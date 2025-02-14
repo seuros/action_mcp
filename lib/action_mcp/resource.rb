@@ -14,7 +14,7 @@ module ActionMCP
 
     # Convert the resource to a JSON string.
     def to_json(*args)
-      to_h.to_json(*args)
+      MultiJson.dump(to_h, *args)
     end
   end
 end

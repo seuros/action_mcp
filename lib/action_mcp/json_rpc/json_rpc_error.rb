@@ -63,7 +63,7 @@ module ActionMCP
 
       # Converts the error hash to a JSON string.
       def to_json(*_args)
-        as_json.to_json
+        MultiJson.dump(as_json, *args)
       end
     end
   end

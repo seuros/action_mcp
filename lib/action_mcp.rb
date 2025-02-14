@@ -4,6 +4,7 @@ require "rails"
 require "active_support"
 require "active_model"
 require "action_mcp/version"
+require "multi_json"
 require "action_mcp/railtie" if defined?(Rails)
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
