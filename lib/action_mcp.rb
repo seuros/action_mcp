@@ -16,6 +16,7 @@ module ActionMCP
   autoload :Resource
   autoload :ToolsRegistry
   autoload :PromptsRegistry
+  autoload :ResourcesBank
   autoload :Tool
   autoload :Prompt
   autoload :JsonRpc
