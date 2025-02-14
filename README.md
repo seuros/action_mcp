@@ -59,6 +59,65 @@ end
 ```
 For dynamic versioning, consider adding the rails_app_version gem.
 
+## Generators
+
+ActionMCP includes Rails generators to help you quickly set up your MCP server components. You can generate the base classes for your MCP Prompt and Tool using the following commands.
+
+To generate both the ApplicationPrompt and ApplicationTool files in your application, run:
+
+```bash
+bin/rails generate action_mcp:install 
+```
+
+This command will create:
+•	app/prompts/application_prompt.rb
+•	app/tools/application_tool.rb
+
+### Generate a New Prompt
+
+Run the following command to generate a new prompt class:
+
+```bash
+bin/rails generate action_mcp:prompt AnalyzeCode
+```
+This command will create a file at app/prompts/analyze_code_prompt.rb with content similar to:
+
+```ruby
+class AnalyzeCodePrompt < ApplicationPrompt
+  # Override the prompt_name (otherwise we'd get "analyze-code")
+  prompt_name "analyze-code"
+
+  # Provide a user-facing description for your prompt.
+  description "Analyze code for potential improvements"
+
+  # Configure arguments via the new DSL
+  argument :language, description: "Programming language", default: "Ruby"
+  argument :code, description: "Code to explain", required: true
+
+  # Add validations (note: "Ruby" is not allowed per the validation)
+  validates :language, inclusion: { in: %w[C Cobol FORTRAN] }
+end
+```
+
+## Generate a New Tool
+Similarly, run the following command to generate a new tool class:
+
+```bash
+bin/rails generate action_mcp:tool CalculateSum
+```
+
+This command will create a file at app/tools/calculate_sum_tool.rb with content similar to:
+
+```ruby
+class CalculateSumTool < ApplicationTool
+  tool_name "calculate-sum"
+  description "Calculate the sum of two numbers"
+
+  property :a, type: "number", description: "First number", required: true
+  property :b, type: "number", description: "Second number", required: true
+end
+```
+
 ### ActionMCP::Prompt
 
 Make Rails Say Sexy stuff 

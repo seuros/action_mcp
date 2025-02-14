@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-class AnalyzeCodePrompt < ApplicationPrompt
-  # Override the tool_name (otherwise we'd get "analyze-code")
-  prompt_name "analyze-code"
+class <%= class_name %> < ApplicationPrompt
+  prompt_name "<%= prompt_name %>"
 
-  # Provide a user-facing description for your tool.
+  # Provide a user-facing description for your prompt.
   description "Analyze code for potential improvements"
 
   # Configure arguments via the new DSL
@@ -13,4 +12,8 @@ class AnalyzeCodePrompt < ApplicationPrompt
 
   # Add validations (note: "Ruby" is not allowed per the validation)
   validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
+
+  def call
+    # Implement your prompt's behavior here
+  end
 end

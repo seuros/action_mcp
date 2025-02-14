@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class ToolTest < ActiveSupport::TestCase
@@ -11,7 +13,7 @@ class ToolTest < ActiveSupport::TestCase
           "x" => { type: "number", description: "First operand" },
           "y" => { type: "number", description: "Second operand" }
         },
-        required: [ "x", "y" ]
+        required: %w[x y]
       }
     }
     assert_equal expected, AddTool.to_h
@@ -58,14 +60,14 @@ class ToolTest < ActiveSupport::TestCase
         type: "object",
         properties: {
           "filepath" => { type: "string", description: "Path to CSV file" },
-          "operations" => { type: "array", description: "Operations to perform", items: { enum: [ "sum", "average", "count" ] } }
+          "operations" => { type: "array", description: "Operations to perform",
+                            items: { enum: %w[sum average count] } }
         }
         # No required properties.
       }
     }
     assert_equal expected, AnalyzeCsvTool.to_h
   end
-
 
   test "ArithmeticTool is not registered" do
     assert_not ActionMCP::ToolsRegistry.items.key?("arithmetic"), "Abstract tool should not be registered"
@@ -81,7 +83,7 @@ class ToolTest < ActiveSupport::TestCase
           "a" => { type: "number", description: "First number" },
           "b" => { type: "number", description: "Second number" }
         },
-        required: [ "a", "b" ]
+        required: %w[a b]
       }
     }
     assert_equal expected, CalculateSumTool.to_h
@@ -98,7 +100,7 @@ class ToolTest < ActiveSupport::TestCase
           "b" => { type: "number", description: "Second number" },
           "precision" => { type: "integer", description: "Decimal precision" }
         },
-        required: [ "a", "b" ]  # "precision" is not required.
+        required: %w[a b] # "precision" is not required.
       }
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
@@ -112,7 +114,7 @@ class ToolTest < ActiveSupport::TestCase
         type: "object",
         properties: {
           "command" => { type: "string", description: "The command to run" },
-          "args"    => { type: "array", description: "Command arguments", items: { type: "string" } }
+          "args" => { type: "array", description: "Command arguments", items: { type: "string" } }
         }
         # No required properties specified.
       }
@@ -134,10 +136,10 @@ class ToolTest < ActiveSupport::TestCase
             items: {
               type: "object",
               properties: {
-                "file"     => { type: "string", description: "eeee" },
+                "file" => { type: "string", description: "eeee" },
                 "checksum" => { type: "string", description: "eeee" }
               },
-              required: [ "file", "checksum" ]
+              required: %w[file checksum]
             }
           }
         }

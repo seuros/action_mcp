@@ -17,17 +17,11 @@ module ActionMCP
       capabilities = {}
 
       # Only include each capability if the corresponding registry is non-empty.
-      if ActionMCP::ToolsRegistry.available_tools.any?
-        capabilities[:tools] = { listChanged: true }
-      end
+      capabilities[:tools] = { listChanged: true } if ActionMCP::ToolsRegistry.available_tools.any?
 
-      if ActionMCP::PromptsRegistry.available_prompts.any?
-        capabilities[:prompts] = { listChanged: true }
-      end
+      capabilities[:prompts] = { listChanged: true } if ActionMCP::PromptsRegistry.available_prompts.any?
 
-      if ActionMCP::ResourcesBank.all_resources.any?
-        capabilities[:resources] = { listChanged: true }
-      end
+      capabilities[:resources] = { listChanged: true } if ActionMCP::ResourcesBank.all_resources.any?
 
       # Add logging capability only if enabled by configuration.
       capabilities[:logging] = {} if ActionMCP.configuration.logging_enabled
@@ -55,38 +49,34 @@ module ActionMCP
     #
     # @param request_id [String, Integer] The request identifier.
     def send_resources_list(request_id)
-      begin
-        resources = ActionMCP::ResourcesBank.all_resources  # fetch all resources
-        result_data = { "resources" => resources }
-        send_jsonrpc_response(request_id, result: result_data)
-        Rails.logger.info("resources/list: Returned #{resources.size} resources.")
-      rescue StandardError => e
-        Rails.logger.error("resources/list failed: #{e.message}")
-        error_obj = JsonRpcError.new(
-          :internal_error,
-          message: "Failed to list resources: #{e.message}"
-        ).as_json
-        send_jsonrpc_response(request_id, error: error_obj)
-      end
+      resources = ActionMCP::ResourcesBank.all_resources # fetch all resources
+      result_data = { "resources" => resources }
+      send_jsonrpc_response(request_id, result: result_data)
+      Rails.logger.info("resources/list: Returned #{resources.size} resources.")
+    rescue StandardError => e
+      Rails.logger.error("resources/list failed: #{e.message}")
+      error_obj = JsonRpcError.new(
+        :internal_error,
+        message: "Failed to list resources: #{e.message}"
+      ).as_json
+      send_jsonrpc_response(request_id, error: error_obj)
     end
 
     # Sends the resource templates list JSON-RPC response.
     #
     # @param request_id [String, Integer] The request identifier.
     def send_resource_templates_list(request_id)
-      begin
-        templates = ActionMCP::ResourcesBank.all_templates  # get all resource templates
-        result_data = { "resourceTemplates" => templates }
-        send_jsonrpc_response(request_id, result: result_data)
-        Rails.logger.info("resources/templates/list: Returned #{templates.size} resource templates.")
-      rescue StandardError => e
-        Rails.logger.error("resources/templates/list failed: #{e.message}")
-        error_obj = JsonRpcError.new(
-          :internal_error,
-          message: "Failed to list resource templates: #{e.message}"
-        ).as_json
-        send_jsonrpc_response(request_id, error: error_obj)
-      end
+      templates = ActionMCP::ResourcesBank.all_templates # get all resource templates
+      result_data = { "resourceTemplates" => templates }
+      send_jsonrpc_response(request_id, result: result_data)
+      Rails.logger.info("resources/templates/list: Returned #{templates.size} resource templates.")
+    rescue StandardError => e
+      Rails.logger.error("resources/templates/list failed: #{e.message}")
+      error_obj = JsonRpcError.new(
+        :internal_error,
+        message: "Failed to list resource templates: #{e.message}"
+      ).as_json
+      send_jsonrpc_response(request_id, error: error_obj)
     end
 
     # Sends the resource read JSON-RPC response.
@@ -105,7 +95,7 @@ module ActionMCP
       end
 
       begin
-        content = ActionMCP::ResourcesBank.read(uri)  # Expecting an instance of an ActionMCP::Content subclass
+        content = ActionMCP::ResourcesBank.read(uri) # Expecting an instance of an ActionMCP::Content subclass
         if content.nil?
           Rails.logger.error("resources/read: Resource not found for URI #{uri}")
           error_obj = JsonRpcError.new(
@@ -138,35 +128,31 @@ module ActionMCP
     # @param tool_name [String] The name of the tool.
     # @param params [Hash] The parameters for the tool.
     def send_tools_call(request_id, tool_name, params)
-      begin
-        tool = ActionMCP::ToolsRegistry.fetch_available_tool(tool_name.to_s)
-        Rails.logger.info("Sending tool call: #{tool_name} with params: #{params}")
-        # TODO: Implement tool call handling and response if needed.
-      rescue StandardError => e
-        Rails.logger.error("tools/call: Failed to call tool #{tool_name} - #{e.message}")
-        error_obj = JsonRpcError.new(
-          :internal_error,
-          message: "Failed to call tool #{tool_name}: #{e.message}"
-        ).as_json
-        send_jsonrpc_response(request_id, error: error_obj)
-      end
+      ActionMCP::ToolsRegistry.fetch_available_tool(tool_name.to_s)
+      Rails.logger.info("Sending tool call: #{tool_name} with params: #{params}")
+      # TODO: Implement tool call handling and response if needed.
+    rescue StandardError => e
+      Rails.logger.error("tools/call: Failed to call tool #{tool_name} - #{e.message}")
+      error_obj = JsonRpcError.new(
+        :internal_error,
+        message: "Failed to call tool #{tool_name}: #{e.message}"
+      ).as_json
+      send_jsonrpc_response(request_id, error: error_obj)
     end
 
     # Sends the prompts list JSON-RPC notification.
     #
     # @param request_id [String, Integer] The request identifier.
     def send_prompts_list(request_id)
-      begin
-        prompts = format_registry_items(ActionMCP::PromptsRegistry.available_prompts)
-        send_jsonrpc_response(request_id, result: { prompts: prompts })
-      rescue StandardError => e
-        Rails.logger.error("prompts/list failed: #{e.message}")
-        error_obj = JsonRpcError.new(
-          :internal_error,
-          message: "Failed to list prompts: #{e.message}"
-        ).as_json
-        send_jsonrpc_response(request_id, error: error_obj)
-      end
+      prompts = format_registry_items(ActionMCP::PromptsRegistry.available_prompts)
+      send_jsonrpc_response(request_id, result: { prompts: prompts })
+    rescue StandardError => e
+      Rails.logger.error("prompts/list failed: #{e.message}")
+      error_obj = JsonRpcError.new(
+        :internal_error,
+        message: "Failed to list prompts: #{e.message}"
+      ).as_json
+      send_jsonrpc_response(request_id, error: error_obj)
     end
 
     def send_prompts_get(request_id, params)

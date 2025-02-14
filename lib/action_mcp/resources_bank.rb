@@ -38,17 +38,17 @@ module ActionMCP
       def register_source(source_uri, path, watch: false)
         reload_source(source_uri, path) # Initial load
 
-        if watch
-          require "active_support/evented_file_update_checker"
-          # Watch all files under the given path (recursive)
-          file_paths = Dir.glob("#{path}/**/*")
-          watcher = ActiveSupport::EventedFileUpdateChecker.new(file_paths) do |modified, added, removed|
-            Rails.logger.info("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
-            # Reload resources for this source when changes occur.
-            reload_source(source_uri, path)
-          end
-          @watchers[source_uri] = { path: path, watcher: watcher }
+        return unless watch
+
+        require "active_support/evented_file_update_checker"
+        # Watch all files under the given path (recursive)
+        file_paths = Dir.glob("#{path}/**/*")
+        watcher = ActiveSupport::EventedFileUpdateChecker.new(file_paths) do |modified, added, removed|
+          Rails.logger.info("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
+          # Reload resources for this source when changes occur.
+          reload_source(source_uri, path)
         end
+        @watchers[source_uri] = { path: path, watcher: watcher }
       end
 
       # Unregisters a source and stops watching it.
@@ -68,6 +68,7 @@ module ActionMCP
         Rails.logger.info("Reloading resources from #{path} for #{source_uri}")
         Dir.glob("#{path}/**/*").each do |file|
           next unless File.file?(file)
+
           # Create a resource URI from the source and file path.
           relative_path = file.sub(%r{\A#{Regexp.escape(path)}/?}, "")
           resource_uri = "#{source_uri}://#{relative_path}"

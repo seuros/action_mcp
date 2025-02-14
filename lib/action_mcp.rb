@@ -33,6 +33,7 @@ module ActionMCP
   end
 
   module_function
+
   def tools
     ToolsRegistry.tools
   end

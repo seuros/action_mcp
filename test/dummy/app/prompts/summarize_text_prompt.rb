@@ -13,7 +13,6 @@ class SummarizeTextPrompt < ApplicationPrompt
   validates :text, presence: true
   validates :style, inclusion: { in: %w[concise detailed] }
 
-  # Instance-level call method
   def call
     # Perform the summarization logic here.
     # For demonstration, we'll just stub out a short or long summary.

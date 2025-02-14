@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ArithmeticTool < ApplicationTool
-  abstract!  # Mark this as abstract so it is not directly registered as a concrete tool.
+  abstract! # Mark this as abstract so it is not directly registered as a concrete tool.
 
   description "Abstract arithmetic tool"
 

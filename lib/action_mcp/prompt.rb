@@ -15,7 +15,8 @@ module ActionMCP
     def self.inherited(subclass)
       super
       return if subclass == Prompt
-      return if "ApplicationPrompt" == subclass.name
+      return if subclass.name == "ApplicationPrompt"
+
       subclass.abstract_prompt = false
 
       # Automatically register the subclass with the PromptsRegistry
@@ -28,7 +29,7 @@ module ActionMCP
     end
 
     def self.abstract?
-      self.abstract_prompt
+      abstract_prompt
     end
 
     # ---------------------------------------------------
@@ -102,7 +103,7 @@ module ActionMCP
     #   ActionMCP::JsonRpc::JsonRpcError(:invalid_params) if validation fails.
     #
     def self.call(params)
-      prompt = new(params)  # Initialize an instance with provided params
+      prompt = new(params) # Initialize an instance with provided params
       unless prompt.valid?
         # Collect all validation errors into a single string or array
         errors_str = prompt.errors.full_messages.join(", ")

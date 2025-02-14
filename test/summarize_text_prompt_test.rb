@@ -9,14 +9,14 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     result = SummarizeTextPrompt.call(params)
 
     assert result.key?(:summary), "Expected result to include :summary"
-    assert_match /\A\[CONCISE\]/, result[:summary], "Expected summary to start with '[CONCISE]'"
+    assert_match(/\A\[CONCISE\]/, result[:summary], "Expected summary to start with '[CONCISE]'")
   end
 
   test "returns a detailed summary when style is 'detailed'" do
     params = { text: "Lorem ipsum dolor sit amet.", style: "detailed" }
     result = SummarizeTextPrompt.call(params)
 
-    assert_match /\A\[DETAILED\]/, result[:summary], "Expected summary to start with '[DETAILED]'"
+    assert_match(/\A\[DETAILED\]/, result[:summary], "Expected summary to start with '[DETAILED]'")
   end
 
   # Test invalid params
@@ -28,7 +28,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     end
 
     # Verify error code, message, and data
-    assert_equal(-32602, error.code, "Expected error code for invalid_params")
+    assert_equal(-32_602, error.code, "Expected error code for invalid_params")
     assert_match(/Prompt validation failed/i, error.message)
     assert_includes error.data[:errors].to_hash, :text, "Expected :text to be in validation errors"
   end
@@ -40,7 +40,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
       SummarizeTextPrompt.call(params)
     end
 
-    assert_equal(-32602, error.code)
+    assert_equal(-32_602, error.code)
     assert_match(/Prompt validation failed/i, error.message)
     assert_includes error.data[:errors].to_hash, :style
   end
@@ -52,6 +52,6 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     prompt.validate!
 
     result = prompt.call
-    assert_match /\A\[CONCISE\]/, result[:summary]
+    assert_match(/\A\[CONCISE\]/, result[:summary])
   end
 end

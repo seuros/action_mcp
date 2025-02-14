@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module Content
     extend ActiveSupport::Autoload

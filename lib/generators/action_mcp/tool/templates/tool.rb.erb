@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+class <%= class_name %> < ApplicationTool
+  tool_name "<%= tool_name %>"
+  description "Calculate the sum of two numbers"
+
+  property :a, type: "number", description: "First number", required: true
+  property :b, type: "number", description: "Second number", required: true
+
+  def call
+    a + b
+  end
+end

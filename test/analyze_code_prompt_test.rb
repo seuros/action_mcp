@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class AnalyzeCodePromptTest < ActiveSupport::TestCase
@@ -17,9 +19,8 @@ class AnalyzeCodePromptTest < ActiveSupport::TestCase
   end
 
   test "language validation works correctly" do
-    # With the default language ("Ruby") provided by the DSL, validation should fail
-    prompt = AnalyzeCodePrompt.new(code: "puts 'hello world'", language: "Ruby")
-    assert_not prompt.valid?, "Prompt should be invalid with language 'Ruby'"
+    prompt = AnalyzeCodePrompt.new(code: "print 'Hello, world!'", language: "PHP")
+    assert_not prompt.valid?, "Prompt should be invalid with language 'PHP'"
     assert_includes prompt.errors[:language], "is not included in the list"
 
     # Changing language to an allowed value should make it valid.

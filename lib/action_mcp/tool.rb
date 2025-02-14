@@ -16,8 +16,9 @@ module ActionMCP
     def self.inherited(subclass)
       super
       return if subclass == Tool
+
       subclass.abstract_tool = false
-      return if "ApplicationTool" == subclass.name
+      return if subclass.name == "ApplicationTool"
 
       ToolsRegistry.register(subclass.tool_name, subclass)
     end
@@ -25,11 +26,11 @@ module ActionMCP
     # Mark this tool as abstract so it won’t be available for use.
     def self.abstract!
       self.abstract_tool = true
-      ToolsRegistry.unregister(self.tool_name) if ToolsRegistry.items.key?(self.tool_name)
+      ToolsRegistry.unregister(tool_name) if ToolsRegistry.items.key?(tool_name)
     end
 
     def self.abstract?
-      self.abstract_tool
+      abstract_tool
     end
 
     # ---------------------------------------------------
@@ -66,7 +67,7 @@ module ActionMCP
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => prop_definition)
       self._required_properties = _required_properties.dup
-      self._required_properties << prop_name.to_s if required
+      _required_properties << prop_name.to_s if required
 
       # Map our DSL type to an ActiveModel attribute type.
       am_type = case type.to_s
@@ -92,7 +93,7 @@ module ActionMCP
     #      property :file, required: true, description: 'file uri'
     #      property :checksum, required: true, description: 'checksum to verify'
     #    end
-    def self.collection(prop_name, type: nil, description: nil, required: false, default: nil, **opts, &block)
+    def self.collection(prop_name, type: nil, description: nil, required: false, default: nil, **_opts, &block)
       if block_given?
         # Build nested schema for an object.
         nested_schema = { type: "object", properties: {}, required: [] }
@@ -101,12 +102,13 @@ module ActionMCP
         collection_definition = { type: "array", description: description, items: nested_schema }
       else
         raise ArgumentError, "Type is required for a collection without a block" if type.nil?
+
         collection_definition = { type: "array", description: description, items: { type: type } }
       end
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => collection_definition)
       self._required_properties = _required_properties.dup
-      self._required_properties << prop_name.to_s if required
+      _required_properties << prop_name.to_s if required
 
       # Register the property as an attribute.
       # (Mapping for a collection can be customized; here we use :string to mimic previous behavior.)
@@ -135,11 +137,11 @@ module ActionMCP
     # Convert Tool Definition to Hash
     # ---------------------------------------------------
     def self.to_h
-      schema = { type: "object", properties: self._schema_properties }
-      schema[:required] = self._required_properties if self._required_properties.any?
+      schema = { type: "object", properties: _schema_properties }
+      schema[:required] = _required_properties if _required_properties.any?
       {
-        name: self.tool_name,
-        description: self.description.presence,
+        name: tool_name,
+        description: description.presence,
         inputSchema: schema
       }.compact
     end

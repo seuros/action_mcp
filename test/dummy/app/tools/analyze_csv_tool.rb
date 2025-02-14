@@ -5,5 +5,6 @@ class AnalyzeCsvTool < ApplicationTool
   description "Analyze a CSV file"
 
   property :filepath, type: "string", description: "Path to CSV file"
-  property :operations, type: "array", description: "Operations to perform", items: { enum: [ "sum", "average", "count" ] }
+  property :operations, type: "array", description: "Operations to perform",
+                        items: { enum: %w[sum average count] }
 end

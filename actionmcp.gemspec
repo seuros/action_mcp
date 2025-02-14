@@ -12,9 +12,8 @@ Gem::Specification.new do |spec|
   spec.description = 'It offers base classes and helpers for creating MCP applications, making it easier to integrate your Ruby/Rails application with the MCP standard'
   spec.license     = 'MIT'
 
-
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = "https://github.com/seuros/action_mcp"
+  spec.metadata['source_code_uri'] = 'https://github.com/seuros/action_mcp'
   # spec.metadata['changelog_ur i'] = "Put your gem's CHANGELOG.md URL here."
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
