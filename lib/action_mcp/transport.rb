@@ -14,17 +14,30 @@ module ActionMCP
     #
     # @param request_id [String, Integer] The request identifier.
     def send_capabilities(request_id)
+      capabilities = {}
+
+      # Only include each capability if the corresponding registry is non-empty.
+      if ActionMCP::ToolsRegistry.available_tools.any?
+        capabilities[:tools] = { listChanged: true }
+      end
+
+      if ActionMCP::PromptsRegistry.available_prompts.any?
+        capabilities[:prompts] = { listChanged: true }
+      end
+
+      if ActionMCP::ResourcesBank.all_resources.any?
+        capabilities[:resources] = { listChanged: true }
+      end
+
+      # Add logging capability only if enabled by configuration.
+      capabilities[:logging] = {} if ActionMCP.configuration.logging_enabled
+
       payload = {
         protocolVersion: "2024-11-05",
-        capabilities: {
-          tools: { listChanged: true },
-          prompts: { listChanged: true },
-          resources: { listChanged: true },
-          logging: {}
-        },
+        capabilities: capabilities,
         serverInfo: {
-          name: Rails.application.name,
-          version: Rails.application.version.to_s
+          name: ActionMCP.configuration.name,
+          version: ActionMCP.configuration.version
         }
       }
       send_jsonrpc_response(request_id, result: payload)
@@ -43,7 +56,7 @@ module ActionMCP
     # @param request_id [String, Integer] The request identifier.
     def send_resources_list(request_id)
       begin
-        resources = ActionMCP::ResourcesRegistry.all_resources  # fetch all resources
+        resources = ActionMCP::ResourcesBank.all_resources  # fetch all resources
         result_data = { "resources" => resources }
         send_jsonrpc_response(request_id, result: result_data)
         Rails.logger.info("resources/list: Returned #{resources.size} resources.")
@@ -62,7 +75,7 @@ module ActionMCP
     # @param request_id [String, Integer] The request identifier.
     def send_resource_templates_list(request_id)
       begin
-        templates = ActionMCP::ResourcesRegistry.all_templates  # get all resource templates
+        templates = ActionMCP::ResourcesBank.all_templates  # get all resource templates
         result_data = { "resourceTemplates" => templates }
         send_jsonrpc_response(request_id, result: result_data)
         Rails.logger.info("resources/templates/list: Returned #{templates.size} resource templates.")
@@ -92,7 +105,7 @@ module ActionMCP
       end
 
       begin
-        content = ActionMCP::ResourcesRegistry.read(uri)  # Expecting an instance of an ActionMCP::Content subclass
+        content = ActionMCP::ResourcesBank.read(uri)  # Expecting an instance of an ActionMCP::Content subclass
         if content.nil?
           Rails.logger.error("resources/read: Resource not found for URI #{uri}")
           error_obj = JsonRpcError.new(
@@ -118,7 +131,6 @@ module ActionMCP
         send_jsonrpc_response(request_id, error: error_obj)
       end
     end
-
 
     # Sends a call to a tool. Currently logs the call details.
     #
@@ -146,7 +158,7 @@ module ActionMCP
     def send_prompts_list(request_id)
       begin
         prompts = format_registry_items(ActionMCP::PromptsRegistry.available_prompts)
-        send_jsonrpc_response(request_id, result: {prompts: prompts} )
+        send_jsonrpc_response(request_id, result: { prompts: prompts })
       rescue StandardError => e
         Rails.logger.error("prompts/list failed: #{e.message}")
         error_obj = JsonRpcError.new(
@@ -192,7 +204,6 @@ module ActionMCP
         send_jsonrpc_response(request_id, error: error_obj)
       end
     end
-
 
     # Sends a JSON-RPC pong response.
     # We don't actually to send any data back because the spec are not fun anymore.

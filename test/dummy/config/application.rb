@@ -15,5 +15,7 @@ module Dummy
     config.action_controller.include_all_helpers = false
 
     config.autoload_lib(ignore: %w[tasks])
+
+    config.action_mcp.name = "ActionMCP Dummy"
   end
 end

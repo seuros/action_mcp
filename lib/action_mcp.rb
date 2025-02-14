@@ -19,6 +19,18 @@ module ActionMCP
   autoload :Tool
   autoload :Prompt
   autoload :JsonRpc
+  eager_autoload do
+    autoload :Configuration
+  end
+
+  # Accessor for the configuration instance.
+  def self.configuration
+    @configuration ||= Configuration.new
+  end
+
+  def self.configure
+    yield(configuration)
+  end
 
   module_function
   def tools

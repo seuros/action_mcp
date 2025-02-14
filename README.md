@@ -44,6 +44,21 @@ ActionMCP provides three core abstractions to streamline MCP server development:
 These correspond to key MCP concepts and let you define what context or capabilities your server exposes to LLMs. 
 Below is an overview of each component and how you might use it:
 
+### Configuration
+ActionMCP is configured via config.action_mcp in your Rails application. 
+By default, the name is set to your application's name and the version defaults to "0.0.1". 
+You can override these settings in your configuration (e.g., in config/application.rb):
+```ruby
+module Tron
+  class Application < Rails::Application
+    config.action_mcp.name = "Friendly MCP (Master Control Program)"  # defaults to Rails.application.name
+    config.action_mcp.version = "1.2.3"                 # defaults to "0.0.1"
+    config.action_mcp.logging_enabled = true            # defaults to true
+  end
+end
+```
+For dynamic versioning, consider adding the rails_app_version gem.
+
 ### ActionMCP::Prompt
 
 Make Rails Say Sexy stuff 
