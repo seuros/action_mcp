@@ -1,7 +1,9 @@
 # ActionMCP
 
 **ActionMCP** is a Ruby gem that provides essential tooling for building Model Context Protocol (MCP) capable servers. 
+
 It offers base classes and helpers for creating MCP applications, making it easier to integrate your Ruby/Rails application with the MCP standard. 
+
 With ActionMCP, you can focus on your app's logic while it handles the boilerplate for MCP compliance.
 
 ## Introduction
