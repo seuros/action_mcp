@@ -4,7 +4,6 @@ module ActionMCP
   module JsonRpc
     extend ActiveSupport::Autoload
 
-    autoload :Base
     autoload :JsonRpcError
     autoload :Notification
     autoload :Request

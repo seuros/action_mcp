@@ -2,26 +2,30 @@
 
 module ActionMCP
   class RegistryBase
+    class NotFound < StandardError; end
+
     class << self
       def items
         @items ||= {}
       end
 
-      # Register an item by unique name
-      def register(name, item_class)
+      # Register an item by unique name.
+      def register(name, klass)
         raise ArgumentError, "Name can't be blank" if name.blank?
         raise ArgumentError, "Name '#{name}' is already registered." if items.key?(name)
 
-        items[name] = { class: item_class, enabled: true }
+        items[name] = { klass: klass, enabled: true }
       end
 
-      # Fetch an item’s metadata
-      # Returns { class: <Class>, enabled: <Boolean> } or nil
-      def fetch(name)
-        items[name]
+      # Retrieve an item’s metadata by name.
+      def find(name)
+        item = items[name]
+        raise NotFound, "Item '#{name}' not found." if item.nil?
+
+        item[:klass]
       end
 
-      # Number of registered items, ignoring abstract ones.
+      # Return the number of registered items, ignoring abstract ones.
       def size
         items.values.reject { |item| abstract_item?(item) }.size
       end
@@ -34,37 +38,46 @@ module ActionMCP
         items.clear
       end
 
-      # List of currently available items, excluding abstract ones.
+      # Chainable scope: returns only enabled, non-abstract items.
       def enabled
-        items
-          .reject { |_name, item| item[:class].abstract? }
-          .select { |_name, item| item[:enabled] }
-      end
-
-      def fetch_available_tool(name)
-        enabled[name]&.fetch(:class)
-      end
-
-      # Enable an item by name
-      def enable(name)
-        raise ArgumentError, "Name '#{name}' not found." unless items.key?(name)
-
-        items[name][:enabled] = true
-      end
-
-      # Disable an item by name
-      def disable(name)
-        raise ArgumentError, "Name '#{name}' not found." unless items.key?(name)
-
-        items[name][:enabled] = false
+        RegistryScope.new(items)
       end
 
       private
 
       # Helper to determine if an item is abstract.
       def abstract_item?(item)
-        klass = item[:class]
+        klass = item[:klass]
         klass.respond_to?(:abstract?) && klass.abstract?
+      end
+    end
+
+    # Query object for chainable registry scopes.
+    class RegistryScope
+      include Enumerable
+
+      # Using a Data type for items.
+      Item = Data.define(:name, :klass)
+
+      def initialize(items)
+        @items = items.reject do |_name, item|
+          RegistryBase.send(:abstract_item?, item) || !item[:enabled]
+        end.map { |name, item| Item.new(name, item[:klass]) }
+      end
+
+      def each(&)
+        @items.each(&)
+      end
+
+      # Returns the names (keys) of all enabled items.
+      def keys
+        @items.map(&:name)
+      end
+
+      # Chainable finder for available tools by name.
+      def find_available_tool(name)
+        item = @items.find { |i| i.name == name }
+        item&.klass
       end
     end
   end

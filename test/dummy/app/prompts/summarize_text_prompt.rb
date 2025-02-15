@@ -9,8 +9,7 @@ class SummarizeTextPrompt < ApplicationPrompt
   argument :text, description: "Text to summarize", required: true
   argument :style, description: "Summarization style", default: "concise"
 
-  # Validation: text must be present; style must be a known style
-  validates :text, presence: true
+  # Validation: style must be a known style
   validates :style, inclusion: { in: %w[concise detailed] }
 
   def call

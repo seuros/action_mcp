@@ -6,6 +6,8 @@ require "active_model"
 require "action_mcp/version"
 require "multi_json"
 require "action_mcp/railtie" if defined?(Rails)
+require_relative "action_mcp/integer_array"
+require_relative "action_mcp/string_array"
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym "MCP"
@@ -21,6 +23,10 @@ module ActionMCP
   autoload :Tool
   autoload :Prompt
   autoload :JsonRpc
+  autoload :Transport
+  autoload :Content
+  autoload :Renderable
+
   eager_autoload do
     autoload :Configuration
   end
@@ -51,4 +57,7 @@ module ActionMCP
   def available_prompts
     PromptsRegistry.available_prompts
   end
+
+  ActiveModel::Type.register(:string_array, StringArray)
+  ActiveModel::Type.register(:integer_array, IntegerArray)
 end

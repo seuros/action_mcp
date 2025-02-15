@@ -4,16 +4,15 @@ module ActionMCP
   module JsonRpc
     Notification = Data.define(:method, :params) do
       def initialize(method:, params: nil)
-        super(method: method, params: params)
+        super
       end
 
       def to_h
-        hash = {
+        {
           jsonrpc: "2.0",
-          method: method
-        }
-        hash[:params] = params if params
-        hash
+          method: method,
+          params: params
+        }.compact
       end
     end
   end

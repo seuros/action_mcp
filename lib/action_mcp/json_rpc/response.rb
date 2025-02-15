@@ -4,49 +4,29 @@ module ActionMCP
   module JsonRpc
     Response = Data.define(:id, :result, :error) do
       def initialize(id:, result: nil, error: nil)
-        processed_error = process_error(error)
-        processed_result = error ? nil : result
-        validate_result_error!(processed_result, processed_error)
-        super(id: id, result: processed_result, error: processed_error)
+        validate_presence_of_result_or_error!(result, error)
+        validate_absence_of_both_result_and_error!(result, error)
+
+        super
       end
 
       def to_h
-        hash = {
+        {
           jsonrpc: "2.0",
-          id: id
-        }
-        if error
-          hash[:error] = {
-            code: error[:code],
-            message: error[:message]
-          }
-          hash[:error][:data] = error[:data] if error[:data]
-        else
-          hash[:result] = result
-        end
-        hash
+          id: id,
+          result: result,
+          error: error
+        }.compact
       end
 
       private
 
-      def process_error(error)
-        case error
-        when Symbol
-          ErrorCodes[error]
-        when Hash
-          validate_error!(error)
-          error
-        end
+      def validate_presence_of_result_or_error!(result, error)
+        raise ArgumentError, "Either result or error must be provided." if result.nil? && error.nil?
       end
 
-      def validate_error!(error)
-        raise Error, "Error code must be an integer" unless error[:code].is_a?(Integer)
-        raise Error, "Error message is required" unless error[:message].is_a?(String)
-      end
-
-      def validate_result_error!(result, error)
-        raise Error, "Either result or error must be set" unless result || error
-        raise Error, "Cannot set both result and error" if result && error
+      def validate_absence_of_both_result_and_error!(result, error)
+        raise ArgumentError, "Both result and error cannot be provided simultaneously." if result && error
       end
     end
   end

@@ -15,9 +15,14 @@ module ActionMCP
         { type: @type }
       end
 
-      def to_json(*args)
-        MultiJson.dump(to_h, *args)
+      def to_json(*)
+        MultiJson.dump(to_h, *)
       end
     end
+
+    autoload :Image
+    autoload :Text
+    autoload :Audio
+    autoload :Resource
   end
 end

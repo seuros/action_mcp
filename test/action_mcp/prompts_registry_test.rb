@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
+require "test_helper"
+
 module ActionMCP
   class PromptsRegistryTest < ActiveSupport::TestCase
     test "fetch returns correct metadata" do
-      metadata = PromptsRegistry.fetch("analyze-code")
-      assert_equal AnalyzeCodePrompt, metadata[:class]
-      assert metadata[:enabled]
+      prompt = PromptsRegistry.find("analyze-code")
+      assert_equal AnalyzeCodePrompt, prompt
     end
 
     test "size excludes abstract prompts" do

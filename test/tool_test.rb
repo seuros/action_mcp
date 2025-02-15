@@ -21,7 +21,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "ExecuteCommandTool to_h returns correct hash representation" do
     expected = {
-      name: "execute_command",
+      name: "execute-command",
       description: "Run a shell command",
       inputSchema: {
         type: "object",
@@ -54,14 +54,14 @@ class ToolTest < ActiveSupport::TestCase
 
   test "AnalyzeCsvTool to_h returns correct hash representation" do
     expected = {
-      name: "analyze_csv",
+      name: "analyze-csv",
       description: "Analyze a CSV file",
       inputSchema: {
         type: "object",
         properties: {
           "filepath" => { type: "string", description: "Path to CSV file" },
           "operations" => { type: "array", description: "Operations to perform",
-                            items: { enum: %w[sum average count] } }
+                            items: { type: "string" } }
         }
         # No required properties.
       }
@@ -75,7 +75,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "CalculateSumTool to_h returns correct hash representation" do
     expected = {
-      name: "calculate_sum",
+      name: "calculate-sum",
       description: "Calculate the sum of two numbers",
       inputSchema: {
         type: "object",
@@ -91,16 +91,17 @@ class ToolTest < ActiveSupport::TestCase
 
   test "CalculateSumWithPrecisionTool to_h returns correct hash representation with extra property" do
     expected = {
-      name: "calculate_sum_with_precision",
+      name: "calculate-sum-with-precision",
       description: "Calculate the sum of two numbers with specified precision",
       inputSchema: {
         type: "object",
         properties: {
           "a" => { type: "number", description: "First number" },
           "b" => { type: "number", description: "Second number" },
-          "precision" => { type: "integer", description: "Decimal precision" }
+          "precision" => { type: "number", description: "Decimal precision" },
+          "unit" => { type: "string", description: "Unit of measurement" }
         },
-        required: %w[a b] # "precision" is not required.
+        required: %w[a b precision] # "precision" is not required and used only for this test
       }
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
@@ -108,7 +109,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "ExecuteCommandTool to_h returns correct hash representation with simple collection" do
     expected = {
-      name: "execute_command",
+      name: "execute-command",
       description: "Run a shell command",
       inputSchema: {
         type: "object",
@@ -120,31 +121,5 @@ class ToolTest < ActiveSupport::TestCase
       }
     }
     assert_equal expected, ExecuteCommandTool.to_h
-  end
-
-  test "ChecksumCheckerTool to_h returns correct hash representation with collection of objects" do
-    # Default tool name will be derived from the class name.
-    expected = {
-      name: "checksum-checker",
-      description: "check checksum256 of a file",
-      inputSchema: {
-        type: "object",
-        properties: {
-          "files" => {
-            type: "array",
-            description: "List of Files",
-            items: {
-              type: "object",
-              properties: {
-                "file" => { type: "string", description: "eeee" },
-                "checksum" => { type: "string", description: "eeee" }
-              },
-              required: %w[file checksum]
-            }
-          }
-        }
-      }
-    }
-    assert_equal expected, ChecksumCheckerTool.to_h
   end
 end

@@ -8,7 +8,7 @@ module ActionMCP
 
       def initialize(text)
         super("text")
-        @text = text
+        @text = text.to_s
       end
 
       def to_h

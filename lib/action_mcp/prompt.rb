@@ -6,6 +6,7 @@ module ActionMCP
   class Prompt
     include ActiveModel::Model
     include ActiveModel::Attributes
+    include Renderable
 
     class_attribute :_prompt_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
@@ -72,6 +73,9 @@ module ActionMCP
 
       # Register the attribute so it's recognized by ActiveModel
       attribute arg_name, :string, default: default
+      return unless required
+
+      validates arg_name, presence: true
     end
 
     def self.arguments
