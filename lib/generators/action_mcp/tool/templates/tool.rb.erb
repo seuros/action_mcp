@@ -8,6 +8,6 @@ class <%= class_name %> < ApplicationTool
   property :b, type: "number", description: "Second number", required: true
 
   def call
-    a + b
+    render_text(a + b)
   end
 end

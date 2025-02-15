@@ -120,16 +120,24 @@ class CalculateSumTool < ApplicationTool
 
   property :a, type: "number", description: "First number", required: true
   property :b, type: "number", description: "Second number", required: true
+  
+  def call
+    render_text(a + b)
+  end
 end
 ```
 
 ### ActionMCP::Prompt
 
-Make Rails Say Sexy stuff 
+A **Prompt** defines a question or request that an LLM can make to your application. It encapsulates the input parameters required for the request and any validations that need to be performed.
+
+For example, you might define a prompt called "analyze-code" that takes a code snippet as input and returns an analysis of the code.
 
 ### ActionMCP::Tool
 
-Make Rails Do Sexy stuff and serve beer to Clients.
+A **Tool** defines an action that your application can perform on behalf of an LLM. It encapsulates the input parameters required for the action and any logic that needs to be executed.
+
+For example, you might define a tool called "execute-command" that takes a shell command as input and executes it on the server, returning the output. This could be used to retrieve system information, run scripts, or perform other administrative tasks.
 
 ### ActionMCP::Resource
 
