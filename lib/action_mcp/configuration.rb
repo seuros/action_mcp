@@ -7,7 +7,8 @@ module ActionMCP
                   # Right now, if enabled, the server will send a listChanged notification for tools, prompts, and resources.
                   # We can make it more granular in the future, but for now, it's a simple boolean.
                   :list_changed,
-                  :resources_subscribe
+                  :resources_subscribe,
+                  :logging_level
 
     def initialize
       # Use Rails.application values if available, or fallback to defaults.
@@ -15,6 +16,7 @@ module ActionMCP
       @version = defined?(Rails) && Rails.respond_to?(:application) && Rails.application.respond_to?(:version) ? Rails.application.version.to_s.presence : "0.0.1"
       @logging_enabled = true
       @list_changed = false
+      @logging_level = :info
     end
   end
 end

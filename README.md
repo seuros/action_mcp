@@ -56,9 +56,12 @@ module Tron
     config.action_mcp.name = "Friendly MCP (Master Control Program)"  # defaults to Rails.application.name
     config.action_mcp.version = "1.2.3"                 # defaults to "0.0.1"
     config.action_mcp.logging_enabled = true            # defaults to true
+    config.action_mcp.logging_level = :info             # defaults to :info, can be :debug, :info, :warn, :error, :fatal
   end
 end
 ```
+The `logging_level` option configures the verbosity of the logs. It can be set to `:debug`, `:info`, `:warn`, `:error`, or `:fatal`. The default value is `:info`.
+
 For dynamic versioning, consider adding the rails_app_version gem.
 
 ## Generators

@@ -42,7 +42,7 @@ module ActionMCP
         # Watch all files under the given path (recursive)
         file_paths = Dir.glob("#{path}/**/*")
         watcher = ActiveSupport::EventedFileUpdateChecker.new(file_paths) do |modified, added, removed|
-          Rails.logger.info("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
+          Transport.logger.debug("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
           # Reload resources for this source when changes occur.
           reload_source(source_uri, path)
         end
@@ -63,7 +63,7 @@ module ActionMCP
       # @param source_uri [String] The identifier for the source.
       # @param path [String] Filesystem path to the source.
       def reload_source(source_uri, path)
-        Rails.logger.info("Reloading resources from #{path} for #{source_uri}")
+        Transport.logger.debug("Reloading resources from #{path} for #{source_uri}")
         Dir.glob("#{path}/**/*").each do |file|
           next unless File.file?(file)
 
@@ -75,9 +75,9 @@ module ActionMCP
             text = File.read(file)
             content = ActionMCP::Content::Text.new(text)
             register_resource(resource_uri, content)
-            Rails.logger.info("Registered resource: #{resource_uri}")
+            Transport.logger.debug("Registered resource: #{resource_uri}")
           rescue StandardError => e
-            Rails.logger.error("Error reading file #{file}: #{e.message}")
+            Transport.logger.error("Error reading file '#{file}': #{e.message}")
           end
         end
       end

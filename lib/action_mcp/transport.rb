@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require "action_mcp/logging"
+
 module ActionMCP
   class Transport
+    include Logging
+
     HEARTBEAT_INTERVAL = 15 # seconds
     attr_reader :initialized
 
@@ -25,7 +29,7 @@ module ActionMCP
       @protocol_version = params["protocolVersion"]
       @client_info = params["clientInfo"]
       @client_capabilities = params["capabilities"]
-      Rails.logger.info("Client capabilities stored: #{@client_capabilities}")
+      Transport.logger.debug("Client capabilities stored: #{@client_capabilities}")
       capabilities = {}
 
       # Only include each capability if the corresponding registry is non-empty.
@@ -50,7 +54,7 @@ module ActionMCP
 
     def initialized!
       @initialized = true
-      Rails.logger.info("Transport initialized.")
+      ActionMCP.logger.debug("Transport initialized.")
     end
 
     # Sends the resources list JSON-RPC response.
@@ -60,9 +64,9 @@ module ActionMCP
       resources = ResourcesBank.all_resources # fetch all resources
       result_data = { "resources" => resources }
       send_jsonrpc_response(request_id, result: result_data)
-      Rails.logger.info("resources/list: Returned #{resources.size} resources.")
+      ActionMCP.logger.debug("resources/list: Returned #{resources.size} resources.")
     rescue StandardError => e
-      Rails.logger.error("resources/list failed: #{e.message}")
+      ActionMCP.logger.error("resources/list failed: #{e.message}")
       error_obj = JsonRpc::JsonRpcError.new(
         :internal_error,
         message: "Failed to list resources: #{e.message}"
@@ -77,9 +81,9 @@ module ActionMCP
       templates = ResourcesBank.all_templates # get all resource templates
       result_data = { "resourceTemplates" => templates }
       send_jsonrpc_response(request_id, result: result_data)
-      Rails.logger.info("resources/templates/list: Returned #{templates.size} resource templates.")
+      ActionMCP.logger.debug("resources/templates/list: Returned #{templates.size} resource templates.")
     rescue StandardError => e
-      Rails.logger.error("resources/templates/list failed: #{e.message}")
+      ActionMCP.logger.error("resources/templates/list failed: #{e.message}")
       error_obj = JsonRpc::JsonRpcError.new(
         :internal_error,
         message: "Failed to list resource templates: #{e.message}"
@@ -94,7 +98,7 @@ module ActionMCP
     def send_resource_read(request_id, params)
       uri = params&.fetch("uri", nil)
       if uri.nil? || uri.empty?
-        Rails.logger.error("resources/read: 'uri' parameter is missing")
+        ActionMCP.logger.error("resources/read: 'uri' parameter is missing")
         error_obj = JsonRpc::JsonRpcError.new(
           :invalid_params,
           message: "Missing 'uri' parameter for resources/read"
@@ -105,7 +109,7 @@ module ActionMCP
       begin
         content = ResourcesBank.read(uri) # Expecting an instance of an ActionMCP::Content subclass
         if content.nil?
-          Rails.logger.error("resources/read: Resource not found for URI #{uri}")
+          ActionMCP.logger.error("resources/read: Resource not found for URI #{uri}")
           error_obj = JsonRpc::JsonRpcError.new(
             :invalid_params,
             message: "Resource not found: #{uri}"
@@ -119,12 +123,12 @@ module ActionMCP
 
         log_msg = "resources/read: Successfully read content of #{uri}"
         log_msg += " (#{content.text.size} bytes)" if content.respond_to?(:text) && content.text
-        Rails.logger.info(log_msg)
+        ActionMCP.logger.debug(log_msg)
       rescue StandardError => e
-        Rails.logger.error("resources/read: Error reading #{uri} - #{e.message}")
+        ActionMCP.logger.error("resources/read: Error reading #{uri} - #{e.message}")
         error_obj = JsonRpc::JsonRpcError.new(
           :internal_error,
-          message: "Failed to read resource: #{e.message}"
+          message: "Failed to read resource '#{uri}': #{e.message}"
         ).as_json
         send_jsonrpc_response(request_id, error: error_obj)
       end
@@ -213,6 +217,8 @@ module ActionMCP
       write_message(notification.to_json)
     end
 
+    ActiveSupport.run_load_hooks(:action_mcp, self)
+
     private
 
     # Formats registry items to a hash representation.
@@ -231,7 +237,7 @@ module ActionMCP
         @output.write("#{data}\n")
       end
     rescue Timeout::Error
-      Rails.logger.error("Write operation timed out")
+      ActionMCP.logger.error("Write operation timed out")
       # Handle timeout appropriately
     end
   end

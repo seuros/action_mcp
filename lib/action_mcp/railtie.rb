@@ -17,6 +17,10 @@ module ActionMCP
       ActionMCP.configuration.logging_enabled = options.fetch(:logging_enabled, true)
     end
 
+    initializer "action_mcp.logger" do
+      ActiveSupport.on_load(:action_mcp) { self.logger = ::Rails.logger }
+    end
+
     initializer "action_mcp.clear_registry" do |app|
       app.config.to_prepare do
         ActionMCP::ToolsRegistry.clear!
