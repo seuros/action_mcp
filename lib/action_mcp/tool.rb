@@ -5,18 +5,12 @@ module ActionMCP
   #
   # Provides a DSL for specifying metadata, properties, and nested collection schemas.
   # Tools are registered automatically in the ToolsRegistry unless marked as abstract.
-  class Tool
-    include ActiveModel::Model
-    include ActiveModel::Attributes
-    include Renderable
-
+  class Tool < Capability
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
     # @!attribute _tool_name
     #   @return [String] The name of the tool.
-    # @!attribute _description
-    #   @return [String] The description of the tool.
     # @!attribute _schema_properties
     #   @return [Hash] The schema properties of the tool.
     # @!attribute _required_properties
@@ -24,7 +18,6 @@ module ActionMCP
     # @!attribute abstract_tool
     #   @return [Boolean] Whether the tool is abstract.
     class_attribute :_tool_name, instance_accessor: false
-    class_attribute :_description, instance_accessor: false, default: ""
     class_attribute :_schema_properties, instance_accessor: false, default: {}
     class_attribute :_required_properties, instance_accessor: false, default: []
     class_attribute :abstract_tool, instance_accessor: false, default: false

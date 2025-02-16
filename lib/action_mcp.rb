@@ -8,6 +8,8 @@ require "multi_json"
 require "action_mcp/railtie" if defined?(Rails)
 require_relative "action_mcp/integer_array"
 require_relative "action_mcp/string_array"
+require_relative "action_mcp/configuration"
+require_relative "action_mcp/capability"
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym "MCP"
@@ -25,11 +27,6 @@ module ActionMCP
   autoload :JsonRpc
   autoload :Transport
   autoload :Content
-  autoload :Renderable
-
-  eager_autoload do
-    autoload :Configuration
-  end
 
   # Returns the configuration instance.
   #

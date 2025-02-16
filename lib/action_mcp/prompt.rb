@@ -2,14 +2,8 @@
 
 module ActionMCP
   # Abstract base class for Prompts
-  # Defines: name, description, arguments, plus auto-registration.
-  class Prompt
-    include ActiveModel::Model
-    include ActiveModel::Attributes
-    include Renderable
-
+  class Prompt < Capability
     class_attribute :_prompt_name, instance_accessor: false
-    class_attribute :_description, instance_accessor: false, default: ""
     class_attribute :_argument_definitions, instance_accessor: false, default: []
     class_attribute :abstract_prompt, instance_accessor: false, default: false
 
@@ -160,15 +154,13 @@ module ActionMCP
     # Usage: Called internally after validation in self.call
     #
     # @raise [NotImplementedError] Subclasses must implement the call method.
-    # @return [void]
+    # @return [Array<Content>] Array of Content objects is expected as return value
     def call
       raise NotImplementedError, "Subclasses must implement the call method"
       # Default implementation (no-op)
       # In a real subclass, you might do:
-      #   def call
-      #     # Perform logic, e.g. analyze code, etc.
-      #     # Return something meaningful.
-      #   end
+      #  # Perform logic, e.g. analyze code, etc.
+      #  # Return something meaningful.
     end
   end
 end

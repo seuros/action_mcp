@@ -34,25 +34,15 @@ module ActionMCP
       @client_info = params["clientInfo"]
       @client_capabilities = params["capabilities"]
       Transport.logger.debug("Client capabilities stored: #{@client_capabilities}")
-      capabilities = {}
-
-      # Only include each capability if the corresponding registry is non-empty.
-      capabilities[:tools] = { listChanged: ActionMCP.configuration.list_changed } if ToolsRegistry.available_tools.any?
-      if PromptsRegistry.available_prompts.any?
-        capabilities[:prompts] =
-          { listChanged: ActionMCP.configuration.list_changed }
-      end
-      capabilities[:resources] = { subscribe: ActionMCP.configuration.list_changed } if ResourcesBank.all_resources.any?
-      capabilities[:logging] = {} if ActionMCP.configuration.logging_enabled
+      capabilities = ActionMCP.configuration.capabilities
 
       payload = {
         protocolVersion: "2024-11-05",
-        capabilities: capabilities,
         serverInfo: {
           name: ActionMCP.configuration.name,
           version: ActionMCP.configuration.version
         }
-      }
+      }.merge(capabilities)
       send_jsonrpc_response(request_id, result: payload)
     end
 
