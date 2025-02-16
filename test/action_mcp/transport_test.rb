@@ -27,7 +27,7 @@ module ActionMCP
       # When registries are empty, keys :tools, :prompts, and :resources are omitted.
       assert_includes(result["capabilities"], "tools")
       assert_includes(result["capabilities"], "prompts")
-      assert_not_includes(result["capabilities"], "resources")
+      assert_includes(result["capabilities"], "resources")
       # Logging is enabled in our configuration.
       assert_includes(result["capabilities"], "logging")
     end

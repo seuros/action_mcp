@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 module ActionMCP
+  # Represents a resource with its metadata.
   Resource = Data.define(:uri, :name, :description, :mime_type, :size) do
     # Convert the resource to a hash with the keys expected by MCP.
     # Note: The key for mime_type is converted to 'mimeType' as specified.
+    #
+    # @return [Hash] A hash representation of the resource.
     def to_h
       hash = { uri: uri, name: name }
       hash[:description] = description if description
@@ -12,7 +15,6 @@ module ActionMCP
       hash
     end
 
-    # Convert the resource to a JSON string.
     def to_json(*)
       MultiJson.dump(to_h, *)
     end

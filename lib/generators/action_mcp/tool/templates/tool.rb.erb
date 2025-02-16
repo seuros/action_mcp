@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
+# Template for generating new tools.
 class <%= class_name %> < ApplicationTool
+  # Set the tool name.
   tool_name "<%= tool_name %>"
   description "Calculate the sum of two numbers"
 
+  # Define input properties.
   property :a, type: "number", description: "First number", required: true
   property :b, type: "number", description: "Second number", required: true
 
+  # Implement the tool's logic here.
   def call
     render_text(a + b)
   end

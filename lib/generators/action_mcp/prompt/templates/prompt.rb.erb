@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+# Template for generating new prompts.
 class <%= class_name %> < ApplicationPrompt
+  # Set the prompt name.
   prompt_name "<%= prompt_name %>"
 
   # Provide a user-facing description for your prompt.
@@ -13,7 +15,7 @@ class <%= class_name %> < ApplicationPrompt
   # Add validations (note: "Ruby" is not allowed per the validation)
   validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
 
+  # Implement your prompt's behavior here
   def call
-    # Implement your prompt's behavior here
   end
 end

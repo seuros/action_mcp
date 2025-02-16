@@ -31,29 +31,47 @@ module ActionMCP
     autoload :Configuration
   end
 
-  # Accessor for the configuration instance.
+  # Returns the configuration instance.
+  #
+  # @return [Configuration] the configuration instance
   def self.configuration
     @configuration ||= Configuration.new
   end
 
+  # Configures the ActionMCP module.
+  #
+  # @yield [configuration] the configuration instance
+  # @return [void]
   def self.configure
     yield(configuration)
   end
 
   module_function
 
+  # Returns the tools registry.
+  #
+  # @return [Hash] the tools registry
   def tools
     ToolsRegistry.tools
   end
 
+  # Returns the prompts registry.
+  #
+  # @return [Hash] the prompts registry
   def prompts
     PromptsRegistry.prompts
   end
 
+  # Returns the available tools.
+  #
+  # @return [ActionMCP::RegistryBase::RegistryScope] the available tools
   def available_tools
     ToolsRegistry.available_tools
   end
 
+  # Returns the available prompts.
+  #
+  # @return [ActionMCP::RegistryBase::RegistryScope] the available prompts
   def available_prompts
     PromptsRegistry.available_prompts
   end

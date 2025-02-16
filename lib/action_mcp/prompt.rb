@@ -24,11 +24,17 @@ module ActionMCP
       PromptsRegistry.register(subclass.prompt_name, subclass)
     end
 
+    # Marks the prompt as abstract.
+    #
+    # @return [void]
     def self.abstract!
       self.abstract_prompt = true
       # If already registered, you might want to unregister it here.
     end
 
+    # Checks if the prompt is abstract.
+    #
+    # @return [Boolean] True if the prompt is abstract, false otherwise.
     def self.abstract?
       abstract_prompt
     end
@@ -36,6 +42,10 @@ module ActionMCP
     # ---------------------------------------------------
     # Prompt Name
     # ---------------------------------------------------
+    # Gets or sets the prompt name.
+    #
+    # @param name [String, nil] The prompt name to set.
+    # @return [String] The prompt name.
     def self.prompt_name(name = nil)
       if name
         self._prompt_name = name
@@ -44,6 +54,9 @@ module ActionMCP
       end
     end
 
+    # Returns the default prompt name based on the class name.
+    #
+    # @return [String] The default prompt name.
     def self.default_prompt_name
       name.demodulize.underscore.dasherize.sub(/-prompt$/, "")
     end
@@ -51,6 +64,8 @@ module ActionMCP
     # ---------------------------------------------------
     # Description
     # ---------------------------------------------------
+    # @param text [String, nil] The description to set.
+    # @return [String] The prompt description.
     def self.description(text = nil)
       if text
         self._description = text
@@ -62,6 +77,13 @@ module ActionMCP
     # ---------------------------------------------------
     # Argument DSL
     # ---------------------------------------------------
+    # Defines an argument for the prompt.
+    #
+    # @param arg_name [Symbol] The name of the argument.
+    # @param description [String] The description of the argument.
+    # @param required [Boolean] Whether the argument is required.
+    # @param default [Object] The default value of the argument.
+    # @return [void]
     def self.argument(arg_name, description: "", required: false, default: nil)
       arg_def = {
         name: arg_name.to_s,
@@ -78,6 +100,9 @@ module ActionMCP
       validates arg_name, presence: true
     end
 
+    # Returns the list of argument definitions.
+    #
+    # @return [Array<Hash>] The list of argument definitions.
     def self.arguments
       _argument_definitions
     end
@@ -85,6 +110,7 @@ module ActionMCP
     # ---------------------------------------------------
     # Convert prompt definition to Hash
     # ---------------------------------------------------
+    # @return [Hash] The prompt definition as a Hash.
     def self.to_h
       {
         name: prompt_name,
@@ -106,6 +132,8 @@ module ActionMCP
     # Raises:
     #   ActionMCP::JsonRpc::JsonRpcError(:invalid_params) if validation fails.
     #
+    # @param params [Hash] The parameters for the prompt.
+    # @return [Object] The result of the prompt's call method.
     def self.call(params)
       prompt = new(params) # Initialize an instance with provided params
       unless prompt.valid?
@@ -131,6 +159,8 @@ module ActionMCP
     #
     # Usage: Called internally after validation in self.call
     #
+    # @raise [NotImplementedError] Subclasses must implement the call method.
+    # @return [void]
     def call
       raise NotImplementedError, "Subclasses must implement the call method"
       # Default implementation (no-op)

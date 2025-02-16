@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 require "action_mcp/logging"
+require "securerandom"
+require "timeout"
 
 module ActionMCP
+  # Handles communication with the client.
   class Transport
     include Logging
 
@@ -22,9 +25,10 @@ module ActionMCP
       @protocol_version = ""
     end
 
-    # Sends the capabilities JSON-RPC notification.
+    # Sends the capabilities JSON-RPC response.
     #
     # @param request_id [String, Integer] The request identifier.
+    # @param params [Hash] The parameters including the 'protocolVersion' and 'clientInfo'.
     def send_capabilities(request_id, params = {})
       @protocol_version = params["protocolVersion"]
       @client_info = params["clientInfo"]
@@ -52,6 +56,9 @@ module ActionMCP
       send_jsonrpc_response(request_id, result: payload)
     end
 
+    # Marks the transport as initialized.
+    #
+    # @return [void]
     def initialized!
       @initialized = true
       ActionMCP.logger.debug("Transport initialized.")
@@ -134,7 +141,7 @@ module ActionMCP
       end
     end
 
-    # Sends the tools list JSON-RPC notification.
+    # Sends the tools list JSON-RPC response.
     #
     # @param request_id [String, Integer] The request identifier.
     def send_tools_list(request_id)
@@ -156,7 +163,7 @@ module ActionMCP
                                                                          message: "Tool not found: #{tool_name}").as_json)
     end
 
-    # Sends the prompts list JSON-RPC notification.
+    # Sends the prompts list JSON-RPC response.
     #
     # @param request_id [String, Integer] The request identifier.
     def send_prompts_list(request_id)
@@ -164,6 +171,11 @@ module ActionMCP
       send_jsonrpc_response(request_id, result: { prompts: prompts })
     end
 
+    # Sends a call to a prompt.
+    #
+    # @param request_id [String, Integer] The request identifier.
+    # @param prompt_name [String] The name of the prompt.
+    # @param params [Hash] The parameters for the prompt.
     def send_prompts_get(request_id, prompt_name, params)
       send_jsonrpc_response(request_id, result: PromptsRegistry.prompt_call(prompt_name.to_s, params))
     rescue RegistryBase::NotFound
@@ -185,6 +197,7 @@ module ActionMCP
       send_jsonrpc_response(request_id, result: {})
     end
 
+    # Sends a JSON-RPC ping request.
     def send_ping
       send_jsonrpc_request("ping")
     end

@@ -13,6 +13,16 @@ module ActionMCP
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
+    # @!attribute _tool_name
+    #   @return [String] The name of the tool.
+    # @!attribute _description
+    #   @return [String] The description of the tool.
+    # @!attribute _schema_properties
+    #   @return [Hash] The schema properties of the tool.
+    # @!attribute _required_properties
+    #   @return [Array<String>] The required properties of the tool.
+    # @!attribute abstract_tool
+    #   @return [Boolean] Whether the tool is abstract.
     class_attribute :_tool_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
     class_attribute :_schema_properties, instance_accessor: false, default: {}
@@ -25,6 +35,7 @@ module ActionMCP
     # Automatically registers non-abstract subclasses in the ToolsRegistry.
     #
     # @param subclass [Class] the subclass inheriting from Tool.
+    # @return [void]
     def self.inherited(subclass)
       super
       return if subclass == Tool
@@ -37,6 +48,8 @@ module ActionMCP
 
     # Marks this tool as abstract so that it won’t be available for use.
     # If the tool is registered in ToolsRegistry, it is unregistered.
+    #
+    # @return [void]
     def self.abstract!
       self.abstract_tool = true
       ToolsRegistry.unregister(tool_name) if ToolsRegistry.items.key?(tool_name)
@@ -97,6 +110,7 @@ module ActionMCP
     # @param required [Boolean] Whether the property is required (default: false).
     # @param default [Object, nil] The default value for the property.
     # @param opts [Hash] Additional options for the JSON Schema.
+    # @return [void]
     def self.property(prop_name, type: "string", description: nil, required: false, default: nil, **opts)
       # Build the JSON Schema definition.
       prop_definition = { type: type }
@@ -127,6 +141,7 @@ module ActionMCP
     # @param description [String, nil] Optional description for the collection.
     # @param required [Boolean] Whether the collection is required (default: false).
     # @param default [Array, nil] The default value for the collection.
+    # @return [void]
     def self.collection(prop_name, type:, description: nil, required: false, default: [])
       raise ArgumentError, "Type is required for a collection" if type.nil?
 
@@ -166,6 +181,7 @@ module ActionMCP
     # Subclasses must implement this method.
     #
     # @raise [NotImplementedError] Always raised if not implemented in a subclass.
+    # @return [Array<Content>] Array of Content objects is expected as return value
     def call
       raise NotImplementedError, "Subclasses must implement the call method"
       # Default implementation (no-op)
