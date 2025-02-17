@@ -8,7 +8,7 @@ gemspec
 gem "puma"
 
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
-gem "rubocop", "< 1.72", require: false
+gem "rubocop", "< 1.73", require: false
 gem "rubocop-rails-omakase", require: false
 
 # Start debugger with binding.b [https://github.com/ruby/debug]
