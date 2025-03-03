@@ -5,7 +5,7 @@ require "test_helper"
 module ActionMCP
   class PromptsRegistryTest < ActiveSupport::TestCase
     test "fetch returns correct metadata" do
-      prompt = PromptsRegistry.find("analyze-code")
+      prompt = PromptsRegistry.find("analyze_code")
       assert_equal AnalyzeCodePrompt, prompt
     end
 
@@ -16,7 +16,7 @@ module ActionMCP
 
     test "enabled list excludes abstract prompts" do
       enabled_names = PromptsRegistry.enabled
-      assert_includes enabled_names.keys, "analyze-code"
+      assert_includes enabled_names.keys, "analyze_code"
     end
   end
 end

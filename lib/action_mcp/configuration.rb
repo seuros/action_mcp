@@ -49,4 +49,22 @@ module ActionMCP
       { capabilities: capabilities }
     end
   end
+
+  class << self
+    attr_accessor :server
+    # Returns the configuration instance.
+    #
+    # @return [Configuration] the configuration instance
+    def configuration
+      @configuration ||= Configuration.new
+    end
+
+    # Configures the ActionMCP module.
+    #
+    # @yield [configuration] the configuration instance
+    # @return [void]
+    def configure
+      yield(configuration)
+    end
+  end
 end

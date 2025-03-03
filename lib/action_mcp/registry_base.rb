@@ -68,6 +68,8 @@ module ActionMCP
         RegistryScope.new(items)
       end
 
+      alias_method :all, :enabled
+
       private
 
       # Helper to determine if an item is abstract.

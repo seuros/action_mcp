@@ -4,7 +4,7 @@ module ActionMCP
   class TransportTest < ActiveSupport::TestCase
     def setup
       @output = StringIO.new
-      @transport = Transport.new(@output)
+      @transport = TransportHandler.new(@output)
     end
 
     # Helper method to parse the last JSON message written to the output.
@@ -47,7 +47,7 @@ module ActionMCP
     test "send_tools_call logs call details without writing a JSON response" do
       request_id = 3
       payload = {
-        name: "calculate-sum",
+        name: "calculate_sum",
         arguments: { a: 1, b: 1 },
         _meta: { progressToken: 0 }
       }
@@ -137,7 +137,7 @@ module ActionMCP
 
     test "send_prompts_get returns prompt when found" do
       request_id = 11
-      name = "summarize-text"
+      name = "summarize_text"
       params = { "text" => "Hello world" }
       @transport.send_prompts_get(request_id, name, params)
       response = parse_last_output

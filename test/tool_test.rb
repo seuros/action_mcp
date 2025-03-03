@@ -21,7 +21,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "ExecuteCommandTool to_h returns correct hash representation" do
     expected = {
-      name: "execute-command",
+      name: "execute_command",
       description: "Run a shell command",
       inputSchema: {
         type: "object",
@@ -37,7 +37,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "GitHubCreateIssueTool to_h returns correct hash representation" do
     expected = {
-      name: "github_create_issue",
+      name: "create_github_issue",
       description: "Create a GitHub issue",
       inputSchema: {
         type: "object",
@@ -54,7 +54,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "AnalyzeCsvTool to_h returns correct hash representation" do
     expected = {
-      name: "analyze-csv",
+      name: "analyze_csv",
       description: "Analyze a CSV file",
       inputSchema: {
         type: "object",
@@ -75,7 +75,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "CalculateSumTool to_h returns correct hash representation" do
     expected = {
-      name: "calculate-sum",
+      name: "calculate_sum",
       description: "Calculate the sum of two numbers",
       inputSchema: {
         type: "object",
@@ -91,7 +91,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "CalculateSumWithPrecisionTool to_h returns correct hash representation with extra property" do
     expected = {
-      name: "calculate-sum-with-precision",
+      name: "calculate_sum_with_precision",
       description: "Calculate the sum of two numbers with specified precision",
       inputSchema: {
         type: "object",
@@ -109,7 +109,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "ExecuteCommandTool to_h returns correct hash representation with simple collection" do
     expected = {
-      name: "execute-command",
+      name: "execute_command",
       description: "Run a shell command",
       inputSchema: {
         type: "object",

@@ -65,7 +65,7 @@ module ActionMCP
         # Watch all files under the given path (recursive)
         file_paths = Dir.glob("#{path}/**/*")
         watcher = ActiveSupport::EventedFileUpdateChecker.new(file_paths) do |modified, added, removed|
-          Transport.logger.debug("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
+          TransportHandler.logger.debug("Files changed in #{path} - Modified: #{modified.inspect}, Added: #{added.inspect}, Removed: #{removed.inspect}")
           # Reload resources for this source when changes occur.
           reload_source(source_uri, path)
         end
@@ -88,7 +88,7 @@ module ActionMCP
       # @param path [String] Filesystem path to the source.
       # @return [void]
       def reload_source(source_uri, path)
-        Transport.logger.debug("Reloading resources from #{path} for #{source_uri}")
+        TransportHandler.logger.debug("Reloading resources from #{path} for #{source_uri}")
         Dir.glob("#{path}/**/*").each do |file|
           next unless File.file?(file)
 
@@ -104,9 +104,9 @@ module ActionMCP
               content = ActionMCP::Content::Resource.new(resource_uri, mime_type, text: nil, blob: Base64.encode64(text))
             end
             register_resource(resource_uri, content)
-            Transport.logger.debug("Registered resource: #{resource_uri}")
+            TransportHandler.logger.debug("Registered resource: #{resource_uri}")
           rescue StandardError => e
-            Transport.logger.error("Error reading file '#{file}': #{e.message}")
+            TransportHandler.logger.error("Error reading file '#{file}': #{e.message}")
           end
         end
       end
@@ -170,7 +170,7 @@ module ActionMCP
         uri = params["uri"]
         # In a real implementation, you would likely store the subscription
         # and send notifications when the resource changes.
-        Transport.logger.info("Subscribed to resource: #{uri}")
+        TransportHandler.logger.info("Subscribed to resource: #{uri}")
         # TODO: Send notifications/resources/updated notification when the resource changes
         {} # Return an empty hash to indicate success
       end
@@ -180,7 +180,7 @@ module ActionMCP
       # @return [void]
       def send_list_changed_notification
         # TODO: Implement the logic to send the notifications/resources/list_changed notification
-        Transport.logger.info("Sending notifications/resources/list_changed notification")
+        TransportHandler.logger.info("Sending notifications/resources/list_changed notification")
       end
     end
   end

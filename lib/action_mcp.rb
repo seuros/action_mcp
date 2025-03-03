@@ -5,17 +5,23 @@ require "active_support"
 require "active_model"
 require "action_mcp/version"
 require "multi_json"
-require "action_mcp/railtie" if defined?(Rails)
+require "concurrent"
+require "action_mcp/engine" if defined?(Rails)
 require_relative "action_mcp/integer_array"
 require_relative "action_mcp/string_array"
+require_relative "action_mcp/logging"
 require_relative "action_mcp/configuration"
 require_relative "action_mcp/capability"
+require_relative "action_mcp/json_rpc"
+require_relative "action_mcp/json_rpc_handler"
+require_relative "action_mcp/registry_base"
 
-ActiveSupport::Inflector.inflections(:en) do |inflect|
-  inflect.acronym "MCP"
-end
 module ActionMCP
+  PROTOCOL_VERSION =  "2024-11-05"
+
   extend ActiveSupport::Autoload
+
+  TRANSPORT_REGISTRY = Concurrent::Map.new
 
   autoload :RegistryBase
   autoload :Resource
@@ -24,24 +30,10 @@ module ActionMCP
   autoload :ResourcesBank
   autoload :Tool
   autoload :Prompt
-  autoload :JsonRpc
-  autoload :Transport
   autoload :Content
-
-  # Returns the configuration instance.
-  #
-  # @return [Configuration] the configuration instance
-  def self.configuration
-    @configuration ||= Configuration.new
-  end
-
-  # Configures the ActionMCP module.
-  #
-  # @yield [configuration] the configuration instance
-  # @return [void]
-  def self.configure
-    yield(configuration)
-  end
+  autoload :Transport
+  autoload :TransportHandler
+  autoload :Client
 
   module_function
 
@@ -71,6 +63,10 @@ module ActionMCP
   # @return [ActionMCP::RegistryBase::RegistryScope] the available prompts
   def available_prompts
     PromptsRegistry.available_prompts
+  end
+
+  def transport_registry
+    TRANSPORT_REGISTRY
   end
 
   ActiveModel::Type.register(:string_array, StringArray)

@@ -52,7 +52,7 @@ module ActionMCP
     #
     # @return [String] The default prompt name.
     def self.default_prompt_name
-      name.demodulize.underscore.dasherize.sub(/-prompt$/, "")
+      name.demodulize.underscore.sub(/_prompt$/, "")
     end
 
     # ---------------------------------------------------

@@ -74,7 +74,7 @@ module ActionMCP
     #
     # @return [String] The default tool name.
     def self.default_tool_name
-      name.demodulize.underscore.dasherize.sub(/-tool$/, "")
+      name.demodulize.underscore.sub(/_tool$/, "")
     end
 
     # Sets or retrieves the tool's description.
