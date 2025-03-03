@@ -1,6 +1,8 @@
 module ActionMCP
   class SSEController < ApplicationController
+    HEARTBEAT_INTERVAL = 10
     include ActionController::Live
+    delegate :send_endpoint_event, :send_sse_event, :send_ping!, to: :transport
 
     # @route GET /sse (sse_out)
     def events
@@ -9,58 +11,41 @@ module ActionMCP
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["Cache-Control"] = "no-cache"
       response.headers["Connection"] = "keep-alive"
-
-      # Create transport and register session
-      transport = TransportHandler::SSEServer.new(response)
-      handler = JsonRpcHandler.new(transport)
-      transport.onmessage = lambda do |message|
-        handler.call(message)
-      end
+      TransportRegistry.create(transport)
+      # # Register the transport first
+      Rails.logger.info "SSE: Registering new connection with session ID: #{session_id}"
+      Rails.logger.info "SSE: Transport registered successfully, starting stream"
 
       begin
-        # Register the transport first
-        Rails.logger.info "SSE: Registering new connection with session ID: #{transport.session_id}"
-        Rails.logger.info "SSE: Transport registered successfully, starting stream"
-        transport.start
-
-        TransportRegistry.add(transport.session_id, transport)
-        # Verify registration was successful
-        unless TransportRegistry.get(transport.session_id)
-          Rails.logger.error "Failed to register transport"
-          raise "Failed to register transport"
-        end
-
         # Now start streaming
-        send_endpoint_event(transport)
+        send_endpoint_event(sse_in_url)
 
         # Keep the connection alive with heartbeat
-        while response.stream.closed? == false
-          transport.send_ping!
-          sleep 20
+        while transport.closed? == false
+          send_ping!
+          sleep HEARTBEAT_INTERVAL
         end
       rescue ActionController::Live::ClientDisconnected, IOError => e
         Rails.logger.info "SSE: Expected disconnection: #{e.message}"
       rescue => e
         Rails.logger.error "SSE: Unexpected error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       ensure
-        cleanup_session(transport)
+        transport.close!
       end
     end
 
     private
 
-    def send_endpoint_event(transport)
-      endpoint = "#{messages_url}?session_id=#{transport.session_id}"
-      transport.send_sse_event("endpoint", endpoint)
+    def transport
+      @transport ||= Transport::SSEServer.new(response.stream)
     end
 
-    def cleanup_session(transport)
-      if transport
-        Rails.logger.info "SSE: Cleaning up transport for session: #{transport.session_id}"
-        transport.close
-        TransportRegistry.remove(transport.session_id)
-        response.stream.close rescue nil
-      end
+    def session_id
+      transport.session_id
+    end
+
+    def default_url_options
+      { host: request.host, port: request.port }
     end
   end
 end

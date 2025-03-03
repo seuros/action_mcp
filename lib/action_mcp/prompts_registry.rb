@@ -8,10 +8,6 @@ module ActionMCP
       #   Returns all registered prompts.
       #   @return [Hash] A hash of registered prompts.
       alias prompts items
-      # @!method available_prompts
-      #   Returns all enabled prompts.
-      #   @return [Hash] A hash of enabled prompts.
-      alias available_prompts enabled
 
       # Calls a prompt with the given name and arguments.
       #
@@ -35,6 +31,10 @@ module ActionMCP
             isError: true
           }
         end
+      end
+
+      def item_klass
+        Prompt
       end
     end
   end

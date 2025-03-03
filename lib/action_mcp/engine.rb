@@ -7,6 +7,7 @@ module ActionMCP
   # Engine for integrating ActionMCP with Rails applications.
   class Engine < ::Rails::Engine
     isolate_namespace ActionMCP
+    config.eager_load_namespaces << ::ActionMCP
 
     ActiveSupport::Inflector.inflections(:en) do |inflect|
       inflect.acronym "SSE"
@@ -28,15 +29,6 @@ module ActionMCP
     initializer "action_mcp.logger" do
       ActiveSupport.on_load(:action_mcp) do
         self.logger = ::Rails.logger
-      end
-    end
-
-    # Clear the ActionMCP registry on each request in development mode.
-    initializer "action_mcp.clear_registry" do |app|
-      app.config.to_prepare do
-        ActionMCP::ToolsRegistry.clear!
-        ActionMCP::PromptsRegistry.clear!
-        ActionMCP.transport_registry.clear
       end
     end
   end

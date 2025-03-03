@@ -7,7 +7,7 @@ class AnalyzeCodePromptTest < ActiveSupport::TestCase
     prompt = AnalyzeCodePrompt
 
     expected_hash = {
-      name: "analyze-code",
+      name: "analyze_code",
       description: "Analyze code for potential improvements",
       arguments: [
         { name: "language", description: "Programming language", required: false },

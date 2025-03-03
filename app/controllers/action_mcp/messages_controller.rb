@@ -1,10 +1,10 @@
 module ActionMCP
   class MessagesController < ApplicationController
-    # @route POST /sse (sse_in)
+    # @route POST /messages (messages)
     def create
       session_id = params[:session_id]
 
-      transport = TransportRegistry.get(session_id)
+      transport = TransportRegistry.find(session_id)
 
       unless transport
         error_msg = "Session not found: #{session_id}"
@@ -13,7 +13,7 @@ module ActionMCP
       end
 
       begin
-        transport.handle_post_message(request, response)
+        transport.handle_post_message(params, response)
       rescue => e
         Rails.logger.error "Error handling message: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
         render status: :internal_server_error, json: { error: e.message }

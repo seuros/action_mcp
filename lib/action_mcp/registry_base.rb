@@ -11,23 +11,13 @@ module ActionMCP
       #
       # @return [Hash] A hash of registered items.
       def items
-        @items ||= {}
+        @items = item_klass.descendants.each_with_object({}) do |klass, hash|
+          next if klass.abstract?
+          hash[klass.capability_name] = klass
+        end
       end
 
-      # Register an item by unique name.
-      #
-      # @param name [String] The unique name of the item.
-      # @param klass [Class] The class of the item.
-      # @raise [ArgumentError] if the name is blank or already registered.
-      # @return [void]
-      def register(name, klass)
-        raise ArgumentError, "Name can't be blank" if name.blank?
-        raise ArgumentError, "Name '#{name}' is already registered." if items.key?(name)
-
-        items[name] = { klass: klass, enabled: true }
-      end
-
-      # Retrieve an item’s metadata by name.
+      # Retrieve an item by name.
       #
       # @param name [String] The name of the item to find.
       # @raise [NotFound] if the item is not found.
@@ -36,49 +26,35 @@ module ActionMCP
         item = items[name]
         raise NotFound, "Item '#{name}' not found." if item.nil?
 
-        item[:klass]
+        item
       end
 
       # Return the number of registered items, ignoring abstract ones.
       #
       # @return [Integer] The number of registered items.
       def size
-        items.values.reject { |item| abstract_item?(item) }.size
+        items.size
       end
 
-      # Unregister an item by name.
-      #
-      # @param name [String] The name of the item to unregister.
-      # @return [void]
-      def unregister(name)
-        items.delete(name)
-      end
-
-      # Clear all registered items.
-      #
-      # @return [void]
-      def clear!
-        items.clear
-      end
-
-      # Chainable scope: returns only enabled, non-abstract items.
+      # Chainable scope: returns only non-abstract items.
       #
       # @return [RegistryScope] A RegistryScope instance.
-      def enabled
+      def non_abstract
         RegistryScope.new(items)
       end
-
-      alias_method :all, :enabled
 
       private
 
       # Helper to determine if an item is abstract.
       #
-      # @param item [Hash] The item to check.
-      # @return [Boolean] True if the item is abstract, false otherwise.
-      def abstract_item?(item)
-        klass = item[:klass]
+      # @param klass [Class] The class to check.
+      # @return [Boolean] True if the class is abstract, false otherwise.
+      def abstract_item?(klass)
         klass.respond_to?(:abstract?) && klass.abstract?
+      end
+
+      def item_klass
+        raise NotImplementedError, "Implement in subclass"
       end
     end
 
@@ -94,9 +70,9 @@ module ActionMCP
       # @param items [Hash] The items to scope.
       # @return [void]
       def initialize(items)
-        @items = items.reject do |_name, item|
-          RegistryBase.send(:abstract_item?, item) || !item[:enabled]
-        end.map { |name, item| Item.new(name, item[:klass]) }
+        @items = items.reject do |_name, klass|
+          RegistryBase.send(:abstract_item?, klass)
+        end.map { |name, klass| Item.new(name, klass) }
       end
 
       # Iterates over the items in the scope.
@@ -107,9 +83,9 @@ module ActionMCP
         @items.each(&)
       end
 
-      # Returns the names (keys) of all enabled items.
+      # Returns the names (keys) of all non-abstract items.
       #
-      # @return [Array<String>] The names of all enabled items.
+      # @return [Array<String>] The names of all non-abstract items.
       def keys
         @items.map(&:name)
       end

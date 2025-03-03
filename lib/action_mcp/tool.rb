@@ -9,51 +9,12 @@ module ActionMCP
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
-    # @!attribute _tool_name
-    #   @return [String] The name of the tool.
     # @!attribute _schema_properties
     #   @return [Hash] The schema properties of the tool.
     # @!attribute _required_properties
     #   @return [Array<String>] The required properties of the tool.
-    # @!attribute abstract_tool
-    #   @return [Boolean] Whether the tool is abstract.
-    class_attribute :_tool_name, instance_accessor: false
     class_attribute :_schema_properties, instance_accessor: false, default: {}
     class_attribute :_required_properties, instance_accessor: false, default: []
-    class_attribute :abstract_tool, instance_accessor: false, default: false
-
-    # --------------------------------------------------------------------------
-    # Subclass Registration
-    # --------------------------------------------------------------------------
-    # Automatically registers non-abstract subclasses in the ToolsRegistry.
-    #
-    # @param subclass [Class] the subclass inheriting from Tool.
-    # @return [void]
-    def self.inherited(subclass)
-      super
-      return if subclass == Tool
-
-      subclass.abstract_tool = false
-      return if subclass.name == "ApplicationTool"
-
-      ToolsRegistry.register(subclass.tool_name, subclass)
-    end
-
-    # Marks this tool as abstract so that it won’t be available for use.
-    # If the tool is registered in ToolsRegistry, it is unregistered.
-    #
-    # @return [void]
-    def self.abstract!
-      self.abstract_tool = true
-      ToolsRegistry.unregister(tool_name) if ToolsRegistry.items.key?(tool_name)
-    end
-
-    # Returns whether this tool is abstract.
-    #
-    # @return [Boolean] true if abstract, false otherwise.
-    def self.abstract?
-      abstract_tool
-    end
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -64,9 +25,9 @@ module ActionMCP
     # @return [String] The current tool name.
     def self.tool_name(name = nil)
       if name
-        self._tool_name = name
+        self._capability_name = name
       else
-        _tool_name || default_tool_name
+        _capability_name || default_tool_name
       end
     end
 
@@ -77,16 +38,8 @@ module ActionMCP
       name.demodulize.underscore.sub(/_tool$/, "")
     end
 
-    # Sets or retrieves the tool's description.
-    #
-    # @param text [String, nil] Optional. The description text to set.
-    # @return [String] The current description.
-    def self.description(text = nil)
-      if text
-        self._description = text
-      else
-        _description
-      end
+    class << self
+      alias default_capability_name default_tool_name
     end
 
     # --------------------------------------------------------------------------
@@ -193,13 +146,14 @@ module ActionMCP
     # @return [Symbol] The corresponding ActiveModel attribute type.
     def self.map_json_type_to_active_model_type(type)
       case type.to_s
-      when "number" then  :float # JSON Schema "number" is a float in Ruby, the spec doesn't have an integer type yet.
+      when "number" then :float # JSON Schema "number" is a float in Ruby, the spec doesn't have an integer type yet.
       when "array_number" then :integer_array
       when "array_integer" then :string_array
       when "array_string" then :string_array
-      else                :string
+      else :string
       end
     end
+
     private_class_method :map_json_type_to_active_model_type
   end
 end

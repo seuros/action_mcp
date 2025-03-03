@@ -14,9 +14,9 @@ module ActionMCP
       assert_equal PromptsRegistry.size, ActionMCP.prompts.size
     end
 
-    test "enabled list excludes abstract prompts" do
-      enabled_names = PromptsRegistry.enabled
-      assert_includes enabled_names.keys, "analyze_code"
+    test "non_abstract list excludes abstract prompts" do
+      non_abstract_names = PromptsRegistry.non_abstract
+      assert_includes non_abstract_names.keys, "analyze_code"
     end
   end
 end

@@ -3,7 +3,7 @@ module ActionMCP
   module Transport
     module Prompts
       def send_prompts_list(request_id)
-        prompts = format_registry_items(PromptsRegistry.all)
+        prompts = format_registry_items(PromptsRegistry.non_abstract)
         send_jsonrpc_response(request_id, result: { prompts: prompts })
       end
 

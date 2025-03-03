@@ -41,7 +41,7 @@ module ActionMCP
       response = parse_last_output
       tools = response["result"]["tools"]
       assert_equal 8, tools.size
-      assert_equal "add", tools.first["name"]
+      assert tools.any? { |tool| tool["name"] == "add" }
     end
 
     test "send_tools_call logs call details without writing a JSON response" do
@@ -124,7 +124,7 @@ module ActionMCP
       response = parse_last_output
       prompts = response["result"]["prompts"]
       assert_equal 2, prompts.size
-      assert_equal "analyze-code", prompts.first["name"]
+      assert prompts.any? { |prompt| prompt["name"] == "analyze_code" }
     end
 
     test "send_prompts_get returns error when name is missing" do

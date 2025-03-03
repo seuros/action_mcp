@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class AnalyzeCodePrompt < ApplicationPrompt
-  # Override the tool_name (otherwise we'd get "analyze-code")
-  prompt_name "analyze-code"
-
   # Provide a user-facing description for your tool.
   description "Analyze code for potential improvements"
 

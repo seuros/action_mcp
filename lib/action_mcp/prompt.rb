@@ -3,35 +3,7 @@
 module ActionMCP
   # Abstract base class for Prompts
   class Prompt < Capability
-    class_attribute :_prompt_name, instance_accessor: false
     class_attribute :_argument_definitions, instance_accessor: false, default: []
-    class_attribute :abstract_prompt, instance_accessor: false, default: false
-
-    def self.inherited(subclass)
-      super
-      return if subclass == Prompt
-      return if subclass.name == "ApplicationPrompt"
-
-      subclass.abstract_prompt = false
-
-      # Automatically register the subclass with the PromptsRegistry
-      PromptsRegistry.register(subclass.prompt_name, subclass)
-    end
-
-    # Marks the prompt as abstract.
-    #
-    # @return [void]
-    def self.abstract!
-      self.abstract_prompt = true
-      # If already registered, you might want to unregister it here.
-    end
-
-    # Checks if the prompt is abstract.
-    #
-    # @return [Boolean] True if the prompt is abstract, false otherwise.
-    def self.abstract?
-      abstract_prompt
-    end
 
     # ---------------------------------------------------
     # Prompt Name
@@ -42,9 +14,9 @@ module ActionMCP
     # @return [String] The prompt name.
     def self.prompt_name(name = nil)
       if name
-        self._prompt_name = name
+        self._capability_name = name
       else
-        _prompt_name || default_prompt_name
+        _capability_name || default_prompt_name
       end
     end
 
@@ -54,18 +26,8 @@ module ActionMCP
     def self.default_prompt_name
       name.demodulize.underscore.sub(/_prompt$/, "")
     end
-
-    # ---------------------------------------------------
-    # Description
-    # ---------------------------------------------------
-    # @param text [String, nil] The description to set.
-    # @return [String] The prompt description.
-    def self.description(text = nil)
-      if text
-        self._description = text
-      else
-        _description
-      end
+    class << self
+    alias default_capability_name default_prompt_name
     end
 
     # ---------------------------------------------------

@@ -8,10 +8,6 @@ module ActionMCP
       #   Returns all registered tools.
       #   @return [Hash] A hash of registered tools.
       alias tools items
-      # @!method available_tools
-      #   Returns all enabled tools.
-      #   @return [Hash] A hash of enabled tools.
-      alias available_tools enabled
 
       # Calls a tool with the given name and arguments.
       #
@@ -31,6 +27,10 @@ module ActionMCP
             isError: true
           }
         end
+      end
+
+      def item_klass
+        Tool
       end
     end
   end

@@ -6,7 +6,7 @@ require "active_model"
 require "action_mcp/version"
 require "multi_json"
 require "concurrent"
-require "action_mcp/engine" if defined?(Rails)
+require "action_mcp/engine"
 require_relative "action_mcp/integer_array"
 require_relative "action_mcp/string_array"
 require_relative "action_mcp/logging"
@@ -31,6 +31,7 @@ module ActionMCP
   autoload :Tool
   autoload :Prompt
   autoload :Content
+  autoload :TransportRegistry
   autoload :Transport
   autoload :TransportHandler
   autoload :Client

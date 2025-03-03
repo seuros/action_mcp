@@ -31,7 +31,7 @@ module ActionMCP
           Rails.logger.info "Sent event: #{data}"
         rescue ActionController::Live::ClientDisconnected, IOError => e
           Rails.logger.info "Client disconnected during event send: #{e.message}"
-          response.close
+          close!
           raise e
         end
       end

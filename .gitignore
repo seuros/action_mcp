@@ -10,3 +10,5 @@
 /test/dummy/tmp/
 Gemfile.lock
 .idea
+.DS_Store
+coverage/

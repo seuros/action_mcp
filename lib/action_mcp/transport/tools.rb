@@ -3,7 +3,7 @@ module ActionMCP
   module Transport
     module Tools
       def send_tools_list(request_id)
-        tools = format_registry_items(ToolsRegistry.all)
+        tools = format_registry_items(ToolsRegistry.non_abstract)
         send_jsonrpc_response(request_id, result: { tools: tools })
       end
 

@@ -2,7 +2,7 @@
 
 # A sample prompt class to demonstrate usage and testing
 class SummarizeTextPrompt < ApplicationPrompt
-  prompt_name "summarize-text"
+  prompt_name "summarize_text"
   description "Summarize a piece of text using a chosen method"
 
   # Arguments

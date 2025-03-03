@@ -2,7 +2,7 @@
 
 class FormatCodeTool < ApplicationTool
   # Force a specific name (else would default to "format-code")
-  tool_name "format-source"
+  tool_name "format_source"
   description "Format source code according to a specific style"
 
   property :source_code, type: "string", description: "The code to be formatted", required: true
