@@ -115,7 +115,7 @@ This command will create a file at app/tools/calculate_sum_tool.rb with content 
 
 ```ruby
 class CalculateSumTool < ApplicationTool
-  tool_name "calculate-sum"
+  tool_name "calculate_sum"
   description "Calculate the sum of two numbers"
 
   property :a, type: "number", description: "First number", required: true
@@ -137,7 +137,8 @@ For example, you might define a prompt called "analyze-code" that takes a code s
 
 A **Tool** defines an action that your application can perform on behalf of an LLM. It encapsulates the input parameters required for the action and any logic that needs to be executed.
 
-For example, you might define a tool called "execute-command" that takes a shell command as input and executes it on the server, returning the output. This could be used to retrieve system information, run scripts, or perform other administrative tasks.
+For example, you might define a tool called "execute-command" that takes a shell command as input and executes it on the server, returning the output. 
+This could be used to retrieve system information, run scripts, or perform other administrative tasks.
 
 ### ActionMCP::Resource
 

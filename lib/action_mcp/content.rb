@@ -3,7 +3,6 @@
 module ActionMCP
   # Module for managing content within ActionMCP.
   module Content
-    extend ActiveSupport::Autoload
     # Base class for MCP content items.
     class Base
       # @return [Symbol] The type of content.
@@ -31,9 +30,5 @@ module ActionMCP
       end
     end
 
-    autoload :Image
-    autoload :Text
-    autoload :Audio
-    autoload :Resource
   end
 end

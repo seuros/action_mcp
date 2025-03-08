@@ -7,7 +7,6 @@ module ActionMCP
   # Engine for integrating ActionMCP with Rails applications.
   class Engine < ::Rails::Engine
     isolate_namespace ActionMCP
-    config.eager_load_namespaces << ::ActionMCP
 
     ActiveSupport::Inflector.inflections(:en) do |inflect|
       inflect.acronym "SSE"

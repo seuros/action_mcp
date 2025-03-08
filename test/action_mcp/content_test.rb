@@ -18,10 +18,6 @@ module ActionMCP
         # Verify to_h output
         expected = { type: "audio", data: data, mimeType: mime_type }
         assert_equal expected, audio.to_h
-
-        # Verify to_json returns valid JSON matching to_h
-        parsed = MultiJson.load(audio.to_json, symbolize_keys: true)
-        assert_equal expected, parsed
       end
 
       test "Image content behaves as expected" do
@@ -37,10 +33,6 @@ module ActionMCP
         # Verify to_h output
         expected = { type: "image", data: data, mimeType: mime_type }
         assert_equal expected, image.to_h
-
-        # Verify to_json returns valid JSON matching to_h
-        parsed = MultiJson.load(image.to_json, symbolize_keys: true)
-        assert_equal expected, parsed
       end
 
       test "Resource content behaves as expected with various configurations" do

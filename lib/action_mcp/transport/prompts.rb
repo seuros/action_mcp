@@ -1,4 +1,3 @@
-# app/concerns/action_mcp/transport/prompts.rb
 module ActionMCP
   module Transport
     module Prompts

@@ -1,15 +1,10 @@
-# app/models/action_mcp/transport_handler.rb
 # frozen_string_literal: true
-
-require "action_mcp/logging"
 
 module ActionMCP
   class TransportHandler
     include Logging
 
-    # Include our extracted concerns
     include Transport::Capabilities
-    include Transport::Resources
     include Transport::Tools
     include Transport::Prompts
     include Transport::Messaging
@@ -19,19 +14,27 @@ module ActionMCP
 
     def initialize(output_io)
       @output = output_io
-      @output.sync = true
+      @output.sync = true if @output.respond_to?(:sync=)
       @initialized = false
       @client_capabilities = {}
       @client_info = {}
       @protocol_version = ""
     end
 
+    def send_ping
+      send_jsonrpc_request("ping")
+    end
+
     def send_pong(request_id)
       send_jsonrpc_response(request_id, result: {})
     end
 
-    def send_ping
-      send_jsonrpc_request("ping")
+    def initialized?
+      @initialized
+    end
+
+    def initialized!
+      @initialized = true
     end
 
     private
@@ -41,7 +44,7 @@ module ActionMCP
         @output.write("#{data}\n")
       end
     rescue Timeout::Error
-      ActionMCP.logger.error("Write operation timed out")
+      # ActionMCP.logger.error("Write operation timed out")
     end
 
     def format_registry_items(registry)

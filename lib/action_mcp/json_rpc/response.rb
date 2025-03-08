@@ -13,8 +13,9 @@ module ActionMCP
       def initialize(id:, result: nil, error: nil)
         validate_presence_of_result_or_error!(result, error)
         validate_absence_of_both_result_and_error!(result, error)
+        result, error = transform_value_to_hash!(result, error)
 
-        super
+        super(id: id, result: result, error: error)
       end
 
       # Returns a hash representation of the response.
@@ -27,6 +28,10 @@ module ActionMCP
           result: result,
           error: error
         }.compact
+      end
+
+      def is_error?
+        error.present?
       end
 
       private
@@ -47,6 +52,12 @@ module ActionMCP
       # @raise [ArgumentError] if both result and error are provided.
       def validate_absence_of_both_result_and_error!(result, error)
         raise ArgumentError, "Both result and error cannot be provided simultaneously." if result && error
+      end
+
+      def transform_value_to_hash!(result, error)
+        result = result.is_a?(String) ? (MultiJson.load(result) rescue result) : result
+        error = error.is_a?(String) ? (MultiJson.load(error) rescue error) : error
+        [ result, error ]
       end
     end
   end

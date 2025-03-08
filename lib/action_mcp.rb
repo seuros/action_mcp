@@ -2,39 +2,33 @@
 
 require "rails"
 require "active_support"
-require "active_model"
-require "action_mcp/version"
+require "active_support/rails"
 require "multi_json"
 require "concurrent"
+require "active_record/railtie"
+require "action_controller/railtie"
+require "action_cable/engine"
 require "action_mcp/engine"
-require_relative "action_mcp/integer_array"
-require_relative "action_mcp/string_array"
-require_relative "action_mcp/logging"
-require_relative "action_mcp/configuration"
-require_relative "action_mcp/capability"
-require_relative "action_mcp/json_rpc"
-require_relative "action_mcp/json_rpc_handler"
-require_relative "action_mcp/registry_base"
+require "zeitwerk"
+
+lib = File.dirname(__FILE__)
+
+Zeitwerk::Loader.for_gem.tap do |loader|
+  loader.ignore(
+    "#{lib}/generators",
+    "#{lib}/action_mcp/version.rb",
+    "#{lib}/actionmcp.rb"
+  )
+
+  loader.inflector.inflect("action_mcp" => "ActionMCP")
+  loader.inflector.inflect("sse_client" => "SSEClient")
+  loader.inflector.inflect("sse_server" => "SSEServer")
+end.setup
 
 module ActionMCP
+  require_relative "action_mcp/version"
+  require_relative "action_mcp/configuration"
   PROTOCOL_VERSION =  "2024-11-05"
-
-  extend ActiveSupport::Autoload
-
-  TRANSPORT_REGISTRY = Concurrent::Map.new
-
-  autoload :RegistryBase
-  autoload :Resource
-  autoload :ToolsRegistry
-  autoload :PromptsRegistry
-  autoload :ResourcesBank
-  autoload :Tool
-  autoload :Prompt
-  autoload :Content
-  autoload :TransportRegistry
-  autoload :Transport
-  autoload :TransportHandler
-  autoload :Client
 
   module_function
 
@@ -64,10 +58,6 @@ module ActionMCP
   # @return [ActionMCP::RegistryBase::RegistryScope] the available prompts
   def available_prompts
     PromptsRegistry.available_prompts
-  end
-
-  def transport_registry
-    TRANSPORT_REGISTRY
   end
 
   ActiveModel::Type.register(:string_array, StringArray)

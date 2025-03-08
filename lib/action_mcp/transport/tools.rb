@@ -1,4 +1,3 @@
-# app/concerns/action_mcp/transport/tools.rb
 module ActionMCP
   module Transport
     module Tools

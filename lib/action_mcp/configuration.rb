@@ -42,7 +42,7 @@ module ActionMCP
       # Only include each capability if the corresponding registry is non-empty.
       capabilities[:tools] = { listChanged: @list_changed } if ToolsRegistry.non_abstract.any?
       capabilities[:prompts] = { listChanged: @list_changed } if PromptsRegistry.non_abstract.any?
-      capabilities[:resources] = { subscribe: @list_changed } if ResourcesBank.all_resources.any?
+      capabilities[:resources] = {}
       capabilities[:logging] = {} if @logging_enabled
       capabilities[:resources] = { subscribe: @resources_subscribe,
                                    listChanged: @list_changed }.compact

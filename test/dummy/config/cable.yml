@@ -1,0 +1,6 @@
+development:
+  adapter: postgresql
+  channel_prefix: <%= "actionmcp_#{Rails.application.env}" %>
+
+test:
+  adapter: test

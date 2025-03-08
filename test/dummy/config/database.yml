@@ -1,0 +1,15 @@
+development:
+  primary:
+    adapter: postgresql
+    database: actionmcp_development
+    username: postgres
+    password: ubuntu
+    host: localhost
+
+test:
+  primary:
+    adapter: postgresql
+    database: actionmcp_test
+    username: postgres
+    password: ubuntu
+    host: localhost

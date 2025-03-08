@@ -5,7 +5,6 @@ module ActionMCP
         @protocol_version = params["protocolVersion"]
         @client_info = params["clientInfo"]
         @client_capabilities = params["capabilities"]
-        TransportHandler.logger.debug("Client capabilities stored: #{@client_capabilities}")
         capabilities = ActionMCP.configuration.capabilities
 
         payload = {
@@ -16,11 +15,6 @@ module ActionMCP
           }
         }.merge(capabilities)
         send_jsonrpc_response(request_id, result: payload)
-      end
-
-      def initialized!
-        @initialized = true
-        TransportHandler.logger.debug("Transport initialized.")
       end
     end
   end

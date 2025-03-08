@@ -3,5 +3,8 @@
 module ActionMCP
   # Module for server-related functionality.
   module Server
+    module_function def server
+      @server ||= ActionCable::Server::Base.new
+    end
   end
 end

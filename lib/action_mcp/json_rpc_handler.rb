@@ -23,25 +23,28 @@ module ActionMCP
       else
                   line
       end
-      Rails.logger.info("Received request: #{request.to_json}")
       process_request(request)
     end
 
     private
 
     def process_request(request)
-      return unless request["jsonrpc"] == "2.0"
-
+       unless request["jsonrpc"] == "2.0"
+         puts "Invalid request: #{request}"
+         return
+       end
       method = request["method"]
       id = request["id"]
       params = request["params"]
 
       case method
       when "initialize"
+        puts "\e[31mSending capabilities\e[0m"
         transport.send_capabilities(id, params)
       when "ping"
         transport.send_pong(id)
       when /^notifications\//
+        puts "\e[31mProcessing notifications\e[0m"
         process_notifications(method, id, params)
       when /^prompts\//
         process_prompts(method, id, params)
@@ -50,6 +53,7 @@ module ActionMCP
       when /^tools\//
         process_tools(method, id, params)
       else
+        puts "\e[31mUnknown method: #{method}\e[0m"
         Rails.logger.warn("Unknown method: #{method}")
       end
     end
@@ -57,9 +61,8 @@ module ActionMCP
     def process_notifications(method, _id, _params)
       case method
       when "notifications/initialized"
+        puts "\e[31mInitialized\e[0m"
         transport.initialized!
-      when "notifications/roots/list_changed"
-        transport.send_roots_list
       else
         Rails.logger.warn("Unknown notifications method: #{method}")
       end
