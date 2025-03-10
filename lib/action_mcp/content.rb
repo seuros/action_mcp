@@ -29,6 +29,5 @@ module ActionMCP
         MultiJson.dump(to_h, *)
       end
     end
-
   end
 end

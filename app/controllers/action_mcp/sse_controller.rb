@@ -43,7 +43,7 @@ module ActionMCP
 
             # Handle different message formats
             data = case message
-                   when String
+            when String
                      begin
                        # Try to parse as JSON if it's a JSON string
                        JSON.parse(message)
@@ -51,17 +51,17 @@ module ActionMCP
                      rescue JSON::ParserError
                        message # Return the original string if it's not JSON
                      end
-                   when Hash, Array
+            when Hash, Array
                      message.to_json
-                   else
+            else
                      message.to_s
-                   end
+            end
 
             # Send with proper SSE formatting
             sse = SSE.new(response.stream)
-            if message.is_a?(Hash) && message['event']
+            if message.is_a?(Hash) && message["event"]
               # If message has an event field, use it
-              sse.write(message['data'] || message, event: message['event'])
+              sse.write(message["data"] || message, event: message["event"])
             else
               # Otherwise just write the data
               sse.write(data)
@@ -178,7 +178,7 @@ module ActionMCP
       # Unsubscribe using the correct method signature
       begin
         # Create a dummy callback that matches the one we provided in start
-        dummy_callback = ->(message) {}
+        dummy_callback = ->(message) { }
         adapter.unsubscribe(session_key, dummy_callback)
         Rails.logger.info "Unsubscribed from: #{session_key}"
       rescue => e
@@ -190,5 +190,4 @@ module ActionMCP
       @subscription_active
     end
   end
-
 end

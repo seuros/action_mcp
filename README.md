@@ -89,7 +89,7 @@ This command will create a file at app/prompts/analyze_code_prompt.rb with conte
 
 ```ruby
 class AnalyzeCodePrompt < ApplicationPrompt
-  # Override the prompt_name (otherwise we'd get "analyze-code")
+  # Override the prompt_name (otherwise we'd get "analyze_code")
   prompt_name "analyze-code"
 
   # Provide a user-facing description for your prompt.
@@ -101,6 +101,11 @@ class AnalyzeCodePrompt < ApplicationPrompt
 
   # Add validations (note: "Ruby" is not allowed per the validation)
   validates :language, inclusion: { in: %w[C Cobol FORTRAN] }
+  
+  def call
+    # Implement your prompt logic here
+    render_text("Analyzing #{language} code: #{code}")
+  end
 end
 ```
 
