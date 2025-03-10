@@ -42,8 +42,10 @@ This will load the ActionMCP library so you can start defining MCP prompts, tool
 
 ## Core Components
 
-ActionMCP provides three core abstractions to streamline MCP server development: **Prompt**, **Tool**, and **Resource**. 
-These correspond to key MCP concepts and let you define what context or capabilities your server exposes to LLMs. 
+ActionMCP provides three core abstractions to streamline MCP server development: **Prompt**, **Tool**, and **Resource**.
+These correspond to key MCP concepts and let you define what context or capabilities your server exposes to LLMs.
+ActionMCP require a Rails application to work. It is not meant to be used in a standalone Ruby application.
+
 Below is an overview of each component and how you might use it:
 
 ### Configuration

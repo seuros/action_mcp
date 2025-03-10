@@ -23,6 +23,16 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+    services:
+      db:
+        image: "ghcr.io/seuros/postgis-with-extensions:17-2"
+        env:
+          POSTGRES_USER: ubuntu
+          POSTGRES_PASSWORD: ubuntu
+        ports: [ "5432:5432" ]
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Install packages
@@ -34,10 +44,11 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ruby-3.4.1
+          ruby-version: ruby-3.4.2
           bundler-cache: true
 
+      - name: Create test database
+        run: cd test/dummy && bin/rails db:prepare RAILS_ENV=test
+
       - name: Run tests
-        env:
-          RAILS_ENV: test
         run: bin/rails test
