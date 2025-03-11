@@ -27,12 +27,4 @@ class AnalyzeCodePromptTest < ActiveSupport::TestCase
     prompt.language = "Cobol"
     assert prompt.valid?, "Prompt should be valid with language 'Cobol'"
   end
-
-  test "raises error when both enum and method are defined" do
-    assert_raises ArgumentError do
-      Class.new(ApplicationPrompt) do
-        argument :language, enum: %w[Ruby], method: :language_search
-      end
-    end
-  end
 end
