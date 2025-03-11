@@ -1,3 +1,4 @@
 - implement completion/complete
 - implement notifications/cancelled
+- implement notifications/roots/list_changed
 - implement Resource

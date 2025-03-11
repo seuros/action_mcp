@@ -54,7 +54,6 @@ module ActionMCP
         process_tools(method, id, params)
       else
         puts "\e[31mUnknown method: #{method}\e[0m"
-        Rails.logger.warn("Unknown method: #{method}")
       end
     end
 

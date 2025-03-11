@@ -5,11 +5,13 @@ class AnalyzeCodePrompt < ApplicationPrompt
   description "Analyze code for potential improvements"
 
   # Configure arguments via the new DSL
-  argument :language, description: "Programming language", default: "Ruby"
-  argument :code, description: "Code to explain", required: true
-
-  # Add validations (note: "Ruby" is not allowed per the validation)
-  validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
+  argument :language,
+           description: "Programming language",
+           default: "Ruby",
+           enum: %w[Ruby C Cobol FORTRAN]
+  argument :code,
+           description: "Code to explain",
+           required: true
 
   def call
     render_text("The code you provided is written in #{language} and looks great!")

@@ -26,8 +26,9 @@ module ActionMCP
     def self.default_prompt_name
       name.demodulize.underscore.sub(/_prompt$/, "")
     end
+
     class << self
-    alias default_capability_name default_prompt_name
+      alias default_capability_name default_prompt_name
     end
 
     # ---------------------------------------------------
@@ -39,21 +40,26 @@ module ActionMCP
     # @param description [String] The description of the argument.
     # @param required [Boolean] Whether the argument is required.
     # @param default [Object] The default value of the argument.
+    # @param enum [Array<String>] The list of allowed values for the argument.
     # @return [void]
-    def self.argument(arg_name, description: "", required: false, default: nil)
+    # Argument DSL
+    def self.argument(arg_name, description: "", required: false, default: nil, enum: nil)
       arg_def = {
         name: arg_name.to_s,
         description: description,
         required: required,
-        default: default
+        default: default,
+        enum: enum
       }
       self._argument_definitions += [ arg_def ]
 
       # Register the attribute so it's recognized by ActiveModel
       attribute arg_name, :string, default: default
-      return unless required
+      validates arg_name, presence: true if required
 
-      validates arg_name, presence: true
+      if enum.present?
+        validates arg_name, inclusion: { in: enum }
+      end
     end
 
     # Returns the list of argument definitions.
