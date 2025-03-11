@@ -1,12 +1,11 @@
 module ActionMCP
   class MessagesController < ApplicationController
-    # @route POST /messages (messages)
+    # @route POST / (sse_in)
     def create
       begin
         handle_post_message(params, response)
       rescue => e
-        Rails.logger.error "Error handling message: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
-        render status: :internal_server_error, json: { error: e.message }
+        head :internal_server_error
       end
       head response.status
     end
@@ -30,8 +29,6 @@ module ActionMCP
 
       response.status = :accepted
     rescue StandardError => e
-      puts e.message
-      puts e.backtrace
       response.status = :bad_request
     end
 
@@ -44,13 +41,10 @@ module ActionMCP
       def initialize(session_key)
         @session_key = session_key
         @adapter = ActionMCP::Server.server.pubsub
-        Rails.logger.info "Transport initialized for session: #{session_key}"
       end
 
       def write(data)
-        Rails.logger.info "Transport: Writing data: #{data} in session: #{session_key}"
         adapter.broadcast(session_key, data.to_json)
-        Rails.logger.info "Transport: Data broadcast complete"
       end
     end
   end

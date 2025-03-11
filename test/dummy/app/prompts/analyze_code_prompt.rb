@@ -10,4 +10,8 @@ class AnalyzeCodePrompt < ApplicationPrompt
 
   # Add validations (note: "Ruby" is not allowed per the validation)
   validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
+
+  def call
+    render_text("The code you provided is written in #{language} and looks great!")
+  end
 end

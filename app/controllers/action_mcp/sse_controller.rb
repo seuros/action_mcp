@@ -12,28 +12,10 @@ module ActionMCP
       response.headers["Cache-Control"] = "no-cache"
       response.headers["Connection"] = "keep-alive"
 
-      # in green
-      Rails.logger.info "\e[32mSSE: Registering new connection with session ID: #{session_id}\e[0m"
-
       listener = nil
       begin
         # Now start streaming - send endpoint
         send_endpoint_event(sse_in_url)
-
-        # Get info about the adapter
-        adapter = ActionMCP::Server.server.pubsub
-        adapter_class = adapter.class.name
-        Rails.logger.info "Using pub/sub adapter: #{adapter_class}"
-
-        # Test broadcasting a message
-        begin
-          test_message = { test: true, timestamp: Time.now.to_i }.to_json
-          Rails.logger.info "Testing broadcast with channel: #{session_key}, message: #{test_message}"
-          adapter.broadcast(session_key, test_message)
-          Rails.logger.info "Broadcast test message successfully"
-        rescue => e
-          Rails.logger.error "Failed to broadcast test message: #{e.message}"
-        end
 
         # Start listener and process messages via the transport
         listener = SseListener.new(session_key)
@@ -41,33 +23,9 @@ module ActionMCP
           begin
             Rails.logger.info "Processing message in controller: #{message.inspect} (#{message.class})"
 
-            # Handle different message formats
-            data = case message
-            when String
-                     begin
-                       # Try to parse as JSON if it's a JSON string
-                       JSON.parse(message)
-                       message # Return the original string if it parsed successfully
-                     rescue JSON::ParserError
-                       message # Return the original string if it's not JSON
-                     end
-            when Hash, Array
-                     message.to_json
-            else
-                     message.to_s
-            end
-
             # Send with proper SSE formatting
             sse = SSE.new(response.stream)
-            if message.is_a?(Hash) && message["event"]
-              # If message has an event field, use it
-              sse.write(message["data"] || message, event: message["event"])
-            else
-              # Otherwise just write the data
-              sse.write(data)
-            end
-
-            Rails.logger.info "Sent SSE message to client"
+            sse.write(data)
           rescue => e
             Rails.logger.error "Error sending SSE message: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
           end
@@ -178,7 +136,7 @@ module ActionMCP
       # Unsubscribe using the correct method signature
       begin
         # Create a dummy callback that matches the one we provided in start
-        dummy_callback = ->(message) { }
+        dummy_callback = ->(_) { }
         adapter.unsubscribe(session_key, dummy_callback)
         Rails.logger.info "Unsubscribed from: #{session_key}"
       rescue => e
