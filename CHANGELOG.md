@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.3...action_mcp/v0.2.4) (2025-03-11)
+
+
+### Bug Fixes
+
+* add missing folder to the gemspec ([f2282b9](https://github.com/seuros/action_mcp/commit/f2282b954a3a55bb7df041ca6408251a184958cb))
+
 ## [0.2.3](https://github.com/seuros/action_mcp/compare/action_mcp-v0.2.3...action_mcp/v0.2.3) (2025-03-11)
 
 
