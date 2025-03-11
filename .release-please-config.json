@@ -2,7 +2,7 @@
   "packages": {
     ".": {
       "release-type": "ruby",
-      "version-file": "lib/action_mcp/version.rb"
+      "package-name": "action_mcp"
     }
   }
 }
