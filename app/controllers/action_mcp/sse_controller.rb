@@ -21,11 +21,11 @@ module ActionMCP
         listener = SseListener.new(session_key)
         if listener.start do |message|
           begin
-            Rails.logger.info "Processing message in controller: #{message.inspect} (#{message.class})"
+            Rails.logger.debug "Processing message in controller: #{message.inspect} (#{message.class})"
 
             # Send with proper SSE formatting
             sse = SSE.new(response.stream)
-            sse.write(data)
+            sse.write(message)
           rescue => e
             Rails.logger.error "Error sending SSE message: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
           end
@@ -41,13 +41,13 @@ module ActionMCP
           raise "Failed to establish subscription"
         end
       rescue ActionController::Live::ClientDisconnected, IOError => e
-        Rails.logger.info "SSE: Expected disconnection: #{e.message}"
+        Rails.logger.debug "SSE: Expected disconnection: #{e.message}"
       rescue => e
         Rails.logger.error "SSE: Unexpected error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       ensure
         listener&.stop
         response.stream.close
-        Rails.logger.info "SSE: Connection closed for session: #{session_id}"
+        Rails.logger.debug "SSE: Connection closed for session: #{session_id}"
       end
     end
 
@@ -87,22 +87,22 @@ module ActionMCP
 
     # Start listening using ActionCable's PostgreSQL adapter
     def start(&callback)
-      Rails.logger.info "Starting listener for channel: #{session_key}"
+      Rails.logger.debug "Starting listener for channel: #{session_key}"
 
       # Set up success callback
       success_callback = -> {
-        Rails.logger.info "Successfully subscribed to channel: #{session_key}"
+        Rails.logger.debug "Successfully subscribed to channel: #{session_key}"
         @subscription_active = true
       }
 
       # Set up message callback with detailed debugging
       message_callback = ->(raw_message) {
-        Rails.logger.info "Received raw message via adapter: #{raw_message.inspect} (#{raw_message.class})"
+        Rails.logger.debug "Received raw message via adapter: #{raw_message.inspect} (#{raw_message.class})"
 
         begin
           # Try to parse the message if it's JSON
           message = raw_message.is_a?(String) ? JSON.parse(raw_message) : raw_message
-          Rails.logger.info "Processed message: #{message.inspect}"
+          Rails.logger.debug "Processed message: #{message.inspect}"
 
           # Send the message to the callback
           callback.call(message) if callback && !@stopped
@@ -121,7 +121,7 @@ module ActionMCP
 
       # Check if subscription was successful
       if @subscription_active
-        Rails.logger.info "Subscription confirmed active for: #{session_key}"
+        Rails.logger.debug "Subscription confirmed active for: #{session_key}"
         true
       else
         Rails.logger.error "Failed to activate subscription for: #{session_key}"
@@ -130,7 +130,7 @@ module ActionMCP
     end
 
     def stop
-      Rails.logger.info "Stopping listener for: #{session_key}"
+      Rails.logger.debug "Stopping listener for: #{session_key}"
       @stopped = true
 
       # Unsubscribe using the correct method signature
@@ -138,7 +138,7 @@ module ActionMCP
         # Create a dummy callback that matches the one we provided in start
         dummy_callback = ->(_) { }
         adapter.unsubscribe(session_key, dummy_callback)
-        Rails.logger.info "Unsubscribed from: #{session_key}"
+        Rails.logger.debug "Unsubscribed from: #{session_key}"
       rescue => e
         Rails.logger.error "Error unsubscribing from #{session_key}: #{e.message}"
       end

@@ -1,0 +1,3 @@
+- implement completion/complete
+- implement notifications/cancelled
+- implement Resource
