@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/seuros/action_mcp'
-  # spec.metadata['changelog_ur i'] = "Put your gem's CHANGELOG.md URL here."
+  spec.metadata['changelog_uri'] = "#{spec.homepage}/blob/master/CHANGELOG.md"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     Dir['{exe,lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.md']

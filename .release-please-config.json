@@ -1,0 +1,8 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "ruby",
+      "version-file": "lib/action_mcp/version.rb"
+    }
+  }
+}
