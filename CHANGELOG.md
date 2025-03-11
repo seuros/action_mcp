@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/seuros/action_mcp/compare/v0.2.3...v0.2.4) (2025-03-11)
+
+
+### Bug Fixes
+
+* extract gem_version ([5ddbdde](https://github.com/seuros/action_mcp/commit/5ddbdde4dec4e60189fb0a3b728c1b7bedfc2ef6))
+
 ## [0.2.3](https://github.com/seuros/action_mcp/compare/v0.2.0...v0.2.3) (2025-03-11)
 
 
