@@ -17,6 +17,7 @@ Zeitwerk::Loader.for_gem.tap do |loader|
   loader.ignore(
     "#{lib}/generators",
     "#{lib}/action_mcp/version.rb",
+    "#{lib}/action_mcp/gem_version.rb",
     "#{lib}/actionmcp.rb"
   )
 
