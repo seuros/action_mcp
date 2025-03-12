@@ -18,3 +18,4 @@ gem "railties"
 gem "simplecov", require: false
 
 gem "pg"
+gem "redis"

@@ -40,11 +40,7 @@ module ActionMCP
     private
 
     def write_message(data)
-      Timeout.timeout(5) do
-        @output.write("#{data}\n")
-      end
-    rescue Timeout::Error
-      # ActionMCP.logger.error("Write operation timed out")
+      @output.write(data)
     end
 
     def format_registry_items(registry)

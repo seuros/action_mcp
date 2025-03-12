@@ -21,8 +21,6 @@ module ActionMCP
         listener = SseListener.new(session_key)
         if listener.start do |message|
           begin
-            Rails.logger.debug "Processing message in controller: #{message.inspect} (#{message.class})"
-
             # Send with proper SSE formatting
             sse = SSE.new(response.stream)
             sse.write(message)
@@ -97,17 +95,15 @@ module ActionMCP
 
       # Set up message callback with detailed debugging
       message_callback = ->(raw_message) {
-        Rails.logger.debug "Received raw message via adapter: #{raw_message.inspect} (#{raw_message.class})"
+        # Rails.logger.debug "\e[31mReceived raw message: #{raw_message.inspect}\e[0m"
 
         begin
           # Try to parse the message if it's JSON
-          message = raw_message.is_a?(String) ? JSON.parse(raw_message) : raw_message
-          Rails.logger.debug "Processed message: #{message.inspect}"
+          message = raw_message.is_a?(String) ? MultiJson.load(raw_message) : raw_message
 
           # Send the message to the callback
           callback.call(message) if callback && !@stopped
         rescue => e
-          Rails.logger.error "Error processing message: #{e.class} - #{e.message}"
           # Still try to send the raw message as a fallback
           callback.call(raw_message) if callback && !@stopped
         end

@@ -4,11 +4,13 @@ module ActionMCP
   class JsonRpcHandler
     attr_reader :transport
 
+    # @param transport [ActionMCP::TransportHandler]
     def initialize(transport)
       @transport = transport
     end
 
     # Process a single line of input.
+    # @param line [String, Hash]
     def call(line)
       request = if line.is_a?(String)
                   line.strip!
@@ -28,9 +30,9 @@ module ActionMCP
 
     private
 
+    # @param request [Hash]
     def process_request(request)
        unless request["jsonrpc"] == "2.0"
-         puts "Invalid request: #{request}"
          return
        end
       method = request["method"]
@@ -52,25 +54,61 @@ module ActionMCP
         process_resources(method, id, params)
       when /^tools\//
         process_tools(method, id, params)
+      when "completion/complete"
+        process_completion_complete(id, params)
       else
         puts "\e[31mUnknown method: #{method}\e[0m"
       end
     end
 
+    # @param method [String]
+    # @param _id [String]
+    # @param _params [Hash]
     def process_notifications(method, _id, _params)
       case method
       when "notifications/initialized"
-        puts "\e[31mInitialized\e[0m"
         transport.initialized!
       else
         Rails.logger.warn("Unknown notifications method: #{method}")
       end
     end
 
+    # @param id [String]
+    # @param params [Hash]
+    # @example {
+    #     "ref": {
+    #       "type": "ref/prompt",
+    #       "name": "code_review"
+    #     },
+    #     "argument": {
+    #       "name": "language",
+    #       "value": "py"
+    #     }
+    #   }
+    # @return [Hash]
+    # @example {
+    #     "completion": {
+    #       "values": ["python", "pytorch", "pyside"],
+    #       "total": 10,
+    #       "hasMore": true
+    #     }
+    #   }
+    def process_completion_complete(id, params)
+      case params["ref"]["type"]
+      when "ref/prompt"
+        # TODO: Implement completion
+      when "ref/resource"
+        # TODO: Implement completion
+      end
+    end
+
+    # @param method [String]
+    # @param id [String]
+    # @param params [Hash]
     def process_prompts(method, id, params)
       case method
       when "prompts/get"
-        transport.send_prompts_get(id, params&.dig("name"), params&.dig("arguments"))
+        transport.send_prompts_get(id, params["name"], params["arguments"])
       when "prompts/list"
         transport.send_prompts_list(id)
       else
@@ -78,6 +116,10 @@ module ActionMCP
       end
     end
 
+    # @param method [String]
+    # @param id [String]
+    # @param params [Hash]
+    # Not implemented
     def process_resources(method, id, params)
       case method
       when "resources/list"

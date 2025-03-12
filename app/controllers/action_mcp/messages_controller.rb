@@ -29,6 +29,8 @@ module ActionMCP
 
       response.status = :accepted
     rescue StandardError => e
+      puts "Error: #{e.message}"
+      puts e.backtrace.join("\n")
       response.status = :bad_request
     end
 
@@ -44,7 +46,14 @@ module ActionMCP
       end
 
       def write(data)
-        adapter.broadcast(session_key, data.to_json)
+        if data.is_a?(JsonRpc::Request) || data.is_a?(JsonRpc::Response) || data.is_a?(JsonRpc::Notification)
+          data = data.to_json
+        end
+        if data.is_a?(Hash)
+          data = MultiJson.dump(data)
+        end
+
+        adapter.broadcast(session_key, data)
       end
     end
   end

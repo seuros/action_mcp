@@ -2,5 +2,9 @@ development:
   adapter: postgresql
   channel_prefix: <%= "actionmcp_#{Rails.application.env}" %>
 
+#development:
+#  adapter: redis
+#  channel_prefix: <%= "actionmcp_#{Rails.application.env}" %>
+
 test:
   adapter: test
