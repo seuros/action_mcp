@@ -3,7 +3,7 @@ module ActionMCP
     # @route POST / (sse_in)
     def create
       begin
-        handle_post_message(params, response)
+        handle_post_message(clean_params, response)
       rescue => e
         head :internal_server_error
       end
@@ -12,12 +12,8 @@ module ActionMCP
 
     private
 
-    def transport
-      @transport ||= Transport.new(session_key)
-    end
-
     def transport_handler
-      TransportHandler.new(transport)
+      TransportHandler.new(mcp_session)
     end
 
     def json_rpc_handler
@@ -34,27 +30,12 @@ module ActionMCP
       response.status = :bad_request
     end
 
-    def session_id
-      params[:session_id]
+    def mcp_session
+      Session.find(params[:session_id])
     end
 
-    class Transport
-      attr_reader :session_key, :adapter
-      def initialize(session_key)
-        @session_key = session_key
-        @adapter = ActionMCP::Server.server.pubsub
-      end
-
-      def write(data)
-        if data.is_a?(JsonRpc::Request) || data.is_a?(JsonRpc::Response) || data.is_a?(JsonRpc::Notification)
-          data = data.to_json
-        end
-        if data.is_a?(Hash)
-          data = MultiJson.dump(data)
-        end
-
-        adapter.broadcast(session_key, data)
-      end
+    def clean_params
+      params.slice(:id, :method, :jsonrpc, :params, :result, :error)
     end
   end
 end

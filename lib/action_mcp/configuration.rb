@@ -45,7 +45,7 @@ module ActionMCP
       capabilities[:logging] = {} if @logging_enabled
       # capabilities[:resources] = { subscribe: @resources_subscribe,
       #                              listChanged: @list_changed }.compact
-      { capabilities: capabilities }
+      capabilities
     end
   end
 

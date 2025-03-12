@@ -5,16 +5,12 @@ module ActionMCP
         @protocol_version = params["protocolVersion"]
         @client_info = params["clientInfo"]
         @client_capabilities = params["capabilities"]
-        capabilities = ActionMCP.configuration.capabilities
-
-        payload = {
-          protocolVersion: PROTOCOL_VERSION,
-          serverInfo: {
-            name: ActionMCP.configuration.name,
-            version: ActionMCP.configuration.version
-          }
-        }.merge(capabilities)
-        send_jsonrpc_response(request_id, result: payload)
+        session.store_client_info(@client_info)
+        session.store_client_capabilities(@client_capabilities)
+        session.set_protocol_version(@protocol_version)
+        session.save
+        # TODO , if the server don't support the protocol version, send a response with error
+        send_jsonrpc_response(request_id, result: session.server_capabilities_payload)
       end
     end
   end

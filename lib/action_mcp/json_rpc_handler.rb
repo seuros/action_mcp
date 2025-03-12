@@ -2,6 +2,8 @@
 
 module ActionMCP
   class JsonRpcHandler
+    delegate :initialize!, :initialized?, to: :transport
+    delegate :write, :read, to: :transport
     attr_reader :transport
 
     # @param transport [ActionMCP::TransportHandler]
@@ -32,9 +34,14 @@ module ActionMCP
 
     # @param request [Hash]
     def process_request(request)
-       unless request["jsonrpc"] == "2.0"
-         return
-       end
+      unless request["jsonrpc"] == "2.0"
+        puts "Invalid request: #{request}"
+        return
+      end
+      read(request)
+      return if request["error"]
+      return if request["result"] == {} # Probably a pong
+
       method = request["method"]
       id = request["id"]
       params = request["params"]
@@ -47,7 +54,7 @@ module ActionMCP
         transport.send_pong(id)
       when /^notifications\//
         puts "\e[31mProcessing notifications\e[0m"
-        process_notifications(method, id, params)
+        process_notifications(method)
       when /^prompts\//
         process_prompts(method, id, params)
       when /^resources\//
@@ -57,19 +64,18 @@ module ActionMCP
       when "completion/complete"
         process_completion_complete(id, params)
       else
-        puts "\e[31mUnknown method: #{method}\e[0m"
+        puts "\e[31mUnknown method: #{method} #{request}\e[0m"
       end
     end
 
-    # @param method [String]
-    # @param _id [String]
-    # @param _params [Hash]
-    def process_notifications(method, _id, _params)
-      case method
+    # @param rpc_method [String]
+    def process_notifications(rpc_method)
+      case rpc_method
       when "notifications/initialized"
-        transport.initialized!
+        puts "\e[31mInitialized\e[0m"
+        transport.initialize!
       else
-        Rails.logger.warn("Unknown notifications method: #{method}")
+        Rails.logger.warn("Unknown notifications method: #{rpc_method}")
       end
     end
 
@@ -102,26 +108,26 @@ module ActionMCP
       end
     end
 
-    # @param method [String]
+    # @param rpc_method [String]
     # @param id [String]
     # @param params [Hash]
-    def process_prompts(method, id, params)
-      case method
+    def process_prompts(rpc_method, id, params)
+      case rpc_method
       when "prompts/get"
         transport.send_prompts_get(id, params["name"], params["arguments"])
       when "prompts/list"
         transport.send_prompts_list(id)
       else
-        Rails.logger.warn("Unknown prompts method: #{method}")
+        Rails.logger.warn("Unknown prompts method: #{rpc_method}")
       end
     end
 
-    # @param method [String]
+    # @param rpc_method [String]
     # @param id [String]
     # @param params [Hash]
     # Not implemented
-    def process_resources(method, id, params)
-      case method
+    def process_resources(rpc_method, id, params)
+      case rpc_method
       when "resources/list"
         transport.send_resources_list(id)
       when "resources/templates/list"
@@ -129,18 +135,18 @@ module ActionMCP
       when "resources/read"
         transport.send_resource_read(id, params)
       else
-        Rails.logger.warn("Unknown resources method: #{method}")
+        Rails.logger.warn("Unknown resources method: #{rpc_method}")
       end
     end
 
-    def process_tools(method, id, params)
-      case method
+    def process_tools(rpc_method, id, params)
+      case rpc_method
       when "tools/list"
         transport.send_tools_list(id)
       when "tools/call"
         transport.send_tools_call(id, params&.dig("name"), params&.dig("arguments"))
       else
-        Rails.logger.warn("Unknown tools method: #{method}")
+        Rails.logger.warn("Unknown tools method: #{rpc_method}")
       end
     end
   end
