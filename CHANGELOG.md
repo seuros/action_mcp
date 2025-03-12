@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.5](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.4...action_mcp/v0.2.5) (2025-03-12)
+
+
+### Features
+
+* add enum to prompts ([7e28330](https://github.com/seuros/action_mcp/commit/7e2833000248ff4c82da41b974764af57ccd337a))
+* Add Tables to track sessions and messages for future logging. ([cda6c6e](https://github.com/seuros/action_mcp/commit/cda6c6eeab5b74406e3f0cd95eecc41fc32719e7))
+
+
+### Bug Fixes
+
+* fixed redis adapter support ([e65157d](https://github.com/seuros/action_mcp/commit/e65157da0c6275c61dc4ab1cc5ab27d45484a793))
+* removed timeout handling in TransportHandler ([e65157d](https://github.com/seuros/action_mcp/commit/e65157da0c6275c61dc4ab1cc5ab27d45484a793))
+
 ## [0.2.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.3...action_mcp/v0.2.4) (2025-03-11)
 
 
