@@ -86,6 +86,7 @@ ActionMCP includes Rails generators to help you quickly set up your MCP server c
 You can generate the base classes for your MCP Prompt and Tool using the following command:
 
 ```bash
+bin/rails action_mcp:install:migrations  # to copy the migrations
 bin/rails generate action_mcp:install 
 ```
 
