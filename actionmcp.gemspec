@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = "#{spec.homepage}/blob/master/CHANGELOG.md"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir['{app,config,exe,lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.md']
+    Dir['{app,config,db,exe,lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.md']
   end
 
   spec.add_dependency 'railties', '>= 8.0.1'
