@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.5...action_mcp/v0.2.6) (2025-03-12)
+
+
+### Bug Fixes
+
+* add db folder ([732c3e5](https://github.com/seuros/action_mcp/commit/732c3e5dadfd2dfe6e3dbafec9ec52fc9581b235))
+
 ## [0.2.5](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.4...action_mcp/v0.2.5) (2025-03-12)
 
 
