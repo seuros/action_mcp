@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.6...action_mcp/v0.3.0) (2025-03-13)
+
+
+### Bug Fixes
+
+* add resources handler to not crash for clients that don't respect capabilties ([bb854ad](https://github.com/seuros/action_mcp/commit/bb854ad5f3e64643aa5d5c4168c403f7f1634854))
+
+
+### Code Refactoring
+
+* move mcp class into mcp folder. ([3bad311](https://github.com/seuros/action_mcp/commit/3bad3116737f7754acb23f5a7c3e7bdb6b87e75a))
+
 ## [0.2.6](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.5...action_mcp/v0.2.6) (2025-03-12)
 
 
