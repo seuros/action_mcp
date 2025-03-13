@@ -10,6 +10,7 @@ module ActionMCP
     include Transport::Capabilities
     include Transport::Tools
     include Transport::Prompts
+    include Transport::Resources
     include Transport::Messaging
 
     HEARTBEAT_INTERVAL = 15 # seconds
