@@ -5,13 +5,13 @@ module ActionMCP
     class PromptGenerator < Rails::Generators::Base
       namespace "action_mcp:prompt"
       source_root File.expand_path("templates", __dir__)
-      desc "Creates a Prompt (in app/prompts) that inherits from ApplicationPrompt"
+      desc "Creates a Prompt (in app/mcp/prompts) that inherits from ApplicationPrompt"
 
       # The generator takes one argument, e.g. "AnalyzeCode"
       argument :name, type: :string, required: true, banner: "PromptName"
 
       def create_prompt_file
-        template "prompt.rb.erb", "app/prompts/#{file_name}.rb"
+        template "prompt.rb.erb", "app/mcp/prompts/#{file_name}.rb"
       end
 
       private

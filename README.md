@@ -91,8 +91,8 @@ bin/rails generate action_mcp:install
 ```
 
 This command will create:
-- `app/prompts/application_prompt.rb`
-- `app/tools/application_tool.rb`
+- `app/mcp/prompts/application_prompt.rb`
+- `app/mcp/tools/application_tool.rb`
 
 #### Generate a New Prompt
 
@@ -102,7 +102,7 @@ Run the following command to generate a new prompt class:
 bin/rails generate action_mcp:prompt AnalyzeCode
 ```
 
-This command will create a file at `app/prompts/analyze_code_prompt.rb` with content similar to:
+This command will create a file at `app/mcp/prompts/analyze_code_prompt.rb` with content similar to:
 
 ```ruby
 class AnalyzeCodePrompt < ApplicationPrompt
@@ -134,7 +134,7 @@ Similarly, run the following command to generate a new tool class:
 bin/rails generate action_mcp:tool CalculateSum
 ```
 
-This command will create a file at `app/tools/calculate_sum_tool.rb` with content similar to:
+This command will create a file at `app/mcp/tools/calculate_sum_tool.rb` with content similar to:
 
 ```ruby
 class CalculateSumTool < ApplicationTool

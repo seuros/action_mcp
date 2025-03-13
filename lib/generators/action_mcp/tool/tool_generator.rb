@@ -5,13 +5,13 @@ module ActionMCP
     class ToolGenerator < Rails::Generators::Base
       namespace "action_mcp:tool"
       source_root File.expand_path("templates", __dir__)
-      desc "Creates a Tool (in app/tools) that inherits from ApplicationTool"
+      desc "Creates a Tool (in app/mcp/tools) that inherits from ApplicationTool"
 
       # The generator takes one argument, e.g. "CalculateSum"
       argument :name, type: :string, required: true, banner: "ToolName"
 
       def create_tool_file
-        template "tool.rb.erb", "app/tools/#{file_name}.rb"
+        template "tool.rb.erb", "app/mcp/tools/#{file_name}.rb"
       end
 
       private

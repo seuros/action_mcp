@@ -30,5 +30,16 @@ module ActionMCP
         self.logger = ::Rails.logger
       end
     end
+
+    # Configure autoloading for the mcp/tools directory
+    initializer "action_mcp.autoloading" do |app|
+      mcp_path = Rails.root.join("app/mcp")
+
+      if Dir.exist?(mcp_path)
+        Dir.glob(mcp_path.join("*")).select { |f| File.directory?(f) }.each do |dir|
+          Rails.autoloaders.main.push_dir(dir, namespace: Object)
+        end
+      end
+    end
   end
 end
