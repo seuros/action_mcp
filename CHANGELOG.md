@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.5.0...action_mcp/v0.5.1) (2025-03-14)
+
+
+### Bug Fixes
+
+* add test to inheritance ([30a5303](https://github.com/seuros/action_mcp/commit/30a5303335426e58fc9240ee1bc5d9fd95a7b791))
+* never trust autocomplete ([6cf13ad](https://github.com/seuros/action_mcp/commit/6cf13ad228b30426df47b0543cdf5be77eaeb11d))
+
 ## [0.5.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.4.0...action_mcp/v0.5.0) (2025-03-14)
 
 
