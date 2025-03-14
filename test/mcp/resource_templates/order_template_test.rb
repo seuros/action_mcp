@@ -3,6 +3,9 @@
 require "test_helper"
 
 class OrderTemplateTest < ActiveSupport::TestCase
+  test "should not be abstract" do
+    refute OrdersTemplate.abstract?
+  end
   test "orders_template_to_template_hash" do
     template_hash = OrdersTemplate.to_h
     assert_equal "orders", template_hash[:name]

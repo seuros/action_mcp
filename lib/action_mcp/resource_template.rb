@@ -2,10 +2,20 @@
 
 module ActionMCP
   class ResourceTemplate
-    class_attribute :abstract, instance_accessor: false, default: false
-
     class << self
-      attr_writer :abstract
+      def abstract?
+        @abstract ||= false
+      end
+
+      def abstract!
+        @abstract = true
+      end
+
+      def inherited(subclass)
+        super
+        subclass.instance_variable_set(:@abstract, false)
+      end
+
       attr_reader :description, :uri_template, :mime_type, :template_name, :parameters
 
       def parameter(name, description:, required: false)
@@ -46,14 +56,6 @@ module ActionMCP
 
       def retrieve(_params)
         raise NotImplementedError, "Subclasses must implement the retrieve method"
-      end
-
-      def abstract?
-        abstract
-      end
-
-      def abstract!
-        self.abstract = true
       end
 
       def capability_name

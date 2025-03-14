@@ -10,7 +10,6 @@ module ActionMCP
 
     class_attribute :_capability_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
-    class_attribute :abstract_tool, instance_accessor: false, default: false
 
     # use _capability_name or default_capability_name
     def self.capability_name
