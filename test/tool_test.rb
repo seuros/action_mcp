@@ -3,6 +3,8 @@
 require "test_helper"
 
 class ToolTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
   test "AddTool to_h returns correct hash representation inheriting from ArithmeticTool" do
     expected = {
       name: "add",

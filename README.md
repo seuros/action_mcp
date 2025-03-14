@@ -231,6 +231,46 @@ These examples show that both prompts and tools follow a consistent pattern for 
 - **API Stability:**
   The ActionMCP API is stable, though it is acceptable for improvements and changes to be introduced as we move forward. This approach ensures the gem stays modern and adaptable to evolving requirements.
 
+## Testing with the TestHelper
+
+ActionMCP provides a `TestHelper` module to simplify testing of tools and prompts. To use the `TestHelper`, include it in your test class:
+
+```ruby
+require "test_helper"
+require "action_mcp/test_helper"
+
+class ToolTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "CalculateSumTool returns the correct sum" do
+    assert_tool_findable("calculate_sum")
+    result = execute_tool("calculate_sum", a: 5, b: 10)
+    assert_tool_output(result, "15.0")
+  end
+
+  test "AnalyzeCodePrompt returns the correct analysis" do
+    assert_prompt_findable("analyze_code")
+    result = execute_tool("analyze_code", language: "Ruby", code: "def hello; puts 'Hello, world!'; end")
+    assert_equal "Analyzing Ruby code: def hello; puts 'Hello, world!'; end", assert_prompt_output(result)
+  end
+end
+```
+
+The `TestHelper` module provides the following methods:
+
+*   `assert_tool_findable(tool_name)`: Asserts that a tool is findable in the `ToolsRegistry`.
+*   `assert_prompt_findable(prompt_name)`: Asserts that a prompt is findable in the `PromptsRegistry`.
+*   `execute_tool(tool_name, args = {})`: Executes a tool with the given name and arguments.
+*   `execute_prompt(prompt_name, args = {})`: Executes a prompt with the given name and arguments.
+*   `assert_tool_output(result, expected_output)`: Asserts that the output of a tool is equal to the expected output.
+*   `assert_prompt_output(result)`: Asserts that the output of a prompt is equal to the expected output.
+
+To use the `TestHelper`, you need to require it in your `test_helper.rb` file:
+
+```ruby
+require "action_mcp/test_helper"
+```
+
 ## Conclusion
 
-ActionMCP empowers developers to build MCP-compliant servers efficiently by handling the standardization and boilerplate associated with integrating with LLMs. With built-in generators, clear configuration options, robust usage examples, and important deployment considerations, it is designed to accelerate development and integration work while remaining flexible for future enhancements.
+ActionMCP empowers developers to build MCP-compliant servers efficiently by handling the standardization and boilerplate associated with integrating with LLMs. With built-in generators, clear configuration options, robust usage examples, important deployment considerations, and a helpful testing module, it is designed to accelerate development and integration work while remaining flexible for future enhancements.
