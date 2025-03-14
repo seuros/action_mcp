@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.3.0...action_mcp/v0.4.0) (2025-03-14)
+
+
+### Features
+
+* add files to help Assistant build components ([cce5d34](https://github.com/seuros/action_mcp/commit/cce5d345404b7ab14abdd60fa9d53a98a461ffeb))
+* add ResourceTemplate handling ([0423a55](https://github.com/seuros/action_mcp/commit/0423a5506d63a080c3a8f475f37d56ef532eb039))
+* add test helper ([1262b80](https://github.com/seuros/action_mcp/commit/1262b8051ab4549bbc000b40368e88e1c4094f21))
+
+
+### Bug Fixes
+
+* add list_resources to the rake task ([08d52ed](https://github.com/seuros/action_mcp/commit/08d52ed90931451423356054efbcb168f066a898))
+
 ## [0.3.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.2.6...action_mcp/v0.3.0) (2025-03-13)
 
 
