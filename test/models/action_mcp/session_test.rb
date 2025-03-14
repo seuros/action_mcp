@@ -9,7 +9,7 @@ module ActionMCP
                      serverInfo: { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
                      capabilities: { "tools" => { "listChanged" => false },
                                      "prompts" => { "listChanged" => false },
-                                     "resources" => { },
+                                     "resources" => {},
                                      "logging" => {}
                      } },
                    session.server_capabilities_payload)

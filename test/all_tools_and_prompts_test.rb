@@ -12,7 +12,6 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
     assert_tool_findable("analyze_csv")
   end
 
-
   test "CalculateSumTool is findable" do
     assert_tool_findable("calculate_sum")
   end
@@ -41,7 +40,6 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
   test "AnalyzeCodePrompt is findable" do
     assert_prompt_findable("analyze_code")
   end
-
 
   test "SummarizeTextPrompt is findable" do
     assert_prompt_findable("summarize_text")

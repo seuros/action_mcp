@@ -8,6 +8,7 @@ require "concurrent"
 require "active_record/railtie"
 require "action_controller/railtie"
 require "action_cable/engine"
+require "action_mcp/configuration"
 require "action_mcp/engine"
 require "zeitwerk"
 
@@ -30,6 +31,24 @@ module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/configuration"
   PROTOCOL_VERSION =  "2024-11-05"
+
+  class << self
+    attr_accessor :server
+    # Returns the configuration instance.
+    #
+    # @return [Configuration] the configuration instance
+    def configuration
+      @configuration ||= Configuration.new
+    end
+
+    # Configures the ActionMCP module.
+    #
+    # @yield [configuration] the configuration instance
+    # @return [void]
+    def configure
+      yield(configuration)
+    end
+  end
 
   module_function
 

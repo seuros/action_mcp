@@ -13,32 +13,27 @@ module ActionMCP
       inflect.acronym "MCP"
     end
     # Provide a configuration namespace for ActionMCP
-    config.action_mcp = ActiveSupport::OrderedOptions.new
+    config.action_mcp = ActionMCP.configuration
 
-    initializer "action_mcp.configure" do |app|
-      options = app.config.action_mcp.to_h.symbolize_keys
+    # Configure autoloading for the mcp/tools directory
+    initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|
+      mcp_path = app.root.join("app/mcp")
 
-      # Override the default configuration if specified in the Rails app.
-      ActionMCP.configuration.name            = options[:name] if options.key?(:name)
-      ActionMCP.configuration.version         = options[:version] if options.key?(:version)
-      ActionMCP.configuration.logging_enabled = options.fetch(:logging_enabled, true)
+      if mcp_path.exist?
+        # First add the parent mcp directory
+        app.autoloaders.main.push_dir(mcp_path, namespace: Object)
+
+        # Then collapse the subdirectories to avoid namespacing
+        mcp_path.glob("*").select { |f| File.directory?(f) }.each do |dir|
+          app.autoloaders.main.collapse(dir)
+        end
+      end
     end
 
     # Initialize the ActionMCP logger.
     initializer "action_mcp.logger" do
       ActiveSupport.on_load(:action_mcp) do
         self.logger = ::Rails.logger
-      end
-    end
-
-    # Configure autoloading for the mcp/tools directory
-    initializer "action_mcp.autoloading" do |app|
-      mcp_path = Rails.root.join("app/mcp")
-
-      if Dir.exist?(mcp_path)
-        Dir.glob(mcp_path.join("*")).select { |f| File.directory?(f) }.each do |dir|
-          Rails.autoloaders.main.push_dir(dir, namespace: Object)
-        end
       end
     end
   end

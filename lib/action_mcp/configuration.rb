@@ -15,23 +15,29 @@ module ActionMCP
     #   @return [Boolean] Whether to subscribe to resources.
     # @!attribute logging_level
     #   @return [Symbol] The logging level.
-    attr_accessor :name, :version, :logging_enabled,
-                  # Right now, if enabled, the server will send a listChanged notification for tools, prompts, and resources.
-                  # We can make it more granular in the future, but for now, it's a simple boolean.
-                  :list_changed,
-                  :resources_subscribe,
-                  :logging_level
+    attr_writer :name, :version
+    attr_accessor :logging_enabled, # This is not working yet
+                  :list_changed, # This is not working yet
+                  :resources_subscribe, # This is not working yet
+                  :logging_level # This is not working yet
 
     # Initializes a new Configuration instance.
     #
     # @return [void]
+
+
     def initialize
-      # Use Rails.application values if available, or fallback to defaults.
-      @name = defined?(Rails) && Rails.respond_to?(:application) && Rails.application.respond_to?(:name) ? Rails.application.name : "ActionMCP"
-      @version = defined?(Rails) && Rails.respond_to?(:application) && Rails.application.respond_to?(:version) ? Rails.application.version.to_s.presence : "0.0.1"
       @logging_enabled = true
       @list_changed = false
       @logging_level = :info
+    end
+
+    def name
+      @name || Rails.application.name
+    end
+
+    def version
+      @version || (has_rails_version ? Rails.application.version.to_s : "0.0.1")
     end
 
     # Returns a hash of capabilities.
@@ -47,6 +53,16 @@ module ActionMCP
       # For Resources, we need to think about how to pass the list to the session.
       capabilities[:resources] = {} if ResourceTemplatesRegistry.non_abstract.any?
       capabilities
+    end
+    private
+    def has_rails_version
+      begin
+        gem "rails_app_version"
+        require "rails_app_version/railtie"
+        true
+      rescue LoadError
+        false
+      end
     end
   end
 
