@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.4.0...action_mcp/v0.5.0) (2025-03-14)
+
+
+### Features
+
+* enhance ActionMCP configuration and add resource template tests ([2bd4429](https://github.com/seuros/action_mcp/commit/2bd44299deb5326f08a9e295bdbd237d4ae7155e))
+
+
+### Bug Fixes
+
+* update ResourceTemplate generator template ([e166ea6](https://github.com/seuros/action_mcp/commit/e166ea675e5a270e86c45f85104d8691b0ca00c3))
+
 ## [0.4.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.3.0...action_mcp/v0.4.0) (2025-03-14)
 
 
