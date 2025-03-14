@@ -40,11 +40,12 @@ module ActionMCP
     def capabilities
       capabilities = {}
       # Only include each capability if the corresponding registry is non-empty.
-      capabilities[:tools] = { listChanged: @list_changed } if ToolsRegistry.non_abstract.any?
-      capabilities[:prompts] = { listChanged: @list_changed } if PromptsRegistry.non_abstract.any?
+      capabilities[:tools] = { listChanged: false } if ToolsRegistry.non_abstract.any?
+      capabilities[:prompts] = { listChanged: false } if PromptsRegistry.non_abstract.any?
       capabilities[:logging] = {} if @logging_enabled
-      # capabilities[:resources] = { subscribe: @resources_subscribe,
-      #                              listChanged: @list_changed }.compact
+      # For now, we only have one type of resource, ResourceTemplate
+      # For Resources, we need to think about how to pass the list to the session.
+      capabilities[:resources] = {} if ResourceTemplatesRegistry.non_abstract.any?
       capabilities
     end
   end

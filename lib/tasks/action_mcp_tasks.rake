@@ -25,5 +25,6 @@ namespace :action_mcp do
 
   desc "List all tools and prompts with their names and descriptions"
   task list: [ :list_tools, :list_prompts ] do
+    # This task lists all tools and prompts
   end
 end

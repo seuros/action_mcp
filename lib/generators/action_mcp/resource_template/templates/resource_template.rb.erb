@@ -1,0 +1,21 @@
+class <%= class_name %> < MCPResourceTemplate
+  def self.resource_name
+    raise NotImplementedError, "resource_name must be implemented in the subclass"
+  end
+
+  def self.resource_description
+    raise NotImplementedError, "resource_description must be implemented in the subclass"
+  end
+
+  def self.resource_version
+    raise NotImplementedError, "resource_version must be implemented in the subclass"
+  end
+
+  def self.resource_schema
+    raise NotImplementedError, "resource_schema must be implemented in the subclass"
+  end
+
+  def resolve
+    raise NotImplementedError, "resolve must be implemented in the subclass"
+  end
+end

@@ -17,7 +17,8 @@ module ActionMCP
     validates :protocol_version, inclusion: { in: [ PROTOCOL_VERSION ] }, allow_nil: true
 
     def close!
-      adapter.unsubscribe(session_key, _)
+      dummy_callback = ->(*) { } # this callback seem broken
+      adapter.unsubscribe(session_key, dummy_callback)
       update!(status: "closed", ended_at: Time.zone.now)
     end
 
