@@ -1,3 +1,3 @@
-class MCPResourceTemplate < ActionMcp::ResourceTemplate
+class MCPResourceTemplate < ActionMCP::ResourceTemplate
   abstract!
 end
