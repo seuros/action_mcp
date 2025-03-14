@@ -121,7 +121,7 @@ class AnalyzeCodePrompt < ApplicationPrompt
   
   def call
     # Implement your prompt logic here
-    render_text("Analyzing #{language} code: #{code}")
+    render(text: "Analyzing #{language} code: #{code}")
   end
 end
 ```
@@ -145,7 +145,7 @@ class CalculateSumTool < ApplicationTool
   property :b, type: "number", description: "Second number", required: true
   
   def call
-    render_text(a + b)
+    render(text: a + b)
   end
 end
 ```
@@ -189,7 +189,6 @@ end
 ```ruby
 # Instantiate the tool with initial values
 sum_tool = CalculateSumTool.new(a: 5, b: 10)
-
 # Optionally update attributes later:
 sum_tool.a = 15
 sum_tool.b = 20

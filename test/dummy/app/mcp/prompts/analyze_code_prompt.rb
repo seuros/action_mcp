@@ -14,6 +14,7 @@ class AnalyzeCodePrompt < ApplicationPrompt
            required: true
 
   def call
-    render_text("The code you provided is written in #{language} and looks great!")
+    issue_url = "https://github.com/fake/repo/issues/#{rand(1000..9999)}"
+    render text: "The code you provided is written in #{language} and looks great!"
   end
 end

@@ -9,6 +9,6 @@ class CalculateSumWithPrecisionTool < CalculateSumTool
 
   def call
     sum = (a + b).round(precision)
-    render_text(sum)
+    render text: sum
   end
 end

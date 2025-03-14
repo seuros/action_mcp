@@ -11,6 +11,6 @@ class FormatCodeTool < ApplicationTool
 
   def call
     formatted_code = source_code.gsub(/\s+/, " ").strip
-    render_text(formatted_code)
+    render text: formatted_code
   end
 end

@@ -61,7 +61,7 @@ class ProductDescriptionPrompt < ActionMCP::Prompt
   argument :keywords, description: "Keywords related to the product", required: true
 
   def call
-    render_text("Write a compelling product description for #{product_name} using the following keywords: #{keywords}")
+    render(text: "Write a compelling product description for #{product_name} using the following keywords: #{keywords}")
   end
 end
 ```
@@ -79,9 +79,10 @@ class OrderStatusPrompt < ActionMCP::Prompt
 
   def call
     if customer_name
-      render_text("What is the status of order #{order_id} for customer #{customer_name}?")
+      render(text: "What is the status of order #{order_id} for customer #{customer_name}?")
     else
-      render_text("What is the status of order #{order_id}?")
+      render(text: "What is the status of order #{order_id}?")
     end
   end
 end
+```

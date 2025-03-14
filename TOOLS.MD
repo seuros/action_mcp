@@ -63,9 +63,9 @@ class InventoryCheckTool < ActionMCP::Tool
   def call
     # In a real implementation, this would query a database or API
     stock_level = get_stock_level(product_id)
-    render_text("The current stock level for product #{product_id} is #{stock_level}")
+    render(text: "The current stock level for product #{product_id} is #{stock_level}")
   rescue => e
-    render_error("Could not retrieve stock level: #{e.message}")
+    render(error: "Could not retrieve stock level: #{e.message}")
   end
 
   private
@@ -93,9 +93,9 @@ class CreateOrderTool < ActionMCP::Tool
   def call
     # In a real implementation, this would create a new order in a database or system
     order_id = create_order(customer_id, product_ids)
-    render_text("Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
+    render(text: "Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
   rescue => e
-    render_error("Could not create order: #{e.message}")
+    render(error: "Could not create order: #{e.message}")
   end
 
   private

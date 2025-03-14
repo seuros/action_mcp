@@ -6,6 +6,6 @@ class AddTool < ArithmeticTool
   # Inherits properties :x and :y from ArithmeticTool.
 
   def call
-    render_text(x + y)
+    render text: x + y
   end
 end

@@ -11,6 +11,6 @@ class GitHubCreateIssueTool < ApplicationTool
 
   def call
     issue_url = "https://github.com/fake/repo/issues/#{rand(1000..9999)}"
-    render_text("Issue created: #{issue_url} with labels: #{labels}.joins(' ')) and title: #{title}")
+    render text: "Issue created: #{issue_url} with labels: #{labels}.joins(' ')) and title: #{title}"
   end
 end

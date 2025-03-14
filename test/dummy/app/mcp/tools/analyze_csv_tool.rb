@@ -10,6 +10,6 @@ class AnalyzeCsvTool < ApplicationTool
 
   def call
     result = operations.to_h { |op| [ op, rand(1..100) ] }
-    render_text(result.to_json)
+    render text: result.to_json
   end
 end

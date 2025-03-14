@@ -8,6 +8,6 @@ class CalculateSumTool < ApplicationTool
 
   def call
     result = a + b
-    render_text(result)
+    render text: result
   end
 end

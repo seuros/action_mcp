@@ -8,6 +8,6 @@ class ExecuteCommandTool < ApplicationTool
 
   def call
     fake_output = "Executed: #{command} #{args.join(' ')}"
-    render_text(fake_output)
+    render text: fake_output
   end
 end

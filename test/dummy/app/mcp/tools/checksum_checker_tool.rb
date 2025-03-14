@@ -7,6 +7,6 @@ class ChecksumCheckerTool < ApplicationTool
 
   def call
     result = files.map(&:hash)
-    render_text(result.to_json)
+    render text: result.to_json
   end
 end
