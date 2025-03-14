@@ -1,4 +1,4 @@
-# PROMPTS.MD
+# ActionMCP::Prompt
 
 ## Introduction
 

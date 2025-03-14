@@ -1,4 +1,4 @@
-# TOOLS.MD
+# ActionMCP::Tool
 
 ## Introduction
 

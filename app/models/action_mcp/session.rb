@@ -34,7 +34,6 @@ module ActionMCP
     end
 
     def read(data)
-      puts "\e[33m[#{role}] #{data}\e[0m"
       messages.create!(data: data, direction: role)
     end
 

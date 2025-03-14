@@ -42,38 +42,40 @@ module ActionMCP
       return if request["error"]
       return if request["result"] == {} # Probably a pong
 
-      method = request["method"]
+      rpc_method = request["method"]
       id = request["id"]
       params = request["params"]
 
-      case method
+      case rpc_method
       when "initialize"
-        puts "\e[31mSending capabilities\e[0m"
         transport.send_capabilities(id, params)
       when "ping"
         transport.send_pong(id)
       when /^notifications\//
         puts "\e[31mProcessing notifications\e[0m"
-        process_notifications(method)
+        process_notifications(rpc_method, params)
       when /^prompts\//
-        process_prompts(method, id, params)
+        process_prompts(rpc_method, id, params)
       when /^resources\//
-        process_resources(method, id, params)
+        process_resources(rpc_method, id, params)
       when /^tools\//
-        process_tools(method, id, params)
+        process_tools(rpc_method, id, params)
       when "completion/complete"
         process_completion_complete(id, params)
       else
-        puts "\e[31mUnknown method: #{method} #{request}\e[0m"
+        puts "\e[31mUnknown method: #{rpc_method} #{request}\e[0m"
       end
     end
 
     # @param rpc_method [String]
-    def process_notifications(rpc_method)
+    def process_notifications(rpc_method, params)
       case rpc_method
       when "notifications/initialized"
         puts "\e[31mInitialized\e[0m"
         transport.initialize!
+      when "notifications/cancelled"
+        puts "\e[31m Request #{params["requestId"]} cancelled: #{params["reason"]}\e[0m"
+        # we don't need to do anything here
       else
         Rails.logger.warn("Unknown notifications method: #{rpc_method}")
       end
