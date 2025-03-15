@@ -1,7 +1,6 @@
 module ActionMCP
   class SSEController < ApplicationController
     HEARTBEAT_INTERVAL = 30 # TODO: The frequency of pings SHOULD be configurable
-    INITIALIZATION_TIMEOUT = 2
     include ActionController::Live
 
     # @route GET /sse (sse_out)
