@@ -16,11 +16,13 @@ module ActionMCP
       send_endpoint_event(sse_in_url)
 
       begin
+        # Create SSE instance once outside the callback with retry parameter
+        sse = SSE.new(response.stream)
+
         # Start listener and process messages via the transport
         listener = SSEListener.new(mcp_session)
         if listener.start do |message|
           # Send with proper SSE formatting
-          sse = SSE.new(response.stream)
           sse.write(message)
         end
 
@@ -74,25 +76,22 @@ module ActionMCP
     def initialize(session)
       @session = session
       @stopped = false
-      @subscription_active = false
     end
 
     # Start listening using ActionCable's adapter
     def start(&callback)
       Rails.logger.debug "Starting listener for channel: #{session_key}"
 
-      # Set up success callback
       success_callback = -> {
-        Rails.logger.debug "Successfully subscribed to channel: #{session_key}"
+        puts "Successfully subscribed to channel: #{session_key}"
         @subscription_active = true
       }
 
-      # Set up message callback with detailed debugging
+      # Set up message callback
       message_callback = ->(raw_message) {
         begin
           # Try to parse the message if it's JSON
           message = MultiJson.load(raw_message)
-
           # Send the message to the callback
           callback.call(message) if callback && !@stopped
         rescue => e
@@ -102,7 +101,7 @@ module ActionMCP
       }
 
       # Subscribe using the ActionCable adapter
-      adapter.subscribe(session_key, message_callback, success_callback)
+      success = adapter.subscribe(session_key, message_callback, success_callback)
 
       # Give some time for the subscription to be established
       sleep 0.5
@@ -111,21 +110,10 @@ module ActionMCP
     end
 
     def stop
-      Rails.logger.debug "Stopping listener for: #{session_key}"
       @stopped = true
 
-      # Unsubscribe using the correct method signature
-      begin
-        # Create a dummy callback that matches the one we provided in start
-        @session.close!
-        Rails.logger.debug "Unsubscribed from: #{session_key}"
-      rescue => e
-        Rails.logger.error "Error unsubscribing from #{session_key}: #{e.message}"
-      end
-    end
-
-    def active?
-      @subscription_active
+      @session.close!
+      Rails.logger.debug "Unsubscribed from: #{session_key}"
     end
   end
 end

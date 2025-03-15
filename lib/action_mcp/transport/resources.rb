@@ -56,7 +56,7 @@ module ActionMCP
             content = resource.map(&:to_h)
             send_jsonrpc_response(id, result: { contents: content })
           else
-            send_jsonrpc_error(id, :resource_not_found, "Resource not found")
+            send_jsonrpc_error(id, :invalid_params, "Resource not found")
           end
         else
           send_jsonrpc_error(id, :invalid_params, "Invalid resource URI")
