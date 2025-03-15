@@ -83,7 +83,9 @@ module ActionMCP
     end
 
     def send_ping!
-      write(JsonRpc::Request.new(id: Time.now.to_i, method: "ping"))
+      Session.logger.silence do
+        write(JsonRpc::Request.new(id: Time.now.to_i, method: "ping"))
+      end
     end
 
     private

@@ -14,6 +14,11 @@ module ActionMCP
     attr_reader :data
 
     after_create_commit :broadcast_message, if: :outgoing_message?
+    # Set is_ping on responses if the original request was a ping
+    after_create :handle_ping_response, if: -> { %w[response error].include?(message_type) }
+
+    # Scope to exclude both "ping" requests and their responses
+    scope :without_pings, -> { where(is_ping: false) }
 
     # @param payload [String, Hash]
     def data=(payload)
@@ -22,17 +27,14 @@ module ActionMCP
       # Store original version and attempt to determine type
       if payload.is_a?(String)
         self.message_text = payload
-
         begin
           parsed_json = MultiJson.load(payload)
           self.message_json = parsed_json
           process_json_content(parsed_json)
         rescue MultiJson::ParseError
-          # Not valid JSON, just store as text
           self.message_type = "text"
         end
       else
-        # Handle Hash or other JSON-serializable input
         self.message_json = payload
         self.message_text = MultiJson.dump(payload)
         process_json_content(payload)
@@ -43,7 +45,7 @@ module ActionMCP
       message_json.presence || message_text
     end
 
-    # Helper method to check if message is a particular type
+    # Helper methods
     def request?
       message_type == "request"
     end
@@ -67,24 +69,38 @@ module ActionMCP
     end
 
     def process_json_content(content)
-      # Determine message type based on JSON-RPC spec
       if content.is_a?(Hash) && content["jsonrpc"] == "2.0"
         if content.key?("id") && content.key?("method")
           self.message_type = "request"
-          self.jsonrpc_id = content["id"]
+          self.jsonrpc_id = content["id"].to_s
+          # Set is_ping to true if the method is "ping"
+          self.is_ping = true if content["method"] == "ping"
         elsif content.key?("method") && !content.key?("id")
           self.message_type = "notification"
         elsif content.key?("id") && content.key?("result")
           self.message_type = "response"
-          self.jsonrpc_id = content["id"]
+          self.jsonrpc_id = content["id"].to_s
         elsif content.key?("id") && content.key?("error")
           self.message_type = "error"
-          self.jsonrpc_id = content["id"]
+          self.jsonrpc_id = content["id"].to_s
         else
           self.message_type = "invalid_jsonrpc"
         end
       else
         self.message_type = "non_jsonrpc_json"
+      end
+    end
+
+    def handle_ping_response
+      return unless jsonrpc_id.present?
+      request_message = session.messages.find_by(
+        jsonrpc_id: jsonrpc_id,
+        message_type: "request"
+      )
+      if request_message&.is_ping
+        self.is_ping = true
+        request_message.update(ping_acknowledged: true)
+        save! if changed?
       end
     end
   end
