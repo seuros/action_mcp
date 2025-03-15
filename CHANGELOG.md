@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.5.1...action_mcp/v0.6.0) (2025-03-15)
+
+
+### Features
+
+* add is_ping and ping_acknowledged fields to session messages ([42e3833](https://github.com/seuros/action_mcp/commit/42e383378a5fd75102733734740686e57a15443b))
+
 ## [0.5.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.5.0...action_mcp/v0.5.1) (2025-03-14)
 
 
