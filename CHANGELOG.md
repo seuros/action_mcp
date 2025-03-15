@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.2...action_mcp/v0.8.0) (2025-03-15)
+
+
+### Features
+
+* add caching mechanism ([22fbbc0](https://github.com/seuros/action_mcp/commit/22fbbc0a660f928cbcd99cca198cdfa4796bf219))
+* update cable configuration and add solid_cable support; enhance session handling and logging ([d29375f](https://github.com/seuros/action_mcp/commit/d29375fe501538c584c66c3bfa9ce7262b5c7147))
+
 ## [0.7.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.1...action_mcp/v0.7.2) (2025-03-15)
 
 
