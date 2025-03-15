@@ -73,7 +73,7 @@ module ActionMCP
       # Returns a hash formatted for a JSON-RPC error response.
       #
       # @return [Hash] The error hash.
-      def as_json
+      def to_h
         hash = { code: code, message: message }
         hash[:data] = data if data
         hash
@@ -84,7 +84,7 @@ module ActionMCP
       # @param _args [Array] Arguments passed to MultiJson.dump.
       # @return [String] The JSON string.
       def to_json(*_args)
-        MultiJson.dump(as_json, *args)
+        MultiJson.dump(to_h, *args)
       end
     end
   end

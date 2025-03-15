@@ -9,8 +9,9 @@ class ProductsTemplate < MCPResourceTemplate
             description: "Product identifier",
             required: true
 
-  def self.retrieve(params)
-    product_id = params[:product_id]
+  validates :product_id, format: { with: /\A\d+\z/, message: "must be a number" }
+
+  def fetch
     product = MockProduct.find(product_id)
 
     resource = ActionMCP::Resource.new(

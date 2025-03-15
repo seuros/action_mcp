@@ -24,6 +24,7 @@ The `ActionMCP::ResourceTemplate` class provides a template for defining and man
 ## Example Usage
 
 ```ruby
+
 class OrdersTemplate < ActionMCP::ResourceTemplate
   description "Access order information"
   uri_template "ecommerce://orders/{order_id}"
@@ -33,19 +34,20 @@ class OrdersTemplate < ActionMCP::ResourceTemplate
             description: "Order identifier",
             required: true
 
-  def self.retrieve(params)
-    order_id = params[:order_id]
-    order = Order.find(order_id)
+  validates :order_id, format: { with: /\A\d+\z/, message: "must be a number" }
 
-    resource = ActionMCP::Resource.new(
-      uri: "ecommerce://orders/\#{order_id}",
-      name: "Order \#{order_id}",
-      description: "Order information for order \#{order_id}",
-      mime_type: "application/json",
-      size: order.to_json.length
-    )
-    # Convert the Order model to a resource
-    resource
+  def fetch
+    if (order = Order.find_by(id: order_id))
+
+      ActionMCP::Content::Resource.new(
+        "ecommerce://orders/#{order_id}",
+        "application/json",
+        text: order.to_json.length,
+      # blob: order.to_blob, # Either text or blob must be provided
+      )
+    else
+      nil # Return nil if the record is not found
+    end
   end
 end
 ```

@@ -33,7 +33,7 @@ module ActionMCP
         resource_data[:text] = @text if @text
         resource_data[:blob] = @blob if @blob
 
-        super.merge(resource: resource_data)
+        resource_data
       end
     end
   end

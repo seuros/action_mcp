@@ -2,18 +2,20 @@
 
 class OrdersTemplate < MCPResourceTemplate
   description "Access order information"
-  uri_template "ecommerce://orders/{order_id}"
+  uri_template "ecommerce://customers/{customer_id}/orders/{order_id}"
   mime_type "application/json"
 
+  parameter :customer_id,
+            description: "Customer identifier",
+            required: true
   parameter :order_id,
             description: "Order identifier",
             required: true
 
-  def self.retrieve(params)
-    order_id = params[:order_id]
+  def fetch
     order = MockOrder.find(order_id)
 
-    resource = ActionMCP::Resource.new(
+    resource = ActionMCP::Content::Text.new(
       uri: "ecommerce://orders/#{order_id}",
       name: "Order #{order_id}",
       description: "Order information for order #{order_id}",

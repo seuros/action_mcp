@@ -15,6 +15,12 @@ module ActionMCP
         notification = JsonRpc::Notification.new(method: method, params: params)
         write_message(notification)
       end
+
+      def send_jsonrpc_error(request_id, symbol, message, data = nil)
+        error = JsonRpc::JsonRpcError.new(symbol, message:, data:)
+        response = JsonRpc::Response.new(id: request_id, error:)
+        write_message(response)
+      end
     end
   end
 end

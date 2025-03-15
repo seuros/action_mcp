@@ -7,8 +7,22 @@ class <%= class_name %> < MCPResourceTemplate
   parameter :product_id,
             description: "Product identifier",
             required: true
-  
-  def self.retrieve(params)
-    raise NotImplementedError, "resolve must be implemented in the subclass"
+
+  def fetch
+    # Fetch the product from the database or api or whatever
+    # Ruby Magic here
+    if (product = Product.find_by(id: product_id))
+
+      resource = ActionMCP::Content::Resource.new(
+        "ecommerce://orders/#{product_id}",
+        "application/json",
+        text: product.to_json,
+      )
+
+      resource
+
+    else
+      nil # Return nil if resource not found
+    end
   end
 end

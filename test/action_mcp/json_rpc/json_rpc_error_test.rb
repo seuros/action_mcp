@@ -20,7 +20,7 @@ module ActionMCP
 
       test "error instance returns correct json structure" do
         error = JsonRpcError.new(:invalid_params, data: { param: "id" })
-        json_error = error.as_json
+        json_error = error.to_h
         assert_equal(-32_602, json_error[:code])
         assert_equal "Invalid params", json_error[:message]
         assert_equal({ param: "id" }, json_error[:data])

@@ -23,7 +23,7 @@ module ActionMCP
 
         process_result(tool.call)
       rescue StandardError => e
-        error_response(["Tool execution failed: #{e.message}"])
+        error_response([ "Tool execution failed: #{e.message}" ])
       end
 
       def item_klass
@@ -36,13 +36,13 @@ module ActionMCP
         case result
         when Hash
           return result if result[:isError]
-          success_response([result])
+          success_response([ result ])
         when String
-          success_response([Content::Text.new(result)])
+          success_response([ Content::Text.new(result) ])
         when Array
           success_response(result)
         else
-          success_response([result])
+          success_response([ result ])
         end
       end
 

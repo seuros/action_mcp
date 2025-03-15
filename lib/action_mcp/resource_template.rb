@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
+require "active_model"
+
 module ActionMCP
   class ResourceTemplate
+    # Add ActiveModel capabilities
+    include ActiveModel::Model
+    include ActiveModel::Validations
+
     # Track all registered templates
     @registered_templates = []
 
@@ -19,14 +25,30 @@ module ActionMCP
       def inherited(subclass)
         super
         subclass.instance_variable_set(:@abstract, false)
+        # Create a copy of validation requirements for subclasses
+        subclass.instance_variable_set(:@required_parameters, [])
       end
 
       attr_reader :description, :uri_template, :mime_type, :template_name, :parameters
 
-      def parameter(name, description:, required: false)
-        @parameters ||= {}
-        @parameters[name] = { description: description, required: required }
+      # Track required parameters for validation
+      def required_parameters
+        @required_parameters ||= []
       end
+
+      def parameter(name, description:, required: false, **options)
+        @parameters ||= {}
+        @parameters[name] = { description: description, required: required, **options }
+
+        # Define attribute accessor if not already defined
+        attr_accessor name unless method_defined?(name) && method_defined?("#{name}=")
+
+        # Track required parameters for validation
+        required_parameters << name if required
+      end
+
+      # Alias parameter to attribute for clarity
+      alias_method :attribute, :parameter
 
       def parameters
         @parameters || {}
@@ -65,16 +87,73 @@ module ActionMCP
           mimeType: @mime_type
         }.compact
       end
-
-      def retrieve(_params)
-        raise NotImplementedError, "Subclasses must implement the retrieve method"
+      def capability_name
+        @capability_name ||= name.demodulize.underscore.sub(/_template$/, "")
       end
 
-      def capability_name
-        name.demodulize.underscore.sub(/_template$/, "")
+      # Process a URI string to create a template instance
+      def process(uri_string)
+        return nil unless @uri_template
+
+        # Extract parameters from URI using pattern matching
+        params = extract_params_from_uri(uri_string)
+        return new if params.nil? # Return invalid template for bad URI
+
+        # Create new instance with the extracted parameters
+        new(params)
       end
 
       private
+
+      # Extract parameters from a URI using the template pattern
+      def extract_params_from_uri(uri_string)
+        # Convert template parameters to named capture groups
+        regex_parts = []
+        current_pos = 0
+        param_names = []
+
+        # Find all template parameters like {param_name}
+        @uri_template.scan(/\{([^}]+)\}/) do |param_name|
+          param_names << param_name[0]
+
+          # Get the position of this parameter in the template
+          param_start = @uri_template.index("{#{param_name[0]}}", current_pos)
+
+          # Add the text before the parameter (escaped)
+          if param_start > current_pos
+            prefix = Regexp.escape(@uri_template[current_pos...param_start])
+            regex_parts << prefix
+          end
+
+          # Add the named capture group
+          regex_parts << "(?<#{param_name[0]}>[^/]+)"
+
+          # Update current position
+          current_pos = param_start + param_name[0].length + 2 # +2 for { and }
+        end
+
+        # Add any remaining text after the last parameter
+        if current_pos < @uri_template.length
+          suffix = Regexp.escape(@uri_template[current_pos..-1])
+          regex_parts << suffix
+        end
+
+        # Build the final regex
+        regex_pattern = regex_parts.join
+        regex = Regexp.new("^#{regex_pattern}$")
+
+        # Try to match the URI
+        match_data = regex.match(uri_string)
+        return nil unless match_data
+
+        # Extract named captures as parameters
+        params = {}
+        param_names.each do |name|
+          params[name.to_sym] = match_data[name] if match_data[name]
+        end
+
+        params
+      end
 
       # Extract the schema and pattern from a URI template
       def parse_uri_template(template)
@@ -85,7 +164,7 @@ module ActionMCP
           pattern = $2
 
           # Replace parameter placeholders with generic markers to compare structure
-          normalized_pattern = pattern.gsub(/\{[^}]+\}/, '{param}')
+          normalized_pattern = pattern.gsub(/\{[^}]+\}/, "{param}")
 
           return { schema: schema, pattern: normalized_pattern, original: template }
         end
@@ -119,15 +198,15 @@ module ActionMCP
         return true if pattern1 == pattern2
 
         # Split into segments to compare structure
-        segments1 = pattern1.split('/')
-        segments2 = pattern2.split('/')
+        segments1 = pattern1.split("/")
+        segments2 = pattern2.split("/")
 
         # If different number of segments, they can't be ambiguous
         return false if segments1.size != segments2.size
 
         # Count parameter segments
-        param_segments1 = segments1.count { |s| s.include?('{param}') }
-        param_segments2 = segments2.count { |s| s.include?('{param}') }
+        param_segments1 = segments1.count { |s| s.include?("{param}") }
+        param_segments2 = segments2.count { |s| s.include?("{param}") }
 
         # If they have different number of parameter segments, they're not ambiguous
         return false if param_segments1 != param_segments2
@@ -137,14 +216,34 @@ module ActionMCP
         # due to parameter position swapping
         if param_segments1 > 0 && param_segments1 == param_segments2
           # Create pattern maps (P for param, S for static)
-          pattern_map1 = segments1.map { |s| s.include?('{param}') ? 'P' : 'S' }
-          pattern_map2 = segments2.map { |s| s.include?('{param}') ? 'P' : 'S' }
+          pattern_map1 = segments1.map { |s| s.include?("{param}") ? "P" : "S" }
+          pattern_map2 = segments2.map { |s| s.include?("{param}") ? "P" : "S" }
 
           # If pattern maps are different but have same param count, potentially ambiguous
           return pattern_map1 != pattern_map2
         end
 
         false
+      end
+    end
+
+    # Initialize with attribute values
+    def initialize(attributes = {})
+      super(attributes)
+      validate!
+    end
+
+    # Override validate! to not raise exceptions
+    def validate!
+      valid?
+    end
+
+    # Add custom validation for required parameters
+    validate do |template|
+      self.class.required_parameters.each do |param|
+        if self.send(param).nil? || self.send(param).to_s.empty?
+          errors.add(param, "can't be blank")
+        end
       end
     end
 
