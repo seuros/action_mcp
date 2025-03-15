@@ -27,7 +27,7 @@ module ActionMCP
           # Heartbeat loop
           until response.stream.closed?
             sleep HEARTBEAT_INTERVAL
-            mcp_session.send_ping!
+            # mcp_session.send_ping!
           end
         else
           Rails.logger.error "Listener failed to activate for session: #{session_id}"

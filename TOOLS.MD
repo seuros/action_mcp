@@ -65,7 +65,7 @@ class InventoryCheckTool < ActionMCP::Tool
     stock_level = get_stock_level(product_id)
     render(text: "The current stock level for product #{product_id} is #{stock_level}")
   rescue => e
-    render(error: "Could not retrieve stock level: #{e.message}")
+    render(error: ["Could not retrieve stock level: #{e.message}"])
   end
 
   private
@@ -82,8 +82,6 @@ end
 A tool that allows the LLM to create a new order for a customer.
 
 ```ruby
-require 'securerandom'
-
 class CreateOrderTool < ActionMCP::Tool
   description "Create a new order for a customer"
 
@@ -95,7 +93,7 @@ class CreateOrderTool < ActionMCP::Tool
     order_id = create_order(customer_id, product_ids)
     render(text: "Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
   rescue => e
-    render(error: "Could not create order: #{e.message}")
+    render(error: ["Could not create order: #{e.message}"])
   end
 
   private
@@ -105,3 +103,4 @@ class CreateOrderTool < ActionMCP::Tool
     SecureRandom.uuid
   end
 end
+```

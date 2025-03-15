@@ -18,7 +18,7 @@ module ActionMCP
       end
 
       def send_resource_read(id, params)
-        send_jsonrpc_response(id, result: {})
+        send_jsonrpc_response(id, result: { "contents": [] })
       end
 
       def log_resource_templates

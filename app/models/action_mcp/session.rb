@@ -73,7 +73,7 @@ module ActionMCP
     end
 
     def message_flow
-      messages.order(created_at: :asc).map do |message|
+      messages.without_pings.order(created_at: :asc).map do |message|
         {
           direction: message.direction,
           data: message.data,
