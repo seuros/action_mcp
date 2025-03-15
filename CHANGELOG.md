@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.6.0...action_mcp/v0.7.0) (2025-03-15)
+
+
+### Features
+
+* enhance rendering and URI template validation in ActionMCP ([7b02872](https://github.com/seuros/action_mcp/commit/7b02872ee31ceb83f2e28b894b425eb355c05e91))
+* update resource templates and enhance URI parsing functionality ([8937daf](https://github.com/seuros/action_mcp/commit/8937dafecf71faee6e1126684685174e1a103b52))
+
+
+### Bug Fixes
+
+* disable ping for now, it badly implemented. ([7b02872](https://github.com/seuros/action_mcp/commit/7b02872ee31ceb83f2e28b894b425eb355c05e91))
+
 ## [0.6.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.5.1...action_mcp/v0.6.0) (2025-03-15)
 
 
