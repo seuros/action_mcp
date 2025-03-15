@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.0...action_mcp/v0.7.1) (2025-03-15)
+
+
+### Bug Fixes
+
+* fix error handling and optimize SSE listener initialization ([dcf5048](https://github.com/seuros/action_mcp/commit/dcf50484e87c5b3b7c1508307ed9bbef6e5e37e1))
+
 ## [0.7.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.6.0...action_mcp/v0.7.0) (2025-03-15)
 
 
