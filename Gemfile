@@ -16,6 +16,7 @@ gem "rubocop-rails-omakase", require: false
 gem "rails_app_version"
 gem "railties"
 gem "simplecov", require: false
+gem "solid_cache"
 
 gem "pg"
 gem "redis"
