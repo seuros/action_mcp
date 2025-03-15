@@ -21,6 +21,9 @@ module ActionMCP
     end
 
     def handle_post_message(params, response)
+      if params[:method] == "initialize"
+        mcp_session.initialize!
+      end
       json_rpc_handler.call(params)
 
       response.status = :accepted
@@ -31,7 +34,7 @@ module ActionMCP
     end
 
     def mcp_session
-      Session.find(params[:session_id])
+      @mcp_session ||= Session.find_or_create_by(id: params[:session_id])
     end
 
     def clean_params

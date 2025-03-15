@@ -20,12 +20,21 @@ module ActionMCP
 
         # Start listener and process messages via the transport
         listener = SSEListener.new(mcp_session)
+        message_received = false
         if listener.start do |message|
           # Send with proper SSE formatting
           sse.write(message)
+          message_received = true
+        end
+        sleep 1
+        # Heartbeat loop
+        unless message_received
+          Rails.logger.warn "No message received within 1 second, closing connection for session: #{session_id}"
+          error = JsonRpc::Response.new(id: SecureRandom.uuid_v7, error: JsonRpc::JsonRpcError.new(:server_error, message: "No message received within 1 second").to_h).to_h
+          sse.write(error)
+          return
         end
 
-          # Heartbeat loop
           until response.stream.closed?
             sleep HEARTBEAT_INTERVAL
             # mcp_session.send_ping!
@@ -39,8 +48,8 @@ module ActionMCP
       rescue => e
         Rails.logger.error "SSE: Unexpected error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       ensure
-        listener.stop
         response.stream.close
+        listener.stop
         Rails.logger.debug "SSE: Connection closed for session: #{session_id}"
       end
     end
@@ -59,11 +68,15 @@ module ActionMCP
     end
 
     def mcp_session
-      @mcp_session ||= Session.create
+      @mcp_session ||= Session.new
     end
 
     def session_id
       @session_id ||= mcp_session.id
+    end
+
+    def cache_key
+      "action_mcp:session:#{session_id}"
     end
   end
 
@@ -100,7 +113,7 @@ module ActionMCP
       }
 
       # Subscribe using the ActionCable adapter
-      success = adapter.subscribe(session_key, message_callback, success_callback)
+      adapter.subscribe(session_key, message_callback, success_callback)
 
       # Give some time for the subscription to be established
       sleep 0.5
@@ -110,8 +123,9 @@ module ActionMCP
 
     def stop
       @stopped = true
-
-      @session.close!
+      if (mcp_session = Session.find_by(id: session_key))
+        mcp_session.close
+      end
       Rails.logger.debug "Unsubscribed from: #{session_key}"
     end
   end

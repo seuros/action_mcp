@@ -17,6 +17,7 @@ gem "rails_app_version"
 gem "railties"
 gem "simplecov", require: false
 gem "solid_cache"
+gem "solid_cable"
 
 gem "pg"
 gem "redis"
