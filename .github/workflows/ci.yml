@@ -44,8 +44,11 @@ jobs:
           ruby-version: ruby-3.4.2
           bundler-cache: true
 
-      - name: Create test database
-        run: cd test/dummy && bin/rails db:prepare
+      - name: Create and migrate test database
+        run: |
+          cd test/dummy
+          bin/rails db:migrate
+          bin/rails db:prepare
 
       - name: Run tests
         run: bin/rails test
