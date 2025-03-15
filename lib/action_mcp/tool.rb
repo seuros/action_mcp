@@ -74,7 +74,7 @@ module ActionMCP
 
       return unless %w[number integer].include?(type)
 
-      validates prop_name, numericality: true
+      validates prop_name, numericality: true, allow_nil: true
     end
 
     # --------------------------------------------------------------------------
