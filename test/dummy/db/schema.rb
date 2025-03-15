@@ -25,7 +25,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_14_230152) do
     t.datetime "updated_at", null: false
     t.boolean "is_ping", default: false, null: false
     t.boolean "ping_acknowledged", default: false, null: false
-    t.index ["session_id"], name: "index_action_mcp_session_messages_on_session_id"
+    t.index [ "session_id" ], name: "index_action_mcp_session_messages_on_session_id"
   end
 
   create_table "action_mcp_sessions", id: :string, force: :cascade do |t|

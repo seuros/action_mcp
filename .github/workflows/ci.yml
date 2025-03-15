@@ -35,9 +35,6 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git pkg-config google-chrome-stable
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -48,7 +45,7 @@ jobs:
           bundler-cache: true
 
       - name: Create test database
-        run: cd test/dummy && bin/rails db:prepare RAILS_ENV=test
+        run: cd test/dummy && bin/rails db:prepare
 
       - name: Run tests
         run: bin/rails test
