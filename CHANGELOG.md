@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.1...action_mcp/v0.7.2) (2025-03-15)
+
+
+### Bug Fixes
+
+* allow nil values in numericality validation ([3a5cde2](https://github.com/seuros/action_mcp/commit/3a5cde2694a5233608099bcddd62463f5e1868ed))
+* clear registered templates before configuration and handle name conflicts ([b416b65](https://github.com/seuros/action_mcp/commit/b416b65b2989c76483b50fdc94d8368e63270685))
+
 ## [0.7.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.0...action_mcp/v0.7.1) (2025-03-15)
 
 
