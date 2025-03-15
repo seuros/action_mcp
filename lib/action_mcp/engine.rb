@@ -15,6 +15,10 @@ module ActionMCP
     # Provide a configuration namespace for ActionMCP
     config.action_mcp = ActionMCP.configuration
 
+    config.to_prepare do
+      ActionMCP::ResourceTemplate.registered_templates.clear
+    end
+
     # Configure autoloading for the mcp/tools directory
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|
       mcp_path = app.root.join("app/mcp")

@@ -179,6 +179,8 @@ module ActionMCP
         ResourceTemplate.registered_templates.each do |registered_class|
           next if registered_class == self || registered_class.abstract?
           next unless registered_class.uri_template
+          # Ignore conflicts with resource templates that have the same name
+          next if registered_class.name == self.name
 
           existing_template_data = parse_uri_template(registered_class.uri_template)
 
