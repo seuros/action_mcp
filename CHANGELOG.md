@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.8.0...action_mcp/v0.9.0) (2025-03-16)
+
+
+### Features
+
+* add ActionMCP session management with subscriptions and resources; include database migrations and model definitions ([f80cab9](https://github.com/seuros/action_mcp/commit/f80cab9ca449f883e1b3a2d09c7c3e8f32636597))
+* implement ToolResponse class for managing tool execution results and error handling; refactor render method in tools ([617bcd6](https://github.com/seuros/action_mcp/commit/617bcd69e4fec9bc764eb40325bf0740985f3172))
+* rename 'call' method to 'perform' in prompt classes; add CarbonFootprintAssessmentPrompt and GreetingPrompt classes with detailed user interactions ([38f4ed1](https://github.com/seuros/action_mcp/commit/38f4ed18c9f8d2cbc626bf97ed8bad27fa1b9632))
+
 ## [0.8.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.7.2...action_mcp/v0.8.0) (2025-03-15)
 
 
