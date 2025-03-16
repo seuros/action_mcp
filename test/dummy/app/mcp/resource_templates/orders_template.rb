@@ -12,7 +12,7 @@ class OrdersTemplate < ApplicationMCPResTemplate
             description: "Order identifier",
             required: true
 
-  def fetch
+  def resolve
     order = MockOrder.find_by(id: order_id)
     return unless order
 

@@ -25,7 +25,7 @@ The `ActionMCP::ResourceTemplate` class provides a template for defining and man
 
 ```ruby
 
-class OrdersTemplate < ActionMCP::ResourceTemplate
+class OrdersTemplate < ApplicationMCPResTemplate
   description "Access order information"
   uri_template "ecommerce://orders/{order_id}"
   mime_type "application/json"
@@ -36,7 +36,7 @@ class OrdersTemplate < ActionMCP::ResourceTemplate
 
   validates :order_id, format: { with: /\A\d+\z/, message: "must be a number" }
 
-  def fetch
+  def resolve
     if (order = Order.find_by(id: order_id))
 
       ActionMCP::Content::Resource.new(
@@ -52,4 +52,6 @@ class OrdersTemplate < ActionMCP::ResourceTemplate
 end
 ```
 
-This example defines a `ResourceTemplate` for accessing order information. It specifies the URI template, MIME type, and a required parameter for the order ID. The `retrieve` method is responsible for fetching the order data and creating an `ActionMCP::Resource` instance.
+This example defines a `ResourceTemplate` for accessing order information. 
+It specifies the URI template, MIME type, and a required parameter for the order ID. 
+The `resolve` method is responsible for fetching the order data and creating an `ActionMCP::Resource` instance.

@@ -11,7 +11,7 @@ class ProductsTemplate < ApplicationMCPResTemplate
 
   validates :product_id, format: { with: /\A\d+\z/, message: "must be a number" }
 
-  def fetch
+  def resolve
     product = MockProduct.find_by(id: product_id)
     return unless product
 

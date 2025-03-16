@@ -49,7 +49,7 @@ module ActionMCP
       def send_resource_read(id, params)
         if  (template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri]))
           record = template.process(params[:uri])
-          if (resource = record.fetch)
+          if (resource = record.resolve)
             # if resource is a array or a collection, return each item then it ok
             # else wrap it in a array
             resource = [ resource ] unless resource.respond_to?(:each)

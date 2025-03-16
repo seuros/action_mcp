@@ -8,7 +8,7 @@ class <%= class_name %> < ApplicationMCPResTemplate
             description: "Product identifier",
             required: true
 
-  def fetch
+  def resolve
     # Fetch the product from the database or api or whatever
     # Ruby Magic here
     if (product = Product.find_by(id: product_id))
