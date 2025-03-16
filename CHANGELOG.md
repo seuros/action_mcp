@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.13.0...action_mcp/v0.14.0) (2025-03-16)
+
+
+### Features
+
+* enhance test coverage for tools and prompts; update execution methods and assertions for consistency ([e2b0937](https://github.com/seuros/action_mcp/commit/e2b0937a4be8e75b4a0b278846fd29989ef1f7e2))
+
 ## [0.13.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.12.0...action_mcp/v0.13.0) (2025-03-16)
 
 
