@@ -7,13 +7,12 @@ module ActionMCP
     delegate :read, :write, to: :session
     include Logging
 
+    include Transport::Messaging
     include Transport::Capabilities
     include Transport::Tools
     include Transport::Prompts
     include Transport::Resources
-    include Transport::Messaging
-
-    HEARTBEAT_INTERVAL = 15 # seconds
+    include Transport::Notifications
 
     # @param [ActionMCP::Session] session
     def initialize(session)

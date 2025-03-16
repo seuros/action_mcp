@@ -33,7 +33,7 @@ module ActionMCP
         JsonRpc::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
       else
         {
-          content: @contents.map { |c| c.to_h },
+          content: @contents.map { |c| c.to_h }
         }
       end
     end

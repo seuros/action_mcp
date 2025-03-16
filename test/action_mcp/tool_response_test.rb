@@ -65,7 +65,7 @@ module ActionMCP
       @response.add(@text_content)
 
       expected_hash = {
-        content: [ { type: "text", text: "Hello world" } ],
+        content: [ { type: "text", text: "Hello world" } ]
       }
 
       assert_equal expected_hash, @response.to_h
