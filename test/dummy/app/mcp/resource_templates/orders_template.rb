@@ -13,9 +13,10 @@ class OrdersTemplate < ApplicationMCPResTemplate
             required: true
 
   def fetch
-    order = MockOrder.find(order_id)
+    order = MockOrder.find_by(id: order_id)
+    return unless order
 
-    resource = ActionMCP::Content::Text.new(
+    resource = ActionMCP::Resource.new(
       uri: "ecommerce://orders/#{order_id}",
       name: "Order #{order_id}",
       description: "Order information for order #{order_id}",

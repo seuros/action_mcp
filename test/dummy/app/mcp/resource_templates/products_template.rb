@@ -12,7 +12,8 @@ class ProductsTemplate < ApplicationMCPResTemplate
   validates :product_id, format: { with: /\A\d+\z/, message: "must be a number" }
 
   def fetch
-    product = MockProduct.find(product_id)
+    product = MockProduct.find_by(id: product_id)
+    return unless product
 
     resource = ActionMCP::Resource.new(
       uri: "ecommerce://products/#{product_id}",
