@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.9.0...action_mcp/v0.10.0) (2025-03-16)
+
+
+### Features
+
+* add PromptResponse and ToolResponse classes with enhanced functionality; include tests for message handling and response structure ([c9e2976](https://github.com/seuros/action_mcp/commit/c9e2976537b5a5f9b3db597534be867148344196))
+* enhance error handling in prompts; update response structure for better error reporting and validation feedback ([46d9bae](https://github.com/seuros/action_mcp/commit/46d9bae8600f6ecd64a79617ba01ffea596ddb41))
+
 ## [0.9.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.8.0...action_mcp/v0.9.0) (2025-03-16)
 
 
