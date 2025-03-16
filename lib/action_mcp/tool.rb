@@ -126,15 +126,44 @@ module ActionMCP
     # Public entry point for executing the tool
     # Returns an array of Content objects collected from render calls
     def call
-      @render_results = [] # Reset render results for each invocation
-      perform              # Invoke the subclass-specific logic
-      @render_results      # Return the collected render results
+      @response = ToolResponse.new # Create a new response for each invocation
+
+      # Check validations before proceeding
+      if valid?
+        begin
+          perform # Invoke the subclass-specific logic if valid
+        rescue => e
+          # Handle exceptions during execution
+          @response.mark_as_error!
+          render text: "Error executing tool: #{e.message}"
+        end
+      else
+        # Handle validation failure
+        @response.mark_as_error!
+        render text: "Invalid input: #{errors.full_messages.join(', ')}"
+      end
+
+      @response # Return the response with collected content
+    end
+
+    def inspect
+      attributes_hash = attributes.transform_values(&:inspect)
+
+      response_info = if defined?(@response) && @response
+                        "response: #{@response.contents.size} content(s), isError: #{@response.is_error}"
+      else
+                        "response: nil"
+      end
+
+      errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
+
+      "#<#{self.class.name} #{attributes_hash.map { |k, v| "#{k}: #{v.inspect}" }.join(', ')}, #{response_info}#{errors_info}>"
     end
 
     # Override render to collect Content objects
     def render(**args)
-      content = super(**args) # Call Renderable’s render method
-      (@render_results ||= []) << content # Initialize and append to render_results
+      content = super(**args) # Call Renderable's render method
+      @response.add(content)  # Add to the response
       content # Return the content for potential use in perform
     end
 
@@ -144,6 +173,14 @@ module ActionMCP
     # Expected to use render to produce Content objects
     def perform
       raise NotImplementedError, "Subclasses must implement the perform method"
+    end
+
+    private
+
+    # Helper method for tools to manually report errors
+    def report_error(message)
+      @response.mark_as_error!
+      render text: message
     end
 
     # Maps a JSON Schema type to an ActiveModel attribute type.

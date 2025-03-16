@@ -28,6 +28,7 @@ class WeatherForecastTool < ApplicationMCPTool
 
     (1..days_to_forecast).each do |day|
       render(text: extended_forecast(day))
+      # Simulate delay for progressive updates
       sleep(0.3)
     end
 
@@ -45,20 +46,21 @@ class WeatherForecastTool < ApplicationMCPTool
   end
 
   def current_conditions
-    temps = rand(65..85)
+    # Generate random temperatures in Celsius
+    temps = rand(18..29)
     conditions = [ "Sunny", "Partly Cloudy", "Cloudy", "Light Rain", "Thunderstorms" ].sample
     humidity = rand(30..90)
-    wind = rand(0..15)
+    wind = rand(0..24)  # Changed to km/h for consistency with metric
 
-    "#{temps}°F, #{conditions}, Humidity: #{humidity}%, Wind: #{wind} mph"
+    "#{temps}°C, #{conditions}, Humidity: #{humidity}%, Wind: #{wind} km/h"
   end
 
   def today_forecast
-    high = rand(70..95)
-    low = rand(55..75)
+    high = rand(21..35)
+    low = rand(13..24)
     precip = rand(0..100)
 
-    "High #{high}°F, Low #{low}°F, #{precip}% chance of precipitation"
+    "High #{high}°C, Low #{low}°C, #{precip}% chance of precipitation"
   end
 
   def has_alerts?
@@ -79,15 +81,15 @@ class WeatherForecastTool < ApplicationMCPTool
   end
 
   def extended_forecast(day_offset)
-    day_names = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ]
+    day_names = %w[Sunday Monday Tuesday Wednesday Thursday Friday Saturday]
     today = Time.now.wday
     future_day = (today + day_offset) % 7
 
-    high = rand(65..95)
-    low = rand(50..75)
+    high = rand(18..35)
+    low = rand(10..24)
     conditions = [ "Sunny", "Partly Cloudy", "Cloudy", "Light Rain", "Scattered Showers", "Thunderstorms", "Clear" ].sample
-    precip = rand(0..100)
+    precipitation = rand(0..100)
 
-    "#{day_names[future_day]}: #{conditions}, High #{high}°F, Low #{low}°F, #{precip}% chance of precipitation"
+    "#{day_names[future_day]}: #{conditions}, High #{high}°C, Low #{low}°C, #{precipitation}% chance of precipitation"
   end
 end

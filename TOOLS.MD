@@ -1,86 +1,61 @@
 # ActionMCP::Tool
 
-## Introduction
+## Overview
+ActionMCP::Tool provides a framework for LLMs to interact with external systems. 
+Each tool has a specific purpose, defined inputs (properties), and structured outputs.
 
-This document provides guidance on how to design and implement effective tools for use with Large Language Models (LLMs) within the ActionMCP framework. Tools are functions that enable LLMs to interact with external systems, perform computations, and take actions in the real world. Well-designed tools are essential for extending the capabilities of LLMs and enabling them to perform complex tasks.
+## Core Components
 
-## Tool Design Principles
+### Tool Definition
+- Each tool is a Ruby class inheriting from `ApplicationMCPTool`
+- Required elements:
+    - `description`: Explain what the tool does
+    - `property`: Define expected inputs with type information
+    - `perform`: Core logic that executes the tool's function
 
-*   Functionality and Purpose
-*   Input and Output
-*   Error Handling
+### Rendering Output
+Use these methods to return information:
+- `render(text: "message")`: Return text responses
+- `render(image: "base64_data", mime_type: "image/png")`: Return images
+- `render(audio: "base64_data", mime_type: "audio/mpeg")`: Return audio
+- `render(resource: "file://path/to/resource", mime_type: "application/json", text: "{}")`: Return resource with text content
+- `render(resource: "file://path/to/resource", mime_type: "application/octet-stream", blob: "base64_data")`: Return resource with base64 encoded data
+- `render(error: ["error_message"])`: Return errors
 
-## Tool Structure in ActionMCP
+## Usage Pattern
 
-*   `ActionMCP::Tool` class
-*   `tool_name` and `description` methods
-*   `property` method for defining properties
-*   `call` method for tool logic
+1. **Input validation** happens automatically based on property definitions
+2. **Tool execution** occurs in the `perform` method
+3. **Response handling** uses `render` to format outputs
+4. **Multiple renders** can be called to provide progressive information
 
-## Example Tool Patterns
+## Example Tools
 
-*   System Operations
-*   API Integrations
-*   Data Processing
-
-## Best Practices
-
-*   Provide clear, descriptive names and descriptions
-*   Use detailed JSON Schema definitions for parameters
-*   Include examples in tool descriptions to demonstrate how the model should use them
-*   Implement proper error handling and validation
-*   Use progress reporting for long operations
-*   Keep tool operations focused and atomic
-*   Document expected return value structures
-*   Implement proper timeouts
-*   Consider rate limiting for resource-intensive operations
-*   Log tool usage for debugging and monitoring
-
-## Security Considerations
-
-*   Input validation
-*   Access control
-*   Error handling
-
-## Tool Discovery and Updates
-
-## Error Handling
-
-## Testing Tools
-
-## Examples
-
-### Inventory Management Tool
-
-A tool that allows the LLM to check the current stock level of a product.
-
+### Check Inventory
 ```ruby
 class InventoryCheckTool < ApplicationMCPTool
   description "Check the current stock level of a product"
 
   property :product_id, type: "string", description: "The ID of the product", required: true
-
+  validates :product_id, length: { is: 6 }
+  
   def perform
-    # In a real implementation, this would query a database or API
+    render(image: product_thumbnail(product_id), mime_type: "image/png")
     stock_level = get_stock_level(product_id)
     render(text: "The current stock level for product #{product_id} is #{stock_level}")
+    if stock_level < 10
+      render(text: "Warning: Low stock level for product #{product_id}")
+    end
   rescue => e
     render(error: ["Could not retrieve stock level: #{e.message}"])
   end
 
   private
-
-  def get_stock_level(product_id)
-    # Stub implementation
-    rand(0..100)
-  end
+  # Implementation methods...
 end
 ```
 
-### Order Creation Tool
-
-A tool that allows the LLM to create a new order for a customer.
-
+### Create Order
 ```ruby
 class CreateOrderTool < ApplicationMCPTool
   description "Create a new order for a customer"
@@ -89,16 +64,21 @@ class CreateOrderTool < ApplicationMCPTool
   property :product_ids, type: "array", description: "An array of product IDs to add to the order", required: true
 
   def perform
-    # In a real implementation, this would create a new order in a database or system
     order_id = create_order(customer_id, product_ids)
     render(text: "Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
   rescue => e
     render(error: ["Could not create order: #{e.message}"])
   end
 
-  private def create_order(customer_id, product_ids)
-    # Stub implementation
-    SecureRandom.uuid
-  end
+  private
+  # Implementation methods...
 end
 ```
+
+## Key Implementation Notes
+
+1. Use ActiveModel validations for input verification
+2. Structure error handling with rescue blocks
+3. Return meaningful error messages when operations fail
+4. Chain multiple `render` calls for progressive responses
+5. Include descriptive property definitions to guide parameter usage

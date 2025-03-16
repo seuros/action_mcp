@@ -19,10 +19,9 @@ module ActionMCP
         tool_class = find(tool_name)
         tool = tool_class.new(arguments)
 
-        return error_response(tool.errors.full_messages) unless tool.valid?
-
-        process_result(tool.call)
+        tool.call.to_h
       rescue StandardError => e
+        # FIXME, we should maybe not return the error message to the user
         error_response([ "Tool execution failed: #{e.message}" ])
       end
 
@@ -31,24 +30,6 @@ module ActionMCP
       end
 
       private
-
-      def process_result(result)
-        case result
-        when Hash
-          return result if result[:isError]
-          success_response([ result ])
-        when String
-          success_response([ Content::Text.new(result) ])
-        when Array
-          success_response(result)
-        else
-          success_response([ result ])
-        end
-      end
-
-      def success_response(content)
-        { content: content }
-      end
 
       def error_response(messages)
         {
