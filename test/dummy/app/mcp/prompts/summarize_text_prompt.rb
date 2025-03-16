@@ -12,17 +12,17 @@ class SummarizeTextPrompt < ApplicationMCPPrompt
            default: "concise",
            enum: %w[concise detailed]
 
-  def call
+  def perform
     # Perform the summarization logic here.
     # For demonstration, we'll just stub out a short or long summary.
 
     case style
     when "concise"
       # Return a short summary for demonstration
-      { summary: "[CONCISE] #{text.truncate(20)}" }
+      render text: "[CONCISE] #{text.truncate(20)}"
     else
       # Return a slightly more descriptive summary
-      { summary: "[DETAILED] Summarizing the following text in detail: #{text}" }
+      render text: "[DETAILED] Summarizing the following text in detail: #{text}"
     end
   end
 end

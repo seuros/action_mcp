@@ -42,7 +42,6 @@ module ActionMCP
     # @param default [Object] The default value of the argument.
     # @param enum [Array<String>] The list of allowed values for the argument.
     # @return [void]
-    # Argument DSL
     def self.argument(arg_name, description: "", required: false, default: nil, enum: nil)
       arg_def = {
         name: arg_name.to_s,
@@ -88,47 +87,67 @@ module ActionMCP
     # validates it, and if valid, calls the instance call method.
     # If invalid, raises a JsonRpcError with code :invalid_params.
     #
-    # Usage:
-    #   result = MyPromptClass.call(params)
-    #
-    # Raises:
-    #   ActionMCP::JsonRpc::JsonRpcError(:invalid_params) if validation fails.
-    #
     # @param params [Hash] The parameters for the prompt.
-    # @return [Object] The result of the prompt's call method.
+    # @return [PromptResponse] The result of the prompt's call method.
     def self.call(params)
       prompt = new(params) # Initialize an instance with provided params
-      unless prompt.valid?
-        # Collect all validation errors into a single string or array
-        errors_str = prompt.errors.full_messages.join(", ")
-
-        raise ActionMCP::JsonRpc::JsonRpcError.new(
-          :invalid_params,
-          message: "Prompt validation failed: #{errors_str}",
-          data: { errors: prompt.errors }
-        )
-      end
 
       # If we reach here, the prompt is valid
       prompt.call
     end
 
     # ---------------------------------------------------
-    # Instance call method
+    # Instance Methods
     # ---------------------------------------------------
-    # By default, does nothing. Override in your subclasses to
-    # perform custom prompt processing. (Return a payload if needed)
-    #
-    # Usage: Called internally after validation in self.call
-    #
-    # @raise [NotImplementedError] Subclasses must implement the call method.
-    # @return [Array<Content>] Array of Content objects is expected as return value
+
+    # Public entry point for executing the prompt
+    # Returns a PromptResponse object containing messages
     def call
-      raise NotImplementedError, "Subclasses must implement the call method"
-      # Default implementation (no-op)
-      # In a real subclass, you might do:
-      #  # Perform logic, e.g. analyze code, etc.
-      #  # Return something meaningful.
+      @response = PromptResponse.new
+
+      # Check validations before proceeding
+      if valid?
+        begin
+          perform # Invoke the subclass-specific logic if valid
+        rescue => e
+          # Handle exceptions during execution
+          render text: "Error executing prompt: #{e.message}"
+        end
+      else
+        # Handle validation failure
+        render text: "Invalid input: #{errors.full_messages.join(', ')}"
+      end
+
+      @response # Return the response with collected messages
+    end
+
+    def inspect
+      attributes_hash = attributes.transform_values(&:inspect)
+
+      response_info = if defined?(@response) && @response
+                        "response: #{@response.messages.size} message(s)"
+      else
+                        "response: nil"
+      end
+
+      errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
+
+      "#<#{self.class.name} #{attributes_hash.map { |k, v| "#{k}: #{v.inspect}" }.join(', ')}, #{response_info}#{errors_info}>"
+    end
+
+    # Override render to collect messages
+    def render(**args)
+      content = super(**args.slice(:text, :audio, :image, :resource, :mime_type, :blob))
+      @response.add_content(content, role: args.fetch(:role, "user")) # Add to the response
+      content # Return the content for potential use in perform
+    end
+
+    protected
+
+    # Abstract method for subclasses to implement their logic
+    # Expected to use render to produce Content objects or add_message for messages
+    def perform
+      raise NotImplementedError, "Subclasses must implement the perform method"
     end
   end
 end

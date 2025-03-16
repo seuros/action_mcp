@@ -65,7 +65,7 @@ module ActionMCP
 
     # Implement hash method for hash key usage
     def hash
-      [contents, is_error].hash
+      [ contents, is_error ].hash
     end
 
     # Pretty print for better debugging
@@ -74,4 +74,3 @@ module ActionMCP
     end
   end
 end
-

@@ -13,7 +13,7 @@ class AnalyzeCodePrompt < ApplicationMCPPrompt
            description: "Code to explain",
            required: true
 
-  def call
+  def perform
     issue_url = "https://github.com/fake/repo/issues/#{rand(1000..9999)}"
     render text: "The code you provided is written in #{language} and looks great!"
   end
