@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.14.0...action_mcp/v0.15.0) (2025-03-16)
+
+
+### Features
+
+* refactor order and product fetching methods to use find_by; add SamplingRequest class for managing AI interactions ([769fb90](https://github.com/seuros/action_mcp/commit/769fb90e3301e69901ef82cab0923f5a7ddc2f0c))
+* rename fetch method to resolve in resource templates for clarity; update related references ([37d1a6d](https://github.com/seuros/action_mcp/commit/37d1a6d13388c92c9f69e436670245e3f12d0ecb))
+
 ## [0.14.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.13.0...action_mcp/v0.14.0) (2025-03-16)
 
 
