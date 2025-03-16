@@ -9,7 +9,7 @@ class FormatCodeTool < ApplicationTool
   property :language, type: "string", description: "Programming language", required: true
   property :style, type: "string", description: "Style or formatter rules"
 
-  def call
+  def perform
     formatted_code = source_code.gsub(/\s+/, " ").strip
     render text: formatted_code
   end

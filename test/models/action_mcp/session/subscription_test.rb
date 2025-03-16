@@ -21,6 +21,5 @@ require "test_helper"
 
 module ActionMCP
   class Session::SubscriptionTest < ActiveSupport::TestCase
-
   end
 end

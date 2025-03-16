@@ -40,7 +40,7 @@ module ActionMCP
       assert_equal "request", message.message_type, "Message type should be 'request'"
       assert_equal "123", message.jsonrpc_id, "jsonrpc_id should match the payload"
       assert message.is_ping, "is_ping should be true for ping requests"
-      refute message.ping_acknowledged, "ping_acknowledged should be false initially"
+      refute message.request_acknowledged, "request_acknowledged should be false initially"
     end
 
     # Test that non-"ping" requests are not marked as ping
@@ -51,7 +51,7 @@ module ActionMCP
       assert_equal "request", message.message_type, "Message type should be 'request'"
       assert_equal "456", message.jsonrpc_id, "jsonrpc_id should match the payload"
       refute message.is_ping, "is_ping should be false for non-ping requests"
-      refute message.ping_acknowledged, "ping_acknowledged should be false"
+      refute message.request_acknowledged, "request_acknowledged should be false"
     end
 
     # Test that a successful "pong" response acknowledges a "ping" request
@@ -63,7 +63,7 @@ module ActionMCP
       @session.messages.create!(direction: "server", data: response_payload)
 
       ping_message.reload
-      assert ping_message.ping_acknowledged, "ping_acknowledged should be true after response"
+      assert ping_message.request_acknowledged, "request_acknowledged should be true after response"
     end
 
     # Test that an error response still acknowledges a "ping" request
@@ -75,7 +75,7 @@ module ActionMCP
       @session.messages.create!(direction: "server", data: error_response_payload)
 
       ping_message.reload
-      assert ping_message.ping_acknowledged, "ping_acknowledged should be true after error response"
+      assert ping_message.request_acknowledged, "request_acknowledged should be true after error response"
     end
 
     # Test that a response with a different jsonrpc_id does not acknowledge a "ping"
@@ -87,7 +87,7 @@ module ActionMCP
       @session.messages.create!(direction: "server", data: response_payload)
 
       ping_message.reload
-      refute ping_message.ping_acknowledged, "ping_acknowledged should remain false for non-matching id"
+      refute ping_message.request_acknowledged, "request_acknowledged should remain false for non-matching id"
     end
 
     # Test that non-"ping" requests are not affected by responses
@@ -100,7 +100,7 @@ module ActionMCP
 
       non_ping_message.reload
       refute non_ping_message.is_ping, "is_ping should remain false"
-      refute non_ping_message.ping_acknowledged, "ping_acknowledged should remain false"
+      refute non_ping_message.request_acknowledged, "request_acknowledged should remain false"
     end
 
     # Test handling of non-JSON-RPC payloads (e.g., plain text)
@@ -110,7 +110,7 @@ module ActionMCP
 
       assert_equal "text", message.message_type, "Message type should be 'text' for non-JSON-RPC"
       refute message.is_ping, "is_ping should be false"
-      refute message.ping_acknowledged, "ping_acknowledged should be false"
+      refute message.request_acknowledged, "request_acknowledged should be false"
     end
 
     # Test handling of JSON payloads that are not JSON-RPC compliant
@@ -120,7 +120,7 @@ module ActionMCP
 
       assert_equal "non_jsonrpc_json", message.message_type, "Message type should be 'non_jsonrpc_json'"
       refute message.is_ping, "is_ping should be false"
-      refute message.ping_acknowledged, "ping_acknowledged should be false"
+      refute message.request_acknowledged, "request_acknowledged should be false"
     end
 
     # Test handling of string-based jsonrpc_id
@@ -134,7 +134,7 @@ module ActionMCP
       ping_message.reload
       assert_equal "abc123", ping_message.jsonrpc_id, "jsonrpc_id should match the string id"
       assert ping_message.is_ping, "is_ping should be true"
-      assert ping_message.ping_acknowledged, "ping_acknowledged should be true"
+      assert ping_message.request_acknowledged, "request_acknowledged should be true"
     end
 
     # Test handling of integer-based jsonrpc_id
@@ -148,7 +148,7 @@ module ActionMCP
       ping_message.reload
       assert_equal "456", ping_message.jsonrpc_id, "jsonrpc_id should match the integer id as a string"
       assert ping_message.is_ping, "is_ping should be true"
-      assert ping_message.ping_acknowledged, "ping_acknowledged should be true"
+      assert ping_message.request_acknowledged, "request_acknowledged should be true"
     end
 
     test "excludes both ping requests and their responses using without_pings scope" do

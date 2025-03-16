@@ -5,7 +5,7 @@ class ChecksumCheckerTool < ApplicationTool
 
   collection :files, description: "List of Files", type: "string"
 
-  def call
+  def perform
     result = files.map(&:hash)
     render text: result.to_json
   end

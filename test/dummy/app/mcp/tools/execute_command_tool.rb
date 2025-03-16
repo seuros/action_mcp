@@ -6,7 +6,7 @@ class ExecuteCommandTool < ApplicationTool
   property :command, type: "string", description: "The command to run"
   collection :args, type: "string", description: "Command arguments"
 
-  def call
+  def perform
     fake_output = "Executed: #{command} #{args.join(' ')}"
     render text: fake_output
   end

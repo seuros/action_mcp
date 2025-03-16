@@ -6,7 +6,7 @@ class CalculateSumTool < ApplicationTool
   property :a, type: "number", description: "First number", required: true
   property :b, type: "number", description: "Second number", required: true
 
-  def call
+  def perform
     result = a + b
     render text: result
   end

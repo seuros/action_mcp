@@ -129,7 +129,7 @@ module ActionMCP
       )
       if request_message&.is_ping
         self.is_ping = true
-        request_message.update(ping_acknowledged: true)
+        request_message.update(request_acknowledged: true)
         save! if changed?
       end
     end

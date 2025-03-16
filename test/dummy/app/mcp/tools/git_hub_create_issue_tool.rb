@@ -9,7 +9,7 @@ class GitHubCreateIssueTool < ApplicationTool
   property :body, type: "string", description: "Issue body"
   collection :labels, type: "string", description: "Issue labels"
 
-  def call
+  def perform
     issue_url = "https://github.com/fake/repo/issues/#{rand(1000..9999)}"
     render text: "Issue created: #{issue_url} with labels: #{labels}.joins(' ')) and title: #{title}"
   end

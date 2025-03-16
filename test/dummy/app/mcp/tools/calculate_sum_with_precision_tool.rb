@@ -7,7 +7,7 @@ class CalculateSumWithPrecisionTool < CalculateSumTool
   property :precision, type: "number", description: "Decimal precision", required: true, default: 2
   property :unit, type: "string", description: "Unit of measurement", required: false
 
-  def call
+  def perform
     sum = (a + b).round(precision)
     render text: sum
   end

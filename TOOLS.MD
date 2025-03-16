@@ -60,7 +60,7 @@ class InventoryCheckTool < ActionMCP::Tool
 
   property :product_id, type: "string", description: "The ID of the product", required: true
 
-  def call
+  def perform
     # In a real implementation, this would query a database or API
     stock_level = get_stock_level(product_id)
     render(text: "The current stock level for product #{product_id} is #{stock_level}")
@@ -88,7 +88,7 @@ class CreateOrderTool < ActionMCP::Tool
   property :customer_id, type: "string", description: "The ID of the customer", required: true
   property :product_ids, type: "array", description: "An array of product IDs to add to the order", required: true
 
-  def call
+  def perform
     # In a real implementation, this would create a new order in a database or system
     order_id = create_order(customer_id, product_ids)
     render(text: "Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
@@ -96,9 +96,7 @@ class CreateOrderTool < ActionMCP::Tool
     render(error: ["Could not create order: #{e.message}"])
   end
 
-  private
-
-  def create_order(customer_id, product_ids)
+  private def create_order(customer_id, product_ids)
     # Stub implementation
     SecureRandom.uuid
   end

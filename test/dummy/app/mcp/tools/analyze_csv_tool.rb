@@ -8,7 +8,7 @@ class AnalyzeCsvTool < ApplicationTool
 
   validates :operations, inclusion: { in: %w[sum average count] }
 
-  def call
+  def perform
     result = operations.to_h { |op| [ op, rand(1..100) ] }
     render text: result.to_json
   end

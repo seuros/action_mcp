@@ -122,23 +122,29 @@ module ActionMCP
     # --------------------------------------------------------------------------
     # Instance Methods
     # --------------------------------------------------------------------------
-    # Abstract method to perform the tool's action.
-    #
-    # Subclasses must implement this method.
-    #
-    # @raise [NotImplementedError] Always raised if not implemented in a subclass.
-    # @return [Array<Content>] Array of Content objects is expected as return value
+
+    # Public entry point for executing the tool
+    # Returns an array of Content objects collected from render calls
     def call
-      raise NotImplementedError, "Subclasses must implement the call method"
-      # Default implementation (no-op)
-      # In a real subclass, you might do:
-      #   def call
-      #     # Perform logic, e.g. analyze code, etc.
-      #     # Array of Content objects is expected as return value
-      #   end
+      @render_results = [] # Reset render results for each invocation
+      perform              # Invoke the subclass-specific logic
+      @render_results      # Return the collected render results
     end
 
-    private
+    # Override render to collect Content objects
+    def render(**args)
+      content = super(**args) # Call Renderable’s render method
+      (@render_results ||= []) << content # Initialize and append to render_results
+      content # Return the content for potential use in perform
+    end
+
+    protected
+
+    # Abstract method for subclasses to implement their logic
+    # Expected to use render to produce Content objects
+    def perform
+      raise NotImplementedError, "Subclasses must implement the perform method"
+    end
 
     # Maps a JSON Schema type to an ActiveModel attribute type.
     #
