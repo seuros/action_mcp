@@ -19,17 +19,23 @@ module ActionMCP
     end
 
     # Mark response as error
-    def mark_as_error!
+    def mark_as_error!(symbol = :invalid_request, message: nil, data: nil)
       @is_error = true
+      @symbol = symbol
+      @error_message = message
+      @error_data = data
       self
     end
 
     # Convert to hash format expected by MCP protocol
-    def to_h(options = {})
-      {
-        content: @contents.map { |c| c.to_h },
-        isError: @is_error
-      }
+    def to_h
+      if @is_error
+        JsonRpc::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
+      else
+        {
+          content: @contents.map { |c| c.to_h },
+        }
+      end
     end
 
     # Alias as_json to to_h for consistency

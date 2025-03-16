@@ -8,12 +8,11 @@ module ActionMCP
 
       def send_tools_call(request_id, tool_name, arguments, _meta = {})
         result = ToolsRegistry.tool_call(tool_name, arguments, _meta)
-        send_jsonrpc_response(request_id, result: result)
-      rescue RegistryBase::NotFound
-        send_jsonrpc_response(request_id, error: JsonRpc::JsonRpcError.new(
-          :method_not_found,
-          message: "Tool not found: #{tool_name}"
-        ).as_json)
+        if result.is_error
+          send_jsonrpc_response(request_id, error: result)
+        else
+          send_jsonrpc_response(request_id, result:)
+        end
       end
     end
   end

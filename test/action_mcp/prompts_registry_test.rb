@@ -19,5 +19,14 @@ module ActionMCP
       non_abstract_names = PromptsRegistry.non_abstract
       assert_includes non_abstract_names.keys, "analyze_code"
     end
+
+    test "prompt_call calls the prompt" do
+      response = PromptsRegistry.prompt_call("analyze_code", { code: "puts 'hello world'" })
+      assert_instance_of PromptResponse, response
+      assert response.messages.size.positive?
+      assert response.messages.first[:role].present?
+      assert response.messages.first[:content].present?
+      assert_equal "user", response.messages.first[:role]
+    end
   end
 end

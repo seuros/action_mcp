@@ -7,12 +7,12 @@ module ActionMCP
       end
 
       def send_prompts_get(request_id, prompt_name, params)
-        send_jsonrpc_response(request_id, result: PromptsRegistry.prompt_call(prompt_name.to_s, params))
-      rescue RegistryBase::NotFound
-        send_jsonrpc_response(request_id, error: JsonRpc::JsonRpcError.new(
-          :method_not_found,
-          message: "Prompt not found: #{prompt_name}"
-        ).as_json)
+        result = PromptsRegistry.prompt_call(prompt_name.to_s, params)
+        if result.is_error
+          send_jsonrpc_response(request_id, error: result)
+        else
+          send_jsonrpc_response(request_id, result:)
+        end
       end
     end
   end

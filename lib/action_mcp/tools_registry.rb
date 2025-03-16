@@ -20,9 +20,11 @@ module ActionMCP
         tool = tool_class.new(arguments)
 
         tool.call.to_h
+      rescue RegistryBase::NotFound
+        error_response(:invalid_params, message: "Tool not found: #{tool_name}")
       rescue StandardError => e
         # FIXME, we should maybe not return the error message to the user
-        error_response([ "Tool execution failed: #{e.message}" ])
+        error_response(:invalid_params, message: "Tool execution failed: #{e.message}")
       end
 
       def item_klass
@@ -31,11 +33,9 @@ module ActionMCP
 
       private
 
-      def error_response(messages)
-        {
-          content: messages.map { |msg| Content::Text.new(msg) },
-          isError: true
-        }
+      def error_response(symbol, message: nil, data: nil)
+        response = ToolResponse.new
+        response.mark_as_error!(symbol, message: message, data: data)
       end
     end
   end

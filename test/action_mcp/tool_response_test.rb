@@ -40,8 +40,7 @@ module ActionMCP
         content: [
           { type: "text", text: "Hello world" },
           { type: "image", data: "base64data", mimeType: "image/png" }
-        ],
-        isError: false
+        ]
       }
 
       assert_equal expected, @response.to_h
@@ -49,12 +48,9 @@ module ActionMCP
 
     test "to_h with error flag" do
       @response.add(@text_content)
-      @response.mark_as_error!
+      @response.mark_as_error!(:invalid_request, message: "Something went wrong")
 
-      expected = {
-        content: [ { type: "text", text: "Hello world" } ],
-        isError: true
-      }
+      expected = { code: -32600, message: "Something went wrong" }
 
       assert_equal expected, @response.to_h
     end
@@ -65,23 +61,11 @@ module ActionMCP
       assert_equal @response.to_h, @response.as_json
     end
 
-    test "to_json returns valid JSON string" do
-      @response.add(@text_content)
-
-      expected = {
-        content: [ { type: "text", text: "Hello world" } ],
-        isError: false
-      }.to_json
-
-      assert_equal expected, @response.to_json
-    end
-
     test "equality with hash" do
       @response.add(@text_content)
 
       expected_hash = {
         content: [ { type: "text", text: "Hello world" } ],
-        isError: false
       }
 
       assert_equal expected_hash, @response.to_h

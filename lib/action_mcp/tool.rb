@@ -134,13 +134,11 @@ module ActionMCP
           perform # Invoke the subclass-specific logic if valid
         rescue => e
           # Handle exceptions during execution
-          @response.mark_as_error!
-          render text: "Error executing tool: #{e.message}"
+          @response.mark_as_error!(:internal_error, message: e.message)
         end
       else
         # Handle validation failure
-        @response.mark_as_error!
-        render text: "Invalid input: #{errors.full_messages.join(', ')}"
+        @response.mark_as_error!(:invalid_request, message: "Invalid input", data: errors.full_messages)
       end
 
       @response # Return the response with collected content

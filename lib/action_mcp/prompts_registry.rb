@@ -17,20 +17,7 @@ module ActionMCP
       def prompt_call(prompt_name, arguments)
         prompt = find(prompt_name)
         prompt = prompt.new(arguments)
-        prompt.valid?
-        if prompt.valid?
-          {
-            messages: [ {
-              role: "user",
-              content: prompt.call
-            } ]
-          }
-        else
-          {
-            content: prompt.errors.full_messages.map { |msg| Content::Text.new(msg) },
-            isError: true
-          }
-        end
+        prompt.call
       end
 
       def item_klass

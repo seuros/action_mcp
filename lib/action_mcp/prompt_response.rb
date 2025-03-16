@@ -26,7 +26,7 @@ module ActionMCP
       self
     end
 
-    def mark_as_error!(symbol, message: nil, data: nil)
+    def mark_as_error!(symbol = :invalid_request, message: nil, data: nil)
       @is_error = true
       @symbol = symbol
       @error_message = message
