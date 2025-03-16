@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.11.0...action_mcp/v0.12.0) (2025-03-16)
+
+
+### Features
+
+* add is_error attribute to PromptResponse class; update JSON-RPC handler to improve error response handling ([1871060](https://github.com/seuros/action_mcp/commit/18710605d7a7723704c13931e2054c54984f3114))
+
 ## [0.11.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.10.0...action_mcp/v0.11.0) (2025-03-16)
 
 
