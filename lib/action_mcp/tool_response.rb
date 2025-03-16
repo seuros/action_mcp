@@ -4,14 +4,12 @@ module ActionMCP
   # Manages the collection of content objects for tool results
   class ToolResponse
     include Enumerable
-
     attr_reader :contents, :is_error
-
     delegate :empty?, :size, :each, :find, :map, to: :contents
 
-    def initialize(is_error: false)
+    def initialize
       @contents = []
-      @is_error = is_error
+      @is_error = false
     end
 
     # Add content to the response
@@ -27,31 +25,30 @@ module ActionMCP
     end
 
     # Convert to hash format expected by MCP protocol
-    def as_json(options = nil)
+    def to_h(options = {})
       {
-        content: @contents.map { |c| c.as_json(options) },
+        content: @contents.map { |c| c.to_h },
         isError: @is_error
-      }.compact
+      }
     end
 
-    # Alias to_h to as_json for consistency
-    alias_method :to_h, :as_json
+    # Alias as_json to to_h for consistency
+    alias_method :as_json, :to_h
 
     # Handle to_json directly
     def to_json(options = nil)
-      as_json(options).to_json
+      to_h.to_json(options)
     end
 
-    # Compare with hash for easier testing
-    # This allows assertions like: assert_equal({content: [...], isError: false}, tool_response)
+    # Compare with hash for easier testing.
     def ==(other)
       case other
       when Hash
-        # Compare our hash representation with the other hash
-        # Use deep symbolization to handle both string and symbol keys
-        to_h.deep_symbolize_keys == other.deep_symbolize_keys
+        # Convert both to normalized format for comparison
+        hash_self = to_h.deep_transform_keys { |key| key.to_s.underscore }
+        hash_other = other.deep_transform_keys { |key| key.to_s.underscore }
+        hash_self == hash_other
       when ToolResponse
-        # Direct comparison with another ToolResponse
         contents == other.contents && is_error == other.is_error
       else
         super
