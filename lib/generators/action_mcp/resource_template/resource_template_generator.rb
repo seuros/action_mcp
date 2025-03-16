@@ -5,7 +5,7 @@ module ActionMcp
     class ResourceTemplateGenerator < Rails::Generators::NamedBase
       namespace "action_mcp:resource_template"
       source_root File.expand_path("templates", __dir__)
-      desc "Creates a ResourceTemplate (in app/mcp/resource_templates) that inherits from MCPResourceTemplate"
+      desc "Creates a ResourceTemplate (in app/mcp/resource_templates) that inherits from ApplicationMCPResTemplate"
 
       argument :name, type: :string, required: true, banner: "ResourceTemplateName"
 

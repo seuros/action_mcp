@@ -55,7 +55,7 @@ This document provides guidance on how to design and implement effective tools f
 A tool that allows the LLM to check the current stock level of a product.
 
 ```ruby
-class InventoryCheckTool < ActionMCP::Tool
+class InventoryCheckTool < ApplicationMCPTool
   description "Check the current stock level of a product"
 
   property :product_id, type: "string", description: "The ID of the product", required: true
@@ -82,7 +82,7 @@ end
 A tool that allows the LLM to create a new order for a customer.
 
 ```ruby
-class CreateOrderTool < ActionMCP::Tool
+class CreateOrderTool < ApplicationMCPTool
   description "Create a new order for a customer"
 
   property :customer_id, type: "string", description: "The ID of the customer", required: true

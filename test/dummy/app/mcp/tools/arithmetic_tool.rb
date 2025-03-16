@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ArithmeticTool < ApplicationTool
+class ArithmeticTool < ApplicationMCPTool
   abstract! # Mark this as abstract so it is not directly registered as a concrete tool.
 
   description "Abstract arithmetic tool"

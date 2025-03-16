@@ -1,4 +1,4 @@
-class WeatherForecastTool < ActionMCP::Tool
+class WeatherForecastTool < ApplicationMCPTool
   description "Get detailed weather forecast for a location with progressive updates"
 
   property :location, type: "string", description: "City name or postal code", required: true

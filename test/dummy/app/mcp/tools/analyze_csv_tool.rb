@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class AnalyzeCsvTool < ApplicationTool
+class AnalyzeCsvTool < ApplicationMCPTool
   description "Analyze a CSV file"
 
   property :filepath, type: "string", description: "Path to CSV file"

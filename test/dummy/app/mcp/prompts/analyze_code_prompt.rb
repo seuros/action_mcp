@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class AnalyzeCodePrompt < ApplicationPrompt
+class AnalyzeCodePrompt < ApplicationMCPPrompt
   # Provide a user-facing description for your tool.
   description "Analyze code for potential improvements"
 

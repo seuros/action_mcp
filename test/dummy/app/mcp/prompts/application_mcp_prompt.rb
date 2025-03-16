@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class ApplicationTool < ActionMCP::Tool
+class ApplicationMCPPrompt < ActionMCP::Prompt
   abstract!
 end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ExecuteCommandTool < ApplicationTool
+class ExecuteCommandTool < ApplicationMCPTool
   description "Run a shell command"
 
   property :command, type: "string", description: "The command to run"

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ChecksumCheckerTool < ApplicationTool
+class ChecksumCheckerTool < ApplicationMCPTool
   description "Check checksum256 of a file"
 
   collection :files, description: "List of Files", type: "string"

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # A sample prompt class to demonstrate usage and testing
-class SummarizeTextPrompt < ApplicationPrompt
+class SummarizeTextPrompt < ApplicationMCPPrompt
   prompt_name "summarize_text"
   description "Summarize a piece of text using a chosen method"
 

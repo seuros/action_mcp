@@ -105,7 +105,8 @@ bin/rails generate action_mcp:prompt AnalyzeCode
 This command will create a file at `app/mcp/prompts/analyze_code_prompt.rb` with content similar to:
 
 ```ruby
-class AnalyzeCodePrompt < ApplicationPrompt
+
+class AnalyzeCodePrompt < ApplicationMCPPrompt
   # Override the prompt_name (otherwise we'd get "analyze_code")
   prompt_name "analyze-code"
 
@@ -118,7 +119,7 @@ class AnalyzeCodePrompt < ApplicationPrompt
 
   # Add validations
   validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
-  
+
   def call
     # Implement your prompt logic here
     render(text: "Analyzing #{language} code: #{code}")
@@ -137,7 +138,7 @@ bin/rails generate action_mcp:tool CalculateSum
 This command will create a file at `app/mcp/tools/calculate_sum_tool.rb` with content similar to:
 
 ```ruby
-class CalculateSumTool < ApplicationTool
+class CalculateSumTool < ApplicationMCPTool
   tool_name "calculate_sum"
   description "Calculate the sum of two numbers"
 

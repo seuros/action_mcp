@@ -3,6 +3,6 @@
 require "test_helper"
 class MCPResourceTemplateTest < ActiveSupport::TestCase
   test "should be abstract" do
-    assert MCPResourceTemplate.abstract?
+    assert ApplicationMCPResTemplate.abstract?
   end
 end

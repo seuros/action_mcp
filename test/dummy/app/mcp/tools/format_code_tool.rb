@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class FormatCodeTool < ApplicationTool
+class FormatCodeTool < ApplicationMCPTool
   # Force a specific name (else would default to "format-code")
   tool_name "format_source"
   description "Format source code according to a specific style"

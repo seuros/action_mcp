@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class GitHubCreateIssueTool < ApplicationTool
+class GitHubCreateIssueTool < ApplicationMCPTool
   # Force a specific name (else would default to "git_hub_create_issue")
   tool_name "create_github_issue"
   description "Create a GitHub issue"

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ProductsTemplate < MCPResourceTemplate
+class ProductsTemplate < ApplicationMCPResTemplate
   description "Access product information"
   uri_template "ecommerce://products/{product_id}"
   mime_type "application/json"

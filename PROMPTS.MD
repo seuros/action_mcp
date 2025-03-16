@@ -54,7 +54,7 @@ This document provides guidance on how to design and implement effective prompts
 This prompt generates product descriptions based on a product name and keywords.
 
 ```ruby
-class ProductDescriptionPrompt < ActionMCP::Prompt
+class ProductDescriptionPrompt < ApplicationMCPPrompt
   description "Generate a product description"
 
   argument :product_name, description: "Name of the product", required: true
@@ -71,7 +71,7 @@ end
 This prompt helps a customer support chatbot answer questions about order status.
 
 ```ruby
-class OrderStatusPrompt < ActionMCP::Prompt
+class OrderStatusPrompt < ApplicationMCPPrompt
   description "Answer questions about order status"
 
   argument :order_id, description: "The ID of the order", required: true
