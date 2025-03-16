@@ -120,7 +120,7 @@ class AnalyzeCodePrompt < ApplicationMCPPrompt
   # Add validations
   validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
 
-  def call
+  def perform
     # Implement your prompt logic here
     render(text: "Analyzing #{language} code: #{code}")
   end
@@ -145,7 +145,7 @@ class CalculateSumTool < ApplicationMCPTool
   property :a, type: "number", description: "First number", required: true
   property :b, type: "number", description: "Second number", required: true
   
-  def call
+  def perform
     render(text: a + b)
   end
 end
@@ -176,13 +176,8 @@ analyze_prompt = AnalyzeCodePrompt.new(language: "Ruby", code: "def hello; puts 
 # Optionally update attributes later:
 analyze_prompt.code = "def goodbye; puts 'Goodbye!'; end"
 
-# Validate the prompt before calling it
-if analyze_prompt.valid?
-  result = analyze_prompt.call # => #<ActionMCP::Content::Text:0x00000001239398c8 @text="The code you provided is written in Ruby and looks great!", @type="text">
-  puts result.to_h  # => {type: "text", text: "The code you provided is written in Ruby and looks great!"}
-else
-  puts analyze_prompt.errors.full_messages
-end
+result = analyze_prompt.call #=> #<ActionMCP::PromptResponse messages: [{role: "user", content: {type: "text", text: "The code you provided is written in Ruby and looks great!"}}]>
+puts result.to_h #=> {messages: [{role: "user", content: {type: "text", text: "The code you provided is written in Ruby and looks great!"}}]}
 ```
 
 ### Example for a Tool
@@ -195,12 +190,8 @@ sum_tool.a = 15
 sum_tool.b = 20
 
 # Validate the tool before calling it
-if sum_tool.valid?
-  result = sum_tool.call # => #<ActionMCP::Content::Text:0x0000000124cfaba0 @text="35.0", @type="text">
-  puts result.to_h  # => {type: "text", text: "35.0"}
-else
-  puts sum_tool.errors.full_messages
-end
+result = sum_tool.call # => #<ActionMCP::ToolResponse content: [#<ActionMCP::Content::Text:0x000000012bb50f78 @type="text", @text="35.0">], isError: false>
+puts result.to_h  # => {content: [{type: "text", text: "35.0"}]}
 ```
 
 These examples show that both prompts and tools follow a consistent pattern for initialization, validation, and execution, making it easy to integrate them into your application logic.
@@ -251,7 +242,7 @@ class ToolTest < ActiveSupport::TestCase
 
   test "AnalyzeCodePrompt returns the correct analysis" do
     assert_prompt_findable("analyze_code")
-    result = execute_tool("analyze_code", language: "Ruby", code: "def hello; puts 'Hello, world!'; end")
+    result = execute_prompt("analyze_code", language: "Ruby", code: "def hello; puts 'Hello, world!'; end")
     assert_equal "Analyzing Ruby code: def hello; puts 'Hello, world!'; end", assert_prompt_output(result)
   end
 end
@@ -263,8 +254,8 @@ The `TestHelper` module provides the following methods:
 *   `assert_prompt_findable(prompt_name)`: Asserts that a prompt is findable in the `PromptsRegistry`.
 *   `execute_tool(tool_name, args = {})`: Executes a tool with the given name and arguments.
 *   `execute_prompt(prompt_name, args = {})`: Executes a prompt with the given name and arguments.
-*   `assert_tool_output(result, expected_output)`: Asserts that the output of a tool is equal to the expected output.
-*   `assert_prompt_output(result)`: Asserts that the output of a prompt is equal to the expected output.
+*   `assert_tool_output(expected_output, result)`: Asserts that the output of a tool is equal to the expected output.
+*   `assert_prompt_output(expected_output, result)`: Asserts that the output of a prompt is equal to the expected output.
 
 To use the `TestHelper`, you need to require it in your `test_helper.rb` file:
 

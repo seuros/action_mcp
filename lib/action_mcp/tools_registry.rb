@@ -19,7 +19,7 @@ module ActionMCP
         tool_class = find(tool_name)
         tool = tool_class.new(arguments)
 
-        tool.call.to_h
+        tool.call
       rescue RegistryBase::NotFound
         error_response(:invalid_params, message: "Tool not found: #{tool_name}")
       rescue StandardError => e
