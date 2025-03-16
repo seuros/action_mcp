@@ -1,11 +1,44 @@
+# == Schema Information
+#
+# Table name: action_mcp_sessions
+#
+#  id                                                  :string           not null, primary key
+#  client_capabilities(The capabilities of the client) :jsonb
+#  client_info(The information about the client)       :jsonb
+#  ended_at(The time the session ended)                :datetime
+#  initialized                                         :boolean          default(FALSE), not null
+#  messages_count                                      :integer          default(0), not null
+#  protocol_version                                    :string
+#  role(The role of the session)                       :string           default("server"), not null
+#  server_capabilities(The capabilities of the server) :jsonb
+#  server_info(The information about the server)       :jsonb
+#  status                                              :string           default("pre_initialize"), not null
+#  created_at                                          :datetime         not null
+#  updated_at                                          :datetime         not null
+#
 module ActionMCP
+  ##
+  # Represents an MCP session, which is a connection between a client and a server.
+  # Its role is to manage the communication channel and store information about the session,
+  # such as client and server capabilities, protocol version, and session status.
+  # It also manages the association with messages and subscriptions related to the session.
   class Session < ApplicationRecord
     attribute :id, :string, default: -> { SecureRandom.hex(6) }
     has_many :messages,
              class_name: "ActionMCP::Session::Message",
              foreign_key: "session_id",
-             dependent: :destroy,
+             dependent: :delete_all,
              inverse_of: :session
+    has_many :subscriptions,
+              class_name: "ActionMCP::Session::Subscription",
+              foreign_key: "session_id",
+              dependent: :delete_all,
+              inverse_of: :session
+    has_many :resources,
+              class_name: "ActionMCP::Session::Resource",
+              foreign_key: "session_id",
+              dependent: :delete_all,
+              inverse_of: :session
 
     scope :pre_initialize, -> { where(status: "pre_initialize") }
     scope :closed, -> { where(status: "closed") }
@@ -20,6 +53,7 @@ module ActionMCP
       dummy_callback = ->(*) { } # this callback seem broken
       adapter.unsubscribe(session_key, dummy_callback)
       update!(status: "closed", ended_at: Time.zone.now)
+      subscriptions.delete_all # delete all subscriptions
     end
 
     def write(data)

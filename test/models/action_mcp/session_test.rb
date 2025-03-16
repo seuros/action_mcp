@@ -1,3 +1,21 @@
+# == Schema Information
+#
+# Table name: action_mcp_sessions
+#
+#  id                                                  :string           not null, primary key
+#  client_capabilities(The capabilities of the client) :jsonb
+#  client_info(The information about the client)       :jsonb
+#  ended_at(The time the session ended)                :datetime
+#  initialized                                         :boolean          default(FALSE), not null
+#  messages_count                                      :integer          default(0), not null
+#  protocol_version                                    :string
+#  role(The role of the session)                       :string           default("server"), not null
+#  server_capabilities(The capabilities of the server) :jsonb
+#  server_info(The information about the server)       :jsonb
+#  status                                              :string           default("pre_initialize"), not null
+#  created_at                                          :datetime         not null
+#  updated_at                                          :datetime         not null
+#
 require "test_helper"
 
 module ActionMCP

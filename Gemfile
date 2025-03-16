@@ -21,3 +21,4 @@ gem "solid_cable"
 
 gem "pg"
 gem "redis"
+gem "annotaterb"
