@@ -11,6 +11,7 @@ module ActionMCP
 
     def initialize
       @messages = []
+      @is_error = false
     end
 
     # Add a message to the response
@@ -25,11 +26,23 @@ module ActionMCP
       self
     end
 
+    def mark_as_error!(symbol, message: nil, data: nil)
+      @is_error = true
+      @symbol = symbol
+      @error_message = message
+      @error_data = data
+      self
+    end
+
     # Convert to hash format expected by MCP protocol
     def to_h
-      {
-        messages: @messages
-      }
+      if @is_error
+        JsonRpc::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
+      else
+        {
+          messages: @messages
+        }
+      end
     end
 
     # Alias as_json to to_h for consistency

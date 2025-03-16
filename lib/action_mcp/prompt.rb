@@ -57,7 +57,7 @@ module ActionMCP
       validates arg_name, presence: true if required
 
       if enum.present?
-        validates arg_name, inclusion: { in: enum }
+        validates arg_name, inclusion: { in: enum }, allow_blank: !required
       end
     end
 
@@ -109,13 +109,13 @@ module ActionMCP
       if valid?
         begin
           perform # Invoke the subclass-specific logic if valid
-        rescue => e
+        rescue
           # Handle exceptions during execution
-          render text: "Error executing prompt: #{e.message}"
+          @response.mark_as_error!(:internal_error, message: "Unhandled Error executing prompt")
         end
       else
         # Handle validation failure
-        render text: "Invalid input: #{errors.full_messages.join(', ')}"
+        @response.mark_as_error!(:invalid_params, message: "Invalid input", data: errors.full_messages)
       end
 
       @response # Return the response with collected messages

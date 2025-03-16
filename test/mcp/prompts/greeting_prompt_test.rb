@@ -33,7 +33,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
 
     # Make sure calling an invalid prompt works as expected
     response = prompt.call
-    assert_match /can't be blank/, response.messages.first[:content][:text]
+    assert_match /can't be blank/, response.to_h[:data].first
   end
 
   test "validates enum parameters" do
@@ -46,7 +46,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
 
     # Make sure calling an invalid prompt works as expected
     response = prompt.call
-    assert_match /not included in the list/, response.messages.first[:content][:text]
+    assert_match /not included in the list/, response.to_h[:data].first
   end
 
   test "uses default values when parameters are not provided" do

@@ -17,12 +17,12 @@ class SummarizeTextPrompt < ApplicationMCPPrompt
     # For demonstration, we'll just stub out a short or long summary.
 
     case style
-    when "concise"
-      # Return a short summary for demonstration
-      render text: "[CONCISE] #{text.truncate(20)}"
-    else
+    when "detailed"
       # Return a slightly more descriptive summary
       render text: "[DETAILED] Summarizing the following text in detail: #{text}"
+    else
+      # Return a short summary for demonstration
+      render text: "[CONCISE] #{text.truncate(20)}"
     end
   end
 end
