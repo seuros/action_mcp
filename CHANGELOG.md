@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.10.0...action_mcp/v0.11.0) (2025-03-16)
+
+
+### Features
+
+* improve error handling and response structure in tools and prompts; add tests for tool and prompt calls ([b6e23e9](https://github.com/seuros/action_mcp/commit/b6e23e99cc89f4560698a54a2e97693e650e3047))
+
 ## [0.10.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.9.0...action_mcp/v0.10.0) (2025-03-16)
 
 
