@@ -102,6 +102,8 @@ module ActionMCP
     #     }
     #   }
     def process_completion_complete(id, params)
+      # TODO: Not Implemented, but to remove the error message in the inspector
+      transport.send_jsonrpc_response(id, result: { completion: { values: [], total: 0, hasMore: false } })
       case params["ref"]["type"]
       when "ref/prompt"
         # TODO: Implement completion

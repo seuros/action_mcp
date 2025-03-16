@@ -3,8 +3,7 @@
 module ActionMCP
   class PromptResponse
     include Enumerable
-
-    attr_reader :messages
+    attr_reader :messages, :is_error
 
     # Delegate methods to the underlying messages array
     delegate :empty?, :size, :each, :find, :map, to: :messages
