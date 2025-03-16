@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.12.0...action_mcp/v0.13.0) (2025-03-16)
+
+
+### Features
+
+* add notifications module for client resource updates and logging; refactor transport handler to include notifications ([dd6a8e3](https://github.com/seuros/action_mcp/commit/dd6a8e363ccf97705d42a005e84ab3aadae8aec4))
+
 ## [0.12.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.11.0...action_mcp/v0.12.0) (2025-03-16)
 
 
