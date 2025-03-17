@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module Transport
     module Capabilities
@@ -9,7 +11,7 @@ module ActionMCP
         session.store_client_capabilities(@client_capabilities)
         session.set_protocol_version(@protocol_version)
         session.save
-        # TODO , if the server don't support the protocol version, send a response with error
+        # TODO: , if the server don't support the protocol version, send a response with error
         send_jsonrpc_response(request_id, result: session.server_capabilities_payload)
       end
     end

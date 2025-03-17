@@ -25,10 +25,10 @@ class OrderTemplateTest < ActiveSupport::TestCase
   end
 
   test "handles missing parameters in orders uri" do
-      template = OrdersTemplate.new()
-      assert_not template.valid?
+    template = OrdersTemplate.new
+    assert_not template.valid?
 
-      template = OrdersTemplate.process("ecommerce://orders/")
-      assert_not template.valid?
-    end
+    template = OrdersTemplate.process("ecommerce://orders/")
+    assert_not template.valid?
+  end
 end

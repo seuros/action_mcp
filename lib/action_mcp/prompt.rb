@@ -56,9 +56,9 @@ module ActionMCP
       attribute arg_name, :string, default: default
       validates arg_name, presence: true if required
 
-      if enum.present?
-        validates arg_name, inclusion: { in: enum }, allow_blank: !required
-      end
+      return unless enum.present?
+
+      validates arg_name, inclusion: { in: enum }, allow_blank: !required
     end
 
     # Returns the list of argument definitions.
@@ -109,7 +109,7 @@ module ActionMCP
       if valid?
         begin
           perform # Invoke the subclass-specific logic if valid
-        rescue
+        rescue StandardError
           # Handle exceptions during execution
           @response.mark_as_error!(:internal_error, message: "Unhandled Error executing prompt")
         end
@@ -132,7 +132,9 @@ module ActionMCP
 
       errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
 
-      "#<#{self.class.name} #{attributes_hash.map { |k, v| "#{k}: #{v.inspect}" }.join(', ')}, #{response_info}#{errors_info}>"
+      "#<#{self.class.name} #{attributes_hash.map do |k, v|
+        "#{k}: #{v.inspect}"
+      end.join(', ')}, #{response_info}#{errors_info}>"
     end
 
     # Override render to collect messages

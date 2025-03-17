@@ -45,17 +45,17 @@ module ActionMCP
 
       # Mark the client as ready and send initial capabilities if not already sent
       def mark_ready_and_send_capabilities
-        unless @received_server_message
-          @received_server_message = true
-          log_info("Received first server message")
+        return if @received_server_message
 
-          # Send initial capabilities if not already sent
-          unless @capabilities_sent
-            log_info("Server is ready, sending initial capabilities...")
-            send_initial_capabilities
-            @capabilities_sent = true
-          end
-        end
+        @received_server_message = true
+        log_info("Received first server message")
+
+        # Send initial capabilities if not already sent
+        return if @capabilities_sent
+
+        log_info("Server is ready, sending initial capabilities...")
+        send_initial_capabilities
+        @capabilities_sent = true
       end
 
       private
@@ -78,9 +78,7 @@ module ActionMCP
             log_info(line)
 
             # Check stderr for server messages
-            if line.include?("MCP Server") || line.include?("running on stdio")
-              mark_ready_and_send_capabilities
-            end
+            mark_ready_and_send_capabilities if line.include?("MCP Server") || line.include?("running on stdio")
           end
         end
 

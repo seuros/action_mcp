@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 module ActionMCP
   class MessagesController < ApplicationController
     # @route POST / (sse_in)
     def create
       begin
         handle_post_message(clean_params, response)
-      rescue => e
+      rescue StandardError
         head :internal_server_error
       end
       head response.status
@@ -21,9 +23,7 @@ module ActionMCP
     end
 
     def handle_post_message(params, response)
-      if params[:method] == "initialize"
-        mcp_session.initialize!
-      end
+      mcp_session.initialize! if params[:method] == "initialize"
       json_rpc_handler.call(params)
 
       response.status = :accepted

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_sessions
@@ -28,8 +30,7 @@ module ActionMCP
                      capabilities: { "tools" => { "listChanged" => false },
                                      "prompts" => { "listChanged" => false },
                                      "resources" => {},
-                                     "logging" => {}
-                     } },
+                                     "logging" => {} } },
                    session.server_capabilities_payload)
     end
   end

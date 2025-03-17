@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   class SSEController < ApplicationController
     HEARTBEAT_INTERVAL = 30 # TODO: The frequency of pings SHOULD be configurable
@@ -26,14 +28,17 @@ module ActionMCP
           sse.write(message)
           message_received = true
         end
-        sleep 1
-        # Heartbeat loop
-        unless message_received
-          Rails.logger.warn "No message received within 1 second, closing connection for session: #{session_id}"
-          error = JsonRpc::Response.new(id: SecureRandom.uuid_v7, error: JsonRpc::JsonRpcError.new(:server_error, message: "No message received within 1 second").to_h).to_h
-          sse.write(error)
-          return
-        end
+          sleep 1
+          # Heartbeat loop
+          unless message_received
+            Rails.logger.warn "No message received within 1 second, closing connection for session: #{session_id}"
+            error = JsonRpc::Response.new(id: SecureRandom.uuid_v7,
+                                          error: JsonRpc::JsonRpcError.new(
+                                            :server_error, message: "No message received within 1 second"
+                                          ).to_h).to_h
+            sse.write(error)
+            return
+          end
 
           until response.stream.closed?
             sleep HEARTBEAT_INTERVAL
@@ -45,7 +50,7 @@ module ActionMCP
         end
       rescue ActionController::Live::ClientDisconnected, IOError => e
         Rails.logger.debug "SSE: Expected disconnection: #{e.message}"
-      rescue => e
+      rescue StandardError => e
         Rails.logger.error "SSE: Unexpected error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       ensure
         response.stream.close
@@ -82,6 +87,7 @@ module ActionMCP
 
   class SSEListener
     attr_reader :session_key, :adapter
+
     delegate :session_key, :adapter, to: :@session
 
     # @param session [ActionMCP::Session]
@@ -94,19 +100,19 @@ module ActionMCP
     def start(&callback)
       Rails.logger.debug "Starting listener for channel: #{session_key}"
 
-      success_callback = -> {
+      success_callback = lambda {
         puts "Successfully subscribed to channel: #{session_key}"
         @subscription_active = true
       }
 
       # Set up message callback
-      message_callback = ->(raw_message) {
+      message_callback = lambda { |raw_message|
         begin
           # Try to parse the message if it's JSON
           message = MultiJson.load(raw_message)
           # Send the message to the callback
           callback.call(message) if callback && !@stopped
-        rescue => e
+        rescue StandardError
           # Still try to send the raw message as a fallback
           callback.call(raw_message) if callback && !@stopped
         end

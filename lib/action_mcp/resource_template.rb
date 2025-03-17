@@ -12,7 +12,7 @@ module ActionMCP
     @registered_templates = []
 
     class << self
-      attr_reader :registered_templates
+      attr_reader :registered_templates, :description, :uri_template, :mime_type, :template_name, :parameters
 
       def abstract?
         @abstract ||= false
@@ -28,8 +28,6 @@ module ActionMCP
         # Create a copy of validation requirements for subclasses
         subclass.instance_variable_set(:@required_parameters, [])
       end
-
-      attr_reader :description, :uri_template, :mime_type, :template_name, :parameters
 
       # Track required parameters for validation
       def required_parameters
@@ -48,7 +46,7 @@ module ActionMCP
       end
 
       # Alias parameter to attribute for clarity
-      alias_method :attribute, :parameter
+      alias attribute parameter
 
       def parameters
         @parameters || {}
@@ -87,6 +85,7 @@ module ActionMCP
           mimeType: @mime_type
         }.compact
       end
+
       def capability_name
         @capability_name ||= name.demodulize.underscore.sub(/_template$/, "")
       end
@@ -134,7 +133,7 @@ module ActionMCP
 
         # Add any remaining text after the last parameter
         if current_pos < @uri_template.length
-          suffix = Regexp.escape(@uri_template[current_pos..-1])
+          suffix = Regexp.escape(@uri_template[current_pos..])
           regex_parts << suffix
         end
 
@@ -159,9 +158,9 @@ module ActionMCP
       def parse_uri_template(template)
         # Parse the URI template to get schema and pattern
         # Format: schema://path/{param1}/{param2}...
-        if template =~ /^([^:]+):\/\/(.+)$/
-          schema = $1
-          pattern = $2
+        if template =~ %r{^([^:]+)://(.+)$}
+          schema = ::Regexp.last_match(1)
+          pattern = ::Regexp.last_match(2)
 
           # Replace parameter placeholders with generic markers to compare structure
           normalized_pattern = pattern.gsub(/\{[^}]+\}/, "{param}")
@@ -180,17 +179,17 @@ module ActionMCP
           next if registered_class == self || registered_class.abstract?
           next unless registered_class.uri_template
           # Ignore conflicts with resource templates that have the same name
-          next if registered_class.name == self.name
+          next if registered_class.name == name
 
           existing_template_data = parse_uri_template(registered_class.uri_template)
 
           # Check if schema and structure are the same
-          if new_template_data[:schema] == existing_template_data[:schema] &&
-            are_potentially_ambiguous?(new_template_data[:pattern], existing_template_data[:pattern])
+          next unless new_template_data[:schema] == existing_template_data[:schema] &&
+                      are_potentially_ambiguous?(new_template_data[:pattern], existing_template_data[:pattern])
 
-            # Use a consistent error message format for all conflicts
-            raise ArgumentError, "URI template conflict detected: '#{new_template}' conflicts with existing template '#{registered_class.uri_template}' registered by #{registered_class.name}"
-          end
+          # Use a consistent error message format for all conflicts
+          raise ArgumentError,
+                "URI template conflict detected: '#{new_template}' conflicts with existing template '#{registered_class.uri_template}' registered by #{registered_class.name}"
         end
       end
 
@@ -216,7 +215,7 @@ module ActionMCP
         # If we have the same number of segments and same number of parameters,
         # but the patterns aren't identical, they could be ambiguous
         # due to parameter position swapping
-        if param_segments1 > 0 && param_segments1 == param_segments2
+        if param_segments1.positive? && param_segments1 == param_segments2
           # Create pattern maps (P for param, S for static)
           pattern_map1 = segments1.map { |s| s.include?("{param}") ? "P" : "S" }
           pattern_map2 = segments2.map { |s| s.include?("{param}") ? "P" : "S" }
@@ -241,11 +240,9 @@ module ActionMCP
     end
 
     # Add custom validation for required parameters
-    validate do |template|
+    validate do |_template|
       self.class.required_parameters.each do |param|
-        if self.send(param).nil? || self.send(param).to_s.empty?
-          errors.add(param, "can't be blank")
-        end
+        errors.add(param, "can't be blank") if send(param).nil? || send(param).to_s.empty?
       end
     end
 

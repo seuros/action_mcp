@@ -108,8 +108,8 @@ module ActionMCP
       @response.add(@image_content)
 
       assert_equal 2, @response.size
-      assert_equal [ @text_content, @image_content ], @response.map { |c| c }
-      assert_equal @text_content, @response.find { |c| c.is_a?(Content::Text) }
+      assert_equal([ @text_content, @image_content ], @response.map { |c| c })
+      assert_equal(@text_content, @response.find { |c| c.is_a?(Content::Text) })
     end
 
     test "eql? matches == behavior" do

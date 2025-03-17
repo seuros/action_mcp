@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails/generators"
 
 module ActionMcp
@@ -14,7 +16,8 @@ module ActionMcp
       end
 
       def create_mcp_resource_template_file
-        template "application_mcp_res_template.rb", File.join("app/mcp/resource_templates", "application_mcp_res_template.rb")
+        template "application_mcp_res_template.rb",
+                 File.join("app/mcp/resource_templates", "application_mcp_res_template.rb")
       end
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class AllToolsAndPromptsTest < ActiveSupport::TestCase
@@ -46,6 +48,9 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
   test "SummarizeTextPrompt is findable" do
     assert_prompt_findable("summarize_text")
     result = execute_prompt("analyze_code", language: "Ruby", code: "def hello; puts 'Hello, world!'; end")
-    assert_prompt_output([ { role: "user", content: { type: "text", text: "The code you provided is written in Ruby and looks great!" } } ], result)
+    assert_prompt_output(
+      [ { role: "user",
+         content: { type: "text", text: "The code you provided is written in Ruby and looks great!" } } ], result
+    )
   end
 end

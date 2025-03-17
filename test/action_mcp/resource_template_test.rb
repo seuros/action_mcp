@@ -19,7 +19,7 @@ module ActionMCP
     # Helper method to create temporary classes that will be garbage collected
     def create_temp_template(options = {})
       Class.new(ResourceTemplate) do
-        def self.name; "Test#{SecureRandom.hex(6)}Template"; end
+        def self.name = "Test#{SecureRandom.hex(6)}Template"
         # Set abstract first if specified
         abstract! if options[:abstract]
 
@@ -27,9 +27,7 @@ module ActionMCP
         description options[:description] || "Test Resource"
 
         # Define name method to avoid anonymous class issues in error messages
-        if options[:name]
-          define_singleton_method(:name) { options[:name] }
-        end
+        define_singleton_method(:name) { options[:name] } if options[:name]
       end
     end
 
@@ -51,7 +49,7 @@ module ActionMCP
         create_temp_template(uri_template: "service://resource/{param}", name: "Template2")
       end
 
-      assert_match /URI template conflict detected/, error.message
+      assert_match(/URI template conflict detected/, error.message)
     end
 
     test "rejects ambiguous URI templates with swapped parameters" do
@@ -63,7 +61,7 @@ module ActionMCP
         create_temp_template(uri_template: "service://{other1}/{other2}", name: "Template2")
       end
 
-      assert_match /URI template conflict detected/, error.message
+      assert_match(/URI template conflict detected/, error.message)
     end
 
     test "allows templates with different parameter counts" do

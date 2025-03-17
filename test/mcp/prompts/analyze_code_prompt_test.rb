@@ -6,15 +6,14 @@ class AnalyzeCodePromptTest < ActiveSupport::TestCase
   test "to_h returns correct hash representation without default values" do
     prompt = AnalyzeCodePrompt
 
-
-        expected_hash = {
-          name: "analyze_code",
-          description: "Analyze code for potential improvements",
-          arguments: [
-            { name: "language", description: "Programming language", required: false },
-            { name: "code", description: "Code to explain", required: true }
-          ]
-        }
+    expected_hash = {
+      name: "analyze_code",
+      description: "Analyze code for potential improvements",
+      arguments: [
+        { name: "language", description: "Programming language", required: false },
+        { name: "code", description: "Code to explain", required: true }
+      ]
+    }
     assert_equal expected_hash, prompt.to_h
   end
 

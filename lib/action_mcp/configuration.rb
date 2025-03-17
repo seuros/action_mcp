@@ -25,7 +25,6 @@ module ActionMCP
     #
     # @return [void]
 
-
     def initialize
       @logging_enabled = true
       @list_changed = false
@@ -54,20 +53,21 @@ module ActionMCP
       capabilities[:resources] = {} if ResourceTemplatesRegistry.non_abstract.any?
       capabilities
     end
+
     private
+
     def has_rails_version
-      begin
-        gem "rails_app_version"
-        require "rails_app_version/railtie"
-        true
-      rescue LoadError
-        false
-      end
+      gem "rails_app_version"
+      require "rails_app_version/railtie"
+      true
+    rescue LoadError
+      false
     end
   end
 
   class << self
     attr_accessor :server
+
     # Returns the configuration instance.
     #
     # @return [Configuration] the configuration instance

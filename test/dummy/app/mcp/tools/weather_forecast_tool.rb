@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class WeatherForecastTool < ApplicationMCPTool
   description "Get detailed weather forecast for a location with progressive updates"
 
@@ -16,9 +18,7 @@ class WeatherForecastTool < ApplicationMCPTool
     render(text: "Today's forecast: #{today_forecast}")
 
     # Weather alerts if any
-    if has_alerts?
-      render(text: "⚠️ WEATHER ALERT: #{weather_alerts}")
-    end
+    render(text: "⚠️ WEATHER ALERT: #{weather_alerts}") if has_alerts?
 
     # Extended forecast for requested days
     days_to_forecast = [ days.to_i, 7 ].min
@@ -34,7 +34,7 @@ class WeatherForecastTool < ApplicationMCPTool
 
     # Final summary
     render(text: "Weather data complete for #{location}. Forecast generated at #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}")
-  rescue => e
+  rescue StandardError => e
     render(error: [ "Weather forecast failed: #{e.message}" ])
   end
 
@@ -42,7 +42,7 @@ class WeatherForecastTool < ApplicationMCPTool
 
   def valid_location?
     # Mock validation - would check against a real database
-    !location.nil? && location.strip.length > 0 && !location.match?(/^\d{1,2}$/)
+    !location.nil? && location.strip.length.positive? && !location.match?(/^\d{1,2}$/)
   end
 
   def current_conditions
@@ -50,7 +50,7 @@ class WeatherForecastTool < ApplicationMCPTool
     temps = rand(18..29)
     conditions = [ "Sunny", "Partly Cloudy", "Cloudy", "Light Rain", "Thunderstorms" ].sample
     humidity = rand(30..90)
-    wind = rand(0..24)  # Changed to km/h for consistency with metric
+    wind = rand(0..24) # Changed to km/h for consistency with metric
 
     "#{temps}°C, #{conditions}, Humidity: #{humidity}%, Wind: #{wind} km/h"
   end
@@ -87,7 +87,8 @@ class WeatherForecastTool < ApplicationMCPTool
 
     high = rand(18..35)
     low = rand(10..24)
-    conditions = [ "Sunny", "Partly Cloudy", "Cloudy", "Light Rain", "Scattered Showers", "Thunderstorms", "Clear" ].sample
+    conditions = [ "Sunny", "Partly Cloudy", "Cloudy", "Light Rain", "Scattered Showers", "Thunderstorms",
+                  "Clear" ].sample
     precipitation = rand(0..100)
 
     "#{day_names[future_day]}: #{conditions}, High #{high}°C, Low #{low}°C, #{precipitation}% chance of precipitation"

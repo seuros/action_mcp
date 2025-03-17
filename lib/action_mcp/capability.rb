@@ -17,11 +17,11 @@ module ActionMCP
     end
 
     def self.abstract_capability
-      @abstract_tool ||= false # Default to false, unique to each class
+      @abstract_capability ||= false # Default to false, unique to each class
     end
 
     def self.abstract_capability=(value)
-      @abstract_tool = value
+      @abstract_capability = value
     end
 
     # Marks this tool as abstract so that it won’t be available for use.
@@ -38,7 +38,6 @@ module ActionMCP
     def self.abstract?
       abstract_capability
     end
-
 
     def self.description(text = nil)
       if text

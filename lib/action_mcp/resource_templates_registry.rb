@@ -73,8 +73,6 @@ module ActionMCP
           end
         elsif matching_templates.size == 1
           matching_templates.first
-        else
-          nil
         end
       end
 
@@ -117,11 +115,11 @@ module ActionMCP
         # Extract parameters
         params = {}
         template_segments.each_with_index do |template_segment, index|
-          if template_segment.start_with?("{") && template_segment.end_with?("}")
-            # Extract parameter name without braces
-            param_name = template_segment[1...-1].to_sym
-            params[param_name] = uri_segments[index]
-          end
+          next unless template_segment.start_with?("{") && template_segment.end_with?("}")
+
+          # Extract parameter name without braces
+          param_name = template_segment[1...-1].to_sym
+          params[param_name] = uri_segments[index]
         end
 
         params
@@ -131,28 +129,24 @@ module ActionMCP
 
       # Parse a concrete URI
       def parse_uri(uri)
-        if uri =~ /^([^:]+):\/\/(.+)$/
-          {
-            schema: $1,
-            path: $2,
-            original: uri
-          }
-        else
-          nil
-        end
+        return unless uri =~ %r{^([^:]+)://(.+)$}
+
+        {
+          schema: ::Regexp.last_match(1),
+          path: ::Regexp.last_match(2),
+          original: uri
+        }
       end
 
       # Parse a URI template
       def parse_uri_template(template)
-        if template =~ /^([^:]+):\/\/(.+)$/
-          {
-            schema: $1,
-            path: $2,
-            original: template
-          }
-        else
-          nil
-        end
+        return unless template =~ %r{^([^:]+)://(.+)$}
+
+        {
+          schema: ::Regexp.last_match(1),
+          path: ::Regexp.last_match(2),
+          original: template
+        }
       end
     end
   end

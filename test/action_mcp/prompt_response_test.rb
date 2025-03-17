@@ -103,7 +103,7 @@ module ActionMCP
       assert_equal 2, @response.size
 
       roles = @response.map { |m| m[:role] }
-      assert_equal [ "user", "assistant" ], roles
+      assert_equal %w[user assistant], roles
 
       user_message = @response.find { |m| m[:role] == "user" }
       assert_equal "Hello", user_message[:content][:text]
@@ -143,7 +143,7 @@ module ActionMCP
     test "inspect returns readable representation" do
       @response.add_message(role: "user", content: { type: "text", text: "Hello" })
 
-      expected = "#<ActionMCP::PromptResponse messages: [{role: \"user\", content: {type: \"text\", text: \"Hello\"}}]>"
+      expected = '#<ActionMCP::PromptResponse messages: [{role: "user", content: {type: "text", text: "Hello"}}]>'
       assert_equal expected, @response.inspect
     end
   end

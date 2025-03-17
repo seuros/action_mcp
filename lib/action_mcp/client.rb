@@ -5,8 +5,8 @@ module ActionMCP
   # @param endpoint [String] The endpoint to connect to (URL or command)
   # @param logger [Logger] The logger to use
   # @return [Client] An SSEClient or StdioClient depending on the endpoint
-  def self.create_client(endpoint, logger: Logger.new(STDOUT))
-    if endpoint =~ /\Ahttps?:\/\//
+  def self.create_client(endpoint, logger: Logger.new($stdout))
+    if endpoint =~ %r{\Ahttps?://}
       logger.info("Creating SSE client for endpoint: #{endpoint}")
       SSEClient.new(endpoint, logger: logger)
     else
@@ -19,7 +19,7 @@ module ActionMCP
   class Client
     attr_reader :logger, :capabilities, :type, :connection_error
 
-    def initialize(logger: Logger.new(STDOUT))
+    def initialize(logger: Logger.new($stdout))
       @logger = logger
       @connected = false
       @initialize_request_id = SecureRandom.uuid_v7
@@ -47,7 +47,7 @@ module ActionMCP
         @connected = true
         logger.info("Connected to MCP server")
         true
-      rescue => e
+      rescue StandardError => e
         @connection_error = e.message
         logger.error("Failed to connect to MCP server: #{e.message}")
         false
@@ -64,7 +64,7 @@ module ActionMCP
         @connected = false
         logger.info("Disconnected from MCP server")
         true
-      rescue => e
+      rescue StandardError => e
         logger.error("Error disconnecting from MCP server: #{e.message}")
         false
       end
@@ -83,7 +83,7 @@ module ActionMCP
         json = prepare_payload(payload)
         send_message(json)
         true
-      rescue => e
+      rescue StandardError => e
         logger.error("Failed to send request: #{e.message}")
         false
       end
@@ -111,9 +111,7 @@ module ActionMCP
 
     # Get the server capabilities
     # @return [Hash, nil] The server capabilities, or nil if not connected
-    def server_capabilities
-      @server_capabilities
-    end
+    attr_reader :server_capabilities
 
     protected
 
@@ -159,7 +157,7 @@ module ActionMCP
     # Initialize an SSE client
     # @param endpoint [String] The SSE endpoint URL
     # @param logger [Logger] The logger to use
-    def initialize(endpoint, logger: Logger.new(STDOUT))
+    def initialize(endpoint, logger: Logger.new($stdout))
       super(logger: logger)
       @endpoint = endpoint
       @transport = Transport::SSEClient.new(endpoint, logger: logger)
@@ -172,18 +170,16 @@ module ActionMCP
     protected
 
     def start_transport
-      begin
-        @transport.start(@initialize_request_id)
-        true
-      rescue Transport::SSEClient::ConnectionError => e
-        @connection_error = e.message
-        @error_callback&.call(e)
-        false
-      rescue => e
-        @connection_error = e.message
-        @error_callback&.call(e)
-        false
-      end
+      @transport.start(@initialize_request_id)
+      true
+    rescue Transport::SSEClient::ConnectionError => e
+      @connection_error = e.message
+      @error_callback&.call(e)
+      false
+    rescue StandardError => e
+      @connection_error = e.message
+      @error_callback&.call(e)
+      false
     end
 
     private
@@ -211,7 +207,7 @@ module ActionMCP
     # Initialize a STDIO client
     # @param command [String] The command to execute
     # @param logger [Logger] The logger to use
-    def initialize(command, logger: Logger.new(STDOUT))
+    def initialize(command, logger: Logger.new($stdout))
       super(logger: logger)
       @command = command
       @transport = Transport::StdioClient.new(command, logger: logger)
@@ -234,9 +230,7 @@ module ActionMCP
     def setup_callbacks
       @transport.on_message do |message|
         # Check if this is a response to our initialize request
-        if message && message.id && message.id == @initialize_request_id
-          @transport.handle_initialize_response(message)
-        end
+        @transport.handle_initialize_response(message) if message&.id && message.id == @initialize_request_id
 
         @message_callback&.call(message)
       end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateActionMCPSessionResources < ActiveRecord::Migration[8.0]
   def change
     create_table :action_mcp_session_resources do |t|
@@ -15,8 +17,8 @@ class CreateActionMCPSessionResources < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    change_column_comment :action_mcp_session_messages, :direction, "The message recipient"
-    change_column_comment :action_mcp_session_messages, :is_ping, "Whether the message is a ping"
+    change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
+    change_column_comment :action_mcp_session_messages, :is_ping, 'Whether the message is a ping'
     rename_column :action_mcp_session_messages, :ping_acknowledged, :request_acknowledged
     add_column :action_mcp_session_messages, :request_cancelled, :boolean, null: false, default: false
   end

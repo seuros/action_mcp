@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_sessions
@@ -30,15 +32,15 @@ module ActionMCP
              dependent: :delete_all,
              inverse_of: :session
     has_many :subscriptions,
-              class_name: "ActionMCP::Session::Subscription",
-              foreign_key: "session_id",
-              dependent: :delete_all,
-              inverse_of: :session
+             class_name: "ActionMCP::Session::Subscription",
+             foreign_key: "session_id",
+             dependent: :delete_all,
+             inverse_of: :session
     has_many :resources,
-              class_name: "ActionMCP::Session::Resource",
-              foreign_key: "session_id",
-              dependent: :delete_all,
-              inverse_of: :session
+             class_name: "ActionMCP::Session::Resource",
+             foreign_key: "session_id",
+             dependent: :delete_all,
+             inverse_of: :session
 
     scope :pre_initialize, -> { where(status: "pre_initialize") }
     scope :closed, -> { where(status: "closed") }
@@ -60,9 +62,7 @@ module ActionMCP
       if data.is_a?(JsonRpc::Request) || data.is_a?(JsonRpc::Response) || data.is_a?(JsonRpc::Notification)
         data = data.to_json
       end
-      if data.is_a?(Hash)
-        data = MultiJson.dump(data)
-      end
+      data = MultiJson.dump(data) if data.is_a?(Hash)
 
       messages.create!(data: data, direction: writer_role)
     end
@@ -101,9 +101,10 @@ module ActionMCP
 
     def initialize!
       # update the session initialized to true if client_capabilities are present
+      return unless client_capabilities.present?
+
       update!(initialized: true,
-              status: "initialized"
-      ) if client_capabilities.present?
+              status: "initialized")
     end
 
     def message_flow
@@ -120,6 +121,14 @@ module ActionMCP
       Session.logger.silence do
         write(JsonRpc::Request.new(id: Time.now.to_i, method: "ping"))
       end
+    end
+
+    def resource_subscribe(uri)
+      subscriptions.find_or_create_by(uri: uri)
+    end
+
+    def resource_unsubscribe(uri)
+      subscriptions.find_by(uri: uri)&.destroy
     end
 
     private

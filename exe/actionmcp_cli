@@ -11,27 +11,31 @@ require 'logger'
 
 # Default options
 options = {
-  logging_level: "INFO",
+  logging_level: 'INFO',
   auto_initialize: true
 }
 
 # Set up logger
-logger = Logger.new(STDOUT)
+logger = Logger.new($stdout)
 logger.formatter = proc do |severity, _, _, msg|
   "#{severity}: #{msg}\n"
 end
 
 # Parse command-line arguments
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: mcp_client ENDPOINT [options]"
-  opts.on("-l", "--log-level LEVEL", "Set log level (DEBUG, INFO, WARN, ERROR)") do |l|
+  opts.banner = 'Usage: mcp_client ENDPOINT [options]'
+  opts.on('-l', '--log-level LEVEL', 'Set log level (DEBUG, INFO, WARN, ERROR)') do |l|
     options[:logging_level] = l.upcase
-    logger.level = Logger.const_get(l.upcase) rescue Logger::INFO
+    logger.level = begin
+      Logger.const_get(l.upcase)
+    rescue StandardError
+      Logger::INFO
+    end
   end
-  opts.on("--no-auto-init", "Don't automatically initialize the connection") do
+  opts.on('--no-auto-init', "Don't automatically initialize the connection") do
     options[:auto_initialize] = false
   end
-  opts.on("-h", "--help", "Show this help message") do
+  opts.on('-h', '--help', 'Show this help message') do
     puts opts
     exit
   end
@@ -44,7 +48,7 @@ endpoint = ARGV.shift
 parser.parse!(ARGV)
 
 if endpoint.nil?
-  puts "Error: You must provide an MCP endpoint."
+  puts 'Error: You must provide an MCP endpoint.'
   puts parser
   exit 1
 end
@@ -60,13 +64,13 @@ def parse_command(input)
   command = parts.shift
 
   case command
-  when "call_tool"
+  when 'call_tool'
     tool_name = parts.shift
     return nil unless tool_name
 
     arguments = {}
     parts.each do |arg|
-      key, value = arg.split(":", 2)
+      key, value = arg.split(':', 2)
       next unless value
 
       # Try to convert the value to appropriate type
@@ -75,11 +79,11 @@ def parse_command(input)
                        value.to_i
       when /^\d+\.\d+$/
                        value.to_f
-      when "true"
+      when 'true'
                        true
-      when "false"
+      when 'false'
                        false
-      when "null"
+      when 'null'
                        nil
       else
                        value
@@ -90,41 +94,39 @@ def parse_command(input)
 
     ActionMCP::JsonRpc::Request.new(
       id: generate_request_id,
-      method: "tools/get",
+      method: 'tools/get',
       params: {
-        "name" => tool_name,
-        "arguments" => arguments
+        'name' => tool_name,
+        'arguments' => arguments
       }
     )
-  when "list_tools"
+  when 'list_tools'
     ActionMCP::JsonRpc::Request.new(
       id: generate_request_id,
-      method: "tools/list"
+      method: 'tools/list'
     )
-  when "list_prompts"
+  when 'list_prompts'
     ActionMCP::JsonRpc::Request.new(
       id: generate_request_id,
-      method: "prompts/list"
+      method: 'prompts/list'
     )
-  else
-    nil
   end
 end
 
 # Help message for shortcuts
 def print_help
-  puts "Available shortcuts:"
-  puts "  list_tools"
-  puts "    - Get a list of available tools"
-  puts "  call_tool TOOL_NAME PARAM1:VALUE1 PARAM2:VALUE2 ..."
-  puts "    - Sends a tools/get request with the specified tool and parameters"
-  puts "  list_prompts"
-  puts "    - Get a list of available prompts"
-  puts "  get_prompt PROMPT_NAME PARAM1:VALUE1 PARAM2:VALUE2 ..."
-  puts "    - Sends a prompts/get request with the specified prompt and arguments"
-  puts "  help - Show this help message"
-  puts "  exit - Quit the client"
-  puts "Otherwise, enter a raw JSON-RPC request to send directly"
+  puts 'Available shortcuts:'
+  puts '  list_tools'
+  puts '    - Get a list of available tools'
+  puts '  call_tool TOOL_NAME PARAM1:VALUE1 PARAM2:VALUE2 ...'
+  puts '    - Sends a tools/get request with the specified tool and parameters'
+  puts '  list_prompts'
+  puts '    - Get a list of available prompts'
+  puts '  get_prompt PROMPT_NAME PARAM1:VALUE1 PARAM2:VALUE2 ...'
+  puts '    - Sends a prompts/get request with the specified prompt and arguments'
+  puts '  help - Show this help message'
+  puts '  exit - Quit the client'
+  puts 'Otherwise, enter a raw JSON-RPC request to send directly'
 end
 
 # Initialize and start the client
@@ -132,52 +134,52 @@ client = ActionMCP.create_client(endpoint, logger: logger)
 
 # Start the transport
 unless client.connect
-  error_msg = client.connection_error || "Unknown connection error"
+  error_msg = client.connection_error || 'Unknown connection error'
   puts "\nERROR: Failed to connect to MCP server at #{endpoint}"
   puts "Reason: #{error_msg}"
   puts "\nPlease check that:"
-  puts "  1. The server is running"
-  puts "  2. The endpoint URL/address is correct"
-  puts "  3. Any required firewall ports are open"
+  puts '  1. The server is running'
+  puts '  2. The endpoint URL/address is correct'
+  puts '  3. Any required firewall ports are open'
 
-  if endpoint =~ /\Ahttps?:\/\//
-    puts "  4. The URL includes the correct protocol, host, and port"
-    puts "     For example: http://localhost:3000/action_mcp"
+  if endpoint =~ %r{\Ahttps?://}
+    puts '  4. The URL includes the correct protocol, host, and port'
+    puts '     For example: http://localhost:3000/action_mcp'
   end
 
   exit 1
 end
 
-Signal.trap("INT") do
+Signal.trap('INT') do
   puts "\nReceived Ctrl+C. Disconnecting..."
   client.disconnect
-  puts "MCP Client stopped."
+  puts 'MCP Client stopped.'
   exit 0
 end
 
 # Main REPL loop
 loop do
-  print "mcp> "
+  print 'mcp> '
   input = gets&.chomp
   break unless input # Handle EOF
   next if input.empty?
 
   case input.downcase
-  when "exit"
+  when 'exit'
     break
-  when "help"
+  when 'help'
     print_help
     next
   else
     begin
       # Check if input is a command shortcut
-      if input.start_with?("call_tool")
+      if input.start_with?('call_tool')
         request = parse_command(input)
         logger.debug("Parsed shortcut to: #{request.to_h}") if request
-      elsif input.start_with?("connect") || input.start_with?("initialize")
+      elsif input.start_with?('connect') || input.start_with?('initialize')
         request = parse_command(input)
         logger.debug("Initializing connection with: #{request.to_h}") if request
-      elsif input.start_with?("list_tools") || input.start_with?("list_prompts")
+      elsif input.start_with?('list_tools') || input.start_with?('list_prompts')
         request = parse_command(input)
         logger.debug("Requesting tool list: #{request.to_h}") if request
       else
@@ -185,11 +187,11 @@ loop do
         begin
           json = MultiJson.load(input)
           # Validate that the parsed JSON has the required fields
-          if json["method"]
+          if json['method']
             request = ActionMCP::JsonRpc::Request.new(
-              id: json["id"] || generate_request_id,
-              method: json["method"],
-              params: json["params"]
+              id: json['id'] || generate_request_id,
+              method: json['method'],
+              params: json['params']
             )
           else
             puts "Invalid JSON-RPC request: missing 'method' field"
@@ -216,6 +218,6 @@ loop do
   end
 end
 
-puts "Disconnecting..."
+puts 'Disconnecting...'
 client.disconnect
-puts "MCP Client stopped."
+puts 'MCP Client stopped.'

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_session_subscriptions
@@ -20,6 +22,8 @@
 require "test_helper"
 
 module ActionMCP
-  class Session::SubscriptionTest < ActiveSupport::TestCase
+  class Session
+    class SubscriptionTest < ActiveSupport::TestCase
+    end
   end
 end

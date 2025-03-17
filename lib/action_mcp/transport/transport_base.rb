@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module Transport
     class TransportBase
       attr_reader :logger, :client_capabilities, :server_capabilities
 
-      def initialize(logger: Logger.new(STDOUT))
+      def initialize(logger: Logger.new($stdout))
         @logger = logger
         @on_message = nil
         @on_error = nil
@@ -43,14 +45,13 @@ module ActionMCP
       end
 
       def handle_initialize_response(response)
-        unless @server_capabilities
+        return if @server_capabilities
 
-          if response.result
-            @server_capabilities = response.result["capabilities"]
-            send_initialized_notification
-          else
-            log_error("Server initialization failed: #{response.error}")
-          end
+        if response.result
+          @server_capabilities = response.result["capabilities"]
+          send_initialized_notification
+        else
+          log_error("Server initialization failed: #{response.error}")
         end
       end
 
@@ -65,24 +66,24 @@ module ActionMCP
           response = nil
 
           if msg_hash.key?("jsonrpc")
-            if msg_hash.key?("id")
-              response = JsonRpc::Response.new(**msg_hash.slice("id", "result", "error").symbolize_keys)
+            response = if msg_hash.key?("id")
+                         JsonRpc::Response.new(**msg_hash.slice("id", "result", "error").symbolize_keys)
             else
-              response = JsonRpc::Notification.new(**msg_hash.slice("method", "params").symbolize_keys)
+                         JsonRpc::Notification.new(**msg_hash.slice("method", "params").symbolize_keys)
             end
           end
           # Check if this is a response to our initialize request
           if response && @initialize_request_id && response.id == @initialize_request_id
             handle_initialize_response(response)
-          else
-            @on_message&.call(response) if response
+          elsif response
+            @on_message&.call(response)
           end
         rescue MultiJson::ParseError => e
           log_error("JSON parse error: #{e} (raw: #{raw})")
-          @on_error&.call(e) if @on_error
+          @on_error&.call(e)
         rescue StandardError => e
           log_error("Error handling message: #{e} (raw: #{raw})")
-          @on_error&.call(e) if @on_error
+          @on_error&.call(e)
         end
       end
 

@@ -3,6 +3,7 @@
 module ActionMCP
   class TransportHandler
     attr_reader :session
+
     delegate :initialize!, :initialized?, to: :session
     delegate :read, :write, to: :session
     include Logging
@@ -13,6 +14,8 @@ module ActionMCP
     include Transport::Prompts
     include Transport::Resources
     include Transport::Notifications
+    include Transport::Sampling
+    include Transport::Roots
 
     # @param [ActionMCP::Session] session
     def initialize(session)

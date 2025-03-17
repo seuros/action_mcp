@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_session_subscriptions
@@ -18,13 +20,15 @@
 #  fk_rails_...  (session_id => action_mcp_sessions.id) ON DELETE => cascade
 #
 module ActionMCP
-  #
-  # Represents a client's subscription to a resource for real-time updates.
-  # Its role is to store the URI of the resource being subscribed to and track the last time a notification was sent for the subscription.
-  # All Subscriptions are deleted when the session is closed.
-  class Session::Subscription < ApplicationRecord
+  class Session
+    #
+    # Represents a client's subscription to a resource for real-time updates.
+    # Its role is to store the URI of the resource being subscribed to and track the last time a notification was sent for the subscription.
+    # All Subscriptions are deleted when the session is closed.
+    class Subscription < ApplicationRecord
       belongs_to :session,
                  class_name: "ActionMCP::Session",
                  inverse_of: :subscriptions
+    end
   end
 end

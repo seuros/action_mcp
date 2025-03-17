@@ -13,6 +13,7 @@ module ActionMCP
       def items
         @items = item_klass.descendants.each_with_object({}) do |klass, hash|
           next if klass.abstract?
+
           hash[klass.capability_name] = klass
         end
       end

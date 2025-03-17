@@ -5,6 +5,7 @@ module ActionMCP
   class ToolResponse
     include Enumerable
     attr_reader :contents, :is_error
+
     delegate :empty?, :size, :each, :find, :map, to: :contents
 
     def initialize
@@ -33,13 +34,13 @@ module ActionMCP
         JsonRpc::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
       else
         {
-          content: @contents.map { |c| c.to_h }
+          content: @contents.map(&:to_h)
         }
       end
     end
 
     # Alias as_json to to_h for consistency
-    alias_method :as_json, :to_h
+    alias as_json to_h
 
     # Handle to_json directly
     def to_json(options = nil)

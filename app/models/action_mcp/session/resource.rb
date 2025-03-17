@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_session_resources
@@ -23,11 +25,13 @@
 #  fk_rails_...  (session_id => action_mcp_sessions.id) ON DELETE => cascade
 #
 module ActionMCP
-  ##
-  # Represents a resource associated with an MCP session.
-  # Its role is to store information about a resource, such as its URI, MIME type, description,
-  # and any associated metadata. It also tracks whether the resource was created by a tool and the last time it was accessed.
-  class Session::Resource < ApplicationRecord
-    belongs_to :session
+  class Session
+    #
+    # Represents a resource associated with an MCP session.
+    # Its role is to store information about a resource, such as its URI, MIME type, description,
+    # and any associated metadata. It also tracks whether the resource was created by a tool and the last time it was accessed.
+    class Resource < ApplicationRecord
+      belongs_to :session
+    end
   end
 end

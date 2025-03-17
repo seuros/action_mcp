@@ -32,22 +32,22 @@ module ActionMCP
 
       def model_hints(hints = nil)
         @default_model_hints = hints if hints
-        @default_model_hints ||= []
+        @model_hints ||= []
       end
 
       def intelligence_priority(priority = nil)
         @default_intelligence_priority = priority if priority
-        @default_intelligence_priority ||= 0.9
+        @intelligence_priority ||= 0.9
       end
 
       def max_tokens(tokens = nil)
         @default_max_tokens = tokens if tokens
-        @default_max_tokens ||= 500
+        @max_tokens ||= 500
       end
 
       def temperature(temp = nil)
         @default_temperature = temp if temp
-        @default_temperature ||= 0.7
+        @temperature ||= 0.7
       end
 
       private
@@ -62,8 +62,8 @@ module ActionMCP
       end
     end
 
-    attr_reader :messages, :system_prompt, :context, :model_hints,
-                :intelligence_priority, :max_tokens, :temperature
+    attr_accessor :system_prompt, :model_hints, :intelligence_priority, :max_tokens, :temperature
+    attr_reader :messages, :context
 
     def initialize
       @messages = self.class.default_messages.dup
@@ -83,37 +83,15 @@ module ActionMCP
       end
     end
 
-    def system_prompt=(value)
-      @system_prompt = value
-    end
-
     def include_context=(value)
       @context = value
-    end
-
-    def model_hints=(value)
-      @model_hints = value
-    end
-
-    def intelligence_priority=(value)
-      @intelligence_priority = value
-    end
-
-    def max_tokens=(value)
-      @max_tokens = value
-    end
-
-    def temperature=(value)
-      @temperature = value
     end
 
     def add_message(content, role: "user")
       if content.is_a?(Content::Base) || (content.respond_to?(:to_h) && !content.is_a?(Hash))
         @messages << { role: role, content: content.to_h }
       else
-        if content.is_a?(String)
-          content = Content::Text.new(content).to_h
-        end
+        content = Content::Text.new(content).to_h if content.is_a?(String)
         @messages << { role: role, content: content }
       end
     end

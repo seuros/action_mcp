@@ -55,8 +55,24 @@ module ActionMCP
       end
 
       def transform_value_to_hash!(result, error)
-        result = result.is_a?(String) ? (MultiJson.load(result) rescue result) : result
-        error = error.is_a?(String) ? (MultiJson.load(error) rescue error) : error
+        result = if result.is_a?(String)
+                   begin
+                     MultiJson.load(result)
+                   rescue StandardError
+                     result
+                   end
+        else
+                   result
+        end
+        error = if error.is_a?(String)
+                  begin
+                    MultiJson.load(error)
+                  rescue StandardError
+                    error
+                  end
+        else
+                  error
+        end
         [ result, error ]
       end
     end

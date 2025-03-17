@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 require "stringio"
 
@@ -23,7 +25,7 @@ class MCPInitializationFlowTest < ActiveSupport::TestCase
       @sent_messages << parsed
 
       # Forward to server
-      @server_transport.receive_message(message) if @server_transport
+      @server_transport&.receive_message(message)
     end
 
     def receive_message(message)
@@ -93,21 +95,17 @@ class MCPInitializationFlowTest < ActiveSupport::TestCase
       @sent_messages << parsed
 
       # Forward to client
-      @client_transport.receive_message(message) if @client_transport
+      @client_transport&.receive_message(message)
     end
 
     def receive_message(message)
       parsed = JSON.parse(message)
 
       # If this is an initialize request, send capabilities response
-      if parsed["method"] == "initialize"
-        send_capabilities_response(parsed["id"])
-      end
+      send_capabilities_response(parsed["id"]) if parsed["method"] == "initialize"
 
       # If this is an initialized notification, mark as initialized
-      if parsed["method"] == "notifications/initialized"
-        @initialized = true
-      end
+      @initialized = true if parsed["method"] == "notifications/initialized"
 
       # Call any registered message handlers
       @message_handlers.each { |handler| handler.call(parsed) }

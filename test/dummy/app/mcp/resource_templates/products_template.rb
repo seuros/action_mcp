@@ -15,7 +15,7 @@ class ProductsTemplate < ApplicationMCPResTemplate
     product = MockProduct.find_by(id: product_id)
     return unless product
 
-    resource = ActionMCP::Resource.new(
+    ActionMCP::Resource.new(
       uri: "ecommerce://products/#{product_id}",
       name: "Product #{product_id}",
       description: "Product information for product #{product_id}",
@@ -23,7 +23,6 @@ class ProductsTemplate < ApplicationMCPResTemplate
       size: product.to_json.length
     )
     # Convert the Product model to a resource
-    resource
   end
 end
 
@@ -34,7 +33,7 @@ class MockProduct
     @price = price
   end
 
-  def to_json
+  def to_json(*_args)
     { id: @id, name: @name, price: @price }.to_json
   end
 

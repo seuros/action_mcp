@@ -29,11 +29,11 @@ end.setup
 
 module ActionMCP
   require_relative "action_mcp/version"
-  require_relative "action_mcp/configuration"
-  PROTOCOL_VERSION =  "2024-11-05"
+  PROTOCOL_VERSION = "2024-11-05"
 
   class << self
     attr_accessor :server
+
     # Returns the configuration instance.
     #
     # @return [Configuration] the configuration instance

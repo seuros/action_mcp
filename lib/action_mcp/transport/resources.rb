@@ -26,10 +26,8 @@ module ActionMCP
       # @example Output:
       #   # Sends: {"jsonrpc":"2.0","id":"req-456","result":{"resourceTemplates":[{"uriTemplate":"db://{table}","name":"Database Table"}]}}
       def send_resource_templates_list(request_id)
-        templates = ActionMCP::ResourceTemplatesRegistry.resource_templates.values.map do |template|
-          template.to_h
-        end
-        # TODO add pagination support
+        templates = ActionMCP::ResourceTemplatesRegistry.resource_templates.values.map(&:to_h)
+        # TODO: add pagination support
         # TODO add autocomplete
         log_resource_templates
         send_jsonrpc_response(request_id, result: { resourceTemplates: templates })
@@ -47,7 +45,7 @@ module ActionMCP
       # @example Output:
       #   # Sends: {"jsonrpc":"2.0","id":"req-789","result":{"contents":[{"uri":"file:///example.txt","text":"Example content"}]}}
       def send_resource_read(id, params)
-        if  (template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri]))
+        if (template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri]))
           record = template.process(params[:uri])
           if (resource = record.resolve)
             # if resource is a array or a collection, return each item then it ok
@@ -62,6 +60,25 @@ module ActionMCP
           send_jsonrpc_error(id, :invalid_params, "Invalid resource URI")
         end
       end
+
+      def send_resource_subscribe(id, uri)
+        session.resource_subscribe(uri)
+        send_jsonrpc_response(id, result: {})
+      end
+
+      def send_resource_unsubscribe(id, uri)
+        session.resource_unsubscribe(uri)
+        send_jsonrpc_response(id, result: {})
+      end
+
+      # Client logging
+      def set_client_logging_level(id, level)
+        # Store the client's preferred log level
+        @client_log_level = level
+        send_jsonrpc_response(id, result: {})
+      end
+
+      private
 
       # Log all registered resource templates
       #

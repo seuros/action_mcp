@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: action_mcp_session_resources
@@ -24,8 +26,12 @@
 #
 require "test_helper"
 
-class ActionMCP::Session::ResourceTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+module ActionMCP
+  class Session
+    class ResourceTest < ActiveSupport::TestCase
+      # test "the truth" do
+      #   assert true
+      # end
+    end
+  end
 end

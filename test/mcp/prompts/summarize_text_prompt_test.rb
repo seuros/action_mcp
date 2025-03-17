@@ -8,14 +8,14 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     params = { text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." }
     result = SummarizeTextPrompt.new(params).call
 
-    assert_match(/\A\[CONCISE\]/,  result.messages[0][:content][:text], "Expected summary to start with '[CONCISE]'")
+    assert_match(/\A\[CONCISE\]/, result.messages[0][:content][:text], "Expected summary to start with '[CONCISE]'")
   end
 
   test "returns a detailed summary when style is 'detailed'" do
     params = { text: "Lorem ipsum dolor sit amet.", style: "detailed" }
     result = SummarizeTextPrompt.new(params).call
 
-    assert_match(/\A\[DETAILED\]/,  result.messages[0][:content][:text], "Expected summary to start with '[DETAILED]'")
+    assert_match(/\A\[DETAILED\]/, result.messages[0][:content][:text], "Expected summary to start with '[DETAILED]'")
   end
 
   test "returns error response for missing required text parameter" do
@@ -30,9 +30,10 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
 
     # Assert - should return error response
     response_hash = response.to_h
-    assert_equal(-32602, response_hash[:code])
+    assert_equal(-32_602, response_hash[:code])
     assert_includes response_hash[:data], "Text can't be blank"
-    assert_equal "Invalid input", response_hash[:message]  end
+    assert_equal "Invalid input", response_hash[:message]
+  end
 
   test "returns error response for empty text parameter" do
     # Arrange - empty 'text' parameter
@@ -46,7 +47,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
 
     # Assert - should return error response
     response_hash = response.to_h
-    assert_equal(-32602, response_hash[:code])
+    assert_equal(-32_602, response_hash[:code])
     assert_equal "Invalid input", response_hash[:message]
     assert_includes response_hash[:data], "Text can't be blank"
   end
@@ -63,7 +64,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
 
     # Assert - should return error response
     response_hash = response.to_h
-    assert_equal(-32602, response_hash[:code])
+    assert_equal(-32_602, response_hash[:code])
     assert_includes response_hash[:data], "Style is not included in the list"
     assert_equal "Invalid input", response_hash[:message]
   end
@@ -83,12 +84,12 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     assert_not response_hash.key?(:error), "Response should not contain an error key"
 
     # Should use default "concise" style
-    assert_match /\[CONCISE\]/, response.messages.first[:content][:text]
+    assert_match(/\[CONCISE\]/, response.messages.first[:content][:text])
   end
 
   test "handles very long text input" do
     # Arrange - extremely long text
-    long_text = "a" * 10000
+    long_text = "a" * 10_000
     prompt = SummarizeTextPrompt.new(text: long_text)
 
     # Act
@@ -99,7 +100,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     assert_not response_hash.key?(:error), "Response should not contain an error key"
 
     # Should truncate in concise mode
-    assert_match /\[CONCISE\]/, response.messages.first[:content][:text]
+    assert_match(/\[CONCISE\]/, response.messages.first[:content][:text])
     assert response.messages.first[:content][:text].length < long_text.length
   end
 
@@ -111,6 +112,6 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
     response = prompt.call
     response_hash = response.to_h
     # Should fall back to default
-    assert_match /\[CONCISE\]/, response_hash[:messages].first[:content][:text]
+    assert_match(/\[CONCISE\]/, response_hash[:messages].first[:content][:text])
   end
 end

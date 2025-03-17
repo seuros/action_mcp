@@ -45,7 +45,7 @@ module ActionMCP
     end
 
     # Alias as_json to to_h for consistency
-    alias_method :as_json, :to_h
+    alias as_json to_h
 
     # Handle to_json directly
     def to_json(options = nil)

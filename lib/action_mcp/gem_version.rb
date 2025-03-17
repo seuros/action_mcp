@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   # Returns the currently loaded version of Active MCP as a +Gem::Version+.
   #

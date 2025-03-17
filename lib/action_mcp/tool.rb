@@ -132,7 +132,7 @@ module ActionMCP
       if valid?
         begin
           perform # Invoke the subclass-specific logic if valid
-        rescue => e
+        rescue StandardError => e
           # Handle exceptions during execution
           @response.mark_as_error!(:internal_error, message: e.message)
         end
@@ -155,7 +155,9 @@ module ActionMCP
 
       errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
 
-      "#<#{self.class.name} #{attributes_hash.map { |k, v| "#{k}: #{v.inspect}" }.join(', ')}, #{response_info}#{errors_info}>"
+      "#<#{self.class.name} #{attributes_hash.map do |k, v|
+        "#{k}: #{v.inspect}"
+      end.join(', ')}, #{response_info}#{errors_info}>"
     end
 
     # Override render to collect Content objects

@@ -12,25 +12,25 @@ module ActionMCP
 
       # Create some test templates
       @user_profile_template = Class.new(ResourceTemplate) do
-        def self.name; "UserProfileTemplate"; end
+        def self.name = "UserProfileTemplate"
         uri_template "service://users/{id}/profile"
         description "User profile"
       end
 
       @user_template = Class.new(ResourceTemplate) do
-        def self.name; "UserTemplate"; end
+        def self.name = "UserTemplate"
         uri_template "service://users/{id}"
         description "User resource"
       end
 
       @product_template = Class.new(ResourceTemplate) do
-        def self.name; "ProductTemplate"; end
+        def self.name = "ProductTemplate"
         uri_template "service://products/{id}"
         description "Product resource"
       end
 
       @category_products_template = Class.new(ResourceTemplate) do
-        def self.name; "CategoryProductsTemplate"; end
+        def self.name = "CategoryProductsTemplate"
         uri_template "service://categories/{category_id}/products"
         description "Products in a category"
       end
@@ -68,7 +68,7 @@ module ActionMCP
     test "selects the most specific template when multiple match" do
       # Add a more specific template
       specific_template = Class.new(ResourceTemplate) do
-        def self.name; "SpecificUserTemplate"; end
+        def self.name = "SpecificUserTemplate"
         uri_template "service://users/admin/profile"
         description "Admin user profile"
       end

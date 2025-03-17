@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "faraday"
 require "uri"
 
@@ -64,7 +66,7 @@ module ActionMCP
 
         if error
           log_error(error)
-          raise ConnectionError.new(error)
+          raise ConnectionError, error
         end
 
         # If we have the endpoint, consider the connection successful
@@ -86,7 +88,7 @@ module ActionMCP
         end
 
         validate_post_endpoint
-        log_debug("\e[34m" + "--> #{json_rpc}" + "\e[0m")
+        log_debug("\e[34m--> #{json_rpc}\e[0m")
         send_http_request(json_rpc)
       end
 
@@ -131,8 +133,6 @@ module ActionMCP
         @endpoint_mutex.synchronize { @endpoint_received }
       end
 
-      private
-
       # The listen_sse method should NOT mark connection as successful at the end
       def listen_sse
         log_info("Starting SSE listener...")
@@ -142,7 +142,7 @@ module ActionMCP
             req.headers["Accept"] = "text/event-stream"
             req.headers["Cache-Control"] = "no-cache"
 
-            req.options.on_data = Proc.new do |chunk, bytes|
+            req.options.on_data = proc do |chunk, bytes|
               handle_sse_data(chunk, bytes)
             end
           end
@@ -151,7 +151,7 @@ module ActionMCP
           # as the SSE connection stays open
         rescue Faraday::ConnectionFailed => e
           handle_connection_error(format_connection_error(e))
-        rescue => e
+        rescue StandardError => e
           handle_connection_error("Unexpected error: #{e.message}")
         end
       end
@@ -203,7 +203,6 @@ module ActionMCP
         process_buffer while @buffer.include?("\n")
       end
 
-
       def process_buffer
         line, _sep, rest = @buffer.partition("\n")
         @buffer = rest
@@ -241,9 +240,7 @@ module ActionMCP
         end
 
         # If no "data:" prefix was found, treat the entire event as data
-        unless has_data_prefix
-          event_data[:data] = lines.join("\n")
-        end
+        event_data[:data] = lines.join("\n") unless has_data_prefix
         event_data
       end
 
@@ -284,15 +281,14 @@ module ActionMCP
       def send_http_request(json_rpc)
         response = @conn.post(@post_url,
                               json_rpc,
-                              { "Content-Type" => "application/json" }
-        )
+                              { "Content-Type" => "application/json" })
         handle_http_response(response)
       end
 
       def handle_http_response(response)
-        unless response.success?
-          log_error("HTTP POST failed: #{response.status} - #{response.body}")
-        end
+        return if response.success?
+
+        log_error("HTTP POST failed: #{response.status} - #{response.body}")
       end
 
       def cleanup_sse_thread

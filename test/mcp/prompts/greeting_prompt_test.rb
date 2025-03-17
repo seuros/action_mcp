@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class GreetingPromptTest < ActiveSupport::TestCase
@@ -33,7 +35,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
 
     # Make sure calling an invalid prompt works as expected
     response = prompt.call
-    assert_match /can't be blank/, response.to_h[:data].first
+    assert_match(/can't be blank/, response.to_h[:data].first)
   end
 
   test "validates enum parameters" do
@@ -46,7 +48,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
 
     # Make sure calling an invalid prompt works as expected
     response = prompt.call
-    assert_match /not included in the list/, response.to_h[:data].first
+    assert_match(/not included in the list/, response.to_h[:data].first)
   end
 
   test "uses default values when parameters are not provided" do
@@ -57,6 +59,6 @@ class GreetingPromptTest < ActiveSupport::TestCase
     response = prompt.call
 
     # Assert - should use default "friendly" style
-    assert_match /friendly/, response.messages[1][:content][:text]
+    assert_match(/friendly/, response.messages[1][:content][:text])
   end
 end

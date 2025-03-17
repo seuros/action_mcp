@@ -16,7 +16,7 @@ class OrdersTemplate < ApplicationMCPResTemplate
     order = MockOrder.find_by(id: order_id)
     return unless order
 
-    resource = ActionMCP::Resource.new(
+    ActionMCP::Resource.new(
       uri: "ecommerce://orders/#{order_id}",
       name: "Order #{order_id}",
       description: "Order information for order #{order_id}",
@@ -24,7 +24,6 @@ class OrdersTemplate < ApplicationMCPResTemplate
       size: order.to_json.length
     )
     # Convert the Order model to a resource
-    resource
   end
 end
 
@@ -35,7 +34,7 @@ class MockOrder
     @total = total
   end
 
-  def to_json
+  def to_json(*_args)
     { id: @id, customer_id: @customer_id, total: @total }.to_json
   end
 

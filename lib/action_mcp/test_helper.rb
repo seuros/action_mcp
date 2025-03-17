@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "active_support/testing/assertions"
 
 module ActionMCP
@@ -38,14 +40,16 @@ module ActionMCP
     # @param [Hash] expected_output
     # @param [ActionMCP::ToolResponse] result
     def assert_tool_output(expected_output, result)
-       assert_equal expected_output, result.to_h[:content], "Tool output did not match expected output #{expected_output} != #{result.to_h[:content]}"
+      assert_equal expected_output, result.to_h[:content],
+                   "Tool output did not match expected output #{expected_output} != #{result.to_h[:content]}"
     end
 
     # Asserts that the output of a prompt is equal to the expected output.
     # @param [Hash] expected_output
     # @param [ActionMCP::PromptResponse] result
     def assert_prompt_output(expected_output, result)
-      assert_equal expected_output, result.to_h[:messages], "Prompt output did not match expected output #{expected_output} != #{result.to_h[:messages]}"
+      assert_equal expected_output, result.to_h[:messages],
+                   "Prompt output did not match expected output #{expected_output} != #{result.to_h[:messages]}"
     end
   end
 end
