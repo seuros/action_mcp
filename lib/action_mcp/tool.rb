@@ -6,6 +6,7 @@ module ActionMCP
   # Provides a DSL for specifying metadata, properties, and nested collection schemas.
   # Tools are registered automatically in the ToolsRegistry unless marked as abstract.
   class Tool < Capability
+    include ActionMCP::Callbacks
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
@@ -40,6 +41,10 @@ module ActionMCP
 
     class << self
       alias default_capability_name default_tool_name
+
+      def type
+        :tool
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -131,7 +136,9 @@ module ActionMCP
       # Check validations before proceeding
       if valid?
         begin
-          perform # Invoke the subclass-specific logic if valid
+          run_callbacks :perform do
+            perform # Invoke the subclass-specific logic if valid
+          end
         rescue StandardError => e
           # Handle exceptions during execution
           @response.mark_as_error!(:internal_error, message: e.message)

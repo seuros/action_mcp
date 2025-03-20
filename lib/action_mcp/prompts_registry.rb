@@ -17,6 +17,7 @@ module ActionMCP
       def prompt_call(prompt_name, arguments)
         prompt = find(prompt_name)
         prompt = prompt.new(arguments)
+
         prompt.call
       end
 

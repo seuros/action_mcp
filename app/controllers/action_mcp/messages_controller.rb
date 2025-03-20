@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  class MessagesController < ApplicationController
+  class MessagesController < MCPController
+    include Instrumentation::ControllerRuntime
+
     # @route POST / (sse_in)
     def create
       begin

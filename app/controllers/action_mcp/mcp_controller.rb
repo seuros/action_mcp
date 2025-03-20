@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  class ApplicationController < ActionController::Metal
+  class MCPController < ActionController::Metal
     abstract!
     ActionController::API.without_modules(:StrongParameters, :ParamsWrapper).each do |left|
       include left

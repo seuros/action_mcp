@@ -3,6 +3,7 @@
 module ActionMCP
   # Abstract base class for Prompts
   class Prompt < Capability
+    include ActionMCP::Callbacks
     class_attribute :_argument_definitions, instance_accessor: false, default: []
 
     # ---------------------------------------------------
@@ -29,6 +30,10 @@ module ActionMCP
 
     class << self
       alias default_capability_name default_prompt_name
+
+      def type
+        :prompt
+      end
     end
 
     # ---------------------------------------------------
@@ -108,7 +113,9 @@ module ActionMCP
       # Check validations before proceeding
       if valid?
         begin
-          perform # Invoke the subclass-specific logic if valid
+          run_callbacks :perform do
+            perform # Invoke the subclass-specific logic if valid
+          end
         rescue StandardError
           # Handle exceptions during execution
           @response.mark_as_error!(:internal_error, message: "Unhandled Error executing prompt")

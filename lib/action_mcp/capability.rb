@@ -6,6 +6,9 @@ module ActionMCP
   class Capability
     include ActiveModel::Model
     include ActiveModel::Attributes
+    include Callbacks
+    include Instrumentation::Instrumentation
+    include Logging
     include Renderable
 
     class_attribute :_capability_name, instance_accessor: false
@@ -46,5 +49,6 @@ module ActionMCP
         _description
       end
     end
+    ActiveSupport.run_load_hooks(:active_mcp, self)
   end
 end

@@ -11,4 +11,8 @@ class ActionMCPTest < ActiveSupport::TestCase
   test "truth" do
     assert true
   end
+
+  test "it has a logger" do
+    assert ActionMCP.logger
+  end
 end

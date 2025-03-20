@@ -7,6 +7,8 @@ module ActionMCP
     # Add ActiveModel capabilities
     include ActiveModel::Model
     include ActiveModel::Validations
+    include ResourceCallbacks
+    include Logging
 
     # Track all registered templates
     @registered_templates = []

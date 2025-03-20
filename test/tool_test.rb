@@ -82,10 +82,10 @@ class ToolTest < ActiveSupport::TestCase
       inputSchema: {
         type: "object",
         properties: {
-          "a" => { type: "number", description: "First number" },
-          "b" => { type: "number", description: "Second number" }
+          "number1" => { type: "number", description: "The first number" },
+          "number2" => { type: "number", description: "The second number" }
         },
-        required: %w[a b]
+        required: %w[number1 number2]
       }
     }
     assert_equal expected, CalculateSumTool.to_h
@@ -98,12 +98,12 @@ class ToolTest < ActiveSupport::TestCase
       inputSchema: {
         type: "object",
         properties: {
-          "a" => { type: "number", description: "First number" },
-          "b" => { type: "number", description: "Second number" },
+          "number1" => { type: "number", description: "The first number" },
+          "number2" => { type: "number", description: "The second number" },
           "precision" => { type: "number", description: "Decimal precision" },
           "unit" => { type: "string", description: "Unit of measurement" }
         },
-        required: %w[a b precision] # "precision" is not required and used only for this test
+        required: %w[number1 number2 precision] # "precision" is not required and used only for this test
       }
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h

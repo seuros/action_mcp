@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  class SSEController < ApplicationController
+  class SSEController < MCPController
     HEARTBEAT_INTERVAL = 30 # TODO: The frequency of pings SHOULD be configurable
     include ActionController::Live
 

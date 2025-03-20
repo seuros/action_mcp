@@ -9,6 +9,7 @@ require "active_record/railtie"
 require "action_controller/railtie"
 require "action_cable/engine"
 require "action_mcp/configuration"
+require "action_mcp/log_subscriber"
 require "action_mcp/engine"
 require "zeitwerk"
 
@@ -29,6 +30,7 @@ end.setup
 
 module ActionMCP
   require_relative "action_mcp/version"
+  include Logging
   PROTOCOL_VERSION = "2024-11-05"
 
   class << self
@@ -82,4 +84,8 @@ module ActionMCP
 
   ActiveModel::Type.register(:string_array, StringArray)
   ActiveModel::Type.register(:integer_array, IntegerArray)
+end
+
+ActiveSupport.on_load(:action_mcp) do
+  self.logger = ::Rails.logger
 end
