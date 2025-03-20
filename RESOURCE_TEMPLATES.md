@@ -1,57 +1,72 @@
 # ActionMCP::ResourceTemplate
 
-The `ActionMCP::ResourceTemplate` class provides a template for defining and managing resources within the ActionMCP framework. It allows you to specify the structure and attributes of a resource, making it easier to generate and validate resource instances.
+A framework for defining URI-templated resources in MCP servers. Handles parameter validation and content resolution.
 
-## Class Attributes
-
-*   `description`: A human-readable description of the resource template.
-*   `uri_template`: A URI template that defines the pattern for accessing resources of this type. This should follow the RFC 6570 format.
-*   `mime_type`: The MIME type of the resource.
-
-## Class Methods
-
-*   `parameter(name, description:, required: false)`: Defines a parameter for the resource template.
-    *   `name`: The name of the parameter.
-    *   `description`: A description of the parameter.
-    *   `required`: A boolean indicating whether the parameter is required. Defaults to `false`.
-
-*   `retrieve(params)`: An abstract method that subclasses must implement to retrieve the resource based on the provided parameters.
-
-*   `to_template_hash`: Returns a hash representation of the resource template.
-
-*   `abstract?`: Returns false, indicating that this is not an abstract class.
-
-## Example Usage
+## Usage
 
 ```ruby
-
-class OrdersTemplate < ApplicationMCPResTemplate
-  description "Access order information"
-  uri_template "ecommerce://orders/{order_id}"
+# Basic resource template
+class ProductTemplate < ApplicationMCPResTemplate
+  description "Access product data"
+  uri_template "store://products/{id}"
   mime_type "application/json"
 
-  parameter :order_id,
-            description: "Order identifier",
-            required: true
-
-  validates :order_id, format: { with: /\A\d+\z/, message: "must be a number" }
+  parameter :id, description: "Product ID", required: true
+  validates :id, format: { with: /\A\d+\z/ }
 
   def resolve
-    if (order = Order.find_by(id: order_id))
+    product = Product.find_by(id: id)
+    return nil unless product
 
+    ActionMCP::Content::Resource.new(
+      "store://products/#{id}",
+      mime_type,
+      text: product.to_json
+    )
+  end
+end
+
+# Nested/related resource template
+class ProductCertificatesTemplate < ApplicationMCPResTemplate
+  description "Access certificates for a product"
+  uri_template "store://products/{id}/certificates"
+  mime_type "application/json"
+
+  parameter :id, description: "Product ID", required: true
+  validates :id, format: { with: /\A\d+\z/ }
+
+  def resolve
+    product = Product.find_by(id: id)
+    return nil unless product
+    
+    certificates = product.certificates
+    
+    certificates.map do |cert|
       ActionMCP::Content::Resource.new(
-        "ecommerce://orders/#{order_id}",
-        "application/json",
-        text: order.to_json.length,
-      # blob: order.to_blob, # Either text or blob must be provided
+        "store://products/#{id}/certificates/#{cert.id}",
+        mime_type,
+        text: cert.to_json
       )
-    else
-      nil # Return nil if the record is not found
     end
   end
 end
 ```
 
-This example defines a `ResourceTemplate` for accessing order information. 
-It specifies the URI template, MIME type, and a required parameter for the order ID. 
-The `resolve` method is responsible for fetching the order data and creating an `ActionMCP::Resource` instance.
+## Key Methods
+
+- `description` - Sets human-readable template description
+- `uri_template` - Defines RFC 6570 URI pattern with parameters
+- `mime_type` - Sets content type for resources
+- `parameter(name, description:, required:)` - Declares URI parameters
+- `resolve` - Returns resource content (single resource, array, or nil)
+
+## Implementation Notes
+
+- Templates can represent nested or related resources
+- Complex relationships expressed through path segments
+- Return collections as arrays of Resource objects
+- Each resource in collection has unique URI
+- Parameters extracted from URI template are accessible as methods
+- Standard Rails validations apply to parameters
+
+Templates enable structured resource access through standardized URI patterns.
