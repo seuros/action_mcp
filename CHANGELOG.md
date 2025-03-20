@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.15.0...action_mcp/v0.16.0) (2025-03-20)
+
+
+### Features
+
+* add callback and instrumentation support for resource templates; enhance logging capabilities ([da33db8](https://github.com/seuros/action_mcp/commit/da33db8805d8c45ce335df6356d7861b3f53a799))
+* add integration tests for resource template callbacks; ensure correct logging order ([7bc0f38](https://github.com/seuros/action_mcp/commit/7bc0f3854531a4a489d756486a3b883d93f868ba))
+* refactor error handling and improve code consistency ([d4fc8ea](https://github.com/seuros/action_mcp/commit/d4fc8eaf4ecc3b16d5138271b5188218c040ccd3))
+
 ## [0.15.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.14.0...action_mcp/v0.15.0) (2025-03-16)
 
 
