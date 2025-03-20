@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class ProductsTemplate < ApplicationMCPResTemplate
   description "Access product information"
   uri_template "ecommerce://products/{product_id}"
@@ -9,35 +7,41 @@ class ProductsTemplate < ApplicationMCPResTemplate
             description: "Product identifier",
             required: true
 
-  validates :product_id, format: { with: /\A\d+\z/, message: "must be a number" }
+  before_resolve do |template|
+    logger.tagged("ProductsTemplate") { logger.info("Starting to resolve product: #{template.product_id}") }
+  end
+
+  after_resolve do |template|
+    logger.tagged("ProductsTemplate") { logger.info("Finished resolving product resource for product: #{template.product_id}") }
+  end
+
+  around_resolve do |template, block|
+    start_time = Time.current
+    logger.tagged("ProductsTemplate") { logger.info("Starting resolution for product: #{template.product_id}") }
+
+    resource = block.call
+
+    if resource
+      logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s") }
+    else
+      logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
+    end
+
+    resource
+  end
 
   def resolve
-    product = MockProduct.find_by(id: product_id)
-    return unless product
+    run_callbacks :resolve do
+      product = MockProduct.find_by(id: product_id)
+      return unless product
 
-    ActionMCP::Resource.new(
-      uri: "ecommerce://products/#{product_id}",
-      name: "Product #{product_id}",
-      description: "Product information for product #{product_id}",
-      mime_type: "application/json",
-      size: product.to_json.length
-    )
-    # Convert the Product model to a resource
-  end
-end
-
-class MockProduct
-  def initialize(id:, name:, price:)
-    @id = id
-    @name = name
-    @price = price
-  end
-
-  def to_json(*_args)
-    { id: @id, name: @name, price: @price }.to_json
-  end
-
-  def self.find(id)
-    MockProduct.new(id: id, name: "Product #{id}", price: 9.99)
+      ActionMCP::Resource.new(
+        uri: "ecommerce://products/#{product_id}",
+        name: "Product #{product_id}",
+        description: "Product information for product #{product_id}",
+        mime_type: "application/json",
+        size: product.to_json.length
+      )
+    end
   end
 end
