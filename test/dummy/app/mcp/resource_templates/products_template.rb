@@ -32,17 +32,15 @@ class ProductsTemplate < ApplicationMCPResTemplate
   end
 
   def resolve
-    run_callbacks :resolve do
-      product = MockProduct.find_by(id: product_id)
-      return unless product
+    product = MockProduct.find_by(id: product_id)
+    return unless product
 
-      ActionMCP::Resource.new(
-        uri: "ecommerce://products/#{product_id}",
-        name: "Product #{product_id}",
-        description: "Product information for product #{product_id}",
-        mime_type: "application/json",
-        size: product.to_json.length
-      )
-    end
+    ActionMCP::Resource.new(
+      uri: "ecommerce://products/#{product_id}",
+      name: "Product #{product_id}",
+      description: "Product information for product #{product_id}",
+      mime_type: "application/json",
+      size: product.to_json.length
+    )
   end
 end

@@ -12,7 +12,7 @@ class ResourceTemplateCallbacksTest < ActionDispatch::IntegrationTest
     template.logger = ActiveSupport::TaggedLogging.new(Logger.new(log_output))
 
     begin
-      template.resolve
+      template.call
 
       # Get all the log lines
       log_lines = log_output.string.lines.map(&:strip)
@@ -39,7 +39,7 @@ class ResourceTemplateCallbacksTest < ActionDispatch::IntegrationTest
     template.logger = ActiveSupport::TaggedLogging.new(Logger.new(log_output))
 
     begin
-      template.resolve
+      template.call
 
       # Get all the log lines
       log_lines = log_output.string.lines.map(&:strip)

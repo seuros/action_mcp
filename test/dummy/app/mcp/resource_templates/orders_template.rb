@@ -35,17 +35,15 @@ class OrdersTemplate < ApplicationMCPResTemplate
   end
 
   def resolve
-    run_callbacks :resolve do
-      order = MockOrder.find_by(id: order_id)
-      return unless order
+    order = MockOrder.find_by(id: order_id)
+    return unless order
 
-      ActionMCP::Resource.new(
-        uri: "ecommerce://orders/#{order_id}",
-        name: "Order #{order_id}",
-        description: "Order information for order #{order_id}",
-        mime_type: "application/json",
-        size: order.to_json.length
-      )
-    end
+    ActionMCP::Resource.new(
+      uri: "ecommerce://orders/#{order_id}",
+      name: "Order #{order_id}",
+      description: "Order information for order #{order_id}",
+      mime_type: "application/json",
+      size: order.to_json.length
+    )
   end
 end

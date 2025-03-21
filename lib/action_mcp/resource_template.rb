@@ -14,7 +14,8 @@ module ActionMCP
     @registered_templates = []
 
     class << self
-      attr_reader :registered_templates, :description, :uri_template, :mime_type, :template_name, :parameters
+      attr_reader :registered_templates, :description, :uri_template,
+                  :mime_type, :template_name, :parameters
 
       def abstract?
         @abstract ||= false
@@ -249,5 +250,11 @@ module ActionMCP
     end
 
     attr_reader :description, :uri_template, :mime_type
+
+    def call
+      run_callbacks :resolve do
+        resolve
+      end
+    end
   end
 end

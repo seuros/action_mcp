@@ -7,6 +7,10 @@ class OrderTemplateTest < ActiveSupport::TestCase
     refute OrdersTemplate.abstract?
   end
 
+  test "should set mime type" do
+    assert_equal "application/json", OrdersTemplate.mime_type
+  end
+
   test "orders_template_to_template_hash" do
     template_hash = OrdersTemplate.to_h
     assert_equal "orders", template_hash[:name]
