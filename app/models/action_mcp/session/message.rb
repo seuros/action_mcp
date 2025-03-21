@@ -63,13 +63,14 @@ module ActionMCP
           begin
             parsed_json = MultiJson.load(payload)
             self.message_json = parsed_json
+            self.message_text = nil
             process_json_content(parsed_json)
           rescue MultiJson::ParseError
             self.message_type = "text"
           end
         else
           self.message_json = payload
-          self.message_text = MultiJson.dump(payload)
+          self.message_text = nil
           process_json_content(payload)
         end
       end
