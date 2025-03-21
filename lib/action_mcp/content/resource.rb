@@ -17,7 +17,7 @@ module ActionMCP
       # @param mime_type [String] The MIME type of the resource.
       # @param text [String, nil] The text content of the resource (optional).
       # @param blob [String, nil] The base64-encoded blob of the resource (optional).
-      def initialize(uri, mime_type, text: nil, blob: nil)
+      def initialize(uri, mime_type = "text/plain", text: nil, blob: nil)
         super("resource")
         @uri = uri
         @mime_type = mime_type
