@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.16.0...action_mcp/v0.17.0) (2025-03-21)
+
+
+### Features
+
+* enhance resource template handling; add mime type test and refactor resolve method to call ([d2df85a](https://github.com/seuros/action_mcp/commit/d2df85ac396bc164bfcf8f76c598f829c85e0397))
+* fix logging and runtime tracking, add tests for Resource, NTS: should stop pushing code while sleepy ([7eea782](https://github.com/seuros/action_mcp/commit/7eea7828e8a3e38813c462af991c7b93736caa9a))
+
 ## [0.16.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.15.0...action_mcp/v0.16.0) (2025-03-20)
 
 
