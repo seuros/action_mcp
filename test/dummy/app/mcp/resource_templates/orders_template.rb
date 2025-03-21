@@ -10,6 +10,7 @@ class OrdersTemplate < ApplicationMCPResTemplate
             description: "Order identifier",
             required: true
 
+  # You can mutate the template object before resolving
   before_resolve do |template|
     logger.tagged("OrdersTemplate") { logger.info("Starting to resolve order: #{template.order_id} for customer: #{template.customer_id}") }
   end

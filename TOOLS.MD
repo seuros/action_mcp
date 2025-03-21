@@ -82,3 +82,4 @@ end
 3. Return meaningful error messages when operations fail
 4. Chain multiple `render` calls for progressive responses
 5. Include descriptive property definitions to guide parameter usage
+6. Use callbacks to perform actions before, after, or around the tool's execution

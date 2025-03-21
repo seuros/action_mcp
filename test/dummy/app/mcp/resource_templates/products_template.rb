@@ -7,6 +7,7 @@ class ProductsTemplate < ApplicationMCPResTemplate
             description: "Product identifier",
             required: true
 
+  # You can mutate the template object before resolving
   before_resolve do |template|
     logger.tagged("ProductsTemplate") { logger.info("Starting to resolve product: #{template.product_id}") }
   end

@@ -19,7 +19,7 @@ This means an AI (like an LLM) can request information or actions from your appl
 **ActionMCP** is targeted at developers building MCP-enabled applications.
 It simplifies the process of integrating Ruby and Rails apps with the MCP standard by providing a set of base classes and an easy-to-use server interface.
 
-Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs.
+Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs. 
 
 ActionMCP handles the underlying MCP message format and routing, so you can adhere to the open standard with minimal effort.
 
@@ -168,6 +168,32 @@ class ProductResourceTemplate < ApplicationMCPResTemplate
       size: product.to_json.length
     )
   end
+end
+
+# Example of callbacks:
+
+```ruby
+before_resolve do |template|
+  logger.tagged("ProductsTemplate") { logger.info("Starting to resolve product: #{template.product_id}") }
+end
+
+after_resolve do |template|
+  logger.tagged("ProductsTemplate") { logger.info("Finished resolving product resource for product: #{template.product_id}") }
+end
+
+around_resolve do |template, block|
+  start_time = Time.current
+  logger.tagged("ProductsTemplate") { logger.info("Starting resolution for product: #{template.product_id}") }
+
+  resource = block.call
+
+  if resource
+    logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s") }
+  else
+    logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
+  end
+
+  resource
 end
 ```
 

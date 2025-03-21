@@ -70,3 +70,11 @@ end
 - Standard Rails validations apply to parameters
 
 Templates enable structured resource access through standardized URI patterns.
+
+## Callbacks
+
+Resource templates support callbacks that allow you to perform actions before, after, or around the `resolve` method.
+
+- `before_resolve` - Called before the `resolve` method is executed.
+- `after_resolve` - Called after the `resolve` method is executed.
+- `around_resolve` - Called around the `resolve` method, allowing you to wrap the execution of the method.
