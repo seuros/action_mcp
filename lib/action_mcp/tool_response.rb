@@ -72,6 +72,14 @@ module ActionMCP
       [ contents, is_error ].hash
     end
 
+    def success?
+      !is_error
+    end
+
+    def error?
+      is_error
+    end
+
     # Pretty print for better debugging
     def inspect
       "#<#{self.class.name} content: #{contents.inspect}, isError: #{is_error}>"
