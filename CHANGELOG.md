@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.18.0...action_mcp/v0.19.0) (2025-03-22)
+
+
+### Features
+
+* add success and error methods to tool_response to mirror ActiveLLM and Trailblazer::Operation ([427a0f3](https://github.com/seuros/action_mcp/commit/427a0f391fd28d271f992a2419e87751214585fd))
+
 ## [0.18.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.17.0...action_mcp/v0.18.0) (2025-03-22)
 
 
