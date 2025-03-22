@@ -9,6 +9,7 @@ module ActionMCP
     include ActiveModel::Validations
     include ResourceCallbacks
     include Logging
+    include UriAmbiguityChecker
 
     # Track all registered templates
     @registered_templates = []
@@ -194,40 +195,6 @@ module ActionMCP
           raise ArgumentError,
                 "URI template conflict detected: '#{new_template}' conflicts with existing template '#{registered_class.uri_template}' registered by #{registered_class.name}"
         end
-      end
-
-      # Determine if two normalized patterns could be ambiguous
-      def are_potentially_ambiguous?(pattern1, pattern2)
-        # If the patterns are exactly the same, they're definitely ambiguous
-        return true if pattern1 == pattern2
-
-        # Split into segments to compare structure
-        segments1 = pattern1.split("/")
-        segments2 = pattern2.split("/")
-
-        # If different number of segments, they can't be ambiguous
-        return false if segments1.size != segments2.size
-
-        # Count parameter segments
-        param_segments1 = segments1.count { |s| s.include?("{param}") }
-        param_segments2 = segments2.count { |s| s.include?("{param}") }
-
-        # If they have different number of parameter segments, they're not ambiguous
-        return false if param_segments1 != param_segments2
-
-        # If we have the same number of segments and same number of parameters,
-        # but the patterns aren't identical, they could be ambiguous
-        # due to parameter position swapping
-        if param_segments1.positive? && param_segments1 == param_segments2
-          # Create pattern maps (P for param, S for static)
-          pattern_map1 = segments1.map { |s| s.include?("{param}") ? "P" : "S" }
-          pattern_map2 = segments2.map { |s| s.include?("{param}") ? "P" : "S" }
-
-          # If pattern maps are different but have same param count, potentially ambiguous
-          return pattern_map1 != pattern_map2
-        end
-
-        false
       end
     end
 

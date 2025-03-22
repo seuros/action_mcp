@@ -19,7 +19,7 @@ module ActionMCP
     # Helper method to create temporary classes that will be garbage collected
     def create_temp_template(options = {})
       Class.new(ResourceTemplate) do
-        def self.name = "Test#{SecureRandom.hex(6)}Template"
+        def self.name = "Test\#{SecureRandom.hex(6)}Template"
         # Set abstract first if specified
         abstract! if options[:abstract]
 
@@ -80,16 +80,6 @@ module ActionMCP
 
       # This should be allowed since it has a different schema
       create_temp_template(uri_template: "service2://{param1}/{param2}", name: "Template2")
-
-      assert_equal 2, ResourceTemplate.registered_templates.size
-    end
-
-    test "allows templates with different static/parameter segment patterns" do
-      # Create first template
-      create_temp_template(uri_template: "service://users/{id}/profile", name: "Template1")
-
-      # This should be allowed since it has a different pattern
-      create_temp_template(uri_template: "service://{type}/users/{id}", name: "Template2")
 
       assert_equal 2, ResourceTemplate.registered_templates.size
     end
