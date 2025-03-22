@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.17.0...action_mcp/v0.18.0) (2025-03-22)
+
+
+### Features
+
+* add URI ambiguity checker; implement method to determine potential conflicts between URI patterns ([5b9c2a2](https://github.com/seuros/action_mcp/commit/5b9c2a2d4afdeff93ba0f02afab7a3947dbe3e02))
+* enhance resource output; include URI template in resource description display ([3761553](https://github.com/seuros/action_mcp/commit/3761553bb3e8551f20f819cc638968053c8ee5a2))
+* refactor message handling; set message_text to nil for JSON payloads ([925237f](https://github.com/seuros/action_mcp/commit/925237f025e527ffb4f5666d98fcca3056a6cae1))
+
 ## [0.17.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.16.0...action_mcp/v0.17.0) (2025-03-21)
 
 
