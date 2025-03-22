@@ -44,7 +44,7 @@ namespace :action_mcp do
     ActionMCP::ResourceTemplate.descendants.each do |resource|
       next if resource.abstract?
 
-      puts "\e[33m#{resource.capability_name}:\e[0m #{resource.description}" # Yellow name
+      puts "\e[33m#{resource.capability_name}:\e[0m #{resource.description} : #{resource.uri_template}" # Yellow name
     end
     puts "\n"
   end
