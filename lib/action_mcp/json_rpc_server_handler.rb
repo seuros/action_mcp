@@ -108,7 +108,7 @@ module ActionMCP
 
     def process_notifications(rpc_method, params)
       case rpc_method
-      when "notifications/initialized"            # Client initialization complete
+      when "notifications/initialized" # Client initialization complete
         puts "\e[31mInitialized\e[0m"
         transport.initialize!
       else

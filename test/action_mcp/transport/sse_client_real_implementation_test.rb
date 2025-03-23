@@ -16,7 +16,7 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
     logger = Logger.new(@log_output)
     logger.level = Logger::ERROR
 
-    @client = ActionMCP::Transport::SSEClient.new("http://seuros.com/action_mcp", logger: logger)
+    @client = ActionMCP.create_client("http://seuros.com/action_mcp", logger: logger)
 
     @sent_messages = []
 

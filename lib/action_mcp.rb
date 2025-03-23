@@ -30,6 +30,7 @@ end.setup
 
 module ActionMCP
   require_relative "action_mcp/version"
+  require_relative "action_mcp/client"
   include Logging
   PROTOCOL_VERSION = "2024-11-05"
 

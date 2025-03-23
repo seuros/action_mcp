@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Notifications
       # Notify client that the resources list has changed
       def send_resources_list_changed_notification

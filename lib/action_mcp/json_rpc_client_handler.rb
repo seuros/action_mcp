@@ -21,8 +21,6 @@ module ActionMCP
       end
     end
 
-
-
     # @param id [String]
     # @param params [Hash]
     def process_client_logging(id, params)
@@ -54,7 +52,6 @@ module ActionMCP
         Rails.logger.warn("Unknown sampling method: #{rpc_method}")
       end
     end
-
 
     # @param rpc_method [String]
     def process_notifications(rpc_method, params)

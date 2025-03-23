@@ -93,7 +93,7 @@ module ActionMCP
 
     def process_notifications(rpc_method, params)
       case rpc_method
-      when "notifications/cancelled"              # [BOTH] Request cancellation
+      when "notifications/cancelled" # [BOTH] Request cancellation
         puts "\e[31m Request #{params['requestId']} cancelled: #{params['reason']}\e[0m"
         # we don't need to do anything here
       else

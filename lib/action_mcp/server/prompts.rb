@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Prompts
       def send_prompts_list(request_id)
         prompts = format_registry_items(PromptsRegistry.non_abstract)

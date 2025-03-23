@@ -12,6 +12,7 @@ module ActionMCP
       end
 
       private
+
       def instrument(operation, payload = {}, &block)
         payload[:resource_template] = self
         payload[:uri_template] = uri_template if respond_to?(:uri_template)

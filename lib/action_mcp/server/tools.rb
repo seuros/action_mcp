@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Tools
       def send_tools_list(request_id)
         tools = format_registry_items(ToolsRegistry.non_abstract)

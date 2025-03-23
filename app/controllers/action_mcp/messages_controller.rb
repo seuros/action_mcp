@@ -17,7 +17,7 @@ module ActionMCP
     private
 
     def transport_handler
-      TransportHandler.new(mcp_session)
+      Server::TransportHandler.new(mcp_session)
     end
 
     def json_rpc_handler

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module UriAmbiguityChecker
     extend ActiveSupport::Concern
@@ -17,9 +19,7 @@ module ActionMCP
         segments2 = pattern2.split("/")
 
         # If different number of segments, they can't be ambiguous
-        if segments1.size != segments2.size
-          return false
-        end
+        return false if segments1.size != segments2.size
 
         # Extract literals (non-parameters) from each pattern
         literals1 = []
@@ -34,14 +34,12 @@ module ActionMCP
         end
 
         # Check each segment for direct literal mismatches
-        segments1.zip(segments2).each_with_index do |(seg1, seg2), index|
+        segments1.zip(segments2).each_with_index do |(seg1, seg2), _index|
           param1 = parameter?(seg1)
           param2 = parameter?(seg2)
 
           # When both segments are literals, they must match exactly
-          if !param1 && !param2 && seg1 != seg2
-            return false
-          end
+          return false if !param1 && !param2 && seg1 != seg2
         end
 
         # Check for structural incompatibility in the literals
@@ -60,9 +58,7 @@ module ActionMCP
             common_literal_indices2 = common_literals.map { |lit| lit_values2.index(lit) }
 
             # If the relative ordering is different, patterns are not ambiguous
-            if common_literal_indices1 != common_literal_indices2
-              return false
-            end
+            return false if common_literal_indices1 != common_literal_indices2
           end
         end
 

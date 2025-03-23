@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Resources
       # Send list of available resources to the client
       #
@@ -59,23 +59,6 @@ module ActionMCP
         else
           send_jsonrpc_error(id, :invalid_params, "Invalid resource URI")
         end
-      end
-
-      def send_resource_subscribe(id, uri)
-        session.resource_subscribe(uri)
-        send_jsonrpc_response(id, result: {})
-      end
-
-      def send_resource_unsubscribe(id, uri)
-        session.resource_unsubscribe(uri)
-        send_jsonrpc_response(id, result: {})
-      end
-
-      # Client logging
-      def set_client_logging_level(id, level)
-        # Store the client's preferred log level
-        @client_log_level = level
-        send_jsonrpc_response(id, result: {})
       end
 
       private

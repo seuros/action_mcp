@@ -23,8 +23,8 @@ module ActionMCP
       @abstract_capability ||= false # Default to false, unique to each class
     end
 
-    def self.abstract_capability=(value)
-      @abstract_capability = value
+    class << self
+      attr_writer :abstract_capability
     end
 
     # Marks this tool as abstract so that it won’t be available for use.

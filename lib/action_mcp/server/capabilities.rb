@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Capabilities
       def send_capabilities(request_id, params = {})
-        # TODO fix this if client send incorrect params
+        # TODO: fix this if client send incorrect params
         # TODO refuse connection if protocol version is not supported
         @protocol_version = params["protocolVersion"]
         @client_info = params["clientInfo"]

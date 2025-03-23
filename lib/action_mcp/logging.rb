@@ -11,7 +11,7 @@ module ActionMCP
 
     # Included hook to configure the logger.
     included do
-      cattr_accessor :logger, default: ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
+      cattr_accessor :logger, default: ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new($stdout))
     end
   end
 end

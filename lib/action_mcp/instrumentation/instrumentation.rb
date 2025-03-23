@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module Instrumentation
     module Instrumentation # :nodoc:

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Messaging
       def send_jsonrpc_request(method, params: nil, id: SecureRandom.uuid_v7)
         request = JsonRpc::Request.new(id: id, method: method, params: params)

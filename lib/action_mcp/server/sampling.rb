@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  module Transport
+  module Server
     module Sampling
       # @param [String] id
       # @param [SamplingRequest] request
