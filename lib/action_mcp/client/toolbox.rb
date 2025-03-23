@@ -84,6 +84,24 @@ module ActionMCP
         end
       end
 
+      # Generate a hash representation of all tools in the collection based on provider format
+      #
+      # @param provider [Symbol] The provider format to use (:claude, :openai, or :default)
+      # @return [Hash] Hash containing all tools formatted for the specified provider
+      def to_h(provider = :default)
+        case provider
+        when :claude
+          # Claude format
+          { "tools" => @tools.map(&:to_claude_h) }
+        when :openai
+          # OpenAI format
+          { "tools" => @tools.map(&:to_openai_h) }
+        else
+          # Default format (same as original)
+          { "tools" => @tools.map(&:to_h) }
+        end
+      end
+
       # Implements enumerable functionality for the collection
       include Enumerable
 
@@ -147,7 +165,7 @@ module ActionMCP
           properties[name]
         end
 
-        # Generate a hash representation of the tool
+        # Generate a hash representation of the tool (default format)
         #
         # @return [Hash] Hash containing tool details
         def to_h
@@ -155,6 +173,31 @@ module ActionMCP
             "name" => @name,
             "description" => @description,
             "inputSchema" => @input_schema
+          }
+        end
+
+        # Generate a hash representation of the tool in Claude format
+        #
+        # @return [Hash] Hash containing tool details formatted for Claude
+        def to_claude_h
+          {
+            "name" => @name,
+            "description" => @description,
+            "input_schema" => @input_schema.transform_keys { |k| k == "inputSchema" ? "input_schema" : k }
+          }
+        end
+
+        # Generate a hash representation of the tool in OpenAI format
+        #
+        # @return [Hash] Hash containing tool details formatted for OpenAI
+        def to_openai_h
+          {
+            "type" => "function",
+            "function" => {
+              "name" => @name,
+              "description" => @description,
+              "parameters" => @input_schema
+            }
           }
         end
       end

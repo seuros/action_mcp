@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module ActionMCP
   module Client
     # Blueprints
@@ -9,13 +10,13 @@ module ActionMCP
     #
     # Example usage:
     #   template_data = client.list_resource_templates # Returns array of URI template definitions
-    #   blueprints = Blueprints.new(template_data)
+    #   blueprints = Blueprint.new(template_data)
     #
     #   # Access a specific blueprint by pattern
-    #   file_blueprint = blueprints.find_by_pattern("file://{path}")
+    #   file_blueprint = Blueprint.find_by_pattern("file://{path}")
     #
     #   # Generate a concrete URI from a blueprint with parameters
-    #   uri = blueprints.construct("file://{path}", { path: "/logs/app.log" })
+    #   uri = Blueprint.construct("file://{path}", { path: "/logs/app.log" })
     #
     class Blueprint
       # Initialize a new Blueprints collection with URI template definitions
