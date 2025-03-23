@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.19.0...action_mcp/v0.19.1) (2025-03-23)
+
+
+### Bug Fixes
+
+* add success and error methods to prompt_response to mirror ActiveLLM and Trailblazer::Operation ([bb8938e](https://github.com/seuros/action_mcp/commit/bb8938e68ec8deb24d7489474f0acb20fde140f2))
+
 ## [0.19.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.18.0...action_mcp/v0.19.0) (2025-03-22)
 
 
