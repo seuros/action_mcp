@@ -14,7 +14,9 @@ module ActionMCP
 
       attr_reader :logger, :type,
                   :connection_error, :server,
-                  :server_capabilities, :session
+                  :server_capabilities, :session,
+                  :catalog, :blueprint,
+                  :prompt_book, :toolbox
       delegate :initialized?, to: :session
 
       def initialize(logger: ActionMCP.logger)
@@ -31,6 +33,15 @@ module ActionMCP
         @error_callback = nil
         @connection_error = nil
         @initialized = false
+
+        # Resource objects
+        @catalog = Catalog.new
+        # Resource template objects
+        @blueprint = Blueprint.new
+        # Prompt objects
+        @prompt_book = PromptBook.new
+        # Tool objects
+        @toolbox = Toolbox.new
       end
 
       # Connect to the MCP server
