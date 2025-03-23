@@ -2,15 +2,14 @@
 
 module ActionMCP
   # Manages the collection of content objects for tool results
-  class ToolResponse
-    include Enumerable
-    attr_reader :contents, :is_error
+  class ToolResponse < BaseResponse
+    attr_reader :contents
 
     delegate :empty?, :size, :each, :find, :map, to: :contents
 
     def initialize
+      super
       @contents = []
-      @is_error = false
     end
 
     # Add content to the response
@@ -19,65 +18,21 @@ module ActionMCP
       content # Return the content for chaining
     end
 
-    # Mark response as error
-    def mark_as_error!(symbol = :invalid_request, message: nil, data: nil)
-      @is_error = true
-      @symbol = symbol
-      @error_message = message
-      @error_data = data
-      self
+    # Implementation of build_success_hash for ToolResponse
+    def build_success_hash
+      {
+        content: @contents.map(&:to_h)
+      }
     end
 
-    # Convert to hash format expected by MCP protocol
-    def to_h
-      if @is_error
-        JsonRpc::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
-      else
-        {
-          content: @contents.map(&:to_h)
-        }
-      end
+    # Implementation of compare_with_same_class for ToolResponse
+    def compare_with_same_class(other)
+      contents == other.contents && is_error == other.is_error
     end
 
-    # Alias as_json to to_h for consistency
-    alias as_json to_h
-
-    # Handle to_json directly
-    def to_json(options = nil)
-      to_h.to_json(options)
-    end
-
-    # Compare with hash for easier testing.
-    def ==(other)
-      case other
-      when Hash
-        # Convert both to normalized format for comparison
-        hash_self = to_h.deep_transform_keys { |key| key.to_s.underscore }
-        hash_other = other.deep_transform_keys { |key| key.to_s.underscore }
-        hash_self == hash_other
-      when ToolResponse
-        contents == other.contents && is_error == other.is_error
-      else
-        super
-      end
-    end
-
-    # Implement eql? for hash key comparison
-    def eql?(other)
-      self == other
-    end
-
-    # Implement hash method for hash key usage
-    def hash
-      [ contents, is_error ].hash
-    end
-
-    def success?
-      !is_error
-    end
-
-    def error?
-      is_error
+    # Implementation of hash_components for ToolResponse
+    def hash_components
+      [ contents, is_error ]
     end
 
     # Pretty print for better debugging
