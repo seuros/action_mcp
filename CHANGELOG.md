@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.19.1...action_mcp/v0.20.0) (2025-03-23)
+
+
+### Features
+
+* add type parameter to argument method for prompts to allow compatibility with ActiveModel ([60be136](https://github.com/seuros/action_mcp/commit/60be13635f411a34f62c5ce1ca296bc9d3c4a6a8))
+* implement BaseResponse class and refactor PromptResponse and ToolResponse to inherit from it ([fbb243a](https://github.com/seuros/action_mcp/commit/fbb243abc3297ca4db5f8bf6d24378e9a5f749ef))
+
 ## [0.19.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.19.0...action_mcp/v0.19.1) (2025-03-23)
 
 
