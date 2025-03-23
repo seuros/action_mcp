@@ -46,8 +46,9 @@ module ActionMCP
     # @param required [Boolean] Whether the argument is required.
     # @param default [Object] The default value of the argument.
     # @param enum [Array<String>] The list of allowed values for the argument.
+    # @param type [Symbol] The type of the argument (e.g., :string, :integer, :boolean). Defaults to :string.
     # @return [void]
-    def self.argument(arg_name, description: "", required: false, default: nil, enum: nil)
+    def self.argument(arg_name, description: "", required: false, default: nil, enum: nil, type: :string)
       arg_def = {
         name: arg_name.to_s,
         description: description,
@@ -58,7 +59,7 @@ module ActionMCP
       self._argument_definitions += [ arg_def ]
 
       # Register the attribute so it's recognized by ActiveModel
-      attribute arg_name, :string, default: default
+      attribute arg_name, type, default: default
       validates arg_name, presence: true if required
 
       return unless enum.present?
@@ -81,7 +82,7 @@ module ActionMCP
       {
         name: prompt_name,
         description: description.presence,
-        arguments: arguments.map { |arg| arg.slice(:name, :description, :required) }
+        arguments: arguments.map { |arg| arg.slice(:name, :description, :required, :type) }
       }.compact
     end
 
