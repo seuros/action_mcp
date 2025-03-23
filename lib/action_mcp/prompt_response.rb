@@ -77,6 +77,14 @@ module ActionMCP
       [ messages ].hash
     end
 
+    def success?
+      !is_error
+    end
+
+    def error?
+      is_error
+    end
+
     # Pretty print for better debugging
     def inspect
       "#<#{self.class.name} messages: #{messages.inspect}>"

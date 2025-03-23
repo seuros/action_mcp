@@ -14,6 +14,13 @@ module ActionMCP
       assert_empty @response.messages
     end
 
+    test "success? returns false when is_error is true" do
+      assert @response.success?
+      @response.mark_as_error!
+      assert_not @response.success?
+      assert @response.error?
+    end
+
     test "add_message adds a message with role and content" do
       result = @response.add_message(role: "user", content: { type: "text", text: "Hello" })
 

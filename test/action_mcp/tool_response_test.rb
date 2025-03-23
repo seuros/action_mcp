@@ -15,6 +15,13 @@ module ActionMCP
       assert_not @response.is_error
     end
 
+    test "success? returns false when is_error is true" do
+      assert @response.success?
+      @response.mark_as_error!
+      assert_not @response.success?
+      assert @response.error?
+    end
+
     test "add appends content to contents array" do
       returned = @response.add(@text_content)
 
