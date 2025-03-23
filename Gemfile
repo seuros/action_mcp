@@ -22,3 +22,5 @@ gem "solid_cache"
 gem "annotaterb"
 gem "pg"
 gem "redis"
+
+gem "faraday"

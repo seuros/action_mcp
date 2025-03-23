@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+gem "faraday", "~> 2.0"
 require "faraday"
 require "uri"
 
@@ -15,7 +16,7 @@ module ActionMCP
       def initialize(url, **options)
         super(**options)
         setup_connection(url)
-        @buffer = ""
+        @buffer = +""
         @stop_requested = false
         @endpoint_received = false
         @endpoint_mutex = Mutex.new
@@ -151,8 +152,6 @@ module ActionMCP
           # as the SSE connection stays open
         rescue Faraday::ConnectionFailed => e
           handle_connection_error(format_connection_error(e))
-        rescue StandardError => e
-          handle_connection_error("Unexpected error: #{e.message}")
         end
       end
 
@@ -227,7 +226,7 @@ module ActionMCP
       end
 
       def parse_event(lines)
-        event_data = { type: "message", data: "" }
+        event_data = { type: "message", data: +"" }
         has_data_prefix = false
 
         lines.each do |line|
