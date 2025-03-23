@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.20.0...action_mcp/v0.21.0) (2025-03-23)
+
+
+### Features
+
+* implement JsonRpcClientHandler and JsonRpcServerHandler for han… ([d82c7c5](https://github.com/seuros/action_mcp/commit/d82c7c57b01f837f6661f88269c627bd8ebcfdfc))
+* implement JsonRpcClientHandler and JsonRpcServerHandler for handling client and server methods ([176838a](https://github.com/seuros/action_mcp/commit/176838aa4050a28813cd85aae7584b64ae23d6c0))
+
 ## [0.20.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.19.1...action_mcp/v0.20.0) (2025-03-23)
 
 
