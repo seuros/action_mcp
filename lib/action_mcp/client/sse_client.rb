@@ -15,7 +15,7 @@ module ActionMCP
 
       attr_reader :base_url, :sse_path, :post_url, :session
 
-      def initialize(url, logger: ActionMCP.logger, **_options)
+      def initialize(url, connect: true, logger: ActionMCP.logger, **_options)
         super(logger: logger)
         @type = :sse
         setup_connection(url)
@@ -26,6 +26,8 @@ module ActionMCP
         @endpoint_condition = ConditionVariable.new
         @connection_mutex = Mutex.new
         @connection_condition = ConditionVariable.new
+
+        self.connect if connect
       end
 
       protected

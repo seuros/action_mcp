@@ -44,7 +44,11 @@ module ActionMCP
         @toolbox = Toolbox.new
       end
 
-      # Connect to the MCP server
+      def connected?
+        @connected
+      end
+
+      # Connect to the MCP server, if something went wrong at initialization
       def connect
         return true if @connected
 
