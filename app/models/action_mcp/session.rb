@@ -46,8 +46,11 @@ module ActionMCP
     scope :closed, -> { where(status: "closed") }
     scope :without_messages, -> { includes(:messages).where(action_mcp_session_messages: { id: nil }) }
 
-    before_create :set_server_info
-    before_create :set_server_capabilities
+    scope :from_server, -> { where(role: "server") }
+    scope :from_client, -> { where(role: "client") }
+
+    before_create :set_server_info, if: -> { role == "server" }
+    before_create :set_server_capabilities, if: -> { role == "server" }
 
     validates :protocol_version, inclusion: { in: [ PROTOCOL_VERSION ] }, allow_nil: true
 
@@ -100,8 +103,8 @@ module ActionMCP
     end
 
     def initialize!
-      # update the session initialized to true if client_capabilities are present
-      return unless client_capabilities.present?
+      # update the session initialized to true
+      return false if initialized?
 
       update!(initialized: true,
               status: "initialized")

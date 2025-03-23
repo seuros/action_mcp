@@ -11,8 +11,8 @@ module ActionMCP
 
         # Send request
         send_jsonrpc_request("client/setLoggingLevel",
-                                params: { level: level },
-                                id: request_id
+                             params: { level: level },
+                             id: request_id
         )
       end
     end

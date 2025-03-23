@@ -36,9 +36,7 @@ module ActionMCP
 
     # Initialize the ActionMCP logger.
     initializer "action_mcp.logger" do
-      ActiveSupport.on_load(:action_mcp) do
-        self.logger = ::Rails.logger
-      end
+      ActionMCP.logger = ::Rails.logger
     end
   end
 end

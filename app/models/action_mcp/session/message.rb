@@ -99,7 +99,9 @@ module ActionMCP
       end
 
       def broadcast_message
-        adapter.broadcast(session_key, data.to_json)
+        if adapter.present?
+          adapter.broadcast(session_key, data.to_json)
+        end
       end
 
       def process_json_content(content)

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  class JsonRpcHandler
+  class JsonRpcHandlerBase
     delegate :initialize!, :initialized?, to: :transport
     delegate :write, :read, to: :transport
     attr_reader :transport
@@ -84,6 +84,7 @@ module ActionMCP
       id = request["id"]
       params = request["params"]
 
+      return unless rpc_method
       # Try to handle common methods first
       return if handle_common_methods(rpc_method, id, params)
 

@@ -87,6 +87,6 @@ module ActionMCP
   ActiveModel::Type.register(:integer_array, IntegerArray)
 end
 
-ActiveSupport.on_load(:action_mcp) do
+ActiveSupport.on_load(:action_mcp, run_once: true) do
   self.logger = ::Rails.logger
 end

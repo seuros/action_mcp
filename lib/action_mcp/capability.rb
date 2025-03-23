@@ -49,6 +49,5 @@ module ActionMCP
         _description
       end
     end
-    ActiveSupport.run_load_hooks(:active_mcp, self)
   end
 end

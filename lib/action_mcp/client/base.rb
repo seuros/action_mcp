@@ -5,19 +5,27 @@ module ActionMCP
     # Base client class containing common MCP functionality
     class Base
       # Include all transport protocol modules
-      include  Messaging
-      include  Tools
-      include  Prompts
-      include  Resources
-      include  Roots
-      include  Logging
+      include Messaging
+      include Tools
+      include Prompts
+      include Resources
+      include Roots
+      include Logging
 
-      attr_reader :logger, :type, :connection_error, :server_capabilities
+      attr_reader :logger, :type,
+                  :connection_error, :server,
+                  :server_capabilities, :session
+      delegate :initialized?, to: :session
 
       def initialize(logger: ActionMCP.logger)
         @logger = logger
         @connected = false
-        @initialize_request_id = SecureRandom.uuid_v7
+        @session = Session.from_client.new(
+          protocol_version: PROTOCOL_VERSION,
+          client_info: client_info,
+          client_capabilities: client_capabilities
+        )
+        @initialize_request_id = @session.id
         @server_capabilities = nil
         @message_callback = nil
         @error_callback = nil
@@ -43,6 +51,16 @@ module ActionMCP
 
           @connected = true
           log_info("Connected to MCP server")
+          session.save
+
+          # Create handler only if it doesn't exist yet
+          @json_rpc_handler ||= JsonRpcHandler.new(session)
+
+          # Clear any existing message callback and set a new one
+          @message_callback = lambda do |response|
+            @json_rpc_handler.call(response)
+          end
+
           true
         rescue StandardError => e
           @connection_error = e.message
@@ -117,7 +135,6 @@ module ActionMCP
 
       def handle_raw_message(raw)
         log_debug("\e[31m<-- #{raw}\e[0m")
-
         begin
           msg_hash = MultiJson.load(raw)
           response = nil
@@ -134,7 +151,7 @@ module ActionMCP
           if response && response.id == @initialize_request_id
             handle_initialize_response(response)
           elsif response
-            @message_callback&.call(response)
+            @message_callback&.call(raw)
           end
         rescue MultiJson::ParseError => e
           log_error("JSON parse error: #{e} (raw: #{raw})")
@@ -146,13 +163,11 @@ module ActionMCP
       end
 
       def handle_initialize_response(response)
-        return if @initialized
+        return if initialized?
 
         if response.result
-          @server_capabilities = response.result
+          @server = Client::Server.new(response.result)
           send_initialized_notification
-          @initialized = true
-          log_info("Initialization complete with server capabilities: #{@server_capabilities}")
         else
           log_error("Server initialization failed: #{response.error}")
           @error_callback&.call(StandardError.new("Initialization failed: #{response.error}"))
@@ -166,12 +181,9 @@ module ActionMCP
           id: @initialize_request_id,
           method: "initialize",
           params: {
-            protocolVersion: PROTOCOL_VERSION,
-            capabilities: default_capabilities,
-            clientInfo: {
-              name: user_agent,
-              version: ActionMCP.gem_version.to_s
-            }
+            protocolVersion: session.protocol_version,
+            capabilities: session.client_capabilities,
+            clientInfo: session.client_info
           }
         )
 
@@ -184,17 +196,26 @@ module ActionMCP
         )
 
         log_info("Sending initialized notification")
+        session.initialize!
         send_message(notification.to_json)
       end
 
-      def default_capabilities
+      def client_capabilities
         {
           # Base client capabilities can be defined here
+          # TODO
         }
       end
 
       def user_agent
-        "ActionMCP-#{type}-client"
+        "ActionMCP-Client"
+      end
+
+      def client_info
+        {
+          name: user_agent,
+          version: ActionMCP.gem_version.to_s
+        }
       end
 
       def log_debug(message)

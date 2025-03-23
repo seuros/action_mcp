@@ -21,7 +21,7 @@ module ActionMCP
     end
 
     def json_rpc_handler
-      @json_rpc_handler ||= ActionMCP::JsonRpcServerHandler.new(transport_handler)
+      @json_rpc_handler ||= Server::JsonRpcHandler.new(transport_handler)
     end
 
     def handle_post_message(params, response)

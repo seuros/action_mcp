@@ -13,7 +13,7 @@ module ActionMCP
       SSE_TIMEOUT = 10
       ENDPOINT_TIMEOUT = 5 # Seconds
 
-      attr_reader :base_url, :sse_path, :post_url
+      attr_reader :base_url, :sse_path, :post_url, :session
 
       def initialize(url, logger: ActionMCP.logger, **_options)
         super(logger: logger)
@@ -26,7 +26,6 @@ module ActionMCP
         @endpoint_condition = ConditionVariable.new
         @connection_mutex = Mutex.new
         @connection_condition = ConditionVariable.new
-        @initialize_request_id = SecureRandom.uuid_v7
       end
 
       protected
@@ -79,12 +78,12 @@ module ActionMCP
         @conn = Faraday.new(url: @base_url) do |f|
           f.headers["User-Agent"] = user_agent
           f.options.timeout = nil # No read timeout
-          f.options.open_timeout = 10 # Connection timeout
+          f.options.open_timeout = SSE_TIMEOUT # Connection timeout
 
           # Use Net::HTTP adapter explicitly as it works well with streaming
           f.adapter :net_http do |http|
             http.read_timeout = nil # No read timeout at adapter level too
-            http.open_timeout = 10 # Connection timeout
+            http.open_timeout = SSE_TIMEOUT # Connection timeout
           end
         end
 
@@ -180,7 +179,7 @@ module ActionMCP
         # flush it as a complete event.
         if @buffer.strip.start_with?("{") && @buffer.strip.end_with?("}")
           (@current_event ||= []) << @buffer.strip
-          @buffer = ""
+          @buffer = +""
           return handle_complete_event
         end
         process_buffer while @buffer.include?("\n")
