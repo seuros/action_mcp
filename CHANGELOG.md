@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.22.0...action_mcp/v0.23.0) (2025-03-24)
+
+
+### Features
+
+* ack all requests ([56cfb78](https://github.com/seuros/action_mcp/commit/56cfb78202dc3e89da9f251542a7c87ad35f2fa3))
+* refactor collections to inherit from base Collection class ([7e6a50a](https://github.com/seuros/action_mcp/commit/7e6a50a57063c4173a60e0270ba5c6cdadc3b1bd))
+
 ## [0.22.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.21.0...action_mcp/v0.22.0) (2025-03-24)
 
 
