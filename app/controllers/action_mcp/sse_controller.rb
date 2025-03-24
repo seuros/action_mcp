@@ -77,11 +77,11 @@ module ActionMCP
     end
 
     def session_id
-      @session_id ||= mcp_session.id
+      mcp_session.id
     end
 
     def cache_key
-      "action_mcp:session:#{session_id}"
+      mcp_session.session_key
     end
   end
 
