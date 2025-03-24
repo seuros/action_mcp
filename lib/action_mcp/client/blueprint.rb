@@ -24,35 +24,16 @@ module ActionMCP
     #   # Generate a concrete URI from a blueprint with parameters
     #   uri = Blueprint.construct("file://{path}", { path: "/logs/app.log" })
     #
-    class Blueprint
+    class Blueprint < Collection
       # Initialize a new Blueprints collection with URI template definitions
       #
       # @param templates [Array<Hash>] Array of URI template definition hashes, each containing
       #   uriTemplate, name, description, and optionally mimeType keys
       # @param client [Object, nil] Optional client for lazy loading of templates
-      attr_reader :client
-
       def initialize(templates, client)
+        super([], client)
         self.templates = templates
-        @client = client
-        @loaded = !templates.empty?
-      end
-
-      # Return all URI templates in the collection. If initialized with a client and templates
-      # haven't been loaded yet, this will trigger lazy loading from the client.
-      #
-      # @return [Array<Blueprint>] All blueprint objects in the collection
-      def all
-        load_templates unless @loaded
-        @templates
-      end
-
-      # Force reload all templates from the client and return them
-      #
-      # @return [Array<Blueprint>] All blueprint objects in the collection
-      def all!
-        load_templates(force: true)
-        @templates
+        @load_method = :list_resource_templates
       end
 
       # Find a blueprint by its URI pattern
@@ -84,23 +65,6 @@ module ActionMCP
         blueprint.construct(params)
       end
 
-      # Filter blueprints based on a given block
-      #
-      # @yield [blueprint] Block that determines whether to include a blueprint
-      # @yieldparam blueprint [Blueprint] A blueprint from the collection
-      # @yieldreturn [Boolean] true to include the blueprint, false to exclude it
-      # @return [Array<Blueprint>] Blueprints that match the filter criteria
-      def filter(&block)
-        all.select(&block)
-      end
-
-      # Number of blueprints in the collection
-      #
-      # @return [Integer] The number of blueprints
-      def size
-        all.size
-      end
-
       # Check if the collection contains a blueprint with the given pattern
       #
       # @param pattern [String] The blueprint pattern to check for
@@ -116,41 +80,11 @@ module ActionMCP
         all.group_by(&:protocol)
       end
 
-      # Implements enumerable functionality for the collection
-      include Enumerable
-
-      # Yield each blueprint in the collection to the given block
-      #
-      # @yield [blueprint] Block to execute for each blueprint
-      # @yieldparam blueprint [Blueprint] A blueprint from the collection
-      # @return [Enumerator] If no block is given
-      def each(&block)
-        all.each(&block)
-      end
-
       # Convert raw template data into ResourceTemplate objects
       #
       # @param templates [Array<Hash>] Array of template definition hashes
       def templates=(templates)
-        @templates = templates.map { |template_data| ResourceTemplate.new(template_data) }
-      end
-
-      private
-
-      # Load or reload templates using the client
-      #
-      # @param force [Boolean] Whether to force reload even if templates are already loaded
-      # @return [void]
-      def load_templates(force: false)
-        return if @loaded && !force
-
-        begin
-          @client.list_resource_templates
-          @loaded = true
-        rescue StandardError => e
-          Rails.logger.error("Failed to load templates: #{e.message}")
-          @loaded = true unless @templates.empty?
-        end
+        @collection_data = templates.map { |template_data| ResourceTemplate.new(template_data) }
       end
 
       # Internal Blueprint class to represent individual URI templates

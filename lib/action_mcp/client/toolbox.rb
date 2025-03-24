@@ -18,30 +18,15 @@ module ActionMCP
     #   # Get all tools matching a criteria
     #   calculation_tools = toolbox.filter { |t| t.name.include?("calculate") }
     #
-    class Toolbox
-      attr_reader :client
-
+    class Toolbox < Collection
       # Initialize a new Toolbox with tool definitions
       #
       # @param tools [Array<Hash>] Array of tool definition hashes, each containing
       #   name, description, and inputSchema keys
       def initialize(tools, client)
+        super([], client)
         self.tools = tools
-        @client = client
-        @loaded = !tools.empty?
-      end
-
-      # Return all tools in the collection
-      #
-      # @return [Array<Tool>] All tool objects in the collection
-      def all
-        load_tools unless @loaded
-        @tools
-      end
-
-      def all!
-        load_tools(force: true)
-        @tools
+        @load_method = :list_tools
       end
 
       # Find a tool by name
@@ -89,8 +74,9 @@ module ActionMCP
       # @param keyword [String] Keyword to search for in tool names and descriptions
       # @return [Array<Tool>] Tools containing the keyword
       def search(keyword)
-        @tools.select do |tool|
-          tool.name.include?(keyword) || tool.description.downcase.include?(keyword.downcase)
+        all.select do |tool|
+          tool.name.include?(keyword) ||
+            (tool.description && tool.description.downcase.include?(keyword.downcase))
         end
       end
 
@@ -102,46 +88,18 @@ module ActionMCP
         case provider
         when :claude
           # Claude format
-          { "tools" => @tools.map(&:to_claude_h) }
+          { "tools" => all.map(&:to_claude_h) }
         when :openai
           # OpenAI format
-          { "tools" => @tools.map(&:to_openai_h) }
+          { "tools" => all.map(&:to_openai_h) }
         else
           # Default format (same as original)
-          { "tools" => @tools.map(&:to_h) }
+          { "tools" => all.map(&:to_h) }
         end
-      end
-
-      # Implements enumerable functionality for the collection
-      include Enumerable
-
-      # Yield each tool in the collection to the given block
-      #
-      # @yield [tool] Block to execute for each tool
-      # @yieldparam tool [Tool] A tool from the collection
-      # @return [Enumerator] If no block is given
-      def each(&block)
-        @tools.each(&block)
       end
 
       def tools=(tools)
-        @tools = tools.map { |tool_data| Tool.new(tool_data) }
-      end
-
-      private
-
-      def load_tools(force: false)
-        return if @loaded && !force
-
-        begin
-          @client.list_tools
-          @loaded = true
-        rescue StandardError => e
-          # Handle error appropriately
-          Rails.logger.error("Failed to load tools: #{e.message}")
-          # Still mark as loaded but with empty list?
-          @loaded = true unless @tools.empty?
-        end
+        @collection_data = tools.map { |tool_data| Tool.new(tool_data) }
       end
 
       # Internal Tool class to represent individual tools

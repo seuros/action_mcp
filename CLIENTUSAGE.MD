@@ -35,7 +35,7 @@ The `SSEClient` is used to connect to MCP servers via HTTP Server-Sent Events.
 To connect to the server, call the `connect` method:
 
 ```ruby
-client = ActionMCP.create_client("http://127.0.0.1:3066/action_mcp")
+client = ActionMCP.create_client("http://127.0.0.1:3066/action_mcp", connect: false)
 client.connect
 ```
 
@@ -89,7 +89,6 @@ The `ActionMCP::Client` provides access to collections of tools, prompts, resour
 ### Fetching tools from the toolbox
 
 ```ruby
-client.list_tools
 tools = client.toolbox.all
 tools.each do |tool|
   puts tool.name
@@ -99,7 +98,6 @@ end
 ### Accessing prompts from the prompt_book
 
 ```ruby
-client.list_prompts
 prompts = client.prompt_book.all
 prompts.each do |prompt|
   puts prompt.name
@@ -109,7 +107,6 @@ end
 ### Accessing resources from the catalog
 
 ```ruby
-client.list_resources
 resources = client.catalog.all
 resources.each do |resource|
   puts resource.uri
@@ -119,7 +116,6 @@ end
 ### Accessing blueprints from the blueprint
 
 ```ruby
-client.list_resource_templates
 blueprints = client.blueprint.all
 blueprints.each do |blueprint|
   puts blueprint.pattern

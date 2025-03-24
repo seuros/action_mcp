@@ -70,25 +70,30 @@ module ActionMCP
 
       def process_response(id, result)
         if transport.id == id
-          ## This initialize the transport
+          ## This initializes the transport
           client.server = Client::Server.new(result)
           return send_initialized_notification
         end
+
         request = transport.messages.requests.find_by(jsonrpc_id: id)
         return unless request
+
+        # Mark the request as acknowledged
+        request.update(request_acknowledged: true)
+
         case request.rpc_method
         when "tools/list"
-           client.toolbox.tools = result["tools"]
-           return client.toolbox.all
+          client.toolbox.tools = result["tools"]
+          return true
         when "prompts/list"
           client.prompt_book.prompts = result["prompts"]
-          return client.prompt_book.all
+          return true
         when "resources/list"
           client.catalog.resources = result["resources"]
-          return client.catalog.all
+          return true
         when "resources/templates/list"
           client.blueprint.templates = result["resourceTemplates"]
-          return client.blueprint.all
+          return true
         end
 
         puts "\e[31mUnknown response: #{id} #{result}\e[0m"

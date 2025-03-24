@@ -24,27 +24,16 @@ module ActionMCP
     #   # Get all prompts matching a criteria
     #   text_prompts = book.filter { |p| p.name.include?("text") }
     #
-    class PromptBook
+    class PromptBook < Collection
       # Initialize a new PromptBook with prompt definitions
       #
       # @param prompts [Array<Hash>] Array of prompt definition hashes, each containing
       #   name, description, and arguments keys
       # @param client [Object, nil] Optional client for lazy loading of prompts
-      attr_reader :client
-
       def initialize(prompts, client)
+        super([], client)
         self.prompts = prompts
-        @client = client
-        @loaded = !prompts.empty?
-      end
-
-      # Return all prompts in the collection. If initialized with a client and prompts
-      # haven't been loaded yet, this will trigger lazy loading from the client.
-      #
-      # @return [Array<Prompt>] All prompt objects in the collection
-      def all
-        load_prompts unless @loaded
-        @prompts
+        @load_method = :list_prompts
       end
 
       # Find a prompt by name
@@ -55,28 +44,11 @@ module ActionMCP
         all.find { |prompt| prompt.name == name }
       end
 
-      # Filter prompts based on a given block
-      #
-      # @yield [prompt] Block that determines whether to include a prompt
-      # @yieldparam prompt [Prompt] A prompt from the collection
-      # @yieldreturn [Boolean] true to include the prompt, false to exclude it
-      # @return [Array<Prompt>] Prompts that match the filter criteria
-      def filter(&block)
-        all.select(&block)
-      end
-
       # Get a list of all prompt names
       #
       # @return [Array<String>] Names of all prompts in the collection
       def names
         all.map(&:name)
-      end
-
-      # Number of prompts in the collection
-      #
-      # @return [Integer] The number of prompts
-      def size
-        all.size
       end
 
       # Check if the collection contains a prompt with the given name
@@ -87,49 +59,11 @@ module ActionMCP
         all.any? { |prompt| prompt.name == name }
       end
 
-      # Implements enumerable functionality for the collection
-      include Enumerable
-
-      # Yield each prompt in the collection to the given block
-      #
-      # @yield [prompt] Block to execute for each prompt
-      # @yieldparam prompt [Prompt] A prompt from the collection
-      # @return [Enumerator] If no block is given
-      def each(&block)
-        all.each(&block)
-      end
-
-      # Force reload all prompts from the client and return them
-      #
-      # @return [Array<Prompt>] All prompt objects in the collection
-      def all!
-        load_prompts(force: true)
-        all
-      end
-
       # Convert raw prompt data into Prompt objects
       #
       # @param prompts [Array<Hash>] Array of prompt definition hashes
       def prompts=(prompts)
-        @prompts = prompts.map { |data| Prompt.new(data) }
-      end
-
-      private
-
-      # Load or reload prompts using the client
-      #
-      # @param force [Boolean] Whether to force reload even if prompts are already loaded
-      # @return [void]
-      def load_prompts(force: false)
-        return if @loaded && !force
-
-        begin
-          @client.list_prompts
-          @loaded = true
-        rescue StandardError => e
-          Rails.logger.error("Failed to load prompts: #{e.message}")
-          @loaded = true unless @prompts.empty?
-        end
+        @collection_data = prompts.map { |data| Prompt.new(data) }
       end
 
       # Internal Prompt class to represent individual prompts

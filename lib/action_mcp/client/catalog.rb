@@ -24,35 +24,16 @@ module ActionMCP
     #   # Get all resources matching a criteria
     #   rust_files = catalog.filter { |r| r.mime_type == "text/x-rust" }
     #
-    class Catalog
+    class Catalog < Collection
       # Initialize a new Catalog with resource definitions
       #
       # @param resources [Array<Hash>] Array of resource definition hashes, each containing
       #   uri, name, description, and mimeType keys
       # @param client [Object, nil] Optional client for lazy loading of resources
-      attr_reader :client
-
       def initialize(resources, client)
+        super([], client)
         self.resources = resources
-        @client = client
-        @loaded = !resources.empty?
-      end
-
-      # Return all resources in the collection. If initialized with a client and resources
-      # haven't been loaded yet, this will trigger lazy loading from the client.
-      #
-      # @return [Array<Resource>] All resource objects in the collection
-      def all
-        load_resources unless @loaded
-        @resources
-      end
-
-      # Force reload all resources from the client and return them
-      #
-      # @return [Array<Resource>] All resource objects in the collection
-      def all!
-        load_resources(force: true)
-        @resources
+        @load_method = :list_resources
       end
 
       # Find a resource by URI
@@ -79,28 +60,11 @@ module ActionMCP
         all.select { |resource| resource.mime_type == mime_type }
       end
 
-      # Filter resources based on a given block
-      #
-      # @yield [resource] Block that determines whether to include a resource
-      # @yieldparam resource [Resource] A resource from the collection
-      # @yieldreturn [Boolean] true to include the resource, false to exclude it
-      # @return [Array<Resource>] Resources that match the filter criteria
-      def filter(&block)
-        all.select(&block)
-      end
-
       # Get a list of all resource URIs
       #
       # @return [Array<String>] URIs of all resources in the collection
       def uris
         all.map(&:uri)
-      end
-
-      # Number of resources in the collection
-      #
-      # @return [Integer] The number of resources
-      def size
-        all.size
       end
 
       # Check if the collection contains a resource with the given URI
@@ -130,41 +94,11 @@ module ActionMCP
         end
       end
 
-      # Implements enumerable functionality for the collection
-      include Enumerable
-
-      # Yield each resource in the collection to the given block
-      #
-      # @yield [resource] Block to execute for each resource
-      # @yieldparam resource [Resource] A resource from the collection
-      # @return [Enumerator] If no block is given
-      def each(&block)
-        all.each(&block)
-      end
-
       # Convert raw resource data into Resource objects
       #
       # @param raw_resources [Array<Hash>] Array of resource definition hashes
       def resources=(raw_resources)
-        @resources = raw_resources.map { |resource_data| Resource.new(resource_data) }
-      end
-
-      private
-
-      # Load or reload resources using the client
-      #
-      # @param force [Boolean] Whether to force reload even if resources are already loaded
-      # @return [void]
-      def load_resources(force: false)
-        return if @loaded && !force
-
-        begin
-          @client.list_resources
-          @loaded = true
-        rescue StandardError => e
-          Rails.logger.error("Failed to load resources: #{e.message}")
-          @loaded = true unless @resources.empty?
-        end
+        @collection_data = raw_resources.map { |resource_data| Resource.new(resource_data) }
       end
 
       # Internal Resource class to represent individual resources

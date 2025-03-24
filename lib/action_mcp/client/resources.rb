@@ -4,26 +4,32 @@ module ActionMCP
   module Client
     module Resources
       # List all available resources from the server
-      # @return [Array<Hash>] List of available resources with their metadata
+      # @return [String] Request ID for tracking the request
       def list_resources
         request_id = SecureRandom.uuid_v7
 
         # Send request
         send_jsonrpc_request("resources/list", id: request_id)
+
+        # Return request ID for tracking the request
+        request_id
       end
 
       # List resource templates from the server
-      # @return [Array<Hash>] List of resource templates
+      # @return [String] Request ID for tracking the request
       def list_resource_templates
         request_id = SecureRandom.uuid_v7
 
         # Send request
         send_jsonrpc_request("resources/templates/list", id: request_id)
+
+        # Return request ID for tracking the request
+        request_id
       end
 
       # Read a specific resource
       # @param uri [String] URI of the resource to read
-      # @return [Hash] Resource content
+      # @return [String] Request ID for tracking the request
       def read_resource(uri)
         request_id = SecureRandom.uuid_v7
 
@@ -32,12 +38,15 @@ module ActionMCP
                              params: { uri: uri },
                              id: request_id
         )
+
+        # Return request ID for tracking the request
+        request_id
       end
 
       # Subscribe to updates for a specific resource
       # @param uri [String] URI of the resource to subscribe to
       # @param update_callback [Proc] Callback for resource updates
-      # @return [Boolean] Success status
+      # @return [String] Request ID for tracking the request
       def subscribe_resource(uri, update_callback)
         @resource_subscriptions ||= {}
         @resource_subscriptions[uri] = update_callback
@@ -49,11 +58,14 @@ module ActionMCP
                              params: { uri: uri },
                              id: request_id
         )
+
+        # Return request ID for tracking the request
+        request_id
       end
 
       # Unsubscribe from updates for a specific resource
       # @param uri [String] URI of the resource to unsubscribe from
-      # @return [Boolean] Success status
+      # @return [String] Request ID for tracking the request
       def unsubscribe_resource(uri)
         @resource_subscriptions&.delete(uri)
 
@@ -64,6 +76,9 @@ module ActionMCP
                              params: { uri: uri },
                              id: request_id
         )
+
+        # Return request ID for tracking the request
+        request_id
       end
     end
   end
