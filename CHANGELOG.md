@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.22.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.21.0...action_mcp/v0.22.0) (2025-03-24)
+
+
+### Features
+
+* add Catalog, Blueprint, PromptBook, and Toolbox classes for resource management ([a01c10a](https://github.com/seuros/action_mcp/commit/a01c10a43a7aa2e0c9efa19801ce436491a0ca27))
+* add StdioClient and SSEClient classes for handling STDIO and SSE transports ([e6a2a6c](https://github.com/seuros/action_mcp/commit/e6a2a6c4175a4837f5c7e50b0d41f02efd5df552))
+* add Toolbox, Catalog, Blueprint, and PromptBook test cases and enhance Toolbox hash representation methods ([fef9aef](https://github.com/seuros/action_mcp/commit/fef9aeff88b38e89fbbc763d8b29b45d7d414ccb))
+* enhance SSEClient initialization and add connection status check ([c4a6bfe](https://github.com/seuros/action_mcp/commit/c4a6bfe0e61b44e313594218ac3d1adb655d0e88))
+* implement lazy loading for blueprints, catalog, and prompt book with client support ([368b755](https://github.com/seuros/action_mcp/commit/368b75516238486ecca6c669be2cbd1360a6503e))
+* introduce ActionMCP client structure and add new client capabilities ([8232964](https://github.com/seuros/action_mcp/commit/8232964ef00bfe54fdb31b749e63d5f09f737441))
+* refactor initialization of client-related classes ([afd62e5](https://github.com/seuros/action_mcp/commit/afd62e5ed4ea732153c03c958c89d41f161f90c3))
+* refactor JSON-RPC handler and enhance session management ([6cb700f](https://github.com/seuros/action_mcp/commit/6cb700f272219a90b08f715e06f609a2014488e5))
+* refactor resource and blueprint methods to use 'all' for consistency ([d5ce076](https://github.com/seuros/action_mcp/commit/d5ce076b67dca2b9c9e69548a58d4b356228acff))
+* refactor resource initialization and enhance collection management in Blueprint, Catalog, and Toolbox ([7b0d978](https://github.com/seuros/action_mcp/commit/7b0d978eafe51fc247959ba02ad4a4e284886b6b))
+* remove faraday as dependency ([e6a2a6c](https://github.com/seuros/action_mcp/commit/e6a2a6c4175a4837f5c7e50b0d41f02efd5df552))
+
 ## [0.21.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.20.0...action_mcp/v0.21.0) (2025-03-23)
 
 
