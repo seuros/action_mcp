@@ -33,7 +33,7 @@ module ActionMCP
       protected
 
       def start_transport
-        log_info("Connecting to #{@base_url}#{@sse_path}...")
+        log_debug("Connecting to #{@base_url}#{@sse_path}...")
         @stop_requested = false
 
         # Reset connection state before starting
@@ -50,7 +50,7 @@ module ActionMCP
       end
 
       def stop_transport
-        log_info("Stopping SSE connection...")
+        log_debug("Stopping SSE connection...")
         @stop_requested = true
         cleanup_sse_thread
       end
@@ -127,7 +127,7 @@ module ActionMCP
       end
 
       def listen_sse
-        log_info("Starting SSE listener...")
+        log_debug("Starting SSE listener...")
 
         begin
           @conn.get(@sse_path) do |req|
@@ -236,7 +236,7 @@ module ActionMCP
 
       def set_post_endpoint(endpoint_path)
         @post_url = build_post_url(endpoint_path)
-        log_info("Received POST endpoint: #{post_url}")
+        log_debug("Received POST endpoint: #{post_url}")
 
         # Signal that we have received the endpoint
         @endpoint_mutex.synchronize do

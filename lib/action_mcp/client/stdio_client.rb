@@ -23,10 +23,10 @@ module ActionMCP
 
         # Just log that connection is established but don't send capabilities yet
         if @threads_started && @wait_thr.alive?
-          log_info("STDIO connection established")
+          log_debug("STDIO connection established")
           true
         else
-          log_error("Failed to start STDIO threads or process is not alive")
+          log_debug("Failed to start STDIO threads or process is not alive")
           false
         end
       end
@@ -65,7 +65,6 @@ module ActionMCP
         @stderr_thread = Thread.new do
           @stderr.each_line do |line|
             line = line.chomp
-            log_info(line)
 
             # Check stderr for server messages
             mark_ready_and_send_capabilities if line.include?("MCP Server") || line.include?("running on stdio")
@@ -80,12 +79,12 @@ module ActionMCP
         return if @received_server_message
 
         @received_server_message = true
-        log_info("Received first server message")
+        log_debug("Received first server message")
 
         # Send initial capabilities if not already sent
         return if @capabilities_sent
 
-        log_info("Server is ready, sending initial capabilities...")
+        log_debug("Server is ready, sending initial capabilities...")
         send_initial_capabilities
         @capabilities_sent = true
       end

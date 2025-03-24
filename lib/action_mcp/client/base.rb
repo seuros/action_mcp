@@ -52,7 +52,7 @@ module ActionMCP
         return true if @connected
 
         begin
-          log_info("Connecting to MCP server...")
+          log_debug("Connecting to MCP server...")
           @connection_error = nil
 
           # Start transport with proper error handling
@@ -64,7 +64,7 @@ module ActionMCP
           end
 
           @connected = true
-          log_info("Connected to MCP server")
+          log_debug("Connected to MCP server")
 
           # Create handler only if it doesn't exist yet
           @json_rpc_handler ||= JsonRpcHandler.new(session, self)
@@ -90,7 +90,7 @@ module ActionMCP
         begin
           stop_transport
           @connected = false
-          log_info("Disconnected from MCP server")
+          log_debug("Disconnected from MCP server")
           true
         rescue StandardError => e
           log_error("Error disconnecting from MCP server: #{e.message}")
@@ -164,7 +164,6 @@ module ActionMCP
       protected
 
       def handle_raw_message(raw)
-        log_debug("\e[31m<-- #{raw}\e[0m")
         begin
           @message_callback&.call(raw)
         rescue MultiJson::ParseError => e
@@ -177,7 +176,7 @@ module ActionMCP
       end
 
       def send_initial_capabilities
-        log_info("Sending client capabilities")
+        log_debug("Sending client capabilities")
         # We have contact! Let's send our CV to the recruiter.
         # We persist the session object to the database
         session.save
