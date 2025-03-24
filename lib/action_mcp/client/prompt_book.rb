@@ -4,13 +4,19 @@ module ActionMCP
   module Client
     # PromptBook
     #
-    # A collection that manages and provides access to prompt templates form the MCP server.
+    # A collection that manages and provides access to prompt templates from the MCP server.
     # The class stores prompt definitions along with their arguments and provides methods
-    # for retrieving, filtering, and accessing prompts.
+    # for retrieving, filtering, and accessing prompts. It supports lazy loading of prompts
+    # when initialized with a client.
     #
     # Example usage:
+    #   # Eager loading
     #   prompts_data = client.list_prompts # Returns array of prompt definitions
     #   book = PromptBook.new(prompts_data)
+    #
+    #   # Lazy loading
+    #   book = PromptBook.new([], client)
+    #   prompts = book.all # Prompts are loaded here
     #
     #   # Access a specific prompt by name
     #   summary_prompt = book.find("summarize_text")
@@ -23,14 +29,21 @@ module ActionMCP
       #
       # @param prompts [Array<Hash>] Array of prompt definition hashes, each containing
       #   name, description, and arguments keys
-      def initialize(prompts = [])
+      # @param client [Object, nil] Optional client for lazy loading of prompts
+      attr_reader :client
+
+      def initialize(prompts = [], client = nil)
         self.prompts = prompts
+        @client = client
+        @loaded = !prompts.empty?
       end
 
-      # Return all prompts in the collection
+      # Return all prompts in the collection. If initialized with a client and prompts
+      # haven't been loaded yet, this will trigger lazy loading from the client.
       #
       # @return [Array<Prompt>] All prompt objects in the collection
       def all
+        load_prompts unless @loaded
         @prompts
       end
 
@@ -86,9 +99,40 @@ module ActionMCP
         @prompts.each(&block)
       end
 
+      # Force reload all prompts from the client and return them
+      #
+      # @return [Array<Prompt>] All prompt objects in the collection
+      def all!
+        load_prompts(force: true)
+        @prompts
+      end
+
       private
+
+      # Convert raw prompt data into Prompt objects
+      #
+      # @param prompts [Array<Hash>] Array of prompt definition hashes
       def prompts=(prompts)
         @prompts = prompts.map { |data| Prompt.new(data) }
+      end
+
+      # Load or reload prompts using the client
+      #
+      # @param force [Boolean] Whether to force reload even if prompts are already loaded
+      # @return [void]
+      def load_prompts(force: false)
+        return if @loaded && !force
+
+        if @client
+          begin
+            prompt_list = @client.list_prompts
+            self.prompts = prompt_list
+            @loaded = true
+          rescue StandardError => e
+            Rails.logger.error("Failed to load prompts: #{e.message}")
+            @loaded = true unless @prompts.empty?
+          end
+        end
       end
 
       # Internal Prompt class to represent individual prompts

@@ -7,10 +7,16 @@ module ActionMCP
     # A collection that manages and provides access to resources.
     # This class stores resource definitions and provides methods for
     # retrieving, filtering, and accessing resources by URI or other attributes.
+    # It supports lazy loading of resources when initialized with a client.
     #
     # Example usage:
+    #   # Eager loading
     #   resources_data = client.list_resources # Returns array of resource definitions
     #   catalog = Catalog.new(resources_data)
+    #
+    #   # Lazy loading
+    #   catalog = Catalog.new([], client)
+    #   resources = catalog.all # Resources are loaded here
     #
     #   # Access a specific resource by URI
     #   main_file = catalog.find_by_uri("file:///project/src/main.rs")
@@ -23,14 +29,29 @@ module ActionMCP
       #
       # @param resources [Array<Hash>] Array of resource definition hashes, each containing
       #   uri, name, description, and mimeType keys
-      def initialize(resources = [])
+      # @param client [Object, nil] Optional client for lazy loading of resources
+      attr_reader :client
+
+      def initialize(resources = [], client = nil)
         self.resources = resources
+        @client = client
+        @loaded = !resources.empty?
       end
 
-      # Return all resources in the collection
+      # Return all resources in the collection. If initialized with a client and resources
+      # haven't been loaded yet, this will trigger lazy loading from the client.
       #
       # @return [Array<Resource>] All resource objects in the collection
       def all
+        load_resources unless @loaded
+        @resources
+      end
+
+      # Force reload all resources from the client and return them
+      #
+      # @return [Array<Resource>] All resource objects in the collection
+      def all!
+        load_resources(force: true)
         @resources
       end
 
@@ -123,8 +144,30 @@ module ActionMCP
 
       private
 
+      # Convert raw resource data into Resource objects
+      #
+      # @param raw_resources [Array<Hash>] Array of resource definition hashes
       def resources=(raw_resources)
         @resources = raw_resources.map { |resource_data| Resource.new(resource_data) }
+      end
+
+      # Load or reload resources using the client
+      #
+      # @param force [Boolean] Whether to force reload even if resources are already loaded
+      # @return [void]
+      def load_resources(force: false)
+        return if @loaded && !force
+
+        if @client
+          begin
+            resource_list = @client.list_resources
+            self.resources = resource_list
+            @loaded = true
+          rescue StandardError => e
+            Rails.logger.error("Failed to load resources: #{e.message}")
+            @loaded = true unless @resources.empty?
+          end
+        end
       end
 
       # Internal Resource class to represent individual resources

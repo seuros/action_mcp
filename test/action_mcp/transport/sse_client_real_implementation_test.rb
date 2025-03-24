@@ -16,7 +16,7 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
     logger = Logger.new(@log_output)
     logger.level = Logger::ERROR
 
-    @client = ActionMCP.create_client("http://seuros.com/action_mcp", logger: logger)
+    @client = ActionMCP.create_client("http://seuros.com/action_mcp", logger: logger, connect: false)
 
     @sent_messages = []
 
@@ -32,7 +32,6 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
       end
 
       # No need to start the SSE thread
-      # No need to wait for endpoint
     end
 
     # Stub HTTP request handling

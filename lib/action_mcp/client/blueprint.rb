@@ -6,11 +6,17 @@ module ActionMCP
     #
     # A collection that manages and provides access to URI templates (blueprints) for Model Context Protocol (MCP)
     # resource discovery. These blueprints allow dynamic construction of resource URIs by filling in
-    # variable placeholders with specific values.
+    # variable placeholders with specific values. The class supports lazy loading of templates when
+    # initialized with a client.
     #
     # Example usage:
+    #   # Eager loading
     #   template_data = client.list_resource_templates # Returns array of URI template definitions
     #   blueprints = Blueprint.new(template_data)
+    #
+    #   # Lazy loading
+    #   blueprints = Blueprint.new([], client)
+    #   templates = blueprints.all # Templates are loaded here
     #
     #   # Access a specific blueprint by pattern
     #   file_blueprint = Blueprint.find_by_pattern("file://{path}")
@@ -23,14 +29,29 @@ module ActionMCP
       #
       # @param templates [Array<Hash>] Array of URI template definition hashes, each containing
       #   uriTemplate, name, description, and optionally mimeType keys
-      def initialize(templates = [])
+      # @param client [Object, nil] Optional client for lazy loading of templates
+      attr_reader :client
+
+      def initialize(templates = [], client = nil)
         self.templates = templates
+        @client = client
+        @loaded = !templates.empty?
       end
 
-      # Return all URI templates in the collection
+      # Return all URI templates in the collection. If initialized with a client and templates
+      # haven't been loaded yet, this will trigger lazy loading from the client.
       #
       # @return [Array<Blueprint>] All blueprint objects in the collection
       def all
+        load_templates unless @loaded
+        @templates
+      end
+
+      # Force reload all templates from the client and return them
+      #
+      # @return [Array<Blueprint>] All blueprint objects in the collection
+      def all!
+        load_templates(force: true)
         @templates
       end
 
@@ -107,8 +128,37 @@ module ActionMCP
         @templates.each(&block)
       end
 
+      def all!
+        load_templates(force: true)
+        @templates
+      end
+
+      private
+
+      # Convert raw template data into ResourceTemplate objects
+      #
+      # @param templates [Array<Hash>] Array of template definition hashes
       def templates=(templates)
         @templates = templates.map { |template_data| ResourceTemplate.new(template_data) }
+      end
+
+      # Load or reload templates using the client
+      #
+      # @param force [Boolean] Whether to force reload even if templates are already loaded
+      # @return [void]
+      def load_templates(force: false)
+        return if @loaded && !force
+
+        if @client
+          begin
+            template_list = @client.list_resource_templates
+            self.templates = template_list
+            @loaded = true
+          rescue StandardError => e
+            Rails.logger.error("Failed to load templates: #{e.message}")
+            @loaded = true unless @templates.empty?
+          end
+        end
       end
 
       # Internal Blueprint class to represent individual URI templates
