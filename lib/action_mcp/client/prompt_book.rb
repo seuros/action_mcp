@@ -52,7 +52,7 @@ module ActionMCP
       # @param name [String] Name of the prompt to find
       # @return [Prompt, nil] The prompt with the given name, or nil if not found
       def find(name)
-        @prompts.find { |prompt| prompt.name == name }
+        all.find { |prompt| prompt.name == name }
       end
 
       # Filter prompts based on a given block
@@ -62,21 +62,21 @@ module ActionMCP
       # @yieldreturn [Boolean] true to include the prompt, false to exclude it
       # @return [Array<Prompt>] Prompts that match the filter criteria
       def filter(&block)
-        @prompts.select(&block)
+        all.select(&block)
       end
 
       # Get a list of all prompt names
       #
       # @return [Array<String>] Names of all prompts in the collection
       def names
-        @prompts.map(&:name)
+        all.map(&:name)
       end
 
       # Number of prompts in the collection
       #
       # @return [Integer] The number of prompts
       def size
-        @prompts.size
+        all.size
       end
 
       # Check if the collection contains a prompt with the given name
@@ -84,7 +84,7 @@ module ActionMCP
       # @param name [String] The prompt name to check for
       # @return [Boolean] true if a prompt with the name exists
       def contains?(name)
-        @prompts.any? { |prompt| prompt.name == name }
+        all.any? { |prompt| prompt.name == name }
       end
 
       # Implements enumerable functionality for the collection
@@ -96,7 +96,7 @@ module ActionMCP
       # @yieldparam prompt [Prompt] A prompt from the collection
       # @return [Enumerator] If no block is given
       def each(&block)
-        @prompts.each(&block)
+        all.each(&block)
       end
 
       # Force reload all prompts from the client and return them
@@ -104,7 +104,7 @@ module ActionMCP
       # @return [Array<Prompt>] All prompt objects in the collection
       def all!
         load_prompts(force: true)
-        @prompts
+        all
       end
 
       private

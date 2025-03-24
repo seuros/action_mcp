@@ -60,7 +60,7 @@ module ActionMCP
       # @param pattern [String] URI template pattern to find
       # @return [Blueprint, nil] The blueprint with the given pattern, or nil if not found
       def find_by_pattern(pattern)
-        @templates.find { |blueprint| blueprint.pattern == pattern }
+        all.find { |blueprint| blueprint.pattern == pattern }
       end
 
       # Find blueprints by name
@@ -68,7 +68,7 @@ module ActionMCP
       # @param name [String] Name of the blueprints to find
       # @return [Array<Blueprint>] Blueprints with the given name
       def find_by_name(name)
-        @templates.select { |blueprint| blueprint.name == name }
+        all.select { |blueprint| blueprint.name == name }
       end
 
       # Construct a concrete URI by applying parameters to a blueprint
@@ -91,14 +91,14 @@ module ActionMCP
       # @yieldreturn [Boolean] true to include the blueprint, false to exclude it
       # @return [Array<Blueprint>] Blueprints that match the filter criteria
       def filter(&block)
-        @templates.select(&block)
+        all.select(&block)
       end
 
       # Number of blueprints in the collection
       #
       # @return [Integer] The number of blueprints
       def size
-        @templates.size
+        all.size
       end
 
       # Check if the collection contains a blueprint with the given pattern
@@ -106,14 +106,14 @@ module ActionMCP
       # @param pattern [String] The blueprint pattern to check for
       # @return [Boolean] true if a blueprint with the pattern exists
       def contains?(pattern)
-        @templates.any? { |blueprint| blueprint.pattern == pattern }
+        all.any? { |blueprint| blueprint.pattern == pattern }
       end
 
       # Group blueprints by their base protocol
       #
       # @return [Hash<String, Array<Blueprint>>] Hash mapping protocols to arrays of blueprints
       def group_by_protocol
-        @templates.group_by(&:protocol)
+        all.group_by(&:protocol)
       end
 
       # Implements enumerable functionality for the collection
@@ -125,12 +125,7 @@ module ActionMCP
       # @yieldparam blueprint [Blueprint] A blueprint from the collection
       # @return [Enumerator] If no block is given
       def each(&block)
-        @templates.each(&block)
-      end
-
-      def all!
-        load_templates(force: true)
-        @templates
+        all.each(&block)
       end
 
       private

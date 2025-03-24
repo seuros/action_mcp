@@ -60,7 +60,7 @@ module ActionMCP
       # @param uri [String] URI of the resource to find
       # @return [Resource, nil] The resource with the given URI, or nil if not found
       def find_by_uri(uri)
-        @resources.find { |resource| resource.uri == uri }
+        all.find { |resource| resource.uri == uri }
       end
 
       # Find resources by name
@@ -68,7 +68,7 @@ module ActionMCP
       # @param name [String] Name of the resources to find
       # @return [Array<Resource>] Resources with the given name
       def find_by_name(name)
-        @resources.select { |resource| resource.name == name }
+        all.select { |resource| resource.name == name }
       end
 
       # Find resources by MIME type
@@ -76,7 +76,7 @@ module ActionMCP
       # @param mime_type [String] MIME type to search for
       # @return [Array<Resource>] Resources with the given MIME type
       def find_by_mime_type(mime_type)
-        @resources.select { |resource| resource.mime_type == mime_type }
+        all.select { |resource| resource.mime_type == mime_type }
       end
 
       # Filter resources based on a given block
@@ -86,21 +86,21 @@ module ActionMCP
       # @yieldreturn [Boolean] true to include the resource, false to exclude it
       # @return [Array<Resource>] Resources that match the filter criteria
       def filter(&block)
-        @resources.select(&block)
+        all.select(&block)
       end
 
       # Get a list of all resource URIs
       #
       # @return [Array<String>] URIs of all resources in the collection
       def uris
-        @resources.map(&:uri)
+        all.map(&:uri)
       end
 
       # Number of resources in the collection
       #
       # @return [Integer] The number of resources
       def size
-        @resources.size
+        all.size
       end
 
       # Check if the collection contains a resource with the given URI
@@ -108,14 +108,14 @@ module ActionMCP
       # @param uri [String] The resource URI to check for
       # @return [Boolean] true if a resource with the URI exists
       def contains_uri?(uri)
-        @resources.any? { |resource| resource.uri == uri }
+        all.any? { |resource| resource.uri == uri }
       end
 
       # Group resources by MIME type
       #
       # @return [Hash<String, Array<Resource>>] Hash mapping MIME types to arrays of resources
       def group_by_mime_type
-        @resources.group_by(&:mime_type)
+        all.group_by(&:mime_type)
       end
 
       # Search resources by keyword in name or description
@@ -124,7 +124,7 @@ module ActionMCP
       # @return [Array<Resource>] Resources matching the search term
       def search(keyword)
         keyword = keyword.downcase
-        @resources.select do |resource|
+        all.select do |resource|
           resource.name.downcase.include?(keyword) ||
             (resource.description && resource.description.downcase.include?(keyword))
         end
@@ -139,7 +139,7 @@ module ActionMCP
       # @yieldparam resource [Resource] A resource from the collection
       # @return [Enumerator] If no block is given
       def each(&block)
-        @resources.each(&block)
+        all.each(&block)
       end
 
       private
