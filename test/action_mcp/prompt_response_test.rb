@@ -148,9 +148,10 @@ module ActionMCP
     end
 
     test "inspect returns readable representation" do
-      @response.add_message(role: "user", content: { type: "text", text: "Hello" })
+      msg = { role: "user", content: { type: "text", text: "Hello" } }
+      @response.add_message(**msg)
 
-      expected = '#<ActionMCP::PromptResponse messages: [{role: "user", content: {type: "text", text: "Hello"}}]>'
+      expected = "#<ActionMCP::PromptResponse messages: [#{msg.inspect}]>"
       assert_equal expected, @response.inspect
     end
   end
