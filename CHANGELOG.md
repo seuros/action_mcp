@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.23.0...action_mcp/v0.24.0) (2025-03-24)
+
+
+### Features
+
+* refactor initialization in collection-related classes to use provided data ([32dd186](https://github.com/seuros/action_mcp/commit/32dd186dab3934e6902b88159209c0f6bce8bd38))
+
 ## [0.23.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.22.0...action_mcp/v0.23.0) (2025-03-24)
 
 
