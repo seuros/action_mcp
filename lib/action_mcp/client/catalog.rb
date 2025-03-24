@@ -24,7 +24,7 @@ module ActionMCP
       # @param resources [Array<Hash>] Array of resource definition hashes, each containing
       #   uri, name, description, and mimeType keys
       def initialize(resources = [])
-        @resources = resources.map { |resource_data| Resource.new(resource_data) }
+        self.resources = resources
       end
 
       # Return all resources in the collection
@@ -119,6 +119,12 @@ module ActionMCP
       # @return [Enumerator] If no block is given
       def each(&block)
         @resources.each(&block)
+      end
+
+      private
+
+      def resources=(raw_resources)
+        @resources = raw_resources.map { |resource_data| Resource.new(resource_data) }
       end
 
       # Internal Resource class to represent individual resources

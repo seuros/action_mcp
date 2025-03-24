@@ -158,15 +158,16 @@ module ActionMCP
         end
       end
 
-      def handle_connection_error(message)
-        log_error("SSE connection failed: #{message}")
-
-        # Set error and notify waiting threads
+      def connection_error=(message)
         @connection_mutex.synchronize do
           @connection_error = message
           @connection_condition.broadcast
         end
+      end
 
+      def handle_connection_error(message)
+        log_error("SSE connection failed: #{message}")
+        self.connection_error = message
         @error_callback&.call(StandardError.new(message))
       end
 

@@ -24,7 +24,7 @@ module ActionMCP
       # @param prompts [Array<Hash>] Array of prompt definition hashes, each containing
       #   name, description, and arguments keys
       def initialize(prompts = [])
-        @prompts = prompts.map { |prompt_data| Prompt.new(prompt_data) }
+        self.prompts = prompts
       end
 
       # Return all prompts in the collection
@@ -84,6 +84,11 @@ module ActionMCP
       # @return [Enumerator] If no block is given
       def each(&block)
         @prompts.each(&block)
+      end
+
+      private
+      def prompts=(prompts)
+        @prompts = prompts.map { |data| Prompt.new(data) }
       end
 
       # Internal Prompt class to represent individual prompts

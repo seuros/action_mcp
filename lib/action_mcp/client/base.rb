@@ -13,10 +13,11 @@ module ActionMCP
       include Logging
 
       attr_reader :logger, :type,
-                  :connection_error, :server,
+                  :connection_error,
                   :server_capabilities, :session,
                   :catalog, :blueprint,
                   :prompt_book, :toolbox
+      attr_writer :server
       delegate :initialized?, to: :session
 
       def initialize(logger: ActionMCP.logger)
@@ -35,13 +36,13 @@ module ActionMCP
         @initialized = false
 
         # Resource objects
-        @catalog = Catalog.new
+        @catalog = Catalog.new([], self)
         # Resource template objects
-        @blueprint = Blueprint.new
+        @blueprint = Blueprint.new([], self)
         # Prompt objects
-        @prompt_book = PromptBook.new
+        @prompt_book = PromptBook.new([], self)
         # Tool objects
-        @toolbox = Toolbox.new
+        @toolbox = Toolbox.new([], self)
       end
 
       def connected?
@@ -181,7 +182,7 @@ module ActionMCP
         return if initialized?
 
         if response.result
-          @server = Client::Server.new(response.result)
+          self.server = Client::Server.new(response.result)
           send_initialized_notification
         else
           log_error("Server initialization failed: #{response.error}")
@@ -243,33 +244,6 @@ module ActionMCP
 
       def log_error(message)
         logger.error("[ActionMCP::#{self.class.name.split('::').last}] #{message}")
-      end
-
-      # Create a promise/future for an async response
-      # This implementation uses a simple callback approach
-      # You could replace this with a more sophisticated Promise implementation
-      def create_response_promise(request_id)
-        promise = ResponsePromise.new
-
-        # Store the promise with its request ID
-        @pending_responses ||= {}
-        @pending_responses[request_id] = promise
-
-        promise
-      end
-
-      # Handle incoming responses and resolve the corresponding promises
-      def handle_response(response)
-        return unless @pending_responses
-        puts "response: #{response.inspect}"
-        promise = @pending_responses.delete(response.id)
-        return unless promise
-
-        if response.error
-          promise.reject(response.error)
-        else
-          promise.resolve(response.result)
-        end
       end
     end
   end

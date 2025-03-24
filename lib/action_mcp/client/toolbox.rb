@@ -19,18 +19,28 @@ module ActionMCP
     #   calculation_tools = toolbox.filter { |t| t.name.include?("calculate") }
     #
     class Toolbox
+      attr_reader :client
+
       # Initialize a new Toolbox with tool definitions
       #
       # @param tools [Array<Hash>] Array of tool definition hashes, each containing
       #   name, description, and inputSchema keys
-      def initialize(tools = [])
-        @tools = tools.map { |tool_data| Tool.new(tool_data) }
+      def initialize(tools = [], client = nil)
+        self.tools = tools
+        @client = client
+        @loaded = !tools.empty?
       end
 
       # Return all tools in the collection
       #
       # @return [Array<Tool>] All tool objects in the collection
       def all
+        load_tools unless @loaded
+        @tools
+      end
+
+      def all!
+        load_tools(force: true)
         @tools
       end
 
@@ -39,7 +49,7 @@ module ActionMCP
       # @param name [String] Name of the tool to find
       # @return [Tool, nil] The tool with the given name, or nil if not found
       def find(name)
-        @tools.find { |tool| tool.name == name }
+        all.find { |tool| tool.name == name }
       end
 
       # Filter tools based on a given block
@@ -49,21 +59,21 @@ module ActionMCP
       # @yieldreturn [Boolean] true to include the tool, false to exclude it
       # @return [Array<Tool>] Tools that match the filter criteria
       def filter(&block)
-        @tools.select(&block)
+        all.select(&block)
       end
 
       # Get a list of all tool names
       #
       # @return [Array<String>] Names of all tools in the collection
       def names
-        @tools.map(&:name)
+        all.map(&:name)
       end
 
       # Number of tools in the collection
       #
       # @return [Integer] The number of tools
       def size
-        @tools.size
+        all.size
       end
 
       # Check if the collection contains a tool with the given name
@@ -71,7 +81,7 @@ module ActionMCP
       # @param name [String] The tool name to check for
       # @return [Boolean] true if a tool with the name exists
       def contains?(name)
-        @tools.any? { |tool| tool.name == name }
+        all.any? { |tool| tool.name == name }
       end
 
       # Get tools by category or type
@@ -112,6 +122,29 @@ module ActionMCP
       # @return [Enumerator] If no block is given
       def each(&block)
         @tools.each(&block)
+      end
+
+      private
+
+      def load_tools(force: false)
+        return if @loaded && !force
+
+        if @client
+          begin
+            tool_list = @client.list_tools
+            self.tools = tool_list
+            @loaded = true
+          rescue StandardError => e
+            # Handle error appropriately
+            Rails.logger.error("Failed to load tools: #{e.message}")
+            # Still mark as loaded but with empty list?
+            @loaded = true unless @tools.empty?
+          end
+        end
+      end
+
+      def tools=(tools)
+        @tools = tools.map { |tool_data| Tool.new(tool_data) }
       end
 
       # Internal Tool class to represent individual tools

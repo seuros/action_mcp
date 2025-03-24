@@ -24,14 +24,14 @@ module ActionMCP
       # @param templates [Array<Hash>] Array of URI template definition hashes, each containing
       #   uriTemplate, name, description, and optionally mimeType keys
       def initialize(templates = [])
-        @blueprints = templates.map { |template_data| ResourceTemplate.new(template_data) }
+        self.templates = templates
       end
 
       # Return all URI templates in the collection
       #
       # @return [Array<Blueprint>] All blueprint objects in the collection
       def all
-        @blueprints
+        @templates
       end
 
       # Find a blueprint by its URI pattern
@@ -39,7 +39,7 @@ module ActionMCP
       # @param pattern [String] URI template pattern to find
       # @return [Blueprint, nil] The blueprint with the given pattern, or nil if not found
       def find_by_pattern(pattern)
-        @blueprints.find { |blueprint| blueprint.pattern == pattern }
+        @templates.find { |blueprint| blueprint.pattern == pattern }
       end
 
       # Find blueprints by name
@@ -47,7 +47,7 @@ module ActionMCP
       # @param name [String] Name of the blueprints to find
       # @return [Array<Blueprint>] Blueprints with the given name
       def find_by_name(name)
-        @blueprints.select { |blueprint| blueprint.name == name }
+        @templates.select { |blueprint| blueprint.name == name }
       end
 
       # Construct a concrete URI by applying parameters to a blueprint
@@ -70,14 +70,14 @@ module ActionMCP
       # @yieldreturn [Boolean] true to include the blueprint, false to exclude it
       # @return [Array<Blueprint>] Blueprints that match the filter criteria
       def filter(&block)
-        @blueprints.select(&block)
+        @templates.select(&block)
       end
 
       # Number of blueprints in the collection
       #
       # @return [Integer] The number of blueprints
       def size
-        @blueprints.size
+        @templates.size
       end
 
       # Check if the collection contains a blueprint with the given pattern
@@ -85,14 +85,14 @@ module ActionMCP
       # @param pattern [String] The blueprint pattern to check for
       # @return [Boolean] true if a blueprint with the pattern exists
       def contains?(pattern)
-        @blueprints.any? { |blueprint| blueprint.pattern == pattern }
+        @templates.any? { |blueprint| blueprint.pattern == pattern }
       end
 
       # Group blueprints by their base protocol
       #
       # @return [Hash<String, Array<Blueprint>>] Hash mapping protocols to arrays of blueprints
       def group_by_protocol
-        @blueprints.group_by(&:protocol)
+        @templates.group_by(&:protocol)
       end
 
       # Implements enumerable functionality for the collection
@@ -104,7 +104,11 @@ module ActionMCP
       # @yieldparam blueprint [Blueprint] A blueprint from the collection
       # @return [Enumerator] If no block is given
       def each(&block)
-        @blueprints.each(&block)
+        @templates.each(&block)
+      end
+
+      def templates=(templates)
+        @templates = templates.map { |template_data| ResourceTemplate.new(template_data) }
       end
 
       # Internal Blueprint class to represent individual URI templates
