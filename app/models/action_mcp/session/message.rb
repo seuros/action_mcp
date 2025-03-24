@@ -8,7 +8,6 @@
 #  direction(The message recipient)       :string           default("client"), not null
 #  is_ping(Whether the message is a ping) :boolean          default(FALSE), not null
 #  message_json                           :jsonb
-#  message_text                           :string
 #  message_type(The type of the message)  :string           not null
 #  request_acknowledged                   :boolean          default(FALSE), not null
 #  request_cancelled                      :boolean          default(FALSE), not null
@@ -61,26 +60,26 @@ module ActionMCP
       def data=(payload)
         @data = payload
 
-        # Store original version and attempt to determine type
+        # Convert string payloads to JSON
         if payload.is_a?(String)
-          self.message_text = payload
           begin
             parsed_json = MultiJson.load(payload)
             self.message_json = parsed_json
-            self.message_text = nil
-            process_json_content(parsed_json)
           rescue MultiJson::ParseError
-            self.message_type = "text"
+            # Handle invalid JSON by creating an error object
+            self.message_json = { "error" => "Invalid JSON", "raw" => payload }
+            self.message_type = "invalid_json"
+            return
           end
         else
+          # Handle direct hash assignment
           self.message_json = payload
-          self.message_text = nil
-          process_json_content(payload)
         end
+        process_json_content(payload)
       end
 
       def data
-        message_json.presence || message_text
+        message_json
       end
 
       # Helper methods

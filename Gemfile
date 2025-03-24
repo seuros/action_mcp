@@ -18,6 +18,7 @@ gem "railties"
 gem "simplecov", require: false
 gem "solid_cable"
 gem "solid_cache"
+gem "solid_queue"
 
 gem "annotaterb"
 gem "pg"

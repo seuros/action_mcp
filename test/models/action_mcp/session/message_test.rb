@@ -8,7 +8,6 @@
 #  direction(The message recipient)       :string           default("client"), not null
 #  is_ping(Whether the message is a ping) :boolean          default(FALSE), not null
 #  message_json                           :jsonb
-#  message_text                           :string
 #  message_type(The type of the message)  :string           not null
 #  request_acknowledged                   :boolean          default(FALSE), not null
 #  request_cancelled                      :boolean          default(FALSE), not null
@@ -92,16 +91,6 @@ module ActionMCP
 
         ping_message.reload
         refute ping_message.request_acknowledged, "request_acknowledged should remain false for non-matching id"
-      end
-
-      # Test handling of non-JSON-RPC payloads (e.g., plain text)
-      test "handles non-JSON-RPC payloads" do
-        text_payload = "Hello, world!"
-        message = @session.messages.create!(direction: "client", data: text_payload)
-
-        assert_equal "text", message.message_type, "Message type should be 'text' for non-JSON-RPC"
-        refute message.is_ping, "is_ping should be false"
-        refute message.request_acknowledged, "request_acknowledged should be false"
       end
 
       # Test handling of JSON payloads that are not JSON-RPC compliant
