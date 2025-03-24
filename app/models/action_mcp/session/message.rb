@@ -48,7 +48,7 @@ module ActionMCP
 
       after_create_commit :broadcast_message, if: :outgoing_message?
       # Set is_ping on responses if the original request was a ping
-      after_create :handle_ping_response, if: -> { %w[response error].include?(message_type) }
+      after_create :acknowledge_request, if: -> { %w[response error].include?(message_type) }
 
       # Scope to exclude both "ping" requests and their responses
       scope :without_pings, -> { where(is_ping: false) }
@@ -136,17 +136,22 @@ module ActionMCP
         end
       end
 
-      def handle_ping_response
+      def acknowledge_request
         return unless jsonrpc_id.present?
 
         request_message = session.messages.find_by(
           jsonrpc_id: jsonrpc_id,
           message_type: "request"
         )
-        return unless request_message&.is_ping
 
-        self.is_ping = true
+        return unless request_message
+
+        # Set is_ping based on the request
+        self.is_ping = request_message.is_ping
+
+        # Mark the request as acknowledged for all responses
         request_message.update(request_acknowledged: true)
+
         save! if changed?
       end
     end
