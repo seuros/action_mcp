@@ -26,7 +26,7 @@ module ActionMCP
             "mimeType" => "application/json"
           }
         ]
-        @blueprints = Blueprint.new(@template_data)
+        @blueprints = Blueprint.new(@template_data, nil)
       end
 
       test "initializes with template data" do

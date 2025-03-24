@@ -13,11 +13,10 @@ module ActionMCP
       include Logging
 
       attr_reader :logger, :type,
-                  :connection_error,
+                  :connection_error, :server,
                   :server_capabilities, :session,
                   :catalog, :blueprint,
                   :prompt_book, :toolbox
-      attr_writer :server
       delegate :initialized?, to: :session
 
       def initialize(logger: ActionMCP.logger)
@@ -28,7 +27,6 @@ module ActionMCP
           client_info: client_info,
           client_capabilities: client_capabilities
         )
-        @initialize_request_id = @session.id
         @server_capabilities = nil
         @message_callback = nil
         @error_callback = nil
@@ -67,10 +65,9 @@ module ActionMCP
 
           @connected = true
           log_info("Connected to MCP server")
-          session.save
 
           # Create handler only if it doesn't exist yet
-          @json_rpc_handler ||= JsonRpcHandler.new(session)
+          @json_rpc_handler ||= JsonRpcHandler.new(session, self)
 
           # Clear any existing message callback and set a new one
           @message_callback = lambda do |response|
@@ -120,6 +117,7 @@ module ActionMCP
         end
 
         begin
+          session.write(payload)
           data = payload.to_json unless payload.is_a?(String)
           send_message(data)
           true
@@ -147,28 +145,28 @@ module ActionMCP
         raise NotImplementedError, "#{self.class} must implement #ready?"
       end
 
+      def server=(server)
+        if server.is_a?(Client::Server)
+          @server = server
+        else
+          @server = Client::Server.new(server)
+        end
+        session.server_capabilities = server.capabilities
+        session.server_info = server.server_info
+        session.save
+        server
+      end
+
+      def inspect
+        "#<#{self.class.name} server: #{server}, client_name: #{client_info[:name]}, client_version: #{client_info[:version]}, capabilities: #{client_capabilities} , connected: #{connected?}, initialized: #{initialized?}, session: #{session.id}>"
+      end
+
       protected
 
       def handle_raw_message(raw)
         log_debug("\e[31m<-- #{raw}\e[0m")
         begin
-          msg_hash = MultiJson.load(raw)
-          response = nil
-
-          if msg_hash.key?("jsonrpc")
-            response = if msg_hash.key?("id")
-                         JsonRpc::Response.new(**msg_hash.slice("id", "result", "error").symbolize_keys)
-            else
-                         JsonRpc::Notification.new(**msg_hash.slice("method", "params").symbolize_keys)
-            end
-          end
-
-          # Check if this is a response to our initialize request
-          if response && response.id == @initialize_request_id
-            handle_initialize_response(response)
-          elsif response
-            @message_callback&.call(raw)
-          end
+          @message_callback&.call(raw)
         rescue MultiJson::ParseError => e
           log_error("JSON parse error: #{e} (raw: #{raw})")
           @error_callback&.call(e)
@@ -178,42 +176,17 @@ module ActionMCP
         end
       end
 
-      def handle_initialize_response(response)
-        return if initialized?
-
-        if response.result
-          self.server = Client::Server.new(response.result)
-          send_initialized_notification
-        else
-          log_error("Server initialization failed: #{response.error}")
-          @error_callback&.call(StandardError.new("Initialization failed: #{response.error}"))
-        end
-      end
-
       def send_initial_capabilities
         log_info("Sending client capabilities")
-
-        request = JsonRpc::Request.new(
-          id: @initialize_request_id,
-          method: "initialize",
-          params: {
-            protocolVersion: session.protocol_version,
-            capabilities: session.client_capabilities,
-            clientInfo: session.client_info
-          }
-        )
-
-        send_message(request.to_json)
-      end
-
-      def send_initialized_notification
-        notification = JsonRpc::Notification.new(
-          method: "notifications/initialized"
-        )
-
-        log_info("Sending initialized notification")
-        session.initialize!
-        send_message(notification.to_json)
+        # We have contact! Let's send our CV to the recruiter.
+        # We persist the session object to the database
+        session.save
+        params= {
+          protocolVersion: session.protocol_version,
+          capabilities: session.client_capabilities,
+          clientInfo: session.client_info
+        }
+        send_jsonrpc_request("initialize", params: params, id: session.id)
       end
 
       def client_capabilities

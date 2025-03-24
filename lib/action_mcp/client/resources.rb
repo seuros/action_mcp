@@ -18,7 +18,7 @@ module ActionMCP
         request_id = SecureRandom.uuid_v7
 
         # Send request
-        send_jsonrpc_request("resources/listTemplates", id: request_id)
+        send_jsonrpc_request("resources/templates/list", id: request_id)
       end
 
       # Read a specific resource

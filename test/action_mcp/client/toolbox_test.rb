@@ -32,7 +32,7 @@ module ActionMCP
             }
           }
         ]
-        @toolbox = Toolbox.new(@tool_data)
+        @toolbox = Toolbox.new(@tool_data, nil)
       end
 
       test "initializes with tool data" do

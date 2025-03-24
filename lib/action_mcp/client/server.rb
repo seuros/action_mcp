@@ -3,12 +3,14 @@ module ActionMCP
     class Server
       attr_reader :name, :version
 
+      attr_reader :server_info, :capabilities
+
       def initialize(data)
         # Store protocol version if needed for later use
         @protocol_version = data["protocolVersion"]
 
         # Extract server information
-        server_info = data["serverInfo"] || {}
+        @server_info = data["serverInfo"] || {}
         @name = server_info["name"]
         @version = server_info["version"]
 
@@ -47,6 +49,12 @@ module ActionMCP
         resources_cap = @capabilities["resources"] || {}
         resources_cap["listChanged"] == true
       end
+
+      def inspect
+        "#<#{self.class.name} name: #{name}, version: #{version} with resources: #{resources?}, tools: #{tools?}, prompts: #{prompts?}, logging: #{logging?}>"
+      end
+
+      alias to_s inspect
     end
   end
 end

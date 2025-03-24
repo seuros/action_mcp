@@ -4,7 +4,7 @@ require "open3"
 
 module ActionMCP
   module Client
-    # MCP client using Standard I/O (STDIO) transport
+    # MCP client using Standard I/O (STDIO) transport, Not tested for now
     class StdioClient < Base
       def initialize(command, logger: ActionMCP.logger, **_options)
         super(logger: logger)

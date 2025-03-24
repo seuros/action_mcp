@@ -26,7 +26,7 @@ module ActionMCP
             "mimeType" => "text/markdown"
           }
         ]
-        @catalog = Catalog.new(@resource_data)
+        @catalog = Catalog.new(@resource_data, nil)
       end
 
       test "initializes with resource data" do

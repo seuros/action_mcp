@@ -61,6 +61,7 @@ module ActionMCP
       subscriptions.delete_all # delete all subscriptions
     end
 
+    # MESSAGING dispatch
     def write(data)
       if data.is_a?(JsonRpc::Request) || data.is_a?(JsonRpc::Response) || data.is_a?(JsonRpc::Notification)
         data = data.to_json

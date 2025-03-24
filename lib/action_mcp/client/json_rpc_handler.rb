@@ -3,6 +3,12 @@
 module ActionMCP
   module Client
     class JsonRpcHandler < JsonRpcHandlerBase
+      attr_reader :client
+      def initialize(transport, client)
+        super(transport)
+        @client = client
+      end
+
       protected
 
       # Handle client-specific methods
@@ -60,6 +66,43 @@ module ActionMCP
         else
           super
         end
+      end
+
+      def process_response(id, result)
+        if transport.id == id
+          ## This initialize the transport
+          client.server = Client::Server.new(result)
+          return send_initialized_notification
+        end
+        request = transport.messages.requests.find_by(jsonrpc_id: id)
+        return unless request
+        case request.rpc_method
+        when "tools/list"
+           client.toolbox.tools = result["tools"]
+           return client.toolbox.all
+        when "prompts/list"
+          client.prompt_book.prompts = result["prompts"]
+          return client.prompt_book.all
+        when "resources/list"
+          client.catalog.resources = result["resources"]
+          return client.catalog.all
+        when "resources/templates/list"
+          client.blueprint.templates = result["resourceTemplates"]
+          return client.blueprint.all
+        end
+
+        puts "\e[31mUnknown response: #{id} #{result}\e[0m"
+      end
+
+      def process_error(id, error)
+        # Do something ?
+        puts "\e[31mUnknown error: #{id} #{error}\e[0m"
+      end
+
+
+      def send_initialized_notification
+        transport.initialize!
+        client.send_jsonrpc_notification("notifications/initialized")
       end
     end
   end

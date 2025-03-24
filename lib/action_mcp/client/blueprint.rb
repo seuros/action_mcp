@@ -32,7 +32,7 @@ module ActionMCP
       # @param client [Object, nil] Optional client for lazy loading of templates
       attr_reader :client
 
-      def initialize(templates = [], client = nil)
+      def initialize(templates, client)
         self.templates = templates
         @client = client
         @loaded = !templates.empty?
@@ -128,14 +128,14 @@ module ActionMCP
         all.each(&block)
       end
 
-      private
-
       # Convert raw template data into ResourceTemplate objects
       #
       # @param templates [Array<Hash>] Array of template definition hashes
       def templates=(templates)
         @templates = templates.map { |template_data| ResourceTemplate.new(template_data) }
       end
+
+      private
 
       # Load or reload templates using the client
       #
@@ -144,15 +144,12 @@ module ActionMCP
       def load_templates(force: false)
         return if @loaded && !force
 
-        if @client
-          begin
-            template_list = @client.list_resource_templates
-            self.templates = template_list
-            @loaded = true
-          rescue StandardError => e
-            Rails.logger.error("Failed to load templates: #{e.message}")
-            @loaded = true unless @templates.empty?
-          end
+        begin
+          @client.list_resource_templates
+          @loaded = true
+        rescue StandardError => e
+          Rails.logger.error("Failed to load templates: #{e.message}")
+          @loaded = true unless @templates.empty?
         end
       end
 

@@ -75,16 +75,17 @@ module ActionMCP
     # @param request [Hash]
     def process_request(request)
       return unless valid_request?(request)
-
       read(request)
-      return if request["error"]
-      return if request["result"] == {} # Probably a pong
 
-      rpc_method = request["method"]
       id = request["id"]
-      params = request["params"]
 
-      return unless rpc_method
+      unless (rpc_method = request["method"])
+        # this is a response or a bobo
+        return process_response(id, request["result"]) if request["result"]
+        return process_error(id, request["error"]) if request["error"]
+      end
+
+      params = request["params"]
       # Try to handle common methods first
       return if handle_common_methods(rpc_method, id, params)
 

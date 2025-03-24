@@ -32,7 +32,7 @@ module ActionMCP
       # @param client [Object, nil] Optional client for lazy loading of resources
       attr_reader :client
 
-      def initialize(resources = [], client = nil)
+      def initialize(resources, client)
         self.resources = resources
         @client = client
         @loaded = !resources.empty?
@@ -142,14 +142,14 @@ module ActionMCP
         all.each(&block)
       end
 
-      private
-
       # Convert raw resource data into Resource objects
       #
       # @param raw_resources [Array<Hash>] Array of resource definition hashes
       def resources=(raw_resources)
         @resources = raw_resources.map { |resource_data| Resource.new(resource_data) }
       end
+
+      private
 
       # Load or reload resources using the client
       #
@@ -158,15 +158,12 @@ module ActionMCP
       def load_resources(force: false)
         return if @loaded && !force
 
-        if @client
-          begin
-            resource_list = @client.list_resources
-            self.resources = resource_list
-            @loaded = true
-          rescue StandardError => e
-            Rails.logger.error("Failed to load resources: #{e.message}")
-            @loaded = true unless @resources.empty?
-          end
+        begin
+          @client.list_resources
+          @loaded = true
+        rescue StandardError => e
+          Rails.logger.error("Failed to load resources: #{e.message}")
+          @loaded = true unless @resources.empty?
         end
       end
 

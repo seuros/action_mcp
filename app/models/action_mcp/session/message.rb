@@ -53,6 +53,10 @@ module ActionMCP
       # Scope to exclude both "ping" requests and their responses
       scope :without_pings, -> { where(is_ping: false) }
 
+      scope :requests, -> { where(message_type: "request") }
+      scope :notifications, -> { where(message_type: "notification") }
+      scope :responses, -> { where(message_type: "response") }
+
       # @param payload [String, Hash]
       def data=(payload)
         @data = payload
@@ -90,6 +94,11 @@ module ActionMCP
 
       def response?
         message_type == "response"
+      end
+
+      def rpc_method
+        return false unless request?
+        data["method"]
       end
 
       private

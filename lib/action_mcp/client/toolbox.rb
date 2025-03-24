@@ -25,7 +25,7 @@ module ActionMCP
       #
       # @param tools [Array<Hash>] Array of tool definition hashes, each containing
       #   name, description, and inputSchema keys
-      def initialize(tools = [], client = nil)
+      def initialize(tools, client)
         self.tools = tools
         @client = client
         @loaded = !tools.empty?
@@ -124,27 +124,24 @@ module ActionMCP
         @tools.each(&block)
       end
 
+      def tools=(tools)
+        @tools = tools.map { |tool_data| Tool.new(tool_data) }
+      end
+
       private
 
       def load_tools(force: false)
         return if @loaded && !force
 
-        if @client
-          begin
-            tool_list = @client.list_tools
-            self.tools = tool_list
-            @loaded = true
-          rescue StandardError => e
-            # Handle error appropriately
-            Rails.logger.error("Failed to load tools: #{e.message}")
-            # Still mark as loaded but with empty list?
-            @loaded = true unless @tools.empty?
-          end
+        begin
+          @client.list_tools
+          @loaded = true
+        rescue StandardError => e
+          # Handle error appropriately
+          Rails.logger.error("Failed to load tools: #{e.message}")
+          # Still mark as loaded but with empty list?
+          @loaded = true unless @tools.empty?
         end
-      end
-
-      def tools=(tools)
-        @tools = tools.map { |tool_data| Tool.new(tool_data) }
       end
 
       # Internal Tool class to represent individual tools

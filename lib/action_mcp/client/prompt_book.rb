@@ -32,7 +32,7 @@ module ActionMCP
       # @param client [Object, nil] Optional client for lazy loading of prompts
       attr_reader :client
 
-      def initialize(prompts = [], client = nil)
+      def initialize(prompts, client)
         self.prompts = prompts
         @client = client
         @loaded = !prompts.empty?
@@ -107,14 +107,14 @@ module ActionMCP
         all
       end
 
-      private
-
       # Convert raw prompt data into Prompt objects
       #
       # @param prompts [Array<Hash>] Array of prompt definition hashes
       def prompts=(prompts)
         @prompts = prompts.map { |data| Prompt.new(data) }
       end
+
+      private
 
       # Load or reload prompts using the client
       #
@@ -123,15 +123,12 @@ module ActionMCP
       def load_prompts(force: false)
         return if @loaded && !force
 
-        if @client
-          begin
-            prompt_list = @client.list_prompts
-            self.prompts = prompt_list
-            @loaded = true
-          rescue StandardError => e
-            Rails.logger.error("Failed to load prompts: #{e.message}")
-            @loaded = true unless @prompts.empty?
-          end
+        begin
+          @client.list_prompts
+          @loaded = true
+        rescue StandardError => e
+          Rails.logger.error("Failed to load prompts: #{e.message}")
+          @loaded = true unless @prompts.empty?
         end
       end
 

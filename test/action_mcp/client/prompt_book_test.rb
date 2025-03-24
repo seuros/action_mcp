@@ -24,7 +24,7 @@ module ActionMCP
             ]
           }
         ]
-        @collection = PromptBook.new(@prompt_data)
+        @collection = PromptBook.new(@prompt_data, nil)
       end
 
       test "initializes with prompt data" do

@@ -55,15 +55,11 @@ module ActionMCP
         cleanup_sse_thread
       end
 
-      def send_message(json)
-        # Wait for endpoint if not yet received
-        unless endpoint_ready?
-          log_info("Waiting for endpoint before sending message...")
-          wait_for_endpoint
-        end
-
-        validate_post_endpoint
-        send_http_request(json)
+      def send_message(json_rpc)
+        response = @conn.post(post_url,
+                              json_rpc,
+                              { "Content-Type" => "application/json" })
+        response.success?
       end
 
       def ready?
@@ -168,6 +164,7 @@ module ActionMCP
       def handle_connection_error(message)
         log_error("SSE connection failed: #{message}")
         self.connection_error = message
+        @connected = false
         @error_callback&.call(StandardError.new(message))
       end
 
@@ -180,7 +177,7 @@ module ActionMCP
         @buffer << chunk
         # If the buffer does not contain a newline but appears to be a complete JSON object,
         # flush it as a complete event.
-        if @buffer.strip.start_with?("{") && @buffer.strip.end_with?("}")
+        if @buffer.strip.match?(/^\{.*\}$/)
           (@current_event ||= []) << @buffer.strip
           @buffer = +""
           return handle_complete_event
@@ -239,7 +236,7 @@ module ActionMCP
 
       def set_post_endpoint(endpoint_path)
         @post_url = build_post_url(endpoint_path)
-        log_info("Received POST endpoint: #{@post_url}")
+        log_info("Received POST endpoint: #{post_url}")
 
         # Signal that we have received the endpoint
         @endpoint_mutex.synchronize do
@@ -255,23 +252,6 @@ module ActionMCP
         URI.join(@base_url, endpoint_path).to_s
       rescue StandardError
         "#{@base_url}#{endpoint_path}"
-      end
-
-      def validate_post_endpoint
-        raise "MCP endpoint not set (no 'endpoint' event received)" unless @post_url
-      end
-
-      def send_http_request(json_rpc)
-        response = @conn.post(@post_url,
-                              json_rpc,
-                              { "Content-Type" => "application/json" })
-        handle_http_response(response)
-      end
-
-      def handle_http_response(response)
-        return if response.success?
-
-        log_error("HTTP POST failed: #{response.status} - #{response.body}")
       end
 
       def cleanup_sse_thread

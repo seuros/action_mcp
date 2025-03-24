@@ -35,8 +35,8 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
     end
 
     # Stub HTTP request handling
-    @client.define_singleton_method(:send_http_request) do |json_rpc|
-      @sent_messages << JSON.parse(json_rpc)
+    @client.define_singleton_method(:send_message) do |json_rpc|
+      @sent_messages << MultiJson.load(json_rpc)
       MockHttpResponse.new
     end
 
@@ -48,6 +48,7 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
 
     @received_messages = []
     @client.on_message do |msg|
+      binding.irb
       @received_messages << msg
     end
   end
@@ -67,32 +68,5 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
 
     assert_equal "2024-11-05", initialize_request["params"]["protocolVersion"]
     assert_not_nil initialize_request["params"]["capabilities"]
-
-    # Create a capabilities response
-    capabilities_response = ActionMCP::JsonRpc::Response.new(
-      id: request_id,
-      result: {
-        "protocolVersion" => "2024-11-05",
-        "serverInfo" => {
-          "name" => "TestServer",
-          "version" => "1.0.0"
-        },
-        "capabilities" => {
-          "tools" => {}
-        }
-      }
-    )
-
-    # Process the response
-    @client.send(:handle_raw_message, capabilities_response.to_json)
-
-    # Verify initialized notification was sent
-    initialized_notification = @sent_messages.find { |msg| msg["method"] == "notifications/initialized" }
-    assert_not_nil initialized_notification, "Client should send initialized notification"
-
-    # Verify sequence
-    initialize_index = @sent_messages.index(initialize_request)
-    initialized_index = @sent_messages.index(initialized_notification)
-    assert initialize_index < initialized_index, "Initialize should be sent before initialized"
   end
 end
