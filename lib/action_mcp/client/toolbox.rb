@@ -24,8 +24,8 @@ module ActionMCP
       # @param tools [Array<Hash>] Array of tool definition hashes, each containing
       #   name, description, and inputSchema keys
       def initialize(tools, client)
-        super([], client)
-        self.tools = tools
+        super(tools, client)
+        self.tools = @collection_data
         @load_method = :list_tools
       end
 

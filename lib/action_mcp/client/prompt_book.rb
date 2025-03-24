@@ -31,8 +31,8 @@ module ActionMCP
       #   name, description, and arguments keys
       # @param client [Object, nil] Optional client for lazy loading of prompts
       def initialize(prompts, client)
-        super([], client)
-        self.prompts = prompts
+        super(prompts, client)
+        self.prompts = @collection_data
         @load_method = :list_prompts
       end
 

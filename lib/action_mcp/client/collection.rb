@@ -6,7 +6,7 @@ module ActionMCP
     class Collection
       include RequestTimeouts
 
-      attr_reader :client
+      attr_reader :client, :loaded
 
       def initialize(items, client, silence_sql: true)
         @collection_data = items || []
@@ -48,6 +48,8 @@ module ActionMCP
       def each(&block)
         all.each(&block)
       end
+
+      alias loaded? loaded
 
       protected
 

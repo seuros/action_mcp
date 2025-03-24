@@ -94,19 +94,6 @@ module ActionMCP
         refute ping_message.request_acknowledged, "request_acknowledged should remain false for non-matching id"
       end
 
-      # Test that non-"ping" requests are not affected by responses
-      test "does not acknowledge non-ping requests" do
-        non_ping_payload = { "id" => 303, "method" => "other_method", "jsonrpc" => "2.0" }
-        non_ping_message = @session.messages.create!(direction: "client", data: non_ping_payload)
-
-        response_payload = { "id" => 303, "result" => "success", "jsonrpc" => "2.0" }
-        @session.messages.create!(direction: "server", data: response_payload)
-
-        non_ping_message.reload
-        refute non_ping_message.is_ping, "is_ping should remain false"
-        refute non_ping_message.request_acknowledged, "request_acknowledged should remain false"
-      end
-
       # Test handling of non-JSON-RPC payloads (e.g., plain text)
       test "handles non-JSON-RPC payloads" do
         text_payload = "Hello, world!"

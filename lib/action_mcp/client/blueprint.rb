@@ -31,8 +31,8 @@ module ActionMCP
       #   uriTemplate, name, description, and optionally mimeType keys
       # @param client [Object, nil] Optional client for lazy loading of templates
       def initialize(templates, client)
-        super([], client)
-        self.templates = templates
+        super(templates, client)
+        self.templates = @collection_data
         @load_method = :list_resource_templates
       end
 

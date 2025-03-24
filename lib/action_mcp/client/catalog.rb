@@ -31,8 +31,8 @@ module ActionMCP
       #   uri, name, description, and mimeType keys
       # @param client [Object, nil] Optional client for lazy loading of resources
       def initialize(resources, client)
-        super([], client)
-        self.resources = resources
+        super(resources, client)
+        self.resources = @collection_data
         @load_method = :list_resources
       end
 
