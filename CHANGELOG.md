@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.26.0...action_mcp/v0.27.0) (2025-03-25)
+
+
+### Features
+
+* update SSE client to require Faraday gem version 2.0 or higher ([9ba3581](https://github.com/seuros/action_mcp/commit/9ba3581b6de8e06eacce83dbf539f0f47b083f9a))
+
 ## [0.26.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.25.0...action_mcp/v0.26.0) (2025-03-25)
 
 
