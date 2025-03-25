@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.26.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.25.0...action_mcp/v0.26.0) (2025-03-25)
+
+
+### Features
+
+* add MCP configuration file and enhance configuration attributes ([604834f](https://github.com/seuros/action_mcp/commit/604834f3ffe855b92e517c58e5c9e33685ed3c79))
+* implement profile management with rake tasks and configuration options ([d6227c7](https://github.com/seuros/action_mcp/commit/d6227c7f59642a754b7097479e4881e392e2f304))
+* implement profile management with rake tasks and configuration options ([3a72db1](https://github.com/seuros/action_mcp/commit/3a72db12d0f4b8985438d86ba515ab3a3767b06d))
+
 ## [0.25.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.24.0...action_mcp/v0.25.0) (2025-03-25)
 
 
