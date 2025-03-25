@@ -107,8 +107,9 @@ module ActionMCP
       # update the session initialized to true
       return false if initialized?
 
-      update!(initialized: true,
-              status: "initialized")
+      self.initialized = true
+      self.status = "initialized"
+      save
     end
 
     def message_flow

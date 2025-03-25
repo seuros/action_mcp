@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CalculateSumTool < ApplicationMCPTool
   description "Calculate the sum of two numbers"
 
@@ -13,7 +15,7 @@ class CalculateSumTool < ApplicationMCPTool
     logger.tagged("CalculateSumTool") { logger.info("before_perform") }
   end
 
-  around_perform do |tool, block|
+  around_perform do |_tool, block|
     logger.tagged("CalculateSumTool") { logger.info("around_perform (before)") }
     block.call
     logger.tagged("CalculateSumTool") { logger.info("around_perform (after)") }

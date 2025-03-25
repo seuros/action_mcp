@@ -65,7 +65,7 @@ module ActionMCP
       test "enumerates all prompts" do
         names = []
         @collection.each { |prompt| names << prompt.name }
-        assert_equal [ "summarize_text", "greeting" ], names
+        assert_equal %w[summarize_text greeting], names
       end
 
       test "prompt gets required arguments" do

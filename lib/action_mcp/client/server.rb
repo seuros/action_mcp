@@ -1,9 +1,9 @@
+# frozen_string_literal: true
+
 module ActionMCP
   module Client
     class Server
-      attr_reader :name, :version
-
-      attr_reader :server_info, :capabilities
+      attr_reader :name, :version, :server_info, :capabilities
 
       def initialize(data)
         # Store protocol version if needed for later use

@@ -12,7 +12,7 @@ require "action_mcp/test_helper"
 
 class MockOrder
   def self.find_by(id:)
-    new(id: id) if id.to_i > 0
+    new(id: id) if id.to_i.positive?
   end
 
   attr_reader :id
@@ -21,14 +21,14 @@ class MockOrder
     @id = id
   end
 
-  def to_json
+  def to_json(*_args)
     { id: id }.to_json
   end
 end
 
 class MockProduct
   def self.find_by(id:)
-    new(id: id) if id.to_i > 0
+    new(id: id) if id.to_i.positive?
   end
 
   attr_reader :id
@@ -37,7 +37,7 @@ class MockProduct
     @id = id
   end
 
-  def to_json
+  def to_json(*_args)
     { id: id }.to_json
   end
 end

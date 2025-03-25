@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ProductsTemplate < ApplicationMCPResTemplate
   description "Access product information"
   uri_template "ecommerce://products/{product_id}"
@@ -13,7 +15,9 @@ class ProductsTemplate < ApplicationMCPResTemplate
   end
 
   after_resolve do |template|
-    logger.tagged("ProductsTemplate") { logger.info("Finished resolving product resource for product: #{template.product_id}") }
+    logger.tagged("ProductsTemplate") do
+      logger.info("Finished resolving product resource for product: #{template.product_id}")
+    end
   end
 
   around_resolve do |template, block|
@@ -23,7 +27,9 @@ class ProductsTemplate < ApplicationMCPResTemplate
     resource = block.call
 
     if resource
-      logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s") }
+      logger.tagged("ProductsTemplate") do
+        logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s")
+      end
     else
       logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
     end

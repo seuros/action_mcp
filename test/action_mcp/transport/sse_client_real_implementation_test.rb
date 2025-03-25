@@ -64,7 +64,7 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
     initialize_request = @sent_messages.find { |msg| msg["method"] == "initialize" }
     assert_not_nil initialize_request, "Client should send initialize request"
 
-    request_id = initialize_request["id"]
+    initialize_request["id"]
 
     assert_equal "2024-11-05", initialize_request["params"]["protocolVersion"]
     assert_not_nil initialize_request["params"]["capabilities"]

@@ -6,11 +6,7 @@ module ActionMCP
 
     # @route POST / (sse_in)
     def create
-      begin
-        handle_post_message(clean_params, response)
-      rescue StandardError
-        head :internal_server_error
-      end
+      handle_post_message(params, response)
       head response.status
     end
 
@@ -25,22 +21,14 @@ module ActionMCP
     end
 
     def handle_post_message(params, response)
-      mcp_session.initialize! if params[:method] == "initialize"
       json_rpc_handler.call(params)
-
       response.status = :accepted
-    rescue StandardError => e
-      puts "Error: #{e.message}"
-      puts e.backtrace.join("\n")
+    rescue StandardError => _e
       response.status = :bad_request
     end
 
     def mcp_session
       @mcp_session ||= Session.find_or_create_by(id: params[:session_id])
-    end
-
-    def clean_params
-      params.slice(:id, :method, :jsonrpc, :params, :result, :error)
     end
   end
 end

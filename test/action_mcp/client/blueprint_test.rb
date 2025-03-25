@@ -99,7 +99,7 @@ module ActionMCP
 
       test "blueprint extracts variables from pattern" do
         blueprint = @blueprints.find_by_pattern("api://{endpoint}/{resource}/{id}")
-        assert_equal [ "endpoint", "resource", "id" ], blueprint.variables
+        assert_equal %w[endpoint resource id], blueprint.variables
       end
 
       test "blueprint gets protocol from pattern" do

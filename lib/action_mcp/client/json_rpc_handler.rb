@@ -4,6 +4,7 @@ module ActionMCP
   module Client
     class JsonRpcHandler < JsonRpcHandlerBase
       attr_reader :client
+
       def initialize(transport, client)
         super(transport)
         @client = client
@@ -103,7 +104,6 @@ module ActionMCP
         # Do something ?
         puts "\e[31mUnknown error: #{id} #{error}\e[0m"
       end
-
 
       def send_initialized_notification
         transport.initialize!

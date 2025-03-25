@@ -22,9 +22,7 @@ module ActionMCP
         # Wait until either:
         # 1. The collection is loaded (@loaded becomes true from JsonRpcHandler)
         # 2. The timeout is reached
-        while !@loaded && (Time.now - start_time) < timeout
-          sleep(0.1)
-        end
+        sleep(0.1) while !@loaded && (Time.now - start_time) < timeout
 
         # If we timed out
         unless @loaded
@@ -33,9 +31,9 @@ module ActionMCP
           if request && !request.request_acknowledged?
             # Send cancel notification
             client.send_jsonrpc_notification("notifications/cancelled", {
-              requestId: request_id,
-              reason: "Request timed out after #{timeout} seconds"
-            })
+                                               requestId: request_id,
+                                               reason: "Request timed out after #{timeout} seconds"
+                                             })
 
             # Mark as cancelled in the database
             request.update(request_cancelled: true)
@@ -58,18 +56,18 @@ module ActionMCP
         # Find the request
         request = client.session.messages.requests.find_by(jsonrpc_id: request_id)
 
-        if request && !request.request_acknowledged?
-          # Send cancel notification
-          client.send_jsonrpc_notification("notifications/cancelled", {
-            requestId: request_id,
-            reason: "Request timed out after #{timeout} seconds"
-          })
+        return unless request && !request.request_acknowledged?
 
-          # Mark as cancelled in the database
-          request.update(request_cancelled: true)
+        # Send cancel notification
+        client.send_jsonrpc_notification("notifications/cancelled", {
+                                           requestId: request_id,
+                                           reason: "Request timed out after #{timeout} seconds"
+                                         })
 
-          log_error("Request #{method_name} timed out after #{timeout} seconds")
-        end
+        # Mark as cancelled in the database
+        request.update(request_cancelled: true)
+
+        log_error("Request #{method_name} timed out after #{timeout} seconds")
       end
     end
   end

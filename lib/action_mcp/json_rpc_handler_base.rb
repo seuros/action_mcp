@@ -75,6 +75,7 @@ module ActionMCP
     # @param request [Hash]
     def process_request(request)
       return unless valid_request?(request)
+
       read(request)
 
       id = request["id"]

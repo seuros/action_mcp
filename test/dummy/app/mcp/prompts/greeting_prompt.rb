@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class GreetingPrompt < ApplicationMCPPrompt
   description "Generates a personalized greeting message"
 
@@ -11,7 +13,7 @@ class GreetingPrompt < ApplicationMCPPrompt
     logger.tagged("GreetingPrompt") { logger.info("before_perform") }
   end
 
-  around_perform do |prompt, block|
+  around_perform do |_prompt, block|
     logger.tagged("GreetingPrompt") { logger.info("around_perform (before)") }
     block.call
     logger.tagged("GreetingPrompt") { logger.info("around_perform (after)") }

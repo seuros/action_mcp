@@ -57,7 +57,7 @@ module ActionMCP
       @response.add(@text_content)
       @response.mark_as_error!(:invalid_request, message: "Something went wrong")
 
-      expected = { code: -32600, message: "Something went wrong" }
+      expected = { code: -32_600, message: "Something went wrong" }
 
       assert_equal expected, @response.to_h
     end

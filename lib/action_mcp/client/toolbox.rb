@@ -76,7 +76,7 @@ module ActionMCP
       def search(keyword)
         all.select do |tool|
           tool.name.include?(keyword) ||
-            (tool.description && tool.description.downcase.include?(keyword.downcase))
+            tool.description&.downcase&.include?(keyword.downcase)
         end
       end
 
@@ -126,7 +126,7 @@ module ActionMCP
         #
         # @return [Hash] Hash of property definitions
         def properties
-          @input_schema.dig("properties") || {}
+          @input_schema["properties"] || {}
         end
 
         # Check if the tool requires a specific property

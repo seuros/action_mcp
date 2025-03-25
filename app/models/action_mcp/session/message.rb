@@ -97,6 +97,7 @@ module ActionMCP
 
       def rpc_method
         return false unless request?
+
         data["method"]
       end
 
@@ -107,9 +108,9 @@ module ActionMCP
       end
 
       def broadcast_message
-        if adapter.present?
-          adapter.broadcast(session_key, data.to_json)
-        end
+        return unless adapter.present?
+
+        adapter.broadcast(session_key, data.to_json)
       end
 
       def process_json_content(content)

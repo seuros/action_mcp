@@ -14,11 +14,11 @@ module ActionMCP
         # Set up default configuration with a diabolical twist
         SamplingRequest.configure do |config|
           config.messages [
-                            {
-                              role: "user",
-                              content: ActionMCP::Content::Text.new("Analyze the code files in the /project directory and suggest ways to complain about that")
-                            }
-                          ]
+            {
+              role: "user",
+              content: ActionMCP::Content::Text.new("Analyze the code files in the /project directory and suggest ways to complain about that")
+            }
+          ]
           config.system_prompt "You are a wicked senior software engineer using Windows 95 plotting world domination"
           config.include_context "thisServer"
           config.model_hints [ "claude-3-opus" ]

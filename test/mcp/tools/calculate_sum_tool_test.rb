@@ -14,6 +14,6 @@ class CalculateSumToolTest < ActiveSupport::TestCase
     response = CalculateSumTool.logger.silence do
       tool.call
     end
-    assert_equal({ code: -32600, message: "Invalid input", data: [ "Number1 must be 100 or less" ] }, response.to_h)
+    assert_equal({ code: -32_600, message: "Invalid input", data: [ "Number1 must be 100 or less" ] }, response.to_h)
   end
 end

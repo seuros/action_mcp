@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class OrdersTemplate < ApplicationMCPResTemplate
   description "Access order information"
   uri_template "ecommerce://customers/{customer_id}/orders/{order_id}"
@@ -12,7 +14,9 @@ class OrdersTemplate < ApplicationMCPResTemplate
 
   # You can mutate the template object before resolving
   before_resolve do |template|
-    logger.tagged("OrdersTemplate") { logger.info("Starting to resolve order: #{template.order_id} for customer: #{template.customer_id}") }
+    logger.tagged("OrdersTemplate") do
+      logger.info("Starting to resolve order: #{template.order_id} for customer: #{template.customer_id}")
+    end
   end
 
   after_resolve do |template|
@@ -26,7 +30,9 @@ class OrdersTemplate < ApplicationMCPResTemplate
     resource = block.call
 
     if resource
-      logger.tagged("OrdersTemplate") { logger.info("Order #{template.order_id} resolved successfully in #{Time.current - start_time}s") }
+      logger.tagged("OrdersTemplate") do
+        logger.info("Order #{template.order_id} resolved successfully in #{Time.current - start_time}s")
+      end
     else
       logger.tagged("OrdersTemplate") { logger.info("Order #{template.order_id} not found") }
     end

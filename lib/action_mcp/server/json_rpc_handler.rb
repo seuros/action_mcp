@@ -22,7 +22,7 @@ module ActionMCP
         when "completion/complete" # Completion requests
           process_completion_complete(id, params)
         else
-          puts "\e[31mUnknown client method: #{rpc_method}\e[0m"
+          transport.send_jsonrpc_error(id, :method_not_found, "Method not found")
         end
       end
 

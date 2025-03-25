@@ -36,8 +36,7 @@ module ActionMCP
         # Send request
         send_jsonrpc_request("resources/read",
                              params: { uri: uri },
-                             id: request_id
-        )
+                             id: request_id)
 
         # Return request ID for tracking the request
         request_id
@@ -56,8 +55,7 @@ module ActionMCP
         # Send request
         send_jsonrpc_request("resources/subscribe",
                              params: { uri: uri },
-                             id: request_id
-        )
+                             id: request_id)
 
         # Return request ID for tracking the request
         request_id
@@ -74,8 +72,7 @@ module ActionMCP
         # Send request
         send_jsonrpc_request("resources/unsubscribe",
                              params: { uri: uri },
-                             id: request_id
-        )
+                             id: request_id)
 
         # Return request ID for tracking the request
         request_id

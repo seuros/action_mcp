@@ -11,7 +11,7 @@ module ActionMCP
       def initialize(items, client, silence_sql: true)
         @collection_data = items || []
         @client = client
-        @loaded = !(@collection_data.empty?)
+        @loaded = !@collection_data.empty?
         @silence_sql = silence_sql
       end
 

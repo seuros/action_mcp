@@ -90,7 +90,7 @@ module ActionMCP
         keyword = keyword.downcase
         all.select do |resource|
           resource.name.downcase.include?(keyword) ||
-            (resource.description && resource.description.downcase.include?(keyword))
+            resource.description&.downcase&.include?(keyword)
         end
       end
 
@@ -119,7 +119,7 @@ module ActionMCP
         #
         # @return [String, nil] The file extension or nil if no extension
         def extension
-          File.extname(@name)[1..-1] if @name.include?(".")
+          File.extname(@name)[1..] if @name.include?(".")
         end
 
         # Check if this resource is a text file based on MIME type
@@ -140,7 +140,9 @@ module ActionMCP
         #
         # @return [String, nil] The path component of the URI
         def path
-          URI(@uri).path rescue nil
+          URI(@uri).path
+        rescue StandardError
+          nil
         end
 
         # Generate a hash representation of the resource

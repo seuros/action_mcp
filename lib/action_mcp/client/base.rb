@@ -17,6 +17,7 @@ module ActionMCP
                   :server_capabilities, :session,
                   :catalog, :blueprint,
                   :prompt_book, :toolbox
+
       delegate :initialized?, to: :session
 
       def initialize(logger: ActionMCP.logger)
@@ -146,15 +147,14 @@ module ActionMCP
       end
 
       def server=(server)
-        if server.is_a?(Client::Server)
-          @server = server
+        @server = if server.is_a?(Client::Server)
+                    server
         else
-          @server = Client::Server.new(server)
+                    Client::Server.new(server)
         end
         session.server_capabilities = server.capabilities
         session.server_info = server.server_info
         session.save
-        server
       end
 
       def inspect
@@ -164,15 +164,13 @@ module ActionMCP
       protected
 
       def handle_raw_message(raw)
-        begin
-          @message_callback&.call(raw)
-        rescue MultiJson::ParseError => e
-          log_error("JSON parse error: #{e} (raw: #{raw})")
-          @error_callback&.call(e)
-        rescue StandardError => e
-          log_error("Error handling message: #{e} (raw: #{raw})")
-          @error_callback&.call(e)
-        end
+        @message_callback&.call(raw)
+      rescue MultiJson::ParseError => e
+        log_error("JSON parse error: #{e} (raw: #{raw})")
+        @error_callback&.call(e)
+      rescue StandardError => e
+        log_error("Error handling message: #{e} (raw: #{raw})")
+        @error_callback&.call(e)
       end
 
       def send_initial_capabilities
@@ -180,7 +178,7 @@ module ActionMCP
         # We have contact! Let's send our CV to the recruiter.
         # We persist the session object to the database
         session.save
-        params= {
+        params = {
           protocolVersion: session.protocol_version,
           capabilities: session.client_capabilities,
           clientInfo: session.client_info

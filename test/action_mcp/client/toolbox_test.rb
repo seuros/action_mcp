@@ -28,7 +28,7 @@ module ActionMCP
                 "number1" => { "type" => "number", "description" => "The first number" },
                 "number2" => { "type" => "number", "description" => "The second number" }
               },
-              "required" => [ "number1", "number2" ]
+              "required" => %w[number1 number2]
             }
           }
         ]
@@ -62,7 +62,7 @@ module ActionMCP
       end
 
       test "returns all tool names" do
-        assert_equal [ "weather_forecast", "calculate_sum" ], @toolbox.names
+        assert_equal %w[weather_forecast calculate_sum], @toolbox.names
       end
 
       test "checks if toolbox contains a tool" do
@@ -79,7 +79,7 @@ module ActionMCP
       test "enumerates all tools" do
         names = []
         @toolbox.each { |tool| names << tool.name }
-        assert_equal [ "weather_forecast", "calculate_sum" ], names
+        assert_equal %w[weather_forecast calculate_sum], names
       end
 
       test "tool gets required properties" do
@@ -152,7 +152,8 @@ module ActionMCP
         assert_equal "function", tool["type"]
         assert tool["function"]
         assert_equal "weather_forecast", tool["function"]["name"]
-        assert_equal "Get detailed weather forecast for a location with progressive updates", tool["function"]["description"]
+        assert_equal "Get detailed weather forecast for a location with progressive updates",
+                     tool["function"]["description"]
         assert tool["function"]["parameters"]
         assert tool["function"]["parameters"]["properties"]
         assert_equal "string", tool["function"]["parameters"]["properties"]["location"]["type"]

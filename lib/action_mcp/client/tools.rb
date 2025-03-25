@@ -28,8 +28,7 @@ module ActionMCP
                                name: name,
                                arguments: arguments
                              },
-                             id: request_id
-        )
+                             id: request_id)
 
         # Return request ID for tracking the request
         request_id
