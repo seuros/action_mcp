@@ -19,6 +19,10 @@ module ActionMcp
         template "application_mcp_res_template.rb",
                  File.join("app/mcp/resource_templates", "application_mcp_res_template.rb")
       end
+
+      def create_mcp_profile_file
+        template "mcp.yml", File.join("config", "mcp.yml")
+      end
     end
   end
 end

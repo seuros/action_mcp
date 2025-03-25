@@ -29,9 +29,21 @@ module ActionMCP
                      serverInfo: { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
                      capabilities: { "tools" => { "listChanged" => false },
                                      "prompts" => { "listChanged" => false },
-                                     "resources" => {},
+                                     "resources" => { "subscribe"=>false },
                                      "logging" => {} } },
                    session.server_capabilities_payload)
+    end
+
+
+    test "with custom profile " do
+      ActionMCP.with_profile(:minimal) do
+        session = Session.create
+
+        assert_equal({ protocolVersion: "2024-11-05",
+                       serverInfo: { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
+                       capabilities: {} },
+                     session.server_capabilities_payload)
+      end
     end
   end
 end

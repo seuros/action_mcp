@@ -1,0 +1,11 @@
+primary:
+  tools:
+    - all
+  prompts:
+    - all
+  resources:
+    - all
+  options:
+    list_changed: false
+    resources_subscribe: false
+

@@ -64,7 +64,9 @@ module ActionMCP
       include Enumerable
 
       # Using a Data type for items.
-      Item = Data.define(:name, :klass)
+      Item = Data.define(:name, :klass) do
+        delegate :description, to: :klass
+      end
 
       # Initializes a new RegistryScope instance.
       #
