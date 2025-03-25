@@ -1,11 +1,21 @@
-primary:
-  tools:
-    - all
-  prompts:
-    - all
-  resources:
-    - all
-  options:
-    list_changed: false
-    resources_subscribe: false
+shared:
+  primary:
+    tools:
+      - all
+    prompts:
+      - all
+    resources:
+      - all
+    options:
+      list_changed: false
+      resources_subscribe: false
 
+#  minimal:
+#    tools: []
+#    prompts: []
+#    resources: []
+#    options:
+#      list_changed: false
+#      logging_enabled: false
+#      logging_level: :warn
+#      resources_subscribe: false
