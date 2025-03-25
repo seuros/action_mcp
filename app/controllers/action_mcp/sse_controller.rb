@@ -56,23 +56,40 @@ module ActionMCP
           return
         end
 
-        # Schedule heartbeats using a proper timer
-        heartbeat = Concurrent::TimerTask.new(
-          execution_interval: HEARTBEAT_INTERVAL,
-          timeout_interval: 5 # Timeout for heartbeat operation
-        ) do
+        # Create a thread-safe flag to track if we should continue sending heartbeats
+        heartbeat_active = Concurrent::AtomicBoolean.new(true)
+
+        # Setup recurring heartbeat using ScheduledTask with proper cancellation
+        heartbeat_task = nil
+        heartbeat_sender = -> do
           if connection_active.true? && !response.stream.closed?
             begin
-              sse.write({ ping: true })
+              # Try to send heartbeat with a controlled execution time
+              future = Concurrent::Promises.future do
+                sse.write({ ping: true })
+              end
+
+              # Wait for the heartbeat with timeout
+              result = future.value(5) # 5 second timeout
+
+              # Schedule the next heartbeat if this one succeeded
+              if heartbeat_active.true?
+                heartbeat_task = Concurrent::ScheduledTask.execute(HEARTBEAT_INTERVAL, &heartbeat_sender)
+              end
+            rescue Concurrent::TimeoutError
+              Rails.logger.warn "SSE: Heartbeat timed out, closing connection"
+              connection_active.make_false
             rescue StandardError => e
               Rails.logger.debug "SSE: Heartbeat error: #{e.message}"
               connection_active.make_false
             end
           else
-            raise Concurrent::CancelledOperationError
+            heartbeat_active.make_false
           end
         end
-        heartbeat.execute
+
+        # Start the first heartbeat
+        heartbeat_task = Concurrent::ScheduledTask.execute(HEARTBEAT_INTERVAL, &heartbeat_sender)
 
         # Wait for connection to be closed or cancelled
         while connection_active.true? && !response.stream.closed?
@@ -85,8 +102,10 @@ module ActionMCP
       ensure
         # Clean up resources
         timeout_task&.cancel
-        heartbeat&.shutdown
+        heartbeat_active&.make_false  # Signal to stop scheduling new heartbeats
+        heartbeat_task&.cancel        # Cancel any pending heartbeat task
         listener&.stop
+        mcp_session.close! rescue nil
         response.stream.close rescue nil
 
         Rails.logger.debug "SSE: Connection cleaned up for session: #{session_id}"
