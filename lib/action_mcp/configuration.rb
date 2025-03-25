@@ -3,7 +3,18 @@
 module ActionMCP
   # Configuration class to hold settings for the ActionMCP server.
   class Configuration
-    # Existing attributes
+    # @!attribute name
+    #   @return [String] The name of the MCP Server.
+    # @!attribute version
+    #   @return [String] The version of the MCP Server.
+    # @!attribute logging_enabled
+    #   @return [Boolean] Whether logging is enabled.
+    # @!attribute list_changed
+    #   @return [Boolean] Whether to send a listChanged notification for tools, prompts, and resources.
+    # @!attribute resources_subscribe
+    #   @return [Boolean] Whether to subscribe to resources.
+    # @!attribute logging_level
+    #   @return [Symbol] The logging level.    attr_writer :name, :version
     attr_writer :name, :version
     attr_accessor :logging_enabled,
                   :list_changed,

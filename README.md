@@ -295,7 +295,6 @@ The default path will be http://localhost:3000/action_mcp
 
 Here's a section you can add to explain the profile system in ActionMCP:
 
-```markdown
 ## Profiles
 
 ActionMCP supports a flexible profile system that allows you to selectively expose tools, prompts, and resources based on different usage scenarios. This is particularly useful for applications that need different MCP capabilities for different contexts (e.g., public API vs. admin interface).
@@ -310,7 +309,7 @@ Profiles are named configurations that define:
 - Configuration options like logging level and change notifications
 
 By default, ActionMCP includes two profiles:
-- `default`: Exposes all tools, prompts, and resources
+- `primary`: Exposes all tools, prompts, and resources
 - `minimal`: Exposes no tools, prompts, or resources by default
 
 ### Configuring Profiles
@@ -335,8 +334,8 @@ default:
 
 api_only:
   tools:
-    - calculator_tool
-    - weather_tool
+    - calculator
+    - weather
   prompts: []  # No prompts for API
   resources:
     - user_profile
@@ -369,7 +368,7 @@ You can switch between profiles programmatically in your code:
 
 ```ruby
 # Permanently switch to a different profile
-ActionMCP.configuration.use_profile(:api_only)
+ActionMCP.configuration.use_profile(:only_tools)  # Switch to a profile named "only_tools"
 
 # Temporarily use a profile for a specific operation
 ActionMCP.with_profile(:minimal) do
