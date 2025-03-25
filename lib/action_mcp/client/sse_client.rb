@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "faraday"
-require "uri"
-
 module ActionMCP
   module Client
     # MCP client using Server-Sent Events (SSE) transport
@@ -16,6 +13,9 @@ module ActionMCP
       attr_reader :base_url, :sse_path, :post_url, :session
 
       def initialize(url, connect: true, logger: ActionMCP.logger, **_options)
+        gem "faraday", ">= 2.0"
+        require "faraday"
+        require "uri"
         super(logger: logger)
         @type = :sse
         setup_connection(url)
