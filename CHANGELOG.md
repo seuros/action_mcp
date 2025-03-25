@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.28.0...action_mcp/v0.29.0) (2025-03-25)
+
+
+### Features
+
+* improve SSE heartbeat management with thread-safe handling and error logging ([1812fb6](https://github.com/seuros/action_mcp/commit/1812fb6a850c82428c9c54021a3fec3852a86b34))
+
 ## [0.28.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.27.0...action_mcp/v0.28.0) (2025-03-25)
 
 
