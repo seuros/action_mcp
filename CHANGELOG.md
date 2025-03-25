@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.27.0...action_mcp/v0.28.0) (2025-03-25)
+
+
+### Features
+
+* enhance MCP configuration handling with improved profile management and error handling ([1ab8731](https://github.com/seuros/action_mcp/commit/1ab87311747759751ad31667cfc5d93b2454905a))
+
 ## [0.27.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.26.0...action_mcp/v0.27.0) (2025-03-25)
 
 
