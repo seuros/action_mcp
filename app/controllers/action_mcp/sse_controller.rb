@@ -63,7 +63,7 @@ module ActionMCP
         ) do
           if connection_active.true? && !response.stream.closed?
             begin
-              sse.write({ping: true})
+              sse.write({ ping: true })
             rescue StandardError => e
               Rails.logger.debug "SSE: Heartbeat error: #{e.message}"
               connection_active.make_false

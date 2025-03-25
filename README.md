@@ -293,6 +293,118 @@ npx @modelcontextprotocol/inspector
 
 The default path will be http://localhost:3000/action_mcp
 
-## Conclusion
+Here's a section you can add to explain the profile system in ActionMCP:
 
-ActionMCP empowers developers to build MCP-compliant servers efficiently by handling the standardization and boilerplate associated with integrating with LLMs. With its intuitive abstractions for tools, prompts, and resource templates, you can quickly expose your application's capabilities to AI models while maintaining full control over how they interact with your system.
+```markdown
+## Profiles
+
+ActionMCP supports a flexible profile system that allows you to selectively expose tools, prompts, and resources based on different usage scenarios. This is particularly useful for applications that need different MCP capabilities for different contexts (e.g., public API vs. admin interface).
+
+### Understanding Profiles
+
+Profiles are named configurations that define:
+
+- Which tools are available
+- Which prompts are accessible
+- Which resources can be accessed
+- Configuration options like logging level and change notifications
+
+By default, ActionMCP includes two profiles:
+- `default`: Exposes all tools, prompts, and resources
+- `minimal`: Exposes no tools, prompts, or resources by default
+
+### Configuring Profiles
+
+Profiles are configured via a `config/mcp.yml` file in your Rails application. If this file doesn't exist, ActionMCP will use default settings from the gem.
+
+**Example configuration:**
+
+```yaml
+default:
+  tools:
+    - all  # Include all tools
+  prompts:
+    - all  # Include all prompts
+  resources:
+    - all  # Include all resources
+  options:
+    list_changed: false
+    logging_enabled: true
+    logging_level: info
+    resources_subscribe: false
+
+api_only:
+  tools:
+    - calculator_tool
+    - weather_tool
+  prompts: []  # No prompts for API
+  resources:
+    - user_profile
+  options:
+    list_changed: false
+    logging_level: warn
+
+admin:
+  tools:
+    - all
+  options:
+    logging_level: debug
+    list_changed: true
+    resources_subscribe: true
+```
+
+Each profile can specify:
+- `tools`: Array of tool names to include (use `all` to include all tools)
+- `prompts`: Array of prompt names to include (use `all` to include all prompts)
+- `resources`: Array of resource names to include (use `all` to include all resources)
+- `options`: Additional configuration options:
+  - `list_changed`: Whether to send change notifications
+  - `logging_enabled`: Whether to enable logging
+  - `logging_level`: The logging level to use
+  - `resources_subscribe`: Whether to enable resource subscriptions
+
+### Switching Profiles
+
+You can switch between profiles programmatically in your code:
+
+```ruby
+# Permanently switch to a different profile
+ActionMCP.configuration.use_profile(:api_only)
+
+# Temporarily use a profile for a specific operation
+ActionMCP.with_profile(:minimal) do
+  # Code here uses the minimal profile
+  # After the block, reverts to the previous profile
+end
+```
+
+This makes it easy to control which MCP capabilities are available in different contexts of your application.
+
+### Inspecting Profiles
+
+ActionMCP includes rake tasks to help you manage and inspect your profiles:
+
+```bash
+# List all available profiles with their configurations
+bin/rails action_mcp:list_profiles
+
+# Show detailed information about a specific profile
+bin/rails action_mcp:show_profile[admin]
+
+# List all tools, prompts, resources, and profiles
+bin/rails action_mcp:list
+```
+
+The profile inspection tasks will highlight any issues, such as configured tools, prompts, or resources that don't actually exist in your application.
+
+### Use Cases
+
+Profiles are particularly useful for:
+
+1. **Multi-tenant applications**: Use different profiles for different customer tiers with Dorp or other gems
+2. **Access control**: Create profiles for different user roles (admin, staff, public)
+3. **Performance optimization**: Use a minimal profile for high-traffic endpoints
+4. **Testing environments**: Use specific test profiles in your test environment
+5. **Progressive enhancement**: Start with a minimal profile and gradually add capabilities
+
+By leveraging profiles, you can maintain a single ActionMCP codebase while providing tailored MCP capabilities for different contexts.

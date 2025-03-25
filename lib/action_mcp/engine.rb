@@ -12,11 +12,17 @@ module ActionMCP
       inflect.acronym "SSE"
       inflect.acronym "MCP"
     end
+
     # Provide a configuration namespace for ActionMCP
     config.action_mcp = ActionMCP.configuration
 
     config.to_prepare do
       ActionMCP::ResourceTemplate.registered_templates.clear
+    end
+
+    # Load MCP profiles during initialization
+    initializer "action_mcp.load_profiles" do
+      ActionMCP.configuration.load_profiles
     end
 
     # Configure autoloading for the mcp/tools directory
