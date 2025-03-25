@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.25.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.24.0...action_mcp/v0.25.0) (2025-03-25)
+
+
+### Features
+
+* enhance SSEController with connection timeout and heartbeat management ([fba691a](https://github.com/seuros/action_mcp/commit/fba691a6b3a2ca828ab0f4aa518f2badc772cb03))
+* remove message_text column from action_mcp_session_messages and update related logic ([1f90fc3](https://github.com/seuros/action_mcp/commit/1f90fc38b157f96938153f93daa120caf324a324))
+* update cache_key method to use mcp_session.session_key ([17266d4](https://github.com/seuros/action_mcp/commit/17266d45e9ebe450d1605aa630332c56343d6344))
+
 ## [0.24.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.23.0...action_mcp/v0.24.0) (2025-03-24)
 
 
