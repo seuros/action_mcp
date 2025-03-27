@@ -16,7 +16,7 @@ module ActionMCP
       end
 
       def send_jsonrpc_error(request_id, symbol, message, data = nil)
-        error = JsonRpc::JsonRpcError.new(symbol, message: message, data: data)
+        error = JSON_RPC::JsonRpcError.new(symbol, message: message, data: data)
         send_jsonrpc_response(request_id, error: error)
       end
 
@@ -26,19 +26,19 @@ module ActionMCP
       def send_message(type, **args)
         message = case type
         when :request
-                    JsonRpc::Request.new(
+                    JSON_RPC::Request.new(
                       id: args[:id],
                       method: args[:method],
                       params: args[:params]
                     )
         when :response
-                    JsonRpc::Response.new(
+                    JSON_RPC::Response.new(
                       id: args[:id],
                       result: args[:result],
                       error: args[:error]
                     )
         when :notification
-                    JsonRpc::Notification.new(
+                    JSON_RPC::Notification.new(
                       method: args[:method],
                       params: args[:params]
                     )

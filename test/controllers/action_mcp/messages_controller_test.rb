@@ -30,13 +30,11 @@ module ActionMCP
           protocolVersion: "2024-11-05",
           clientInfo: {
             name: "test-client",
-            version: "1.0.0"
+            version: "1.0.1"
           },
           capabilities: {
-            resources: {},
-            tools: {},
-            prompts: {},
-            roots: {}
+            roots: { listChanged: true },
+            sampling: {}
           }
         }
       }

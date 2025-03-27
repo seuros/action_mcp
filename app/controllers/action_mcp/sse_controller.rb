@@ -61,7 +61,7 @@ module ActionMCP
 
         # Setup recurring heartbeat using ScheduledTask with proper cancellation
         heartbeat_task = nil
-        heartbeat_sender = -> do
+        heartbeat_sender = lambda do
           if connection_active.true? && !response.stream.closed?
             begin
               # Try to send heartbeat with a controlled execution time
@@ -70,7 +70,7 @@ module ActionMCP
               end
 
               # Wait for the heartbeat with timeout
-              result = future.value(5) # 5 second timeout
+              future.value(5) # 5 second timeout
 
               # Schedule the next heartbeat if this one succeeded
               if heartbeat_active.true?
@@ -92,9 +92,7 @@ module ActionMCP
         heartbeat_task = Concurrent::ScheduledTask.execute(HEARTBEAT_INTERVAL, &heartbeat_sender)
 
         # Wait for connection to be closed or cancelled
-        while connection_active.true? && !response.stream.closed?
-          sleep 0.1
-        end
+        sleep 0.1 while connection_active.true? && !response.stream.closed?
       rescue ActionController::Live::ClientDisconnected, IOError => e
         Rails.logger.debug "SSE: Client disconnected: #{e.message}"
       rescue StandardError => e
@@ -115,9 +113,9 @@ module ActionMCP
     private
 
     def build_timeout_error
-      JsonRpc::Response.new(
+      JSON_RPC::Response.new(
         id: SecureRandom.uuid_v7,
-        error: JsonRpc::JsonRpcError.new(
+        error: JSON_RPC::JsonRpcError.new(
           :server_error,
           message: "No message received within initial connection timeout"
         ).to_h
@@ -125,9 +123,9 @@ module ActionMCP
     end
 
     def build_listener_error
-      JsonRpc::Response.new(
+      JSON_RPC::Response.new(
         id: SecureRandom.uuid_v7,
-        error: JsonRpc::JsonRpcError.new(
+        error: JSON_RPC::JsonRpcError.new(
           :server_error,
           message: "Failed to establish server connection"
         ).to_h
@@ -153,73 +151,6 @@ module ActionMCP
 
     def cache_key
       mcp_session.session_key
-    end
-  end
-
-  class SSEListener
-    attr_reader :session_key, :adapter
-
-    delegate :session_key, :adapter, to: :@session
-
-    # @param session [ActionMCP::Session]
-    def initialize(session)
-      @session = session
-      @stopped = Concurrent::AtomicBoolean.new(false)
-      @subscription_active = Concurrent::AtomicBoolean.new(false)
-    end
-
-    # Start listening using ActionCable's adapter
-    def start(&callback)
-      Rails.logger.debug "Starting listener for channel: #{session_key}"
-
-      success_callback = lambda {
-        Rails.logger.info "Successfully subscribed to channel: #{session_key}"
-        @subscription_active.make_true
-      }
-
-      # Set up message callback
-      message_callback = lambda { |raw_message|
-        return if @stopped.true?
-
-        begin
-          # Try to parse the message if it's JSON
-          message = MultiJson.load(raw_message)
-          # Send the message to the callback
-          callback.call(message) if callback
-        rescue StandardError => e
-          Rails.logger.error "Error processing message: #{e.message}"
-          # Still try to send the raw message as a fallback
-          callback.call(raw_message) if callback
-        end
-      }
-
-      # Subscribe using the ActionCable adapter
-      adapter.subscribe(session_key, message_callback, success_callback)
-
-      # Use a future with timeout to check subscription status
-      subscription_future = Concurrent::Promises.future do
-        while !@subscription_active.true? && !@stopped.true?
-          sleep 0.1
-        end
-        @subscription_active.true?
-      end
-
-      # Wait up to 1 second for subscription to be established
-      begin
-        subscription_result = subscription_future.value(1)
-        subscription_result || @subscription_active.true?
-      rescue Concurrent::TimeoutError
-        Rails.logger.warn "Timed out waiting for subscription activation"
-        false
-      end
-    end
-
-    def stop
-      @stopped.make_true
-      if (mcp_session = Session.find_by(id: session_key))
-        mcp_session.close
-      end
-      Rails.logger.debug "Unsubscribed from: #{session_key}"
     end
   end
 end

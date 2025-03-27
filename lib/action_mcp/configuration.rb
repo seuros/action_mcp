@@ -21,7 +21,12 @@ module ActionMCP
                   :resources_subscribe,
                   :logging_level,
                   :active_profile,
-                  :profiles
+                  :profiles,
+                  # --- New Transport Options ---
+                  :allow_client_session_termination,
+                  :mcp_endpoint_path,
+                  :sse_heartbeat_interval,
+                  :post_response_preference # :json or :sse
 
     def initialize
       @logging_enabled = true
@@ -30,6 +35,11 @@ module ActionMCP
       @resources_subscribe = false
       @active_profile = :primary
       @profiles = default_profiles
+
+      @allow_client_session_termination = true
+      @mcp_endpoint_path = "/mcp"
+      @sse_heartbeat_interval = 30
+      @post_response_preference = :json
     end
 
     def name
@@ -58,7 +68,7 @@ module ActionMCP
 
         # Merge with defaults so user config overrides gem defaults
         @profiles = app_config
-      rescue => e
+      rescue StandardError
         # If the config file doesn't exist in the Rails app, just use the defaults
         Rails.logger.debug "No MCP config found in Rails app, using defaults from gem"
       end
@@ -114,21 +124,13 @@ module ActionMCP
       capabilities = {}
 
       # Only include capabilities if the corresponding filtered registry is non-empty
-      if filtered_tools.any?
-        capabilities[:tools] = { listChanged: @list_changed }
-      end
+      capabilities[:tools] = { listChanged: @list_changed } if filtered_tools.any?
 
-      if filtered_prompts.any?
-        capabilities[:prompts] = { listChanged: @list_changed }
-      end
+      capabilities[:prompts] = { listChanged: @list_changed } if filtered_prompts.any?
 
-      if @logging_enabled
-        capabilities[:logging] = {}
-      end
+      capabilities[:logging] = {} if @logging_enabled
 
-      if filtered_resources.any?
-        capabilities[:resources] = { subscribe: @resources_subscribe }
-      end
+      capabilities[:resources] = { subscribe: @resources_subscribe } if filtered_resources.any?
 
       capabilities
     end
@@ -178,7 +180,7 @@ module ActionMCP
 
       items = @profiles[active_profile][type]
       # Return true ONLY if items contains "all"
-      items && items.include?("all")
+      items&.include?("all")
     end
 
     def has_rails_version
@@ -213,7 +215,7 @@ module ActionMCP
       thread_profiles.value = profile_name
 
       # Apply the profile options when switching profiles
-      configuration.apply_profile_options if configuration
+      configuration&.apply_profile_options
 
       yield if block_given?
     ensure
