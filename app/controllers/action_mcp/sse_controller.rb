@@ -66,7 +66,11 @@ module ActionMCP
             begin
               # Try to send heartbeat with a controlled execution time
               future = Concurrent::Promises.future do
-                sse.write({ ping: true })
+                ping_request = JSON_RPC::Request.new(
+                  id: SecureRandom.uuid_v7, # Generate a unique ID for each ping
+                  method: "ping"
+                ).to_h
+                sse.write(ping_request)
               end
 
               # Wait for the heartbeat with timeout
