@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.30.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.29.0...action_mcp/v0.30.0) (2025-03-27)
+
+
+### Features
+
+* add jsonrpc-rails dependency to the gemspec ([8ee57b7](https://github.com/seuros/action_mcp/commit/8ee57b7cf45249eb48dabf4e8fef1084769b6f0e))
+* add new transport options to configuration with default values ([8ee57b7](https://github.com/seuros/action_mcp/commit/8ee57b7cf45249eb48dabf4e8fef1084769b6f0e))
+* implement unified MCP endpoint for 2025-03-26 spec with SSE sup… ([8854ad6](https://github.com/seuros/action_mcp/commit/8854ad6d33531015855b4a5fc261685c4deda05b))
+* implement unified MCP endpoint for 2025-03-26 spec with SSE support and session management ([8ee57b7](https://github.com/seuros/action_mcp/commit/8ee57b7cf45249eb48dabf4e8fef1084769b6f0e))
+
+
+### Bug Fixes
+
+* send proper ping ([caf1b04](https://github.com/seuros/action_mcp/commit/caf1b04827bb1517461d346c6aec39e7ddc562de))
+
 ## [0.29.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.28.0...action_mcp/v0.29.0) (2025-03-25)
 
 
