@@ -92,7 +92,7 @@ def parse_command(input)
       arguments[key] = parsed_value
     end
 
-    ActionMCP::JsonRpc::Request.new(
+    JSON_RPC::Request.new(
       id: generate_request_id,
       method: 'tools/get',
       params: {
@@ -101,12 +101,12 @@ def parse_command(input)
       }
     )
   when 'list_tools'
-    ActionMCP::JsonRpc::Request.new(
+    JSON_RPC::Request.new(
       id: generate_request_id,
       method: 'tools/list'
     )
   when 'list_prompts'
-    ActionMCP::JsonRpc::Request.new(
+    JSON_RPC::Request.new(
       id: generate_request_id,
       method: 'prompts/list'
     )
@@ -188,7 +188,7 @@ loop do
           json = MultiJson.load(input)
           # Validate that the parsed JSON has the required fields
           if json['method']
-            request = ActionMCP::JsonRpc::Request.new(
+            request = JSON_RPC::Request.new(
               id: json['id'] || generate_request_id,
               method: json['method'],
               params: json['params']
@@ -200,7 +200,7 @@ loop do
         rescue MultiJson::ParseError => e
           puts "Invalid input: not a valid command or JSON. #{e.message}"
           next
-        rescue ActionMCP::JsonRpc::JsonRpcError => e
+        rescue JSON_RPC::JsonRpcError => e
           puts "Invalid JSON-RPC request: #{e.message}"
           next
         end

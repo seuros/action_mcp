@@ -6,6 +6,7 @@ require "active_support/rails"
 require "multi_json"
 require "concurrent"
 require "active_record/railtie"
+require "jsonrpc-rails"
 require "action_controller/railtie"
 require "action_cable/engine"
 require "action_mcp/configuration"
@@ -26,6 +27,7 @@ Zeitwerk::Loader.for_gem.tap do |loader|
   loader.inflector.inflect("action_mcp" => "ActionMCP")
   loader.inflector.inflect("sse_client" => "SSEClient")
   loader.inflector.inflect("sse_server" => "SSEServer")
+  loader.inflector.inflect("sse_listener" => "SSEListener")
 end.setup
 
 module ActionMCP
@@ -85,8 +87,4 @@ module ActionMCP
 
   ActiveModel::Type.register(:string_array, StringArray)
   ActiveModel::Type.register(:integer_array, IntegerArray)
-end
-
-ActiveSupport.on_load(:action_mcp, run_once: true) do
-  self.logger = ::Rails.logger
 end

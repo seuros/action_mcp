@@ -14,6 +14,7 @@
 #  role(The role of the session)                       :string           default("server"), not null
 #  server_capabilities(The capabilities of the server) :jsonb
 #  server_info(The information about the server)       :jsonb
+#  sse_event_counter                                   :integer          default(0), not null
 #  status                                              :string           default("pre_initialize"), not null
 #  created_at                                          :datetime         not null
 #  updated_at                                          :datetime         not null
@@ -29,11 +30,10 @@ module ActionMCP
                      serverInfo: { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
                      capabilities: { "tools" => { "listChanged" => false },
                                      "prompts" => { "listChanged" => false },
-                                     "resources" => { "subscribe"=>false },
+                                     "resources" => { "subscribe" => false },
                                      "logging" => {} } },
                    session.server_capabilities_payload)
     end
-
 
     test "with custom profile " do
       ActionMCP.with_profile(:minimal) do

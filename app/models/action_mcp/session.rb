@@ -14,6 +14,7 @@
 #  role(The role of the session)                       :string           default("server"), not null
 #  server_capabilities(The capabilities of the server) :jsonb
 #  server_info(The information about the server)       :jsonb
+#  sse_event_counter                                   :integer          default(0), not null
 #  status                                              :string           default("pre_initialize"), not null
 #  created_at                                          :datetime         not null
 #  updated_at                                          :datetime         not null
@@ -63,7 +64,7 @@ module ActionMCP
 
     # MESSAGING dispatch
     def write(data)
-      if data.is_a?(JsonRpc::Request) || data.is_a?(JsonRpc::Response) || data.is_a?(JsonRpc::Notification)
+      if data.is_a?(JSON_RPC::Request) || data.is_a?(JSON_RPC::Response) || data.is_a?(JSON_RPC::Notification)
         data = data.to_json
       end
       data = MultiJson.dump(data) if data.is_a?(Hash)
@@ -124,7 +125,7 @@ module ActionMCP
 
     def send_ping!
       Session.logger.silence do
-        write(JsonRpc::Request.new(id: Time.now.to_i, method: "ping"))
+        write(JSON_RPC::Request.new(id: Time.now.to_i, method: "ping"))
       end
     end
 
@@ -134,6 +135,16 @@ module ActionMCP
 
     def resource_unsubscribe(uri)
       subscriptions.find_by(uri: uri)&.destroy
+    end
+
+    # Atomically increments the SSE event counter and returns the new value.
+    # This ensures unique, sequential IDs for SSE events within the session.
+    # @return [Integer] The new value of the counter.
+    def increment_sse_counter!
+      # Use update_counters for an atomic increment operation
+      self.class.update_counters(id, sse_event_counter: 1)
+      # Reload to get the updated value (update_counters doesn't update the instance)
+      reload.sse_event_counter
     end
 
     private

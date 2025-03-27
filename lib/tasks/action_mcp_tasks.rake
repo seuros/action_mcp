@@ -51,7 +51,7 @@ namespace :action_mcp do
 
   # bin/rails action_mcp:show_profile[profile_name]
   desc "Show configuration for a specific profile"
-  task :show_profile, [ :profile_name ] => :environment do |t, args|
+  task :show_profile, [ :profile_name ] => :environment do |_t, args|
     # Ensure Rails eager loads all classes
     Rails.application.eager_load!
 
@@ -68,19 +68,19 @@ namespace :action_mcp do
     ActionMCP.with_profile(profile_name) do
       profile_config = profiles[profile_name]
 
-      puts "\e[35mPROFILE: #{profile_name.to_s.upcase}\e[0m"  # Purple
+      puts "\e[35mPROFILE: #{profile_name.to_s.upcase}\e[0m" # Purple
       puts "\e[35m#{'-' * (profile_name.to_s.length + 9)}\e[0m"
 
       # Show options
       if profile_config[:options]
-        puts "\n\e[36mOptions:\e[0m"  # Cyan
+        puts "\n\e[36mOptions:\e[0m" # Cyan
         profile_config[:options].each do |key, value|
           puts "  #{key}: #{value}"
         end
       end
 
       # Show Tools
-      puts "\n\e[34mIncluded Tools:\e[0m"  # Blue
+      puts "\n\e[34mIncluded Tools:\e[0m" # Blue
       if ActionMCP.configuration.filtered_tools.any?
         ActionMCP.configuration.filtered_tools.each do |tool|
           puts "  \e[34m#{tool.name}:\e[0m #{tool.description}"
@@ -90,7 +90,7 @@ namespace :action_mcp do
       end
 
       # Show Prompts
-      puts "\n\e[32mIncluded Prompts:\e[0m"  # Green
+      puts "\n\e[32mIncluded Prompts:\e[0m" # Green
       if ActionMCP.configuration.filtered_prompts.any?
         ActionMCP.configuration.filtered_prompts.each do |prompt|
           puts "  \e[32m#{prompt.name}:\e[0m #{prompt.description}"
@@ -100,7 +100,7 @@ namespace :action_mcp do
       end
 
       # Show Resources
-      puts "\n\e[33mIncluded Resources:\e[0m"  # Yellow
+      puts "\n\e[33mIncluded Resources:\e[0m" # Yellow
       if ActionMCP.configuration.filtered_resources.any?
         ActionMCP.configuration.filtered_resources.each do |resource|
           puts "  \e[33m#{resource.name}:\e[0m #{resource.description}"
@@ -110,7 +110,7 @@ namespace :action_mcp do
       end
 
       # Show Capabilities
-      puts "\n\e[36mActive Capabilities:\e[0m"  # Cyan
+      puts "\n\e[36mActive Capabilities:\e[0m" # Cyan
       capabilities = ActionMCP.configuration.capabilities
       capabilities.each do |cap_name, cap_config|
         puts "  #{cap_name}: #{cap_config.inspect}"

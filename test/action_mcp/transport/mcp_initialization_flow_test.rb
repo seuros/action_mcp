@@ -49,7 +49,7 @@ class MCPInitializationFlowTest < ActiveSupport::TestCase
       # Important: Make sure to set the request ID BEFORE sending the message
       @initialize_request_id = "init-#{SecureRandom.hex(4)}"
 
-      initialize_request = ActionMCP::JsonRpc::Request.new(
+      initialize_request = JSON_RPC::Request.new(
         id: @initialize_request_id,
         method: "initialize",
         params: {
@@ -67,7 +67,7 @@ class MCPInitializationFlowTest < ActiveSupport::TestCase
     end
 
     def send_initialized_notification
-      initialized_notification = ActionMCP::JsonRpc::Notification.new(
+      initialized_notification = JSON_RPC::Notification.new(
         method: "notifications/initialized"
       )
 
@@ -116,7 +116,7 @@ class MCPInitializationFlowTest < ActiveSupport::TestCase
     end
 
     def send_capabilities_response(request_id)
-      capabilities_response = ActionMCP::JsonRpc::Response.new(
+      capabilities_response = JSON_RPC::Response.new(
         id: request_id,
         result: {
           protocolVersion: "2024-11-05",
