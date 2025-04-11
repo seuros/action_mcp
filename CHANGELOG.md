@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.30.0...action_mcp/v0.30.1) (2025-04-11)
+
+
+### Bug Fixes
+
+* Fix data setter to handle both string and hash/array inputs ([ed9559f](https://github.com/seuros/action_mcp/commit/ed9559fd26f7304db713a103b48805f126ef0852))
+* Fix data setter to handle both string and hash/array inputs ([e8b3bea](https://github.com/seuros/action_mcp/commit/e8b3bead81461e3cc6c56ff40abd226d39bc06e1))
+
 ## [0.30.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.29.0...action_mcp/v0.30.0) (2025-03-27)
 
 
