@@ -58,13 +58,10 @@ module ActionMCP
 
       # @param payload [String, Hash]
       def data=(payload)
-        @data = payload
-
         # Convert string payloads to JSON
         if payload.is_a?(String)
           begin
-            parsed_json = MultiJson.load(payload)
-            self.message_json = parsed_json
+            @data = MultiJson.load(payload)
           rescue MultiJson::ParseError
             # Handle invalid JSON by creating an error object
             self.message_json = { "error" => "Invalid JSON", "raw" => payload }
@@ -72,10 +69,12 @@ module ActionMCP
             return
           end
         else
-          # Handle direct hash assignment
-          self.message_json = payload
+          # If it's already a hash/array, use it directly
+          @data = payload
         end
-        process_json_content(payload)
+
+        self.message_json = @data
+        process_json_content(@data)
       end
 
       def data
