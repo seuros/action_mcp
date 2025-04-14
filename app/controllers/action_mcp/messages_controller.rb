@@ -21,7 +21,8 @@ module ActionMCP
     end
 
     def handle_post_message(params, response)
-      json_rpc_handler.call(params)
+      filtered_params = filter_jsonrpc_params(params)
+      json_rpc_handler.call(filtered_params)
       response.status = :accepted
     rescue StandardError => _e
       response.status = :bad_request
@@ -29,6 +30,13 @@ module ActionMCP
 
     def mcp_session
       @mcp_session ||= Session.find_or_create_by(id: params[:session_id])
+    end
+
+    def filter_jsonrpc_params(params)
+      # Valid JSON-RPC keys (both request and response)
+      valid_keys = [ "jsonrpc", "method", "params", "id", "result", "error" ]
+
+      params.to_h.slice(*valid_keys)
     end
   end
 end
