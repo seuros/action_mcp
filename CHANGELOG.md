@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.30.1...action_mcp/v0.31.0) (2025-04-14)
+
+
+### Features
+
+* Added a filter_jsonrpc_params method to filter JSON-RPC paramet… ([9bc4ed3](https://github.com/seuros/action_mcp/commit/9bc4ed310a3a3488e742c7a2679a9f43e9a6d157))
+* Added a filter_jsonrpc_params method to filter JSON-RPC parameters, allowing only valid keys ('jsonrpc', 'method', 'params', 'id', 'result', 'error'). This change aims to prevent unexpected parameters from being passed to the json_rpc_handler.call method. ([cbb9b61](https://github.com/seuros/action_mcp/commit/cbb9b617dab284139c98edad46273262a6ad8693))
+
 ## [0.30.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.30.0...action_mcp/v0.30.1) (2025-04-11)
 
 
