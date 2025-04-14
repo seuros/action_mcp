@@ -58,8 +58,14 @@ module ActionMCP
     def close!
       dummy_callback = ->(*) { } # this callback seem broken
       adapter.unsubscribe(session_key, dummy_callback)
-      update!(status: "closed", ended_at: Time.zone.now)
-      subscriptions.delete_all # delete all subscriptions
+      if messages_count.zero?
+        # if there are no messages, we can delete the session immediately
+        destroy
+        nil
+      else
+        update!(status: "closed", ended_at: Time.zone.now)
+        subscriptions.delete_all # delete all subscriptions
+      end
     end
 
     # MESSAGING dispatch

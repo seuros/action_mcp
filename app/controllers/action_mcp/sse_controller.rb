@@ -20,8 +20,9 @@ module ActionMCP
       Rails.logger.info "SSE: Starting connection for session: #{session_id}"
 
       # Use Concurrent primitives for state management
-      message_received = Concurrent::AtomicBoolean.new(false)
-      connection_active = Concurrent::AtomicBoolean.new(true)
+      message_received = Concurrent::AtomicBoolean.new
+      connection_active = Concurrent::AtomicBoolean.new
+      connection_active.make_true
 
       begin
         # Create SSE instance
