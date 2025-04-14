@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.31.0...action_mcp/v0.31.1) (2025-04-14)
+
+
+### Bug Fixes
+
+* remove session that never received a handshake or protocol negoc… ([3ba4a34](https://github.com/seuros/action_mcp/commit/3ba4a341457dbb03f0302378e4fd36bb58633500))
+* remove session that never received a handshake or protocol negociation ([72268a3](https://github.com/seuros/action_mcp/commit/72268a36adeba075b0f4c165352f69eea6de3c04))
+
 ## [0.31.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.30.1...action_mcp/v0.31.0) (2025-04-14)
 
 
