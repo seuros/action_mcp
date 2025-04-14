@@ -5,17 +5,14 @@ require "concurrent/promise"
 
 module ActionMCP
   # Listener class to subscribe to session messages via Action Cable adapter.
-  # Used by controllers handling Server-Sent Events streams.
   class SSEListener
-    attr_reader :session_key, :adapter
-
     delegate :session_key, :adapter, to: :@session
 
     # @param session [ActionMCP::Session]
     def initialize(session)
       @session = session
-      @stopped = Concurrent::AtomicBoolean.new(false)
-      @subscription_active = Concurrent::AtomicBoolean.new(false)
+      @stopped = Concurrent::AtomicBoolean.new
+      @subscription_active = Concurrent::AtomicBoolean.new
     end
 
     # Start listening using ActionCable's adapter
@@ -24,60 +21,83 @@ module ActionMCP
     def start(&callback)
       Rails.logger.debug "SSEListener: Starting for channel: #{session_key}"
 
-      success_callback = lambda {
+      success_callback = -> {
         Rails.logger.info "SSEListener: Successfully subscribed to channel: #{session_key}"
         @subscription_active.make_true
       }
 
-      # Set up message callback
-      message_callback = lambda { |raw_message|
-        return if @stopped.true?
-
-        begin
-          # Try to parse the message if it's JSON
-          message = MultiJson.load(raw_message)
-          # Send the message to the callback
-          # TODO: Add SSE event ID here if implementing resumability
-          callback&.call(message)
-        rescue StandardError => e
-          Rails.logger.error "SSEListener: Error processing message: #{e.message}"
-          # Still try to send the raw message as a fallback? Or ignore?
-          # callback.call(raw_message) if callback
-        end
+      message_callback = -> (raw_message) {
+        process_message(raw_message, callback)
       }
 
       # Subscribe using the ActionCable adapter
       adapter.subscribe(session_key, message_callback, success_callback)
 
-      # Use a future with timeout to check subscription status
+      wait_for_subscription
+    end
+
+    # Stops the listener
+    def stop
+      return if @stopped.true?
+
+      @stopped.make_true
+      Rails.logger.debug "SSEListener: Stopping listener for channel: #{session_key}"
+    end
+
+    private
+
+    def process_message(raw_message, callback)
+      return if @stopped.true?
+
+      begin
+        Rails.logger.debug "SSEListener: Received raw message of type: #{raw_message.class}"
+
+        # Check if the message is a valid JSON string or has a message attribute
+        if raw_message.is_a?(String) && valid_json_format?(raw_message)
+          message = MultiJson.load(raw_message)
+          callback&.call(message)
+        elsif raw_message.respond_to?(:message) && raw_message.message.is_a?(String) && valid_json_format?(raw_message.message)
+          message = MultiJson.load(raw_message.message)
+          callback&.call(message)
+        elsif raw_message.respond_to?(:to_json)
+          # Try to serialize the message object to JSON if it responds to to_json
+          message_json = raw_message.to_json
+          if valid_json_format?(message_json)
+            message = MultiJson.load(message_json)
+            callback&.call(message)
+          else
+            Rails.logger.warn "SSEListener: Message cannot be converted to valid JSON"
+          end
+        else
+          # Log that we received an invalid message format
+          display_message = raw_message.to_s[0..100]
+          Rails.logger.warn "SSEListener: Received invalid JSON format: #{display_message}..."
+        end
+      rescue StandardError => e
+        Rails.logger.error "SSEListener: Error processing message: #{e.message}"
+        Rails.logger.error "SSEListener: Backtrace: #{e.backtrace.join("\n")}"
+      end
+    end
+
+    def valid_json_format?(string)
+      return false if string.blank?
+      string = string.strip
+      (string.start_with?('{') && string.end_with?('}')) ||
+        (string.start_with?('[') && string.end_with?(']'))
+    end
+
+    def wait_for_subscription
       subscription_future = Concurrent::Promises.future do
         sleep 0.1 while !@subscription_active.true? && !@stopped.true?
         @subscription_active.true?
       end
 
-      # Wait up to 5 seconds for subscription to be established (increased timeout)
       begin
-        subscription_result = subscription_future.value(5)
-        subscription_result || @subscription_active.true?
+        subscription_future.value(5) || @subscription_active.true?
       rescue Concurrent::TimeoutError
-        Rails.logger.warn "SSEListener: Timed out waiting for subscription activation for #{session_key}"
+        Rails.logger.warn "SSEListener: Timed out waiting for subscription for #{session_key}"
         false
       end
-    end
-
-    # Stops the listener and attempts to unsubscribe.
-    def stop
-      return if @stopped.true? # Prevent multiple stops
-
-      @stopped.make_true
-      # Unsubscribe using the adapter
-      # Note: ActionCable adapters might not have a direct 'unsubscribe' matching this pattern.
-      # We rely on closing the connection and potentially session cleanup.
-      # If using Redis adapter, explicit unsubscribe might be possible/needed.
-      # For now, just log.
-      Rails.logger.debug "SSEListener: Stopping listener for channel: #{session_key}"
-      # If session cleanup is needed when listener stops, add it here or ensure it happens elsewhere.
-      # Example: @session.close! if @session.role == 'server' # Be careful with side effects
     end
   end
 end
