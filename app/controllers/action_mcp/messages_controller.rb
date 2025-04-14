@@ -34,7 +34,7 @@ module ActionMCP
 
     def filter_jsonrpc_params(params)
       # Valid JSON-RPC keys (both request and response)
-      valid_keys = ['jsonrpc', 'method', 'params', 'id', 'result', 'error']
+      valid_keys = [ "jsonrpc", "method", "params", "id", "result", "error" ]
 
       params.to_h.slice(*valid_keys)
     end

@@ -26,7 +26,7 @@ module ActionMCP
         @subscription_active.make_true
       }
 
-      message_callback = -> (raw_message) {
+      message_callback = ->(raw_message) {
         process_message(raw_message, callback)
       }
 
@@ -82,8 +82,8 @@ module ActionMCP
     def valid_json_format?(string)
       return false if string.blank?
       string = string.strip
-      (string.start_with?('{') && string.end_with?('}')) ||
-        (string.start_with?('[') && string.end_with?(']'))
+      (string.start_with?("{") && string.end_with?("}")) ||
+        (string.start_with?("[") && string.end_with?("]"))
     end
 
     def wait_for_subscription
