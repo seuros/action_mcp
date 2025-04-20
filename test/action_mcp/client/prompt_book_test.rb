@@ -6,25 +6,7 @@ module ActionMCP
   module Client
     class PromptBookTest < ActiveSupport::TestCase
       setup do
-        @prompt_data = [
-          {
-            "name" => "summarize_text",
-            "description" => "Summarize a piece of text using a chosen method",
-            "arguments" => [
-              { "name" => "text", "description" => "Text to summarize", "required" => true },
-              { "name" => "style", "description" => "Summarization style", "required" => false }
-            ]
-          },
-          {
-            "name" => "greeting",
-            "description" => "Generates a personalized greeting message",
-            "arguments" => [
-              { "name" => "name", "description" => "The name to greet", "required" => true },
-              { "name" => "style", "description" => "Style of greeting", "required" => false }
-            ]
-          }
-        ]
-        @collection = PromptBook.new(@prompt_data, nil)
+        @collection = PromptBook.new(load_fixture("promptbook"), nil)
       end
 
       test "initializes with prompt data" do

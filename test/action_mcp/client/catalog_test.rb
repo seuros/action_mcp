@@ -6,27 +6,7 @@ module ActionMCP
   module Client
     class CatalogTest < ActiveSupport::TestCase
       setup do
-        @resource_data = [
-          {
-            "uri" => "file:///project/src/main.rs",
-            "name" => "main.rs",
-            "description" => "Primary application entry point",
-            "mimeType" => "text/x-rust"
-          },
-          {
-            "uri" => "file:///project/src/lib.rs",
-            "name" => "lib.rs",
-            "description" => "Library module definitions",
-            "mimeType" => "text/x-rust"
-          },
-          {
-            "uri" => "file:///project/README.md",
-            "name" => "README.md",
-            "description" => "Project documentation",
-            "mimeType" => "text/markdown"
-          }
-        ]
-        @catalog = Catalog.new(@resource_data, nil)
+        @catalog = Catalog.new(load_fixture("catalog"), nil)
       end
 
       test "initializes with resource data" do

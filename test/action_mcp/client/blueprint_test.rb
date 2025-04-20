@@ -6,27 +6,7 @@ module ActionMCP
   module Client
     class BlueprintTest < ActiveSupport::TestCase
       setup do
-        @template_data = [
-          {
-            "uriTemplate" => "file:///{path}",
-            "name" => "File Access",
-            "description" => "Access local files",
-            "mimeType" => "application/octet-stream"
-          },
-          {
-            "uriTemplate" => "db://{database}/{table}",
-            "name" => "Database Table",
-            "description" => "Access database tables",
-            "mimeType" => "application/json"
-          },
-          {
-            "uriTemplate" => "api://{endpoint}/{resource}/{id}",
-            "name" => "API Resource",
-            "description" => "Access API resources",
-            "mimeType" => "application/json"
-          }
-        ]
-        @blueprints = Blueprint.new(@template_data, nil)
+        @blueprints = Blueprint.new(load_fixture("blueprints"), nil)
       end
 
       test "initializes with template data" do

@@ -6,33 +6,7 @@ module ActionMCP
   module Client
     class ToolboxTest < ActiveSupport::TestCase
       setup do
-        @tool_data = [
-          {
-            "name" => "weather_forecast",
-            "description" => "Get detailed weather forecast for a location with progressive updates",
-            "inputSchema" => {
-              "type" => "object",
-              "properties" => {
-                "location" => { "type" => "string", "description" => "City name or postal code" },
-                "days" => { "type" => "integer", "description" => "Number of forecast days (1-7)" }
-              },
-              "required" => [ "location" ]
-            }
-          },
-          {
-            "name" => "calculate_sum",
-            "description" => "Calculate the sum of two numbers",
-            "inputSchema" => {
-              "type" => "object",
-              "properties" => {
-                "number1" => { "type" => "number", "description" => "The first number" },
-                "number2" => { "type" => "number", "description" => "The second number" }
-              },
-              "required" => %w[number1 number2]
-            }
-          }
-        ]
-        @toolbox = Toolbox.new(@tool_data, nil)
+        @toolbox = Toolbox.new(load_fixture("toolbox"), nil)
       end
 
       test "initializes with tool data" do

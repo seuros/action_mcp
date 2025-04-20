@@ -5,15 +5,7 @@ require "test_helper"
 module ActionMCP
   module Server
     class TransportHandlerTest < ActiveSupport::TestCase
-      # Minimal session stub – just captures whatever gets written.
-      class DummySession
-        attr_reader :written
-
-        def write(data) = @written = data
-        def read        = nil
-        def initialize! = true
-        def initialized? = true
-      end
+      include TransportMocks
 
       test "send_jsonrpc_request builds a valid JSON‑RPC request object" do
         session  = DummySession.new

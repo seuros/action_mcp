@@ -47,12 +47,11 @@ module FixtureHelpers
 
   # Returns a *deep‑dup* of the parsed YAML so each test gets its own copy
   def load_fixture(name)
-    FIXTURE_CACHE[name] ||= YAML.load_file(
-      Rails.root.join("test/fixtures/action_mcp/#{name}.yml")
-    )
+    FIXTURE_CACHE[name] ||= YAML.load_file(File.join(__dir__, "fixtures", "#{name}.yml"))
     FIXTURE_CACHE[name].deep_dup
   end
 end
 
 Minitest::Test.include(FixtureHelpers)
 
+Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }
