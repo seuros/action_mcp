@@ -12,8 +12,6 @@ class ToolsRegistryErrorTest < ActiveSupport::TestCase
     assert_mcp_error_code(-32_602, resp) # invalid_params
   end
 
-
-
   test "tool_call surfaces :internal_error when tool itself raises" do
     resp = ActionMCP::ToolsRegistry.tool_call("explosive", {})
     assert resp.error?

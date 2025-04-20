@@ -193,7 +193,7 @@ module ActionMCP
   end
 
   class << self
-    attr_accessor :server, :logger
+    attr_accessor :logger
 
     # Thread-local storage for active profiles
     def thread_profiles

@@ -35,10 +35,8 @@ module ActionMCP
   require_relative "action_mcp/client"
   include Logging
   PROTOCOL_VERSION = "2024-11-05"
-
   class << self
-    attr_accessor :server
-
+    delegate :server, to: "ActionMCP::Server"
     # Returns the configuration instance.
     #
     # @return [Configuration] the configuration instance

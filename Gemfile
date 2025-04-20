@@ -22,6 +22,6 @@ gem "solid_queue"
 
 gem "annotaterb"
 gem "pg"
-gem "redis"
+# gem "redis"
 
 gem "faraday"
