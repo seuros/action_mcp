@@ -35,8 +35,16 @@ module ActionMCP
             error = build_timeout_error
             # Safely write error and close the stream
             Concurrent::Promise.execute do
-              sse.write(error) rescue nil
-              response.stream.close rescue nil
+              begin
+                sse.write(error)
+              rescue StandardError
+                nil
+              end
+              begin
+                response.stream.close
+              rescue StandardError
+                nil
+              end
               connection_active.make_false
             end
           end
@@ -108,8 +116,16 @@ module ActionMCP
         heartbeat_active&.make_false  # Signal to stop scheduling new heartbeats
         heartbeat_task&.cancel        # Cancel any pending heartbeat task
         listener&.stop
-        mcp_session.close! rescue nil
-        response.stream.close rescue nil
+        begin
+          mcp_session.close!
+        rescue StandardError
+          nil
+        end
+        begin
+          response.stream.close
+        rescue StandardError
+          nil
+        end
 
         Rails.logger.debug "SSE: Connection cleaned up for session: #{session_id}"
       end

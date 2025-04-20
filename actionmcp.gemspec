@@ -22,10 +22,10 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'actioncable', '>= 8.0.1'
   spec.add_dependency 'activerecord', '>= 8.0.1'
+  spec.add_dependency 'jsonrpc-rails'
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.0.1'
   spec.add_dependency 'zeitwerk', '~> 2.6'
-  spec.add_dependency 'jsonrpc-rails'
 
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }

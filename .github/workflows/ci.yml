@@ -27,7 +27,7 @@ jobs:
       RAILS_ENV: test
     services:
       db:
-        image: "ghcr.io/seuros/postgis-with-extensions:17-2"
+        image: "ghcr.io/seuros/postgis-with-extensions:17-4"
         env:
           POSTGRES_USER: ubuntu
           POSTGRES_PASSWORD: ubuntu

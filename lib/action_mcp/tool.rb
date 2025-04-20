@@ -131,24 +131,29 @@ module ActionMCP
     # Public entry point for executing the tool
     # Returns an array of Content objects collected from render calls
     def call
-      @response = ToolResponse.new # Create a new response for each invocation
+      @response = ToolResponse.new
+      performed = false            # ← track execution
 
-      # Check validations before proceeding
       if valid?
         begin
           run_callbacks :perform do
-            perform # Invoke the subclass-specific logic if valid
+            performed = true       # ← set if we reach the block
+            perform
           end
         rescue StandardError => e
-          # Handle exceptions during execution
           @response.mark_as_error!(:internal_error, message: e.message)
         end
       else
-        # Handle validation failure
-        @response.mark_as_error!(:invalid_request, message: "Invalid input", data: errors.full_messages)
+        @response.mark_as_error!(:invalid_request,
+                                 message: "Invalid input",
+                                 data: errors.full_messages)
       end
 
-      @response # Return the response with collected content
+      # If callbacks halted execution (`performed` still false) and
+      # nothing else marked an error, surface it as invalid_request.
+      @response.mark_as_error!(:invalid_request, message: "Aborted by callback") if !performed && !@response.error?
+
+      @response
     end
 
     def inspect
