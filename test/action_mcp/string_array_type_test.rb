@@ -12,15 +12,6 @@ class StringArrayTypeTest < ActiveSupport::TestCase
   end
 end
 
-class NumericArrayTool < ApplicationMCPTool
-  description "accepts array_number attribute"
-  collection :numbers, type: "number", required: true
-
-  def perform
-    render text: numbers.sum
-  end
-end
-
 class NumericArrayToolTest < ActiveSupport::TestCase
   test "collection :numbers coerces strings to floats" do
     resp = NumericArrayTool.new(numbers: %w[1 2 3]).call

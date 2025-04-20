@@ -41,3 +41,18 @@ class MockProduct
     { id: id }.to_json
   end
 end
+
+module FixtureHelpers
+  FIXTURE_CACHE = {}
+
+  # Returns a *deep‑dup* of the parsed YAML so each test gets its own copy
+  def load_fixture(name)
+    FIXTURE_CACHE[name] ||= YAML.load_file(
+      Rails.root.join("test/fixtures/action_mcp/#{name}.yml")
+    )
+    FIXTURE_CACHE[name].deep_dup
+  end
+end
+
+Minitest::Test.include(FixtureHelpers)
+

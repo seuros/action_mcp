@@ -10,10 +10,7 @@ class ToolsRegistryErrorTest < ActiveSupport::TestCase
     assert_equal(-32_602, resp.to_h[:code])          # invalid_params
   end
 
-  class ExplosiveTool < ApplicationMCPTool
-    description "always explodes"
-    def perform = raise("kaboom")
-  end
+
 
   test "tool_call surfaces :internal_error when tool itself raises" do
     resp = ActionMCP::ToolsRegistry.tool_call("explosive", {})

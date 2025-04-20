@@ -2,18 +2,6 @@
 
 require "test_helper"
 
-# A tool that aborts in before_perform so perform never runs
-class AbortTool < ApplicationMCPTool
-  description "Demonstrates throw(:abort) inside callbacks"
-  property :value, type: "string"
-
-  before_perform { throw :abort }
-
-  def perform
-    render text: "should never appear"
-  end
-end
-
 class CallbackAbortToolTest < ActiveSupport::TestCase
   test "tool aborts and returns invalid_request error" do
     resp = AbortTool.new(value: "x").call
