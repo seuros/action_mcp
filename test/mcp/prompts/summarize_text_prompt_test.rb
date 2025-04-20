@@ -3,6 +3,8 @@
 require "test_helper"
 
 class SummarizeTextPromptTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
   # Test valid params
   test "returns a concise summary by default" do
     params = { text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." }
@@ -47,7 +49,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
 
     # Assert - should return error response
     response_hash = response.to_h
-    assert_equal(-32_602, response_hash[:code])
+    assert_mcp_error_code(-32_602, response)
     assert_equal "Invalid input", response_hash[:message]
     assert_includes response_hash[:data], "Text can't be blank"
   end
@@ -64,7 +66,7 @@ class SummarizeTextPromptTest < ActiveSupport::TestCase
 
     # Assert - should return error response
     response_hash = response.to_h
-    assert_equal(-32_602, response_hash[:code])
+    assert_mcp_error_code(-32_602, response)
     assert_includes response_hash[:data], "Style is not included in the list"
     assert_equal "Invalid input", response_hash[:message]
   end

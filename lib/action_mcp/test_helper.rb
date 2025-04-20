@@ -3,53 +3,76 @@
 require "active_support/testing/assertions"
 
 module ActionMCP
+  #---------------------------------------------------------------------------
+  # ActionMCP::TestHelper
+  #
+  # Include in any `ActiveSupport::TestCase`:
+  #
+  #   include ActionMCP::TestHelper
+  #
+  # and you get   assert_mcp_tool_findable,
+  #               assert_mcp_prompt_findable,
+  #               execute_mcp_tool,
+  #               execute_mcp_prompt,
+  #               assert_mcp_error_code,
+  #               assert_mcp_tool_output,
+  #               assert_mcp_prompt_output.
+  #
+  # Short alias names (without the prefix) remain for this gem’s own suite but
+  # are *not* documented for public use.
+  #---------------------------------------------------------------------------
   module TestHelper
     include ActiveSupport::Testing::Assertions
 
-    # Asserts that a tool is findable in the ToolsRegistry.
-    # @param [String] tool_name
-    def assert_tool_findable(tool_name)
-      assert ActionMCP::ToolsRegistry.tools.key?(tool_name), "Tool #{tool_name} not found in registry"
+    # ──── Registry assertions ────────────────────────────────────────────────
+    def assert_mcp_tool_findable(name, msg = nil)
+      assert ActionMCP::ToolsRegistry.tools.key?(name),
+             msg || "Tool #{name.inspect} not found in ToolsRegistry"
     end
+    alias assert_tool_findable assert_mcp_tool_findable
 
-    # Asserts that a prompt is findable in the PromptsRegistry.
-    # @param [String] prompt_name
-    def assert_prompt_findable(prompt_name)
-      assert ActionMCP::PromptsRegistry.prompts.key?(prompt_name), "Prompt #{prompt_name} not found in registry"
+    def assert_mcp_prompt_findable(name, msg = nil)
+      assert ActionMCP::PromptsRegistry.prompts.key?(name),
+             msg || "Prompt #{name.inspect} not found in PromptsRegistry"
     end
+    alias assert_prompt_findable assert_mcp_prompt_findable
 
-    # Executes a tool with the given name and arguments.
-    # @param [String] tool_name
-    # @param [Hash] args
-    def execute_tool(tool_name, args = {})
-      result = ActionMCP::ToolsRegistry.tool_call(tool_name, args)
-      assert_not result.is_error, "Tool #{tool_name} returned an error: #{result.to_h[:message]}"
-      result
+    # ──── Execution helpers (happy‑path only) ────────────────────────────────
+    def execute_mcp_tool(name, args = {})
+      resp = ActionMCP::ToolsRegistry.tool_call(name, args)
+      assert !resp.is_error, "Tool #{name.inspect} returned error: #{resp.to_h[:message]}"
+      resp
     end
+    alias execute_tool execute_mcp_tool
 
-    # Executes a prompt with the given name and arguments.
-    # @param [String] prompt_name
-    # @param [Hash] args
-    def execute_prompt(prompt_name, args = {})
-      result = ActionMCP::PromptsRegistry.prompt_call(prompt_name, args)
-      assert_not result.is_error, "Prompt #{prompt_name} returned an error: #{result.to_h[:message]}"
-      result
+    def execute_mcp_prompt(name, args = {})
+      resp = ActionMCP::PromptsRegistry.prompt_call(name, args)
+      assert !resp.is_error, "Prompt #{name.inspect} returned error: #{resp.to_h[:message]}"
+      resp
     end
+    alias execute_prompt execute_mcp_prompt
 
-    # Asserts that the output of a tool is equal to the expected output.
-    # @param [Hash] expected_output
-    # @param [ActionMCP::ToolResponse] result
-    def assert_tool_output(expected_output, result)
-      assert_equal expected_output, result.to_h[:content],
-                   "Tool output did not match expected output #{expected_output} != #{result.to_h[:content]}"
+    # ──── Negative‑path helper ───────────────────────────────────────────────
+    def assert_mcp_error_code(code, response, msg = nil)
+      assert response.error?, msg || "Expected response to be an error"
+      assert_equal code, response.to_h[:code],
+                   msg || "Expected error code #{code}, got #{response.to_h[:code]}"
     end
+    alias assert_error_code assert_mcp_error_code
 
-    # Asserts that the output of a prompt is equal to the expected output.
-    # @param [Hash] expected_output
-    # @param [ActionMCP::PromptResponse] result
-    def assert_prompt_output(expected_output, result)
-      assert_equal expected_output, result.to_h[:messages],
-                   "Prompt output did not match expected output #{expected_output} != #{result.to_h[:messages]}"
+    # ──── Output assertions ─────────────────────────────────────────────────
+    def assert_mcp_tool_output(expected, response, msg = nil)
+      assert response.success?, msg || "Expected a successful tool response"
+      assert_equal expected, response.contents.map(&:to_h),
+                   msg || "Tool output did not match expected"
     end
+    alias assert_tool_output assert_mcp_tool_output
+
+    def assert_mcp_prompt_output(expected, response, msg = nil)
+      assert response.success?, msg || "Expected a successful prompt response"
+      assert_equal expected, response.messages,
+                   msg || "Prompt output did not match expected"
+    end
+    alias assert_prompt_output assert_mcp_prompt_output
   end
 end

@@ -4,10 +4,12 @@
 require "test_helper"
 
 class ToolsRegistryErrorTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
   test "tool_call returns :invalid_params when tool not found" do
     resp = ActionMCP::ToolsRegistry.tool_call("no_such_tool", {})
     assert resp.error?
-    assert_equal(-32_602, resp.to_h[:code])          # invalid_params
+    assert_mcp_error_code(-32_602, resp) # invalid_params
   end
 
 
@@ -15,7 +17,7 @@ class ToolsRegistryErrorTest < ActiveSupport::TestCase
   test "tool_call surfaces :internal_error when tool itself raises" do
     resp = ActionMCP::ToolsRegistry.tool_call("explosive", {})
     assert resp.error?
-    assert_equal(-32_603, resp.to_h[:code])          # internal_error
+    assert_mcp_error_code(-32_603, resp)        # internal_error
     assert_match(/kaboom/, resp.to_h[:message])
   end
 end
