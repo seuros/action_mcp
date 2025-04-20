@@ -6,8 +6,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
   test "generates a valid greeting response with required parameters" do
     # Arrange
     prompt = GreetingPrompt.new(name: "Ruby", style: "friendly")
-    response = GreetingPrompt.logger.silence do
-      # Act
+    response = with_silenced_logger(prompt) do
       prompt.call # This executes the prompt
     end
 
@@ -33,7 +32,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
     # Assert that the prompt is invalid
     assert_not prompt.valid?
     assert_includes prompt.errors.full_messages, "Name can't be blank"
-    response = GreetingPrompt.logger.silence do
+    response= with_silenced_logger(prompt) do
       # Make sure calling an invalid prompt works as expected
       prompt.call
     end
@@ -47,7 +46,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
     # Assert that the prompt is invalid
     assert_not prompt.valid?
     assert_includes prompt.errors.full_messages, "Style is not included in the list"
-    response = GreetingPrompt.logger.silence do
+    response = with_silenced_logger(prompt) do
       # Make sure calling an invalid prompt works as expected
       prompt.call
     end
@@ -58,7 +57,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
     # Arrange - missing optional 'style' parameter
     prompt = GreetingPrompt.new(name: "Ruby")
 
-    response = GreetingPrompt.logger.silence do
+    response= with_silenced_logger(prompt) do
       # Act
       prompt.call
     end
