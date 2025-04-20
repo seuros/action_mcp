@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.31.1...action_mcp/v0.32.0) (2025-04-20)
+
+
+### Features
+
+* improve error‑handling & tests, bump PG image, revert jsonrpc‑rails dep ([fb53bed](https://github.com/seuros/action_mcp/commit/fb53bedc6158b58a73e2efcf70d0597824f9d7d0))
+* **test_helper:** add namespaced assertions (assert_mcp_*) ([2e2280c](https://github.com/seuros/action_mcp/commit/2e2280cbb66c55e91c877c21c96269a621b25462))
+
+
+### Bug Fixes
+
+* Removed `server` attr_accessor and replaced it with `delegate` to `ActionMCP::Server`. ([b8f8441](https://github.com/seuros/action_mcp/commit/b8f844191152ddb47c51f76192faf6d1270f4708))
+
 ## [0.31.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.31.0...action_mcp/v0.31.1) (2025-04-14)
 
 
