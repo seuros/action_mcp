@@ -1,0 +1,11 @@
+orders:
+  name: "orders"
+  uriTemplate: "ecommerce://customers/{customer_id}/orders/{order_id}"
+  description: "Access order information"
+  mimeType: "application/json"
+
+products:
+  name: "products"
+  uriTemplate: "ecommerce://products/{product_id}"
+  description: "Access product information"
+  mimeType: "application/json"

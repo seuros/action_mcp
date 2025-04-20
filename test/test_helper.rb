@@ -63,7 +63,7 @@ module LogHelpers
   end
 end
 
-Minitest::Test.include(LogHelpers)
-Minitest::Test.include(FixtureHelpers)
+ActiveSupport::TestCase.include(LogHelpers)
+ActiveSupport::TestCase.include(FixtureHelpers)
 
 Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }

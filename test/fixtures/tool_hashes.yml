@@ -1,0 +1,161 @@
+add:
+  name: "add"
+  description: "Add two numbers together"
+  inputSchema:
+    type: object
+    properties:
+      x:
+        type: number
+        description: "First operand"
+      y:
+        type: number
+        description: "Second operand"
+    required: ["x", "y"]
+
+analyze_csv:
+  name: "analyze_csv"
+  description: "Analyze a CSV file"
+  inputSchema:
+    type: object
+    properties:
+      filepath:
+        type: string
+        description: "Path to CSV file"
+      operations:
+        type: array
+        description: "Operations to perform"
+        items:
+          type: string
+
+calculate_sum:
+  name: "calculate_sum"
+  description: "Calculate the sum of two numbers"
+  inputSchema:
+    type: object
+    properties:
+      number1:
+        type: number
+        description: "The first number"
+      number2:
+        type: number
+        description: "The second number"
+    required: ["number1", "number2"]
+
+calculate_sum_with_precision:
+  name: "calculate_sum_with_precision"
+  description: "Calculate the sum of two numbers with specified precision"
+  inputSchema:
+    type: object
+    properties:
+      number1:
+        type: number
+        description: "The first number"
+      number2:
+        type: number
+        description: "The second number"
+      precision:
+        type: number
+        description: "Decimal precision"
+      unit:
+        type: string
+        description: "Unit of measurement"
+    required: ["number1", "number2", "precision"]
+
+checksum_checker:
+  name: "checksum_checker"
+  description: "Check checksum256 of a file"
+  inputSchema:
+    type: object
+    properties:
+      files:
+        type: array
+        description: "List of Files"
+        items:
+          type: string
+
+execute_command:
+  name: "execute_command"
+  description: "Run a shell command"
+  inputSchema:
+    type: object
+    properties:
+      command:
+        type: string
+        description: "The command to run"
+      args:
+        type: array
+        description: "Command arguments"
+        items:
+          type: string
+
+format_source:
+  name: "format_source"
+  description: "Format source code according to a specific style"
+  inputSchema:
+    type: object
+    properties:
+      source_code:
+        type: string
+        description: "The code to be formatted"
+      language:
+        type: string
+        description: "Programming language"
+      style:
+        type: string
+        description: "Style or formatter rules"
+    required: ["source_code", "language"]
+
+create_github_issue:
+  name: "create_github_issue"
+  description: "Create a GitHub issue"
+  inputSchema:
+    type: object
+    properties:
+      title:
+        type: string
+        description: "Issue title"
+      body:
+        type: string
+        description: "Issue body"
+      labels:
+        type: array
+        description: "Issue labels"
+        items:
+          type: string
+
+weather_forecast:
+  name: "weather_forecast"
+  description: "Get detailed weather forecast for a location with progressive updates"
+  inputSchema:
+    type: object
+    properties:
+      location:
+        type: string
+        description: "City name or postal code"
+      days:
+        type: integer
+        description: "Number of forecast days (1-7)"
+    required: ["location"]
+
+boom:
+  name: "boom"
+  description: "Intentionally raises an exception to exercise error handling"
+  inputSchema:
+    type: object
+    properties:
+      message:
+        type: string
+        description: "Custom exception message"
+
+numeric_array:
+  name: "numeric_array"
+  description: "accepts array_number attribute"
+  inputSchema:
+    type: object
+    properties:
+      numbers:
+        type: array
+        description: "Array of numbers"
+        items:
+          type: number
+    required: ["numbers"]

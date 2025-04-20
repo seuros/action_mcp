@@ -1,0 +1,49 @@
+analyze_code:
+  name: "analyze_code"
+  description: "Analyze code for potential improvements"
+  arguments:
+    - name: "language"
+      description: "Programming language"
+      required: false
+    - name: "code"
+      description: "Code to explain"
+      required: true
+
+greeting:
+  name: "greeting"
+  description: "Generates a personalized greeting message"
+  arguments:
+    - name: "name"
+      description: "The name to greet"
+      required: true
+    - name: "style"
+      description: "Style of greeting"
+      required: false
+
+summarize_text:
+  name: "summarize_text"
+  description: "Summarize a piece of text using a chosen method"
+  arguments:
+    - name: "text"
+      description: "Text to summarize"
+      required: true
+    - name: "style"
+      description: "Summarization style"
+      required: false
+
+carbon_footprint_assessment:
+  name: "carbon_footprint_assessment"
+  description: "Guide for assessing and reducing personal carbon footprint"
+  arguments:
+    - name: "transportation_method"
+      description: "Primary mode of transportation"
+      required: true
+    - name: "household_size"
+      description: "Number of people in household"
+      required: true
+    - name: "diet_type"
+      description: "Dietary preference (omnivore, vegetarian, vegan, etc.)"
+      required: true
+    - name: "location_type"
+      description: "Urban, suburban, or rural living environment"
+      required: false
