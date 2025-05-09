@@ -23,3 +23,5 @@ gem "solid_queue"
 gem "annotaterb"
 gem "pg"
 # gem "redis"
+
+gem "faraday" # used by the client
