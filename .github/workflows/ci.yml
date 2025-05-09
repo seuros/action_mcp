@@ -15,7 +15,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ruby-3.4.1
+          ruby-version: ruby-3.4.3
           bundler-cache: true
 
       - name: Lint code for consistent style
@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
+      DATABASE_URL: postgresql://ubuntu:password@localhost
     services:
       db:
         image: "ghcr.io/seuros/postgis-with-extensions:17-4"
@@ -41,7 +42,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ruby-3.4.2
+          ruby-version: ruby-3.4.3
           bundler-cache: true
 
       - name: Create and migrate test database

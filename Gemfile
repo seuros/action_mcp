@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in action_mcp.gemspec.
 gemspec
 
-gem "puma"
+gem "falcon"
 
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
 gem "rubocop", require: false
@@ -24,4 +24,4 @@ gem "annotaterb"
 gem "pg"
 # gem "redis"
 
-gem "faraday"
+gem "faraday" # used by the client
