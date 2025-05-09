@@ -169,6 +169,7 @@ class ProductResourceTemplate < ApplicationMCPResTemplate
     )
   end
 end
+```
 
 # Example of callbacks:
 
@@ -222,15 +223,25 @@ For dynamic versioning, consider adding the `rails_app_version` gem.
 
 ## Engine and Mounting
 
-ActionMCP is implemented as a Rails engine, which means it can be mounted in your application's routes.
-The engine provides no authentication or authorization by default, so you'll need to handle that in your application for now.
+**ActionMCP** runs as a standalone Rack application, similar to **ActionCable**. It is **not** mounted in `routes.rb`.
 
-To mount the ActionMCP engine in your routes, add the following line to your `config/routes.rb`:
+> **Note:** Authentication and authorization are not included. You are responsible for securing the endpoint.
+
+### 1. Create `mcp.ru`
 
 ```ruby
-Rails.application.routes.draw do
-  mount ActionMCP::Engine => "/action_mcp"
+# Load the full Rails environment to access models, DB, Redis, etc.
+require_relative "config/environment"
+
+ActionMCP.configure do |config|
+  config.mcp_endpoint_path = "/mcp"
 end
+
+run ActionMCP::Engine
+```
+### 2. Start the server
+```bash
+bin/rails s -c mcp.ru -p 6277 -P tmp/pids/mcp.pid
 ```
 
 ## Generators

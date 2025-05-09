@@ -2,14 +2,10 @@ development:
   primary:
     adapter: postgresql
     database: actionmcp_development
-    username: postgres
-    password: postgres
-    host: localhost
+    url: <%= ENV.fetch("DATABASE_URL", "postgresql://ubuntu:password@localhost") %>
 
 test:
   primary:
     adapter: postgresql
     database: actionmcp_test
-    username: postgres
-    password: postgres
-    host: localhost
+    url: <%= ENV.fetch("DATABASE_URL", "postgresql://ubuntu:password@localhost") %>

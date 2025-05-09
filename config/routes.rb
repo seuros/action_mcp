@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 ActionMCP::Engine.routes.draw do
+  get "/up" => "/rails/health#show", as: :action_mcp_health_check
   # --- Routes for 2024-11-05 Spec (HTTP+SSE) ---
   # Kept for backward compatibility
   get "/", to: "sse#events", as: :sse_out
