@@ -2,6 +2,7 @@
 
 require "rails"
 require "active_model/railtie"
+require "jsonrpc-rails"
 
 module ActionMCP
   # Engine for integrating ActionMCP with Rails applications.
@@ -19,6 +20,8 @@ module ActionMCP
     config.to_prepare do
       ActionMCP::ResourceTemplate.registered_templates.clear
     end
+
+    config.middleware.use JSONRPC_Rails::Middleware::Validator, [ ActionMCP.configuration.mcp_endpoint_path ]
 
     # Load MCP profiles during initialization
     initializer "action_mcp.load_profiles" do

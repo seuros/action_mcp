@@ -5,12 +5,13 @@ module ActionMCP
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
   class UnifiedController < MCPController
+    include JSONRPC_Rails::ControllerHelpers
     include ActionController::Live
     # TODO: Include Instrumentation::ControllerRuntime if needed for metrics
 
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
     # @route GET /mcp
-    def handle_get
+    def show
       # 1. Check Accept Header
       unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
         return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
@@ -43,8 +44,10 @@ module ActionMCP
       # 4. Setup Stream, Listener, and Heartbeat
       sse = SSE.new(response.stream)
       listener = SSEListener.new(session) # Use the listener class (defined below or moved)
-      connection_active = Concurrent::AtomicBoolean.new(true)
-      heartbeat_active = Concurrent::AtomicBoolean.new(true)
+      connection_active = Concurrent::AtomicBoolean.new
+      connection_active.make_true
+      heartbeat_active = Concurrent::AtomicBoolean.new
+      heartbeat_active.make_true
       heartbeat_task = nil
 
       # Start listener
@@ -109,18 +112,14 @@ module ActionMCP
 
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
     # @route POST /mcp
-    def handle_post
+    def create
       # 1. Check Accept Header
       unless accepts_valid_content_types?
         return render_not_acceptable("Client must accept 'application/json' and 'text/event-stream'")
       end
 
-      # 2. Parse Request Body
-      parsed_body = parse_request_body
-      return unless parsed_body # Error rendered in parse_request_body
-
       # Determine if this is an initialize request (before session check)
-      is_initialize_request = check_if_initialize_request(parsed_body)
+      is_initialize_request = check_if_initialize_request(jsonrpc_params)
 
       # 3. Check Session (unless it's an initialize request)
       session_initially_missing = extract_session_id.nil?
@@ -134,13 +133,16 @@ module ActionMCP
           return render_not_found("Session has been terminated.")
         end
       end
-
+      if session.new_record?
+        session.save
+        response.headers[MCP_SESSION_ID_HEADER] = session.id
+      end
       # 4. Instantiate Handlers
       transport_handler = Server::TransportHandler.new(session)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
 
       # 5. Call Handler
-      handler_results = json_rpc_handler.call(parsed_body)
+      handler_results = json_rpc_handler.call(jsonrpc_params.to_h)
 
       # 6. Process Results
       process_handler_results(handler_results, session, session_initially_missing, is_initialize_request)
@@ -160,13 +162,7 @@ module ActionMCP
 
     # Handles DELETE requests for session termination (2025-03-26 spec).
     # @route DELETE /mcp
-    def handle_delete
-      allow_termination = ActionMCP.configuration.allow_client_session_termination
-
-      unless allow_termination
-        return render_method_not_allowed("Session termination via DELETE is not supported by this server.")
-      end
-
+    def destroy
       # 1. Check Session Header
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for DELETE requests.") unless session_id_from_header
@@ -201,24 +197,10 @@ module ActionMCP
         request.accepts.any? { |type| type.to_s == "text/event-stream" }
     end
 
-    # Parses the JSON request body. Renders error if invalid.
-    def parse_request_body
-      body = request.body.read
-      MultiJson.load(body)
-    rescue MultiJson::ParseError => e
-      render_bad_request("Invalid JSON in request body: #{e.message}")
-      nil # Indicate failure
-    end
-
     # Checks if the parsed body represents an 'initialize' request.
-    def check_if_initialize_request(parsed_body)
-      if parsed_body.is_a?(Hash) && parsed_body["method"] == "initialize"
-        true
-      elsif parsed_body.is_a?(Array) # Cannot be in a batch
-        false
-      else
-        false
-      end
+    def check_if_initialize_request(payload)
+      return false unless payload.is_a?(JSON_RPC::Request) && !jsonrpc_params_batch?
+      payload.method == "initialize"
     end
 
     # Processes the results from the JsonRpcHandler.
@@ -287,7 +269,7 @@ module ActionMCP
     # Renders a 500 Internal Server Error response.
     def render_internal_server_error(message = "Internal Server Error")
       # Using -32000 for generic server error
-      render json: { jsonrpc: "2.0", error: { code: -32_000, message: message } }, status: :internal_server_error
+      render json: { jsonrpc: "2.0", error: { code: -32_000, message: message } }
     end
 
     # Helper to write a JSON payload as an SSE event with a unique ID.

@@ -23,7 +23,6 @@ module ActionMCP
                   :active_profile,
                   :profiles,
                   # --- New Transport Options ---
-                  :allow_client_session_termination,
                   :mcp_endpoint_path,
                   :sse_heartbeat_interval,
                   :post_response_preference # :json or :sse
@@ -36,7 +35,6 @@ module ActionMCP
       @active_profile = :primary
       @profiles = default_profiles
 
-      @allow_client_session_termination = true
       @mcp_endpoint_path = "/mcp"
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
