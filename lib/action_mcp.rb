@@ -34,6 +34,7 @@ module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/client"
   include Logging
+  SUPPORTED_VERSIONS = %w[2024-11-05 2025-03-26].freeze
   PROTOCOL_VERSION = "2024-11-05"
   class << self
     delegate :server, to: "ActionMCP::Server"

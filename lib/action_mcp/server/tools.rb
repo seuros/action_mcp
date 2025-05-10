@@ -4,7 +4,8 @@ module ActionMCP
   module Server
     module Tools
       def send_tools_list(request_id)
-        tools = format_registry_items(ToolsRegistry.non_abstract)
+        protocol_version = session.protocol_version
+        tools = format_registry_items(ToolsRegistry.non_abstract, protocol_version)
         send_jsonrpc_response(request_id, result: { tools: tools })
       end
 
@@ -15,6 +16,12 @@ module ActionMCP
         else
           send_jsonrpc_response(request_id, result:)
         end
+      end
+
+      private
+
+      def format_registry_items(registry, protocol_version = nil)
+        registry.map { |item| item.klass.to_h(protocol_version: protocol_version) }
       end
     end
   end

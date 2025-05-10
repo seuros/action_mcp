@@ -5,6 +5,8 @@ module ActionMCP
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
   class UnifiedController < MCPController
+    REQUIRED_PROTOCOL_VERSION = "2025-03-26"
+
     include JSONRPC_Rails::ControllerHelpers
     include ActionController::Live
     # TODO: Include Instrumentation::ControllerRuntime if needed for metrics
@@ -134,7 +136,7 @@ module ActionMCP
         end
       end
       if session.new_record?
-        session.save
+        session.save!
         response.headers[MCP_SESSION_ID_HEADER] = session.id
       end
       # 4. Instantiate Handlers
@@ -190,6 +192,11 @@ module ActionMCP
     end
 
     private
+
+    # @return [String, nil] The extracted session ID or nil if not found.
+    def extract_session_id
+      request.headers[MCP_SESSION_ID_HEADER].presence
+    end
 
     # Checks if the client's Accept header includes the required types.
     def accepts_valid_content_types?
@@ -278,6 +285,12 @@ module ActionMCP
       # Manually format the SSE event string including the ID
       data = MultiJson.dump(payload)
       sse.stream.write("id: #{event_id}\ndata: #{data}\n\n")
+    end
+
+    def format_tools_list(tools, session)
+      # Pass the session's protocol version when formatting tools
+      protocol_version = session.protocol_version || ActionMCP.configuration.protocol_version
+      tools.map { |tool| tool.klass.to_h(protocol_version: protocol_version) }
     end
 
     # TODO: Add methods for handle_get (SSE setup, listener, heartbeat) - Partially Done

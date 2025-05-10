@@ -2,5 +2,6 @@
 require_relative "config/environment"
 
 ActionMCP.configure { |c| c.mcp_endpoint_path = "/mcp" }
-
+STDOUT.sync = true
+STDERR.sync = true
 run ActionMCP::Engine

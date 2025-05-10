@@ -25,7 +25,8 @@ module ActionMCP
                   # --- New Transport Options ---
                   :mcp_endpoint_path,
                   :sse_heartbeat_interval,
-                  :post_response_preference # :json or :sse
+                  :post_response_preference, # :json or :sse
+                  :protocol_version
 
     def initialize
       @logging_enabled = true
@@ -38,6 +39,7 @@ module ActionMCP
       @mcp_endpoint_path = "/mcp"
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
+      @protocol_version = "2024-11-05"
     end
 
     def name

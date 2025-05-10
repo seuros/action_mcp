@@ -33,20 +33,16 @@ module ActionMCP
     def find_or_initialize_session
       session_id = extract_session_id
       if session_id
-        # Attempt to find the session by ID. Return nil if not found.
-        # Controllers should handle the nil case (e.g., return 404).
-        Session.find_by(id: session_id)
+        session = Session.find_by(id: session_id)
+        if session && session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+          # Update existing session to use 2025 protocol
+          session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+        end
+        session
       else
-        # No session ID provided, initialize a new one (likely for 'initialize' request).
-        Session.new
+        # Create new session with 2025 protocol
+        Session.new(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
       end
-    end
-
-    # Extracts the session ID from the request header or parameters.
-    # Prefers the Mcp-Session-Id header (new spec) over the param (old spec).
-    # @return [String, nil] The extracted session ID or nil if not found.
-    def extract_session_id
-      request.headers[MCP_SESSION_ID_HEADER].presence || params[:session_id].presence
     end
 
     # Renders a 400 Bad Request response with a JSON-RPC-like error structure.

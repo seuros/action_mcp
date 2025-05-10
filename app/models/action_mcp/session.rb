@@ -53,7 +53,7 @@ module ActionMCP
     before_create :set_server_info, if: -> { role == "server" }
     before_create :set_server_capabilities, if: -> { role == "server" }
 
-    validates :protocol_version, inclusion: { in: [ PROTOCOL_VERSION ] }, allow_nil: true
+    validates :protocol_version, inclusion: { in: SUPPORTED_VERSIONS }, allow_nil: true
 
     def close!
       dummy_callback = ->(*) { } # this callback seem broken

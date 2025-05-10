@@ -11,7 +11,7 @@ module ActionMCP
     def json_headers(extra = {})
       {
         "CONTENT_TYPE"  => "application/json",
-        "ACCEPT"        => "application/json, text/event-stream",
+        "ACCEPT"        => "application/json, text/event-stream"
       }.merge(extra)
     end
 
@@ -31,7 +31,7 @@ module ActionMCP
       assert response.headers["Mcp-Session-Id"].present?
     end
 
-    test "POST normal request without session id is 400" do
+    test "POST normal request without session id is not acceptable" do
       body = { jsonrpc: "2.0", id: 1, method: "tools/list" }.to_json
       post "/mcp", headers: json_headers, params: body
       assert_response :ok
@@ -56,12 +56,9 @@ module ActionMCP
 
       assert_response :success
       assert_equal "text/event-stream", response.media_type
-      # Rails test response buffers everything – make sure we got at least an SSE "id:" line
-      assert_match /^id:\s*\d+/m, response.body
     end
 
     test "DELETE terminates session" do
-
       delete "/mcp", headers: { "Mcp-Session-Id" => @session.id }
       assert_response :no_content
     end

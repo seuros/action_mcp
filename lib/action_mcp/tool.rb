@@ -16,6 +16,7 @@ module ActionMCP
     #   @return [Array<String>] The required properties of the tool.
     class_attribute :_schema_properties, instance_accessor: false, default: {}
     class_attribute :_required_properties, instance_accessor: false, default: []
+    class_attribute :_annotations, instance_accessor: false, default: {}
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -44,6 +45,29 @@ module ActionMCP
 
       def type
         :tool
+      end
+
+      def annotate(key, value)
+        self._annotations = _annotations.merge(key.to_s => value)
+      end
+
+      # Convenience methods for common annotations
+      def destructive(enabled = true)
+        annotate(:destructive, enabled)
+      end
+
+      def read_only(enabled = true)
+        annotate(:readOnly, enabled)
+      end
+
+      # Return annotations based on protocol version
+      def annotations_for_protocol(protocol_version = nil)
+        # Only include annotations for 2025+ protocols
+        if protocol_version.nil? || protocol_version == "2024-11-05"
+          {}
+        else
+          _annotations
+        end
       end
     end
 
@@ -114,14 +138,21 @@ module ActionMCP
     # Returns a hash representation of the tool definition including its JSON Schema.
     #
     # @return [Hash] The tool definition.
-    def self.to_h
+    def self.to_h(protocol_version: nil)
       schema = { type: "object", properties: _schema_properties }
       schema[:required] = _required_properties if _required_properties.any?
-      {
+
+      result = {
         name: tool_name,
         description: description.presence,
         inputSchema: schema
       }.compact
+
+      # Add annotations if protocol supports them
+      annotations = annotations_for_protocol(protocol_version)
+      result[:annotations] = annotations if annotations.any?
+
+      result
     end
 
     # --------------------------------------------------------------------------
