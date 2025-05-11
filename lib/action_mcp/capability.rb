@@ -14,6 +14,22 @@ module ActionMCP
     class_attribute :_capability_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
 
+    attr_reader :execution_context
+
+    def initialize(*)
+      super
+      @execution_context = {}
+    end
+
+    def with_context(context)
+      @execution_context = context
+      self
+    end
+
+    def session
+      execution_context[:session]
+    end
+
     # use _capability_name or default_capability_name
     def self.capability_name
       _capability_name || default_capability_name

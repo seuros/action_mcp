@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_27_124131) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_29_120300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,6 +65,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_27_124131) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sse_event_counter", default: 0, null: false
+    t.jsonb "tool_registry", default: []
+    t.jsonb "prompt_registry", default: []
+    t.jsonb "resource_registry", default: []
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|

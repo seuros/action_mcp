@@ -46,10 +46,11 @@ module ActionMCP
       #   # Sends: {"jsonrpc":"2.0","id":"req-789","result":{"contents":[{"uri":"file:///example.txt","text":"Example content"}]}}
       def send_resource_read(id, params)
         if (template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri]))
+          # Create template instance and set execution context
           record = template.process(params[:uri])
+          record.with_context({ session: session })
+
           if (resource = record.call)
-            # if resource is a array or a collection, return each item then it ok
-            # else wrap it in a array
             resource = [ resource ] unless resource.respond_to?(:each)
             content = resource.map(&:to_h)
             send_jsonrpc_response(id, result: { contents: content })

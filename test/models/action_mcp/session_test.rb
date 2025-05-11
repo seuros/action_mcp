@@ -10,12 +10,15 @@
 #  ended_at(The time the session ended)                :datetime
 #  initialized                                         :boolean          default(FALSE), not null
 #  messages_count                                      :integer          default(0), not null
+#  prompt_registry                                     :jsonb
 #  protocol_version                                    :string
+#  resource_registry                                   :jsonb
 #  role(The role of the session)                       :string           default("server"), not null
 #  server_capabilities(The capabilities of the server) :jsonb
 #  server_info(The information about the server)       :jsonb
 #  sse_event_counter                                   :integer          default(0), not null
 #  status                                              :string           default("pre_initialize"), not null
+#  tool_registry                                       :jsonb
 #  created_at                                          :datetime         not null
 #  updated_at                                          :datetime         not null
 #

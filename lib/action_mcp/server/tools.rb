@@ -5,16 +5,31 @@ module ActionMCP
     module Tools
       def send_tools_list(request_id)
         protocol_version = session.protocol_version
-        tools = format_registry_items(ToolsRegistry.non_abstract, protocol_version)
+        # Use session's registered tools instead of global registry
+        tools = session.registered_tools.map { |tool_class|
+          tool_class.to_h(protocol_version: protocol_version)
+        }
         send_jsonrpc_response(request_id, result: { tools: tools })
       end
 
       def send_tools_call(request_id, tool_name, arguments, _meta = {})
-        result = ToolsRegistry.tool_call(tool_name, arguments, _meta)
-        if result.is_error
-          send_jsonrpc_response(request_id, error: result)
+        # Find tool in session's registry
+        tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
+
+        if tool_class
+          # Create tool and set execution context
+          tool = tool_class.new(arguments)
+          tool.with_context({ session: session })
+
+          result = tool.call
+
+          if result.is_error
+            send_jsonrpc_response(request_id, error: result)
+          else
+            send_jsonrpc_response(request_id, result: result)
+          end
         else
-          send_jsonrpc_response(request_id, result:)
+          send_jsonrpc_error(request_id, :method_not_found, "Tool '#{tool_name}' not available in this session")
         end
       end
 
