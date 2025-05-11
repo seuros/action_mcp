@@ -29,6 +29,7 @@ module ActionMCP
   # such as client and server capabilities, protocol version, and session status.
   # It also manages the association with messages and subscriptions related to the session.
   class Session < ApplicationRecord
+    include MCPConsoleHelpers
     attribute :id, :string, default: -> { SecureRandom.hex(6) }
     has_many :messages,
              class_name: "ActionMCP::Session::Message",
@@ -42,6 +43,12 @@ module ActionMCP
              inverse_of: :session
     has_many :resources,
              class_name: "ActionMCP::Session::Resource",
+             foreign_key: "session_id",
+             dependent: :delete_all,
+             inverse_of: :session
+
+    has_many :sse_events,
+             class_name: "ActionMCP::Session::SSEEvent",
              foreign_key: "session_id",
              dependent: :delete_all,
              inverse_of: :session
@@ -123,16 +130,6 @@ module ActionMCP
       save
     end
 
-    def message_flow
-      messages.without_pings.order(created_at: :asc).map do |message|
-        {
-          direction: message.direction,
-          data: message.data,
-          type: message.message_type
-        }
-      end
-    end
-
     def send_ping!
       Session.logger.silence do
         write(JSON_RPC::Request.new(id: Time.now.to_i, method: "ping"))
@@ -157,6 +154,47 @@ module ActionMCP
       reload.sse_event_counter
     end
 
+    # Stores an SSE event for potential resumption
+    # @param event_id [Integer] The event ID
+    # @param data [Hash, String] The event data
+    # @param max_events [Integer] Maximum number of events to store (oldest events are removed when exceeded)
+    # @return [ActionMCP::Session::SSEEvent] The created event
+    def store_sse_event(event_id, data, max_events = 100)
+      # Create the SSE event record
+      event = sse_events.create!(
+        event_id: event_id,
+        data: data
+      )
+
+      # Maintain cache limit by removing oldest events if needed
+      if sse_events.count > max_events
+        sse_events.order(event_id: :asc).limit(sse_events.count - max_events).destroy_all
+      end
+
+      event
+    end
+
+    # Retrieves SSE events after a given ID
+    # @param last_event_id [Integer] The ID to retrieve events after
+    # @param limit [Integer] Maximum number of events to return
+    # @return [Array<ActionMCP::Session::SSEEvent>] The events
+    def get_sse_events_after(last_event_id, limit = 50)
+      sse_events.where("event_id > ?", last_event_id)
+                .order(event_id: :asc)
+                .limit(limit)
+    end
+
+    # Cleans up old SSE events
+    # @param max_age [ActiveSupport::Duration] Maximum age of events to keep
+    # @return [Integer] Number of events removed
+    def cleanup_old_sse_events(max_age = 15.minutes)
+      cutoff_time = Time.current - max_age
+      events_to_delete = sse_events.where("created_at < ?", cutoff_time)
+      count = events_to_delete.count
+      events_to_delete.destroy_all
+      count
+    end
+
     def send_progress_notification(progressToken:, progress:, total: nil, message: nil)
       # Create a transport handler to send the notification
       handler = ActionMCP::Server::TransportHandler.new(self)
@@ -166,6 +204,18 @@ module ActionMCP
         total: total,
         message: message
       )
+    end
+
+    # Calculates the retention period for SSE events based on configuration
+    # @return [ActiveSupport::Duration] The retention period
+    def sse_event_retention_period
+      ActionMCP.configuration.sse_event_retention_period || 15.minutes
+    end
+
+    # Calculates the maximum number of SSE events to store based on configuration
+    # @return [Integer] The maximum number of events
+    def max_stored_sse_events
+      ActionMCP.configuration.max_stored_sse_events || 100
     end
 
     def send_progress_notification_legacy(token:, value:, message: nil)

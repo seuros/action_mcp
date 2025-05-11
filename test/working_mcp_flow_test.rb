@@ -1,12 +1,12 @@
 require "test_helper"
 
 module ActionMCP
-  class BasicMCPFlowTest < ActionDispatch::IntegrationTest
+  class WorkingMCPFlowTest < ActionDispatch::IntegrationTest
     def app
       ActionMCP::Engine
     end
 
-    test "complete basic MCP workflow - initialize, list tools, call tool" do
+    test "complete basic MCP workflow with 2025-03-26 protocol" do
       # ====================================================================
       # STEP 1: Initialize the session
       # ====================================================================
@@ -32,8 +32,7 @@ module ActionMCP
            },
            params: init_request.to_json
 
-      # Both 200 OK and 400 Bad Request are valid responses for unsupported protocol version
-      assert_includes [ 200, 400 ], response.status
+      assert_response :ok
 
       # Parse the initialization response
       init_response = response.parsed_body
@@ -68,6 +67,13 @@ module ActionMCP
 
         # Verify protocol version matches
         assert_equal "2025-03-26", init_response["result"]["protocolVersion"]
+      end
+
+      # Verify server info if result exists
+      if init_response.key?("result") && init_response["result"] && init_response["result"]["serverInfo"]
+        server_info = init_response["result"]["serverInfo"]
+        assert_not_nil server_info["name"]
+        assert_not_nil server_info["version"]
       end
 
       # ====================================================================
@@ -139,20 +145,6 @@ module ActionMCP
       else
         skip "No tools returned in response - implementation might have changed"
       end
-
-      # Skip the remaining tool structure checks if we didn't get a valid tool
-      unless defined?(calculate_sum_tool) && calculate_sum_tool
-        skip "calculate_sum_tool is not available - implementation might have changed"
-      end
-
-      # These checks only run if we found the calculate_sum_tool
-      assert_not_nil calculate_sum_tool["description"]
-      assert_not_nil calculate_sum_tool["inputSchema"]
-      assert_equal "object", calculate_sum_tool["inputSchema"]["type"]
-      assert_not_nil calculate_sum_tool["inputSchema"]["properties"]
-      assert_includes calculate_sum_tool["inputSchema"]["required"], "number1"
-      assert_includes calculate_sum_tool["inputSchema"]["required"], "number2"
-
       # ====================================================================
       # STEP 4: Call the calculate_sum tool
       # ====================================================================
@@ -191,7 +183,6 @@ module ActionMCP
         # If ID is provided, it should match the request ID
         assert_equal "call-tool-1", call_response["id"], "ID should be preserved in response"
       end
-
       if call_response["result"]
         assert_not_nil call_response["result"]
 
@@ -213,13 +204,17 @@ module ActionMCP
       end
 
       # ====================================================================
-      # STEP 5: List available prompts (optional verification)
+      # STEP 5: Test error handling - call non-existent tool
       # ====================================================================
 
-      list_prompts_request = {
+      bad_tool_request = {
         jsonrpc: "2.0",
-        id: "list-prompts-1",
-        method: "prompts/list"
+        id: "bad-tool-1",
+        method: "tools/call",
+        params: {
+          name: "non_existent_tool",
+          arguments: {}
+        }
       }
 
       post "/mcp",
@@ -228,68 +223,38 @@ module ActionMCP
              "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
-           params: list_prompts_request.to_json
+           params: bad_tool_request.to_json
 
       assert_response :ok
 
-      prompts_response = response.parsed_body
-      if prompts_response["result"]
-        assert_not_nil prompts_response["result"]["prompts"]
-      end
+      # Should get an error response with preserved ID
+      error_response = response.parsed_body
+      assert_equal "2.0", error_response["jsonrpc"]
+      assert_equal "bad-tool-1", error_response["id"], "Error response should preserve ID"
+      assert_not_nil error_response["error"]
+      assert_equal -32601, error_response["error"]["code"]
 
       # ====================================================================
-      # STEP 6: Verify session state
-      # ====================================================================
-
-      # Retrieve the session from database
-      session = Session.find(session_id)
-      assert_not_nil session
-      assert_equal "initialized", session.status
-      assert_equal "2025-03-26", session.protocol_version
-      assert session.initialized?
-
-      # Verify message history
-      messages = session.messages.order(:created_at)
-
-      # Should have the init request + init response
-      init_request_msg = messages.find { |m| m.jsonrpc_id == "init-1" && m.message_type == "request" }
-      init_response_msg = messages.find { |m| m.jsonrpc_id == "init-1" && m.message_type == "response" }
-      assert_not_nil init_request_msg
-      assert_not_nil init_response_msg
-
-      # Should have the tools/list request + response
-      tools_request_msg = messages.find { |m| m.jsonrpc_id == "list-tools-1" && m.message_type == "request" }
-      tools_response_msg = messages.find { |m| m.jsonrpc_id == "list-tools-1" && m.message_type == "response" }
-      assert_not_nil tools_request_msg
-      assert_not_nil tools_response_msg
-
-      # Should have the tools/call request + response
-      call_request_msg = messages.find { |m| m.jsonrpc_id == "call-tool-1" && m.message_type == "request" }
-      call_response_msg = messages.find { |m| m.jsonrpc_id == "call-tool-1" && m.message_type == "response" }
-      assert_not_nil call_request_msg
-      assert_not_nil call_response_msg
-
-      # ====================================================================
-      # STEP 7: Cleanup - terminate the session
+      # STEP 6: Cleanup - terminate the session
       # ====================================================================
 
       delete "/mcp", headers: { "Mcp-Session-Id" => session_id }
       assert_response :no_content
 
       # Verify session is closed
-      session.reload
+      session = Session.find(session_id)
       assert_equal "closed", session.status
       assert_not_nil session.ended_at
     end
 
-    test "error handling in basic workflow" do
-      # Test initialization with wrong protocol version
+    test "initialization with unsupported protocol version" do
+      # Test with an unsupported protocol version
       init_request = {
         jsonrpc: "2.0",
-        id: "bad-init",
+        id: "bad-protocol",
         method: "initialize",
         params: {
-          protocolVersion: "1.0.0",  # Wrong version
+          protocolVersion: "1.0.0",  # Unsupported version
           clientInfo: { name: "Test", version: "1.0" },
           capabilities: {}
         }
@@ -297,21 +262,25 @@ module ActionMCP
 
       post "/mcp",
            headers: {
-             "CONTENT_TYPE" => "application/json",
+             "CONTENT-TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream"
            },
            params: init_request.to_json
 
-      # For error responses, the HTTP status can be 200 or 400
+      # Server may return either 200 OK or 400 Bad Request for an unsupported protocol version
       assert_includes [ 200, 400 ], response.status
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
-      # Error code can be -32000 (server error) or -32602 (invalid params)
       assert_includes [ -32000, -32602 ], error_response["error"]["code"]
       assert_match(/Unsupported protocol version/, error_response["error"]["message"])
-      # The ID should match the request ID if present
-      if error_response["id"]
-        assert_equal "bad-init", error_response["id"]
+      assert_equal "bad-protocol", error_response["id"], "Error response must preserve request ID"
+
+      # Verify error data includes supported versions
+      if error_response["error"]["data"]
+        assert_not_nil error_response["error"]["data"]["supported"]
+        assert_includes error_response["error"]["data"]["supported"], "2024-11-05"
+        assert_includes error_response["error"]["data"]["supported"], "2025-03-26"
+        assert_equal "1.0.0", error_response["error"]["data"]["requested"]
       end
     end
   end

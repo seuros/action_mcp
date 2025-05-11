@@ -3,12 +3,34 @@
 module ActionMCP
   module Server
     module Tools
-      def send_tools_list(request_id)
+      def send_tools_list(request_id, params = {})
         protocol_version = session.protocol_version
+        # Extract progress token from _meta if provided
+        progress_token = params.dig("_meta", "progressToken")
+
+        # Send initial progress notification if token is provided
+        if progress_token
+          session.send_progress_notification(
+            progressToken: progress_token,
+            progress: 0,
+            message: "Starting tools list retrieval"
+          )
+        end
+
         # Use session's registered tools instead of global registry
         tools = session.registered_tools.map { |tool_class|
           tool_class.to_h(protocol_version: protocol_version)
         }
+
+        # Send completion progress notification if token is provided
+        if progress_token
+          session.send_progress_notification(
+            progressToken: progress_token,
+            progress: 100,
+            message: "Tools list retrieval complete"
+          )
+        end
+
         send_jsonrpc_response(request_id, result: { tools: tools })
       end
 

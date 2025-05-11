@@ -38,9 +38,10 @@ module ActionMCP
       def send_progress_notification(progressToken:, progress:, total: nil, message: nil, **options)
         params = {
           progressToken: progressToken,
-          progress: progress,
-          total: total
+          progress: progress
         }
+        # Only include total and message if they are present (not nil)
+        params[:total] = total unless total.nil?
         params[:message] = message if message.present?
         params.merge!(options) if options.any?
 
@@ -50,7 +51,7 @@ module ActionMCP
       # Backward compatibility method for old API
       def send_progress_notification_legacy(token:, value:, message: nil)
         Rails.logger.warn("DEPRECATION: send_progress_notification with token/value is deprecated. Use progressToken/progress instead.")
-        send_progress_notification(progressToken: token, progress: value, message: message, total: 0)
+        send_progress_notification(progressToken: token, progress: value, message: message)
       end
     end
   end

@@ -33,7 +33,9 @@ module ActionMCP
         return render_not_found("Session has been terminated.")
       end
 
-      # TODO: Handle Last-Event-ID header for stream resumption
+      # Check for Last-Event-ID header for resumability
+      last_event_id = request.headers["Last-Event-ID"].presence
+      Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}" if last_event_id
 
       # 3. Set SSE Headers
       response.headers["Content-Type"] = "text/event-stream"
@@ -63,6 +65,27 @@ module ActionMCP
         # Don't write error to stream as per spec for GET, just close
         connection_active.make_false
         return # Error logged, connection will close in ensure block
+      end
+
+      # Handle resumability by sending missed events if Last-Event-ID is provided
+      if last_event_id.present? && last_event_id.to_i > 0
+        begin
+          # Fetch events that occurred after the Last-Event-ID
+          missed_events = session.get_sse_events_after(last_event_id.to_i)
+
+          if missed_events.any?
+            Rails.logger.info "Unified SSE (GET): Sending #{missed_events.size} missed events for session: #{session.id}"
+
+            # Send each missed event to the client
+            missed_events.each do |event|
+              sse.stream.write(event.to_sse)
+            end
+          else
+            Rails.logger.info "Unified SSE (GET): No missed events to send for session: #{session.id}"
+          end
+        rescue => e
+          Rails.logger.error "Unified SSE (GET): Error sending missed events: #{e.message}"
+        end
       end
 
       # Heartbeat sender proc
@@ -103,6 +126,10 @@ module ActionMCP
       heartbeat_active&.make_false
       heartbeat_task&.cancel
       listener&.stop
+
+      # Clean up old SSE events if resumability is enabled
+      cleanup_old_sse_events(session) if session
+
       # Don't close the session itself here, it might be used by other connections/requests
       sse&.close
       begin
@@ -212,30 +239,72 @@ module ActionMCP
 
     # Processes the results from the JsonRpcHandler.
     def process_handler_results(results, session, session_initially_missing, is_initialize_request)
-      case results[:type]
+      # Make sure we always have a results hash
+      results ||= {}
+
+      # Check if this is a notification request
+      is_notification = jsonrpc_params.is_a?(Hash) &&
+                        jsonrpc_params["method"].to_s.start_with?("notifications/") &&
+                        !jsonrpc_params.key?("id")
+
+      # Extract request ID from results
+      request_id = nil
+      if results.is_a?(Hash)
+        request_id = results[:request_id] || results[:id]
+
+        # If we have a payload that's a response, extract ID from there as well
+        if results[:payload].is_a?(Hash) && results[:payload][:id]
+          request_id ||= results[:payload][:id]
+        end
+      end
+
+      # Default to empty hash for response payload if nil
+      result_type = results[:type]
+      result_payload = results[:payload] || {}
+
+      # Ensure payload has the correct ID if it's a hash
+      if result_payload.is_a?(Hash) && request_id
+        result_payload[:id] = request_id unless result_payload.key?(:id)
+      end
+
+      # Check if the payload is a notification
+      is_notification_payload = result_payload.is_a?(Hash) &&
+                              result_payload[:method]&.to_s&.start_with?("notifications/") &&
+                              !result_payload.key?(:id)
+
+      case result_type
       when :error
-        # Handle handler-level errors (e.g., batch parse error)
-        render json: results[:payload], status: results.fetch(:status, :bad_request)
+        # Ensure error responses preserve the ID
+        error_payload = result_payload
+        if error_payload.is_a?(Hash) && !error_payload.key?(:id) && request_id
+          error_payload[:id] = request_id
+        end
+        render json: error_payload, status: results.fetch(:status, :bad_request)
       when :notifications_only
-        # No response needed, just accept
         head :accepted
       when :responses
-        # Determine response format based on server preference and client acceptance.
-        # Client MUST accept both 'application/json' and 'text/event-stream' (checked earlier).
-        server_preference = ActionMCP.configuration.post_response_preference # :json or :sse
+        server_preference = ActionMCP.configuration.post_response_preference
         use_sse = (server_preference == :sse)
 
-        # Add session ID header if this was a successful initialize request that created the session
         add_session_header = is_initialize_request && session_initially_missing && session.persisted?
 
         if use_sse
-          render_sse_response(results[:payload], session, add_session_header)
+          render_sse_response(result_payload, session, add_session_header)
         else
-          render_json_response(results[:payload], session, add_session_header)
+          render_json_response(result_payload, session, add_session_header)
         end
       else
-        # Should not happen
-        render_internal_server_error("Unknown handler result type: #{results[:type]}")
+        # This was causing the "Unknown handler result type: " error
+        Rails.logger.error "Unknown handler result type: #{result_type.inspect}"
+
+        # Return a proper JSON-RPC response with the preserved ID
+        # Default to a response with JSON-RPC message format
+        status = is_notification ? :accepted : :ok
+        render json: {
+          jsonrpc: "2.0",
+          id: request_id,
+          result: {}
+        }, status: status
       end
     end
 
@@ -243,11 +312,13 @@ module ActionMCP
     def render_json_response(payload, session, add_session_header)
       response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
       response.headers["Content-Type"] = "application/json"
+
       render json: payload, status: :ok
     end
 
     # Renders the JSON-RPC response(s) as an SSE stream.
     def render_sse_response(payload, session, add_session_header)
+      # This is not recommended with puma
       response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["X-Accel-Buffering"] = "no"
@@ -274,17 +345,46 @@ module ActionMCP
     end
 
     # Renders a 500 Internal Server Error response.
-    def render_internal_server_error(message = "Internal Server Error")
+    def render_internal_server_error(message = "Internal Server Error", id = nil)
       # Using -32000 for generic server error
-      render json: { jsonrpc: "2.0", error: { code: -32_000, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
+    end
+
+    # Helper to clean up old SSE events for a session
+    def cleanup_old_sse_events(session)
+      return unless ActionMCP.configuration.enable_sse_resumability
+
+      begin
+        # Get retention period from configuration
+        retention_period = session.sse_event_retention_period
+        count = session.cleanup_old_sse_events(retention_period)
+
+        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}" if count > 0
+      rescue => e
+        Rails.logger.error "Error cleaning up old SSE events: #{e.message}"
+      end
     end
 
     # Helper to write a JSON payload as an SSE event with a unique ID.
+    # Also stores the event for potential resumability.
     def write_sse_event(sse, session, payload)
       event_id = session.increment_sse_counter!
+
       # Manually format the SSE event string including the ID
-      data = MultiJson.dump(payload)
-      sse.stream.write("id: #{event_id}\ndata: #{data}\n\n")
+      data = payload.is_a?(String) ? payload : MultiJson.dump(payload)
+      sse_event = "id: #{event_id}\ndata: #{data}\n\n"
+
+      # Write to the stream
+      sse.stream.write(sse_event)
+
+      # Store the event for potential resumption if resumability is enabled
+      if ActionMCP.configuration.enable_sse_resumability
+        begin
+          session.store_sse_event(event_id, payload, session.max_stored_sse_events)
+        rescue => e
+          Rails.logger.error "Failed to store SSE event for resumability: #{e.message}"
+        end
+      end
     end
 
     def format_tools_list(tools, session)
