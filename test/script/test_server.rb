@@ -5,6 +5,39 @@ require_relative "../../lib/action_mcp/server"
 require "tempfile"
 require "yaml"
 require "fileutils"
+require "concurrent"
+
+# Helper method to wait for a condition to become true using Concurrent Ruby
+def wait_for_condition(timeout = 5, interval = 0.01)
+  # Create a promise that will check the condition in a loop
+  future = Concurrent::Promises.future do
+    result = false
+    deadline = Time.now + timeout
+    while Time.now < deadline
+      begin
+        if yield
+          result = true
+          break
+        end
+      rescue => e
+        puts "Error in condition check: #{e.message}"
+      end
+      sleep interval
+    end
+    result
+  end
+
+  # Wait for the future to complete with a timeout
+  begin
+    future.value(timeout + 0.5) || false  # Add a small buffer to the timeout
+  rescue Concurrent::TimeoutError
+    puts "Timed out waiting for condition"
+    false
+  rescue => e
+    puts "Error waiting for condition: #{e.message}"
+    false
+  end
+end
 
 # Ensure the directory exists
 FileUtils.mkdir_p(File.dirname(__FILE__))
@@ -13,11 +46,16 @@ FileUtils.mkdir_p(File.dirname(__FILE__))
 config_file = Tempfile.new([ "test_mcp", ".yml" ])
 config_file.write(YAML.dump({
   "development" => {
-    "adapter" => "simple"
+    "adapter" => "simple",
+    "min_threads" => 2,
+    "max_threads" => 5,
+    "max_queue" => 50
   },
   "production" => {
     "adapter" => "solid_cable",
-    "polling_interval" => 0.5
+    "polling_interval" => 0.5,
+    "min_threads" => 5,
+    "max_threads" => 10
   }
 }))
 config_file.close
@@ -46,35 +84,59 @@ puts "Subscription ID: #{subscription_id}"
 puts "Broadcasting message to test-channel..."
 adapter.broadcast("test-channel", "Hello, world!")
 
-# Wait for the message to be received
-wait_for_condition(5) { received_messages.include?("Hello, world!") }
+# Wait for the message to be received using wait_for_condition with Concurrent Ruby
+message_received = wait_for_condition(5) { received_messages.include?("Hello, world!") }
 
-if received_messages.include?("Hello, world!")
+if message_received
   puts "SUCCESS: Message was received"
 else
-  puts "ERROR: Message was not received"
+  puts "ERROR: Message was not received within timeout"
   exit 1
+end
+
+# Add a small delay to ensure the message is fully processed
+# Using a future with a timeout to avoid blocking indefinitely
+timeout = 0.5
+delay_future = Concurrent::Promises.future { sleep 0.2 }
+unless delay_future.wait(timeout)
+  puts "Warning: Delay timed out, continuing anyway"
 end
 
 # Test unsubscribing
 puts "Unsubscribing from test-channel..."
 adapter.unsubscribe("test-channel")
 
+# Verify channel has no subscribers
+if adapter.respond_to?(:subscribed_to?) && adapter.subscribed_to?("test-channel")
+  puts "WARNING: Channel still has subscribers after unsubscribe"
+end
+
 # Test broadcasting a message after unsubscribing
 puts "Broadcasting message after unsubscribe..."
 adapter.broadcast("test-channel", "This should not be received")
 
-# Wait to make sure no message is received
-sleep 0.5
+# Use wait_for_condition with a shorter timeout to verify no message is received
+unexpected_message_received = wait_for_condition(1) {
+  received_messages.include?("This should not be received")
+}
 
-if received_messages.include?("This should not be received")
+if unexpected_message_received
   puts "ERROR: Message was received after unsubscribe"
   exit 1
 else
   puts "SUCCESS: No message received after unsubscribe"
 end
 
-# Clean up
-config_file.unlink
+# Clean up resources
+begin
+  # Shutdown the server gracefully to clean up thread pools
+  puts "Shutting down server..."
+  server.shutdown
 
-puts "All tests passed!"
+  # Remove the temporary config file
+  config_file.unlink
+rescue => e
+  puts "Error during cleanup: #{e.message}"
+ensure
+  puts "All tests passed!"
+end
