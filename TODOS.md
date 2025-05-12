@@ -2,3 +2,4 @@
 - implement notifications/cancelled
 - implement notifications/roots/list_changed
 - Add more examples to the README
+- Remove 2024 spec

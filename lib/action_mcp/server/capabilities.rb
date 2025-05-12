@@ -10,46 +10,52 @@ module ActionMCP
       # @param params [Hash] The JSON-RPC parameters.
       # @return [Hash] A hash representing the JSON-RPC response (success or error).
       def send_capabilities(request_id, params = {})
-        # 1. Validate Parameters
         client_protocol_version = params["protocolVersion"]
         client_info = params["clientInfo"]
         client_capabilities = params["capabilities"]
 
         unless client_protocol_version.is_a?(String) && client_protocol_version.present?
-          return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
+          send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
+          return { type: :error, id: request_id, payload: { jsonrpc: "2.0", id: request_id, error: { code: -32602, message: "Missing or invalid 'protocolVersion'" } } }
         end
-        # Basic check, could be more specific based on spec requirements
-        unless client_info.is_a?(Hash)
-          return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'clientInfo'")
-        end
-        unless client_capabilities.is_a?(Hash)
-          return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'capabilities'")
-        end
-
-        # 2. Check Protocol Version
-        server_protocol_version = ActionMCP::PROTOCOL_VERSION
-        unless client_protocol_version == server_protocol_version
+        # Check if the protocol version is supported
+        unless ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
           error_data = {
-            supported: [ server_protocol_version ],
+            supported: ActionMCP::SUPPORTED_VERSIONS,
             requested: client_protocol_version
           }
-          # Using -32602 Invalid Params code as per spec example for version mismatch
-          return send_jsonrpc_error(request_id, :invalid_params, "Unsupported protocol version", error_data)
+          send_jsonrpc_error(request_id, :invalid_params, "Unsupported protocol version", error_data)
+          return { type: :error, id: request_id, payload: { jsonrpc: "2.0", id: request_id, error: { code: -32602, message: "Unsupported protocol version", data: error_data } } }
         end
 
-        # 3. Store Info and Initialize Session
+        unless client_info.is_a?(Hash)
+          send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'clientInfo'")
+          return { type: :error, id: request_id, payload: { jsonrpc: "2.0", id: request_id, error: { code: -32602, message: "Missing or invalid 'clientInfo'" } } }
+        end
+        unless client_capabilities.is_a?(Hash)
+          send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'capabilities'")
+          return { type: :error, id: request_id, payload: { jsonrpc: "2.0", id: request_id, error: { code: -32602, message: "Missing or invalid 'capabilities'" } } }
+        end
+
+
+
+        # Store client information
         session.store_client_info(client_info)
         session.store_client_capabilities(client_capabilities)
-        session.set_protocol_version(client_protocol_version) # Store the agreed-upon version
+        session.set_protocol_version(client_protocol_version)
 
-        # Attempt to initialize (this saves the session if new)
+        # Initialize the session
         unless session.initialize!
-          # Handle potential initialization failure (e.g., validation error on save)
-          return send_jsonrpc_error(request_id, :internal_error, "Failed to initialize session")
+          send_jsonrpc_error(request_id, :internal_error, "Failed to initialize session")
+          return { type: :error, id: request_id, payload: { jsonrpc: "2.0", id: request_id, error: { code: -32603, message: "Failed to initialize session" } } }
         end
 
-        # 4. Return Success Response Payload
-        send_jsonrpc_response(request_id, result: session.server_capabilities_payload)
+        # Send the successful response with the protocol version the client requested
+        capabilities_payload = session.server_capabilities_payload
+        capabilities_payload[:protocolVersion] = client_protocol_version  # Use the client's requested version
+
+        send_jsonrpc_response(request_id, result: capabilities_payload)
+        { type: :responses, id: request_id, payload: { jsonrpc: "2.0", id: request_id, result: capabilities_payload } }
       end
     end
   end

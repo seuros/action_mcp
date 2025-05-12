@@ -23,10 +23,14 @@ module ActionMCP
                   :active_profile,
                   :profiles,
                   # --- New Transport Options ---
-                  :allow_client_session_termination,
                   :mcp_endpoint_path,
                   :sse_heartbeat_interval,
-                  :post_response_preference # :json or :sse
+                  :post_response_preference, # :json or :sse
+                  :protocol_version,
+                  # --- SSE Resumability Options ---
+                  :enable_sse_resumability,
+                  :sse_event_retention_period,
+                  :max_stored_sse_events
 
     def initialize
       @logging_enabled = true
@@ -36,10 +40,15 @@ module ActionMCP
       @active_profile = :primary
       @profiles = default_profiles
 
-      @allow_client_session_termination = true
       @mcp_endpoint_path = "/mcp"
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
+      @protocol_version = "2024-11-05"
+
+      # Resumability defaults
+      @enable_sse_resumability = true
+      @sse_event_retention_period = 15.minutes
+      @max_stored_sse_events = 100
     end
 
     def name
@@ -131,6 +140,9 @@ module ActionMCP
       capabilities[:logging] = {} if @logging_enabled
 
       capabilities[:resources] = { subscribe: @resources_subscribe } if filtered_resources.any?
+
+      # Add resumability capability if enabled
+      capabilities[:resumability] = { enabled: @enable_sse_resumability } if @enable_sse_resumability
 
       capabilities
     end

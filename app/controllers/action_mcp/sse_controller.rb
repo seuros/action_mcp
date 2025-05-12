@@ -2,6 +2,8 @@
 
 module ActionMCP
   class SSEController < MCPController
+    REQUIRED_PROTOCOL_VERSION = "2024-11-05"
+
     HEARTBEAT_INTERVAL = 30 # in seconds
     INITIAL_CONNECTION_TIMEOUT = 5 # in seconds
     include ActionController::Live

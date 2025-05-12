@@ -10,6 +10,11 @@ module TransportMocks
     def read         = nil                        # Input? Absolutely not. This is a write-only lifestyle.
     def initialize!  = true                       # Pretend everything's fine. It’s faster that way.
     def initialized? = true                       # We’re *always* ready. Emotionally? Not so much.
+
+    def send_progress_notification(**params)
+      handler = ActionMCP::Server::TransportHandler.new(self)
+      handler.send_progress_notification(**params)
+    end
   end
 
   # Client-side mock transport. Sends messages, receives callbacks, pretends to be productive.
@@ -71,18 +76,76 @@ module TransportMocks
   end
 
   # Mock server-side counterpart. Stoic, reliable, and just as fake as the client.
+  class MockClientTransport
+    attr_reader :sent_messages, :initialized
+
+    def initialize
+      @sent_messages = []
+      @initialized = false
+      @handlers = []
+      @peer = nil
+      @initialize_req_id = nil
+    end
+
+    def connect(peer)
+      @peer = peer
+    end
+
+    def send_message(json)
+      parsed = MultiJson.load(json)
+      @sent_messages << parsed
+      @peer&.receive_message(json)
+    end
+
+    def receive_message(json)
+      parsed = MultiJson.load(json)
+      send_initialized_notification if parsed["id"] == @initialize_req_id
+      @handlers.each { |h| h.call(parsed) }
+    end
+
+    def on_message(&block)
+      @handlers << block
+    end
+
+    def send_initialize_request
+      @initialize_req_id = "init-#{SecureRandom.hex(4)}"
+      req = JSON_RPC::Request.new(
+        id: @initialize_req_id,
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "TestClient", version: "1.0.0" }
+        }
+      )
+      send_message(req.to_json)
+      @initialize_req_id
+    end
+
+    def send_initialized_notification
+      note = JSON_RPC::Notification.new(method: "notifications/initialized")
+      @initialized = true
+      send_message(note.to_json)
+    end
+  end
+
   class MockServerTransport
     attr_reader :sent_messages, :initialized
 
     def initialize
       @sent_messages = []
-      @initialized   = false
-      @handlers      = []
-      @peer          = nil
+      @initialized = false
+      @handlers = []
+      @peer = nil
     end
 
-    def connect(peer) = (@peer = peer)
-    def on_message(&block) = (@handlers << block)
+    def connect(peer)
+      @peer = peer
+    end
+
+    def on_message(&block)
+      @handlers << block
+    end
 
     def send_message(json)
       parsed = MultiJson.load(json)

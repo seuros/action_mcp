@@ -13,6 +13,7 @@ module ActionMCP
 
     # Track all registered templates
     @registered_templates = []
+    attr_reader :execution_context
 
     class << self
       attr_reader :registered_templates, :description, :uri_template,
@@ -201,12 +202,22 @@ module ActionMCP
     # Initialize with attribute values
     def initialize(attributes = {})
       super(attributes)
+      @execution_context = {}
       validate!
     end
 
     # Override validate! to not raise exceptions
     def validate!
       valid?
+    end
+
+    def with_context(context)
+      @execution_context = context
+      self
+    end
+
+    def session
+      execution_context[:session]
     end
 
     # Add custom validation for required parameters

@@ -2,6 +2,8 @@
 
 module ActionMCP
   class MessagesController < MCPController
+    REQUIRED_PROTOCOL_VERSION = "2024-11-05"
+
     include Instrumentation::ControllerRuntime
 
     # @route POST / (sse_in)

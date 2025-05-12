@@ -4,8 +4,13 @@ require "test_helper"
 
 module ActionMCP
   class MessagesControllerTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
     def setup
       @session = Session.create!
+    end
+
+    def app
+      ActionMCP::Engine
     end
 
     test "create should handle valid post message" do
@@ -16,7 +21,7 @@ module ActionMCP
         params: { key: "value" }
       }
 
-      post action_mcp.sse_in_url(session_id: @session.id), params: params
+      post sse_in_path(session_id: @session.id), params: params
 
       assert_response :accepted
     end
@@ -39,7 +44,7 @@ module ActionMCP
         }
       }
 
-      post action_mcp.sse_in_url(session_id: @session.id), params: params
+      post sse_in_path(session_id: @session.id), params: params
 
       assert_response :accepted
       assert @session.reload.initialized?

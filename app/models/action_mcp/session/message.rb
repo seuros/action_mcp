@@ -32,6 +32,7 @@ module ActionMCP
     # including the direction (client or server), message type (request, response, notification),
     # and any associated JSON-RPC ID.
     class Message < ApplicationRecord
+      include MCPMessageInspect
       belongs_to :session,
                  class_name: "ActionMCP::Session",
                  inverse_of: :messages,

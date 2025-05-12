@@ -34,15 +34,24 @@ module ActionMCP
         send_jsonrpc_notification("notifications/logging/message", params)
       end
 
-      # Send progress notification for an asynchronous operation
-      def send_progress_notification(token:, value:, message: nil)
+      # Updated to match MCP 2025-03-26 specification
+      def send_progress_notification(progressToken:, progress:, total: nil, message: nil, **options)
         params = {
-          token: token,
-          value: value
+          progressToken: progressToken,
+          progress: progress
         }
+        # Only include total and message if they are present (not nil)
+        params[:total] = total unless total.nil?
         params[:message] = message if message.present?
+        params.merge!(options) if options.any?
 
-        send_jsonrpc_notification("$/progress", params)
+        send_jsonrpc_notification("notifications/progress", params)
+      end
+
+      # Backward compatibility method for old API
+      def send_progress_notification_legacy(token:, value:, message: nil)
+        Rails.logger.warn("DEPRECATION: send_progress_notification with token/value is deprecated. Use progressToken/progress instead.")
+        send_progress_notification(progressToken: token, progress: value, message: message)
       end
     end
   end
