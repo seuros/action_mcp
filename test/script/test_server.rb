@@ -47,7 +47,7 @@ puts "Broadcasting message to test-channel..."
 adapter.broadcast("test-channel", "Hello, world!")
 
 # Wait for the message to be received
-sleep 0.5
+wait_for_condition(5) { received_messages.include?("Hello, world!") }
 
 if received_messages.include?("Hello, world!")
   puts "SUCCESS: Message was received"
