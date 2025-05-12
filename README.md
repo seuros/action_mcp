@@ -1,6 +1,10 @@
 # ActionMCP
 
-**ActionMCP** is a Ruby gem that provides essential tooling for building Model Context Protocol (MCP) capable servers in Ruby on Rails applications.
+**ActionMCP** is a Ruby gem focused on providing Model Context Protocol (MCP) capability to Ruby on Rails applications, specifically as a server.
+
+ActionMCP is designed for production Rails environments and does **not** support STDIO transport. STDIO is not included because it is not production-ready and is only suitable for desktop or script-based use cases. Instead, ActionMCP is built for robust, network-based deployments.
+
+The client functionality in ActionMCP is intended to connect to remote MCP servers, not to local processes via STDIO.
 
 It offers base classes and helpers for creating MCP applications, making it easier to integrate your Ruby/Rails application with the MCP standard.
 
@@ -16,14 +20,17 @@ MCP allows AI systems to plug into various resources in a consistent, secure way
 
 This means an AI (like an LLM) can request information or actions from your application through a well-defined protocol, and your app can provide context or perform tasks for the AI in return.
 
-**ActionMCP** is targeted at developers building MCP-enabled applications.
-It simplifies the process of integrating Ruby and Rails apps with the MCP standard by providing a set of base classes and an easy-to-use server interface.
+**ActionMCP** is targeted at developers building MCP-enabled Rails applications. It simplifies the process of integrating Ruby and Rails apps with the MCP standard by providing a set of base classes and an easy-to-use server interface.
+
+> **Note:** STDIO transport is not supported in ActionMCP. This gem is focused on production-ready, network-based deployments. STDIO is only suitable for desktop or script-based experimentation and is intentionally excluded.
 
 Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs. 
 
 ActionMCP handles the underlying MCP message format and routing, so you can adhere to the open standard with minimal effort.
 
 In short, ActionMCP helps you build an MCP server (the component that exposes capabilities to AI) more quickly and with fewer mistakes.
+
+> **Client connections:** The client part of ActionMCP is meant to connect to remote MCP servers only. Connecting to local processes (such as via STDIO) is not supported.
 
 ## Installation
 

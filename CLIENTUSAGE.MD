@@ -6,7 +6,7 @@ This document provides examples of how to use the `ActionMCP::Client` class to c
 
 The `ActionMCP::Client` is the main entry point for interacting with MCP servers. 
 You can create a client using the `ActionMCP.create_client` method. 
-This method automatically determines whether to create an `SSEClient` or a `StdioClient` based on the endpoint.
+This method automatically determines the appropriate client for your endpoint. STDIO transport is not supported.
 
 ```ruby
 client = ActionMCP.create_client("http://127.0.0.1:3066/action_mcp")
@@ -22,7 +22,7 @@ client = ActionMCP.create_client("some_command")
 
 The `create_client` method accepts the following arguments:
 
-*   `endpoint` (String): The endpoint to connect to (URL or command). If the endpoint is a URL (starts with `http://` or `https://`), an `SSEClient` is created. Otherwise, a `StdioClient` is created.
+*   `endpoint` (String): The endpoint to connect to (URL). Only remote HTTP(S) endpoints are supported.
 *   `logger` (Logger): The logger to use. Default is `Logger.new($stdout)`.
 *   `options` (Hash): Additional options to pass to the client constructor.
 
@@ -53,9 +53,7 @@ You can check if the client is ready to send messages using the `ready?` method:
 client.ready? # => true or false
 ```
 
-## StdioClient Usage
 
-The `StdioClient` is used to connect to MCP servers via standard input/output, this is not well tested.
 
 ### Starting the Transport
 
