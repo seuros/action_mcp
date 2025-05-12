@@ -24,6 +24,8 @@ end
 # Parse command-line arguments
 parser = OptionParser.new do |opts|
   opts.banner = 'Usage: mcp_client ENDPOINT [options]'
+  opts.separator ''
+  opts.separator 'ENDPOINT must be an HTTP(S) URL (e.g., http://localhost:3000/action_mcp)'
   opts.on('-l', '--log-level LEVEL', 'Set log level (DEBUG, INFO, WARN, ERROR)') do |l|
     options[:logging_level] = l.upcase
     logger.level = begin
@@ -50,6 +52,11 @@ parser.parse!(ARGV)
 if endpoint.nil?
   puts 'Error: You must provide an MCP endpoint.'
   puts parser
+  exit 1
+end
+
+unless endpoint =~ %r{\Ahttps?://}
+  puts "Error: Only HTTP(S) endpoints are supported. STDIO/command endpoints are not allowed."
   exit 1
 end
 
@@ -129,7 +136,7 @@ def print_help
   puts 'Otherwise, enter a raw JSON-RPC request to send directly'
 end
 
-# Initialize and start the client
+# Initialize and start the client (only HTTP(S) endpoints are supported)
 client = ActionMCP.create_client(endpoint, logger: logger)
 
 # Start the transport
