@@ -45,6 +45,7 @@ module ActionMCP
         @options = options
         @subscriptions = Concurrent::Map.new
         @channels = Concurrent::Map.new
+        @channel_subscribed = Concurrent::Map.new  # Track channel subscription status
 
         # Initialize thread pool for callbacks
         pool_options = {
@@ -96,9 +97,12 @@ module ActionMCP
         @channels[channel] ||= Concurrent::Array.new
         @channels[channel] << subscription_id
 
-        # Subscribe using SolidCable
-        @solid_cable_pubsub.subscribe(channel) do |message|
-          dispatch_message(channel, message)
+        # Subscribe to SolidCable only if we haven't already subscribed to this channel
+        unless subscribed_to_solid_cable?(channel)
+          @solid_cable_pubsub.subscribe(channel) do |message|
+            dispatch_message(channel, message)
+          end
+          @channel_subscribed[channel] = true
         end
 
         log_subscription_event(channel, "Subscribed", subscription_id)
@@ -119,8 +123,11 @@ module ActionMCP
 
         @channels.delete(channel)
 
-        # Unsubscribe from SolidCable
-        @solid_cable_pubsub.unsubscribe(channel)
+        # Only unsubscribe from SolidCable if we're actually subscribed
+        if subscribed_to_solid_cable?(channel)
+          @solid_cable_pubsub.unsubscribe(channel)
+          @channel_subscribed.delete(channel)
+        end
 
         log_subscription_event(channel, "Unsubscribed")
         callback&.call
@@ -143,6 +150,15 @@ module ActionMCP
         !subscribers.empty?
       end
 
+      # Check if we're already subscribed to a channel
+      # @param channel [String] The channel name
+      # @return [Boolean] True if we're already subscribed
+      def subscribed_to?(channel)
+        channel_subs = @channels[channel]
+        return false if channel_subs.nil?
+        !channel_subs.empty?
+      end
+
       # Shut down the thread pool gracefully
       def shutdown
         @thread_pool.shutdown
@@ -154,6 +170,11 @@ module ActionMCP
       # Check if we're in a testing environment
       def testing?
         defined?(Minitest) || ENV["RAILS_ENV"] == "test"
+      end
+
+      # Check if we're already subscribed to this channel in SolidCable
+      def subscribed_to_solid_cable?(channel)
+        @channel_subscribed[channel] == true
       end
 
       def dispatch_message(channel, message)

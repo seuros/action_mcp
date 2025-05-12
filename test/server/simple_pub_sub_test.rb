@@ -17,6 +17,16 @@ module ActionMCP
         assert_match(/\A[0-9a-f-]+\z/, subscription_id, "Expected subscription_id to be a UUID")
       end
 
+      def test_subscribed_to_returns_correct_status
+        assert_equal false, @pubsub.subscribed_to?("test-channel")
+
+        @pubsub.subscribe("test-channel", @callback)
+        assert_equal true, @pubsub.subscribed_to?("test-channel")
+
+        @pubsub.unsubscribe("test-channel")
+        assert_equal false, @pubsub.subscribed_to?("test-channel")
+      end
+
       def test_subscribe_calls_success_callback
         success_called = false
         success_callback = -> { success_called = true }

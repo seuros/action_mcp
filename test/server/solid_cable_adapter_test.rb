@@ -95,6 +95,33 @@ module ActionMCP
         assert_equal false, @adapter.has_subscribers?("test-channel")
       end
 
+      def test_subscribed_to_returns_correct_status
+        assert_equal false, @adapter.subscribed_to?("test-channel")
+
+        @adapter.subscribe("test-channel", @callback)
+        assert_equal true, @adapter.subscribed_to?("test-channel")
+
+        @adapter.unsubscribe("test-channel")
+        assert_equal false, @adapter.subscribed_to?("test-channel")
+      end
+
+      def test_optimizes_subscriptions_to_solid_cable
+        # Get the mock pub/sub instance to test if it received a subscription
+        mock_pubsub = @adapter.instance_variable_get(:@solid_cable_pubsub)
+
+        # First subscription should register with the underlying adapter
+        @adapter.subscribe("optimize-channel", @callback)
+        assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
+
+        # Second subscription to same channel should reuse existing subscription
+        @adapter.subscribe("optimize-channel", ->(msg) { puts "another callback" })
+        assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
+
+        # Different channel should get a new subscription
+        @adapter.subscribe("different-channel", @callback)
+        assert_equal 1, mock_pubsub.subscriptions["different-channel"]&.size || 0
+      end
+
       # No private methods needed with mock implementation
     end
   end

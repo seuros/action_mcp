@@ -52,6 +52,15 @@ module ActionMCP
         subscription_id
       end
 
+      # Check if we're already subscribed to a channel
+      # @param channel [String] The channel name
+      # @return [Boolean] True if we're already subscribed
+      def subscribed_to?(channel)
+        channel_subs = @channels[channel]
+        return false if channel_subs.nil?
+        !channel_subs.empty?
+      end
+
       # Unsubscribe from a channel
       # @param channel [String] The channel name
       # @param callback [Proc] Optional callback for unsubscribe completion
