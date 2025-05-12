@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.32.1...action_mcp/v0.33.0) (2025-05-12)
+
+
+### Features
+
+* drop action_cable dependency ([#53](https://github.com/seuros/action_mcp/issues/53)) ([d9df2db](https://github.com/seuros/action_mcp/commit/d9df2db1a35093cb2a146300b2d616fd2314a80b))
+
 ## [0.32.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.32.0...action_mcp/v0.32.1) (2025-05-12)
 
 
