@@ -20,12 +20,13 @@ Gem::Specification.new do |spec|
     Dir['{app,config,db,exe,lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.md']
   end
 
-  spec.add_dependency 'actioncable', '>= 8.0.1'
+
   spec.add_dependency 'activerecord', '>= 8.0.1'
   spec.add_dependency 'jsonrpc-rails', '>= 0.5.1'
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.0.1'
   spec.add_dependency 'zeitwerk', '~> 2.6'
+  spec.add_dependency 'concurrent-ruby', '>= 1.3.1'
 
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }

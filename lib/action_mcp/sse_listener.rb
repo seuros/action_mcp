@@ -4,7 +4,7 @@ require "concurrent/atomic/atomic_boolean"
 require "concurrent/promise"
 
 module ActionMCP
-  # Listener class to subscribe to session messages via Action Cable adapter.
+  # Listener class to subscribe to session messages via PubSub adapter.
   class SSEListener
     delegate :session_key, :adapter, to: :@session
 
@@ -15,7 +15,7 @@ module ActionMCP
       @subscription_active = Concurrent::AtomicBoolean.new
     end
 
-    # Start listening using ActionCable's adapter
+    # Start listening using PubSub adapter
     # @yield [Hash] Yields parsed message received from the pub/sub channel
     # @return [Boolean] True if subscription was successful within timeout, false otherwise.
     def start(&callback)
@@ -30,7 +30,7 @@ module ActionMCP
         process_message(raw_message, callback)
       }
 
-      # Subscribe using the ActionCable adapter
+      # Subscribe using the PubSub adapter
       adapter.subscribe(session_key, message_callback, success_callback)
 
       wait_for_subscription
