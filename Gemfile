@@ -16,7 +16,10 @@ gem "debug", ">= 1.0.0"
 gem "rails_app_version"
 gem "railties"
 gem "simplecov", require: false
-gem "solid_cable"
+# Optional PubSub adapters - at least one is recommended for production
+gem "solid_cable"  # Database-backed adapter (no Redis needed)
+
+
 gem "solid_cache"
 gem "solid_queue"
 

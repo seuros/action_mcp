@@ -1,0 +1,36 @@
+# ActionMCP Configuration
+# This file contains configuration for the ActionMCP pub/sub system.
+# Different environments can use different adapters.
+
+development:
+  # In-memory adapter for development
+  adapter: simple
+  # Thread pool configuration (optional)
+  # min_threads: 5     # Minimum number of threads in the pool
+  # max_threads: 10    # Maximum number of threads in the pool
+  # max_queue: 100     # Maximum number of tasks that can be queued
+
+test:
+  # Test adapter for testing
+  adapter: test
+
+production:
+  # Choose one of the following adapters:
+  
+  # 1. Database-backed adapter (recommended)
+  adapter: solid_cable
+  polling_interval: 0.5.seconds
+  # connects_to: cable  # Optional: specify a different database connection
+  
+  # Thread pool configuration (optional)
+  min_threads: 10     # Minimum number of threads in the pool
+  max_threads: 20     # Maximum number of threads in the pool
+  max_queue: 500      # Maximum number of tasks that can be queued
+
+  # 2. Redis-backed adapter (alternative)
+  # adapter: redis
+  # url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
+  # channel_prefix: <%= Rails.application.class.module_parent_name.underscore %>_production
+  # min_threads: 10    # Minimum number of threads in the pool
+  # max_threads: 20    # Maximum number of threads in the pool
+  # max_queue: 500     # Maximum number of tasks that can be queued

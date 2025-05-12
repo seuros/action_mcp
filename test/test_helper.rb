@@ -51,6 +51,26 @@ module FixtureHelpers
     FIXTURE_CACHE[name].deep_dup
   end
 end
+
+module ServerTestHelper
+  # Wait for a condition to be true or timeout
+  def wait_for_condition(timeout = 1, interval = 0.01)
+    deadline = Time.now + timeout
+    while Time.now < deadline
+      return true if yield
+      sleep interval
+    end
+    false
+  end
+
+  # Create a temporary config file for testing
+  def create_temp_config_file(config_hash)
+    file = Tempfile.new([ "action_mcp_config", ".yml" ])
+    file.write(YAML.dump(config_hash))
+    file.close
+    file
+  end
+end
 # frozen_string_literal: true
 module LogHelpers
   def with_silenced_logger(target)
@@ -65,5 +85,6 @@ end
 
 ActiveSupport::TestCase.include(LogHelpers)
 ActiveSupport::TestCase.include(FixtureHelpers)
+ActiveSupport::TestCase.include(ServerTestHelper)
 
 Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }
