@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.32.0...action_mcp/v0.32.1) (2025-05-12)
+
+
+### Bug Fixes
+
+* extract ActionMCP into standalone rack app (mcp.ru) ([#51](https://github.com/seuros/action_mcp/issues/51)) ([c764955](https://github.com/seuros/action_mcp/commit/c764955e103a689775b8a9c934406d7ca5ca6342))
+
 ## [0.32.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.31.1...action_mcp/v0.32.0) (2025-04-20)
 
 
