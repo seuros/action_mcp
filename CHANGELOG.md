@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.0...action_mcp/v0.50.1) (2025-05-13)
+
+
+### Bug Fixes
+
+* Make ActionMCP.server return a Rack-compatible application ([#59](https://github.com/seuros/action_mcp/issues/59)) ([f1e60c4](https://github.com/seuros/action_mcp/commit/f1e60c433e6892841300337b41c99363739b0c58))
+
 ## [0.50.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.33.0...action_mcp/v0.50.0) (2025-05-13)
 
 
