@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.50.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.33.0...action_mcp/v0.50.0) (2025-05-13)
+
+
+### Features
+
+* remove stdio transport ([#56](https://github.com/seuros/action_mcp/issues/56)) ([bc84bae](https://github.com/seuros/action_mcp/commit/bc84bae9f76b7dabd5b8819a36269ad8e24a4056))
+* Remove support for 2023-11-05 MCP spec ([#58](https://github.com/seuros/action_mcp/issues/58)) ([f1ab6ad](https://github.com/seuros/action_mcp/commit/f1ab6adc6a290f2b5cef7ea9b9c2b0d749055067))
+
 ## [0.33.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.32.1...action_mcp/v0.33.0) (2025-05-12)
 
 
