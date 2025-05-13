@@ -60,14 +60,10 @@ module ActionMCP
         annotate(:readOnly, enabled)
       end
 
-      # Return annotations based on protocol version
+      # Return annotations for the tool
       def annotations_for_protocol(protocol_version = nil)
-        # Only include annotations for 2025+ protocols
-        if protocol_version.nil? || protocol_version == "2024-11-05"
-          {}
-        else
-          _annotations
-        end
+        # Always include annotations now that we only support 2025+
+        _annotations
       end
     end
 

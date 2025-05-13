@@ -21,7 +21,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json, text/event-stream"
@@ -38,7 +38,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
     session.register_tool("calculate_sum")
 
     # Send initialized notification
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
@@ -87,7 +87,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       Thread.current[:test_progress_notifications] = []
 
       # Send the request
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json",

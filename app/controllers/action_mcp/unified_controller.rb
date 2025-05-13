@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  # Handles the unified MCP endpoint for the 2025-03-26 specification.
+  # Implements the MCP endpoints according to the 2025-03-26 specification.
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
   class UnifiedController < MCPController

@@ -25,7 +25,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream"
@@ -79,7 +79,7 @@ module ActionMCP
         method: "notifications/initialized"
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -101,7 +101,7 @@ module ActionMCP
         method: "tools/list"
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -170,7 +170,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -222,7 +222,7 @@ module ActionMCP
         method: "prompts/list"
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -273,7 +273,7 @@ module ActionMCP
       # STEP 7: Cleanup - terminate the session
       # ====================================================================
 
-      delete "/mcp", headers: { "Mcp-Session-Id" => session_id }
+      delete "/", headers: { "Mcp-Session-Id" => session_id }
       assert_response :no_content
 
       # Verify session is closed
@@ -295,7 +295,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream"

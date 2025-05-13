@@ -78,7 +78,7 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json",
@@ -210,7 +210,7 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
