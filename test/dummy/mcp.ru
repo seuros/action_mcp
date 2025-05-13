@@ -1,6 +1,8 @@
-# Load the full Rails env *once* so you still get models, DB, Redis, etc.
-require_relative "config/environment"
+# frozen_string_literal: true
 
-STDOUT.sync = true
-STDERR.sync = true
-run ActionMCP::Engine
+# Load the Rails environment
+require_relative 'config/environment'
+
+Rails.application.eager_load!
+
+run ActionMCP.server

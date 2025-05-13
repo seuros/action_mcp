@@ -38,7 +38,20 @@ module ActionMCP
   CURRENT_VERSION = "2025-03-26"   # Current version
   SUPPORTED_VERSIONS = %w[2025-03-26].freeze
   class << self
-    delegate :server, to: "ActionMCP::Server"
+    # Returns a Rack-compatible application for serving MCP requests
+    # This makes ActionMCP.server work similar to ActionCable.server
+    # @return [#call] A Rack application that can be used with `run ActionMCP.server`
+    def server
+      @server ||= begin
+        # Initialize the actual server for PubSub
+        Server.server
+
+        # Return the Engine as the Rack application
+        # The Engine will handle routing to the UnifiedController
+        Engine
+      end
+    end
+
     # Returns the configuration instance.
     #
     # @return [Configuration] the configuration instance
