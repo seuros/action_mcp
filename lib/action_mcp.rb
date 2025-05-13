@@ -44,6 +44,7 @@ module ActionMCP
     def server
       @server ||= begin
         # Initialize the actual server for PubSub.
+        # The return value is intentionally discarded as only the side effects are needed.
         Server.server
 
         # Return the Engine as the Rack application
