@@ -43,7 +43,7 @@ module ActionMCP
     # @return [#call] A Rack application that can be used with `run ActionMCP.server`
     def server
       @server ||= begin
-        # Initialize the actual server for PubSub
+        # Initialize the actual server for PubSub.
         Server.server
 
         # Return the Engine as the Rack application
