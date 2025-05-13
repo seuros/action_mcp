@@ -7,7 +7,8 @@ class ValidatedFormatCodeTool < ApplicationMCPTool
 
   # Define properties with proper schema structure
   property :source_code, type: "string", description: "The source code to be formatted", required: true
-  property :language, type: "string", description: "Programming language (e.g., javascript, ruby, python)", required: true
+  property :language, type: "string", description: "Programming language (e.g., javascript, ruby, python)",
+                      required: true
   property :style, type: "string", description: "Formatting style or formatter rules (optional)"
 
   # Performs the code formatting
@@ -19,19 +20,19 @@ class ValidatedFormatCodeTool < ApplicationMCPTool
     formatted_code = source_code.gsub(/\s+/, " ")
 
     # Apply language-specific formatting
-    case language.downcase
+    formatted_code = case language.downcase
     when "javascript", "js"
-      # For JavaScript, apply specific formatting rules
-      formatted_code = format_javascript(formatted_code)
+                       # For JavaScript, apply specific formatting rules
+                       format_javascript(formatted_code)
     when "ruby"
-      # Ruby-specific formatting
-      formatted_code = format_ruby(formatted_code)
+                       # Ruby-specific formatting
+                       format_ruby(formatted_code)
     when "python"
-      # Python-specific formatting
-      formatted_code = format_python(formatted_code)
+                       # Python-specific formatting
+                       format_python(formatted_code)
     else
-      # Generic formatting for other languages
-      formatted_code = format_generic(formatted_code)
+                       # Generic formatting for other languages
+                       format_generic(formatted_code)
     end
 
     # Return the formatted code

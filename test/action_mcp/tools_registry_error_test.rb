@@ -15,7 +15,7 @@ class ToolsRegistryErrorTest < ActiveSupport::TestCase
   test "tool_call surfaces :internal_error when tool itself raises" do
     resp = ActionMCP::ToolsRegistry.tool_call("explosive", {})
     assert resp.error?
-    assert_mcp_error_code(-32_603, resp)        # internal_error
+    assert_mcp_error_code(-32_603, resp) # internal_error
     assert_match(/kaboom/, resp.to_h[:message])
   end
 end

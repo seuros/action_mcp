@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/mcp/tools/add_session_tool.rb
 class AddSessionTool < ApplicationMCPTool
   tool_name "add_session_tool"
@@ -9,9 +11,7 @@ class AddSessionTool < ApplicationMCPTool
            required: true
 
   def perform
-    unless session
-      return render(text: "Error: No session context available")
-    end
+    return render(text: "Error: No session context available") unless session
 
     if session.register_tool(tool_name)
       render(text: "✅ Tool '#{tool_name}' successfully added to session")

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # test/progress_notification2025_integration_test.rb
 require "test_helper"
 
@@ -102,7 +104,7 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
       end
 
       # Verify each notification follows 2025-03-26 spec
-      captured_notifications.each_with_index do |notification, index|
+      captured_notifications.each_with_index do |notification, _index|
         assert notification.key?(:progressToken), "Missing progressToken"
         assert notification.key?(:progress), "Missing progress"
 
@@ -113,13 +115,11 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
           assert notification[:progress].is_a?(Numeric), "Progress should be numeric"
         end
 
-        if notification[:total].present?
-          assert notification[:total].is_a?(Numeric), "Total should be numeric"
-        end
+        assert notification[:total].is_a?(Numeric), "Total should be numeric" if notification[:total].present?
 
         if notification[:progressToken].present?
           assert notification[:progressToken].is_a?(String) || notification[:progressToken].is_a?(Integer),
-            "progressToken should be a string or integer"
+                 "progressToken should be a string or integer"
         end
       end
 
@@ -190,7 +190,8 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
       params.merge!(options) if options.any?
 
       captured_notifications << params
-      original_send_progress.call(progressToken: progressToken, progress: progress, total: total, message: message, **options)
+      original_send_progress.call(progressToken: progressToken, progress: progress, total: total, message: message,
+                                  **options)
     end
 
     # Clear any existing captured notifications
@@ -220,11 +221,13 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
 
-    # Note: The tool would need to be modified to extract and use the
+    # NOTE: The tool would need to be modified to extract and use the
     # progressToken from the request metadata for full implementation
     # In the current implementation, we might not be capturing notifications
     # Skip the test if no notifications
-    skip "No progress notifications were captured - implementation might have changed" unless captured_notifications.any?
+    unless captured_notifications.any?
+      skip "No progress notifications were captured - implementation might have changed"
+    end
     assert_operator captured_notifications.size, :>=, 0, "Should have zero or more progress notifications"
 
     captured_notifications.each do |notification|
@@ -241,7 +244,9 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
     handler = ActionMCP::Server::TransportHandler.new(session)
 
     # Skip this test if legacy method doesn't exist
-    skip "Legacy progress notification method not implemented" unless handler.respond_to?(:send_progress_notification_legacy)
+    unless handler.respond_to?(:send_progress_notification_legacy)
+      skip "Legacy progress notification method not implemented"
+    end
 
     # Setup to capture the notification
     captured_notification = nil
@@ -253,7 +258,8 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
         total: total,
         message: message
       }
-      original_send_progress.call(progressToken: progressToken, progress: progress, total: total, message: message, **options)
+      original_send_progress.call(progressToken: progressToken, progress: progress, total: total, message: message,
+                                  **options)
     end
 
     # Capture deprecation warnings

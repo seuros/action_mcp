@@ -64,7 +64,7 @@ module ActionMCP
         @adapter.broadcast("test-channel", "test-message")
 
         # The callback should not be invoked
-        sleep 0.5  # Give more time for SolidCable to poll
+        sleep 0.5 # Give more time for SolidCable to poll
         assert_empty @received_messages
       end
 
@@ -114,7 +114,7 @@ module ActionMCP
         assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
 
         # Second subscription to same channel should reuse existing subscription
-        @adapter.subscribe("optimize-channel", ->(msg) { puts "another callback" })
+        @adapter.subscribe("optimize-channel", ->(_msg) { puts "another callback" })
         assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
 
         # Different channel should get a new subscription

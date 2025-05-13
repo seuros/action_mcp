@@ -13,7 +13,7 @@ module ActionMCP
 
     # Track all registered templates
     @registered_templates = []
-    attr_reader :execution_context
+    attr_reader :execution_context, :description, :uri_template, :mime_type
 
     class << self
       attr_reader :registered_templates, :description, :uri_template,
@@ -226,8 +226,6 @@ module ActionMCP
         errors.add(param, "can't be blank") if send(param).nil? || send(param).to_s.empty?
       end
     end
-
-    attr_reader :description, :uri_template, :mime_type
 
     def call
       run_callbacks :resolve do

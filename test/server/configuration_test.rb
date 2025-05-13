@@ -12,7 +12,11 @@ module ActionMCP
       def teardown
         @temp_files.each do |file|
           file.close
-          file.unlink rescue nil
+          begin
+            file.unlink
+          rescue StandardError
+            nil
+          end
         end
       end
 

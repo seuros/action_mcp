@@ -41,7 +41,7 @@ module ActionMCP
 
         @pubsub.broadcast("test-channel", "test-message")
 
-        assert wait_for_condition { @received_messages.include?("test-message") }
+        assert(wait_for_condition { @received_messages.include?("test-message") })
       end
 
       def test_broadcast_to_multiple_subscribers
@@ -57,19 +57,19 @@ module ActionMCP
         @pubsub.broadcast("test-channel", "multi-message")
 
         3.times do |i|
-          assert wait_for_condition { received[i].include?("multi-message") }
+          assert(wait_for_condition { received[i].include?("multi-message") })
         end
       end
 
       def test_unsubscribe_prevents_message_delivery
-        subscription_id = @pubsub.subscribe("test-channel", @callback)
+        @pubsub.subscribe("test-channel", @callback)
 
         # Unsubscribe before broadcasting
         @pubsub.unsubscribe("test-channel")
         @pubsub.broadcast("test-channel", "test-message")
 
         # The callback should not be invoked
-        sleep 0.1  # Give potential message delivery time to occur
+        sleep 0.1 # Give potential message delivery time to occur
         assert_empty @received_messages
       end
 
@@ -83,8 +83,8 @@ module ActionMCP
         @pubsub.broadcast("channel-1", "message-1")
         @pubsub.broadcast("channel-2", "message-2")
 
-        assert wait_for_condition { channel1_messages.include?("message-1") }
-        assert wait_for_condition { channel2_messages.include?("message-2") }
+        assert(wait_for_condition { channel1_messages.include?("message-1") })
+        assert(wait_for_condition { channel2_messages.include?("message-2") })
 
         refute_includes channel1_messages, "message-2"
         refute_includes channel2_messages, "message-1"

@@ -7,7 +7,8 @@ class FixedFormatCodeTool < ApplicationMCPTool
 
   # Define properties with proper schema structure
   property :source_code, type: "string", description: "The code to be formatted", required: true
-  property :language, type: "string", description: "Programming language (e.g., javascript, ruby, python)", required: true
+  property :language, type: "string", description: "Programming language (e.g., javascript, ruby, python)",
+                      required: true
   property :style, type: "string", description: "Formatting style or formatter rules (optional)"
 
   # Performs the code formatting
@@ -23,28 +24,28 @@ class FixedFormatCodeTool < ApplicationMCPTool
     when "javascript", "js"
       # For JavaScript, replace multiple spaces with single space in specific contexts
       formatted_code = formatted_code.gsub(/\s*\{\s*/, " { ")
-                                    .gsub(/\s*\}\s*/, " } ")
-                                    .gsub(/\s*\(\s*/, "(")
-                                    .gsub(/\s*\)\s*/, ") ")
-                                    .gsub(/\s*;\s*/, "; ")
-                                    .gsub(/\s*,\s*/, ", ")
-                                    .gsub(/\s*=\s*/, " = ")
-                                    .strip
+                                     .gsub(/\s*\}\s*/, " } ")
+                                     .gsub(/\s*\(\s*/, "(")
+                                     .gsub(/\s*\)\s*/, ") ")
+                                     .gsub(/\s*;\s*/, "; ")
+                                     .gsub(/\s*,\s*/, ", ")
+                                     .gsub(/\s*=\s*/, " = ")
+                                     .strip
     when "ruby"
       # Some basic Ruby formatting rules
       formatted_code = formatted_code.gsub(/\s*\{\s*/, " { ")
-                                    .gsub(/\s*\}\s*/, " } ")
-                                    .gsub(/\s*\(\s*/, "(")
-                                    .gsub(/\s*\)\s*/, ")")
-                                    .gsub(/\s*,\s*/, ", ")
-                                    .gsub(/\s*=\s*/, " = ")
-                                    .strip
+                                     .gsub(/\s*\}\s*/, " } ")
+                                     .gsub(/\s*\(\s*/, "(")
+                                     .gsub(/\s*\)\s*/, ")")
+                                     .gsub(/\s*,\s*/, ", ")
+                                     .gsub(/\s*=\s*/, " = ")
+                                     .strip
     when "python"
       # Some basic Python formatting
       formatted_code = formatted_code.gsub(/\s*:\s*/, ": ")
-                                    .gsub(/\s*,\s*/, ", ")
-                                    .gsub(/\s*=\s*/, " = ")
-                                    .strip
+                                     .gsub(/\s*,\s*/, ", ")
+                                     .gsub(/\s*=\s*/, " = ")
+                                     .strip
     end
 
     # Return the formatted code

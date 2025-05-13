@@ -18,9 +18,9 @@ module ActionMCP
         end
 
         # Use session's registered tools instead of global registry
-        tools = session.registered_tools.map { |tool_class|
+        tools = session.registered_tools.map do |tool_class|
           tool_class.to_h(protocol_version: protocol_version)
-        }
+        end
 
         # Send completion progress notification if token is provided
         if progress_token

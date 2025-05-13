@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
@@ -101,9 +103,9 @@ module ActionMCP
         assert_equal "string_token", notification.params[:progressToken]
 
         # Integer token
-        @handler.send_progress_notification(progressToken: 12345, progress: 0.75)
+        @handler.send_progress_notification(progressToken: 12_345, progress: 0.75)
         notification = @session.written
-        assert_equal 12345, notification.params[:progressToken]
+        assert_equal 12_345, notification.params[:progressToken]
       end
 
       test "progress notification values can be any numeric type" do
@@ -144,8 +146,6 @@ module ActionMCP
       end
 
       test "progress notification sequence with increasing values" do
-        notifications = []
-
         @session.instance_eval do
           @all_written = []
 
@@ -161,8 +161,10 @@ module ActionMCP
 
         # Send a sequence of progress notifications (spec requires increasing progress)
         @handler.send_progress_notification(progressToken: "sequence", progress: 0, total: 100, message: "Starting...")
-        @handler.send_progress_notification(progressToken: "sequence", progress: 25, total: 100, message: "25% complete")
-        @handler.send_progress_notification(progressToken: "sequence", progress: 50, total: 100, message: "Halfway there")
+        @handler.send_progress_notification(progressToken: "sequence", progress: 25, total: 100,
+                                            message: "25% complete")
+        @handler.send_progress_notification(progressToken: "sequence", progress: 50, total: 100,
+                                            message: "Halfway there")
         @handler.send_progress_notification(progressToken: "sequence", progress: 75, total: 100)
         @handler.send_progress_notification(progressToken: "sequence", progress: 100, total: 100, message: "Complete!")
 
@@ -206,12 +208,12 @@ module ActionMCP
       test "progress notification handles special characters in message" do
         special_messages = [
           "Progress: 50% complete",
-          "File: \"example.txt\"",
-          "Path: C:\\Users\\test\\",
+          'File: "example.txt"',
+          'Path: C:\\Users\\test\\',
           "Unicode: 🚀 ✨ 📊",
           "Multi\nline\ntext",
           "Tabs\tand\tspaces",
-          "Forward/slash\\backslash"
+          'Forward/slash\\backslash'
         ]
 
         special_messages.each do |message|
@@ -235,7 +237,6 @@ module ActionMCP
 
       test "backward compatibility for deprecated token/value parameters" do
         # Test that the old method signature still works with deprecation warning
-        logs = []
 
         # Create a custom logger to capture warnings
         test_logger = Logger.new(StringIO.new)
@@ -268,7 +269,9 @@ module ActionMCP
           assert_equal "Backward compatible", params[:message]
 
           # Verify deprecation warning was logged
-          assert test_logger.captured_logs.any? { |log| log.include?("DEPRECATION") && log.include?("token/value is deprecated") }
+          assert(test_logger.captured_logs.any? do |log|
+            log.include?("DEPRECATION") && log.include?("token/value is deprecated")
+          end)
         ensure
           Rails.logger = original_logger
         end
@@ -276,16 +279,6 @@ module ActionMCP
 
       test "progress notification with metadata dictionary" do
         # The 2025 spec allows including a progressToken in request metadata
-        request_with_meta = {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "some_method",
-          params: {
-            _meta: {
-              progressToken: "meta_test_token"
-            }
-          }
-        }
 
         # When server sends progress notification, it should use the same token
         @handler.send_progress_notification(

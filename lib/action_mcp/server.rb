@@ -23,6 +23,7 @@ module ActionMCP
     # Shut down the server and clean up resources
     def shutdown
       return unless @server
+
       @server.shutdown
       @server = nil
     end
@@ -49,7 +50,7 @@ module ActionMCP
       def configure(config_path)
         shutdown_pubsub if @pubsub
         @configuration = Configuration.new(config_path)
-        @pubsub = nil  # Reset pubsub so it will be recreated with new config
+        @pubsub = nil # Reset pubsub so it will be recreated with new config
       end
 
       # Gracefully shut down the server and its resources
@@ -61,11 +62,11 @@ module ActionMCP
 
       # Shut down the pubsub adapter gracefully
       def shutdown_pubsub
-        return unless @pubsub && @pubsub.respond_to?(:shutdown)
+        return unless @pubsub.respond_to?(:shutdown)
 
         begin
           @pubsub.shutdown
-        rescue => e
+        rescue StandardError => e
           message = "Error shutting down pubsub adapter: #{e.message}"
           Rails.logger.error(message) if defined?(Rails) && Rails.respond_to?(:logger)
         ensure
@@ -87,7 +88,7 @@ module ActionMCP
         rescue NameError, LoadError => e
           message = "Error creating adapter #{adapter_name}: #{e.message}"
           Rails.logger.error(message) if defined?(Rails) && Rails.respond_to?(:logger)
-          SimplePubSub.new  # Fallback to simple pubsub
+          SimplePubSub.new # Fallback to simple pubsub
         end
       end
     end

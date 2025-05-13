@@ -75,6 +75,7 @@ module ActionMCP
     # @param request [Hash]
     def process_request(request)
       return unless valid_request?(request)
+
       request = request.with_indifferent_access
 
       read(request)

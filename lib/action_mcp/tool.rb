@@ -61,7 +61,7 @@ module ActionMCP
       end
 
       # Return annotations for the tool
-      def annotations_for_protocol(protocol_version = nil)
+      def annotations_for_protocol(_protocol_version = nil)
         # Always include annotations now that we only support 2025+
         _annotations
       end

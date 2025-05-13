@@ -29,10 +29,10 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
     unless table_exists?(:action_mcp_session_messages)
       create_table :action_mcp_session_messages do |t|
         t.references :session, null: false,
-                    foreign_key: { to_table: :action_mcp_sessions,
-                                  on_delete: :cascade,
-                                  on_update: :cascade,
-                                  name: 'fk_action_mcp_session_messages_session_id' }, type: :string
+                               foreign_key: { to_table: :action_mcp_sessions,
+                                              on_delete: :cascade,
+                                              on_update: :cascade,
+                                              name: 'fk_action_mcp_session_messages_session_id' }, type: :string
         t.string :direction, null: false, comment: 'The message recipient', default: 'client'
         t.string :message_type, null: false, comment: 'The type of the message'
         t.string :jsonrpc_id
@@ -48,9 +48,9 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
     unless table_exists?(:action_mcp_session_subscriptions)
       create_table :action_mcp_session_subscriptions do |t|
         t.references :session,
-                    null: false,
-                    foreign_key: { to_table: :action_mcp_sessions, on_delete: :cascade },
-                    type: :string
+                     null: false,
+                     foreign_key: { to_table: :action_mcp_sessions, on_delete: :cascade },
+                     type: :string
         t.string :uri, null: false
         t.datetime :last_notification_at
         t.timestamps
@@ -61,9 +61,9 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
     unless table_exists?(:action_mcp_session_resources)
       create_table :action_mcp_session_resources do |t|
         t.references :session,
-                    null: false,
-                    foreign_key: { to_table: :action_mcp_sessions, on_delete: :cascade },
-                    type: :string
+                     null: false,
+                     foreign_key: { to_table: :action_mcp_sessions, on_delete: :cascade },
+                     type: :string
         t.string :uri, null: false
         t.string :name
         t.text :description
@@ -84,7 +84,7 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
         t.timestamps
 
         # Index for efficiently retrieving events after a given ID for a specific session
-        t.index [ :session_id, :event_id ], unique: true
+        t.index %i[session_id event_id], unique: true
         t.index :created_at # For cleanup of old events
       end
     end
@@ -111,27 +111,28 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
     end
 
     # For action_mcp_session_messages
-    if table_exists?(:action_mcp_session_messages)
-      unless column_exists?(:action_mcp_session_messages, :is_ping)
-        add_column :action_mcp_session_messages, :is_ping, :boolean, default: false, null: false, comment: 'Whether the message is a ping'
-      end
+    return unless table_exists?(:action_mcp_session_messages)
 
-      unless column_exists?(:action_mcp_session_messages, :request_acknowledged)
-        add_column :action_mcp_session_messages, :request_acknowledged, :boolean, default: false, null: false
-      end
-
-      unless column_exists?(:action_mcp_session_messages, :request_cancelled)
-        add_column :action_mcp_session_messages, :request_cancelled, :boolean, null: false, default: false
-      end
-
-      if column_exists?(:action_mcp_session_messages, :message_text)
-        remove_column :action_mcp_session_messages, :message_text
-      end
-
-      if column_exists?(:action_mcp_session_messages, :direction)
-        change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
-      end
+    unless column_exists?(:action_mcp_session_messages, :is_ping)
+      add_column :action_mcp_session_messages, :is_ping, :boolean, default: false, null: false,
+                                                                   comment: 'Whether the message is a ping'
     end
+
+    unless column_exists?(:action_mcp_session_messages, :request_acknowledged)
+      add_column :action_mcp_session_messages, :request_acknowledged, :boolean, default: false, null: false
+    end
+
+    unless column_exists?(:action_mcp_session_messages, :request_cancelled)
+      add_column :action_mcp_session_messages, :request_cancelled, :boolean, null: false, default: false
+    end
+
+    if column_exists?(:action_mcp_session_messages, :message_text)
+      remove_column :action_mcp_session_messages, :message_text
+    end
+
+    return unless column_exists?(:action_mcp_session_messages, :direction)
+
+    change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
   end
 
   private

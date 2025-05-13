@@ -58,6 +58,7 @@ module ServerTestHelper
     deadline = Time.now + timeout
     while Time.now < deadline
       return true if yield
+
       sleep interval
     end
     false
@@ -71,6 +72,7 @@ module ServerTestHelper
     file
   end
 end
+
 # frozen_string_literal: true
 module LogHelpers
   def with_silenced_logger(target)

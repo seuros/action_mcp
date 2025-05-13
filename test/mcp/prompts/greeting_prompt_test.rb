@@ -32,7 +32,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
     # Assert that the prompt is invalid
     assert_not prompt.valid?
     assert_includes prompt.errors.full_messages, "Name can't be blank"
-    response= with_silenced_logger(prompt) do
+    response = with_silenced_logger(prompt) do
       # Make sure calling an invalid prompt works as expected
       prompt.call
     end
@@ -57,7 +57,7 @@ class GreetingPromptTest < ActiveSupport::TestCase
     # Arrange - missing optional 'style' parameter
     prompt = GreetingPrompt.new(name: "Ruby")
 
-    response= with_silenced_logger(prompt) do
+    response = with_silenced_logger(prompt) do
       # Act
       prompt.call
     end

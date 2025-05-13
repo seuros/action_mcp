@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AbortTool < ApplicationMCPTool
   description "Demonstrates throw(:abort) inside callbacks"
   property :value, type: "string"

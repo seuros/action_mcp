@@ -42,6 +42,7 @@ module ActionMCP
       # Serializes the data as JSON if it's not already a string
       def data_for_stream
         return data if data.is_a?(String)
+
         data.is_a?(Hash) ? data.to_json : data.to_s
       end
 

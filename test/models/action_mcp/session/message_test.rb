@@ -96,11 +96,9 @@ module ActionMCP
       # Test handling of JSON payloads that are not JSON-RPC compliant
       test "handles JSON payloads that are not JSON-RPC" do
         non_jsonrpc_payload = { "key" => "value" }
-        message = @session.messages.create!(direction: "client", data: non_jsonrpc_payload)
+        message = @session.messages.create(direction: "client", data: non_jsonrpc_payload)
 
-        assert_equal "non_jsonrpc_json", message.message_type, "Message type should be 'non_jsonrpc_json'"
-        refute message.is_ping, "is_ping should be false"
-        refute message.request_acknowledged, "request_acknowledged should be false"
+        assert_not message.persisted?, "Message should not be persisted if not JSON-RPC compliant"
       end
 
       # Test handling of string-based jsonrpc_id

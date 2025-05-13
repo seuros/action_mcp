@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # lib/action_mcp/server/registry_management.rb
 module ActionMCP
   module Server

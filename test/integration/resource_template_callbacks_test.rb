@@ -17,7 +17,7 @@ class ResourceTemplateCallbacksTest < ActionDispatch::IntegrationTest
       assert_match(/Starting resolution for order: 2/, log_lines[1])
       assert_match(/Order 2 resolved successfully in .*s/, log_lines[2])
       assert_match(/Finished resolving order resource for order: 2/, log_lines[3])
-   end
+    end
   end
 
   test "callbacks are executed in the correct order for ProductsTemplate" do

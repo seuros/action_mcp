@@ -56,7 +56,7 @@ if endpoint.nil?
 end
 
 unless endpoint =~ %r{\Ahttps?://}
-  puts "Error: Only HTTP(S) endpoints are supported. STDIO/command endpoints are not allowed."
+  puts 'Error: Only HTTP(S) endpoints are supported. STDIO/command endpoints are not allowed.'
   exit 1
 end
 
