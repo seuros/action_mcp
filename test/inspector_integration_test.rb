@@ -90,7 +90,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json, text/event-stream"
@@ -109,7 +109,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   def send_initialized_notification(session_id)
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
@@ -131,7 +131,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
@@ -152,7 +152,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/mcp",
+    post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",

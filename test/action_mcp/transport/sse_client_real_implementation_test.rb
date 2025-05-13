@@ -66,7 +66,7 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
 
     initialize_request["id"]
 
-    assert_equal "2024-11-05", initialize_request["params"]["protocolVersion"]
+    assert_equal "2025-03-26", initialize_request["params"]["protocolVersion"]
     assert_not_nil initialize_request["params"]["capabilities"]
   end
 end

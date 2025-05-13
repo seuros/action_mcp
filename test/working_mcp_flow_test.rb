@@ -25,7 +25,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream"
@@ -85,7 +85,7 @@ module ActionMCP
         method: "notifications/initialized"
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -107,7 +107,7 @@ module ActionMCP
         method: "tools/list"
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -162,7 +162,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -217,7 +217,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream",
@@ -238,7 +238,7 @@ module ActionMCP
       # STEP 6: Cleanup - terminate the session
       # ====================================================================
 
-      delete "/mcp", headers: { "Mcp-Session-Id" => session_id }
+      delete "/", headers: { "Mcp-Session-Id" => session_id }
       assert_response :no_content
 
       # Verify session is closed
@@ -260,7 +260,7 @@ module ActionMCP
         }
       }
 
-      post "/mcp",
+      post "/",
            headers: {
              "CONTENT-TYPE" => "application/json",
              "ACCEPT" => "application/json, text/event-stream"
@@ -278,7 +278,6 @@ module ActionMCP
       # Verify error data includes supported versions
       if error_response["error"]["data"]
         assert_not_nil error_response["error"]["data"]["supported"]
-        assert_includes error_response["error"]["data"]["supported"], "2024-11-05"
         assert_includes error_response["error"]["data"]["supported"], "2025-03-26"
         assert_equal "1.0.0", error_response["error"]["data"]["requested"]
       end

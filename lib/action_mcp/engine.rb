@@ -21,7 +21,7 @@ module ActionMCP
       ActionMCP::ResourceTemplate.registered_templates.clear
     end
 
-    config.middleware.use JSONRPC_Rails::Middleware::Validator, [ ActionMCP.configuration.mcp_endpoint_path ]
+    config.middleware.use JSONRPC_Rails::Middleware::Validator, [ "/" ]
 
     # Load MCP profiles during initialization
     initializer "action_mcp.load_profiles" do

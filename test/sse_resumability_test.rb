@@ -129,7 +129,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     end
 
     # Mock an SSE request with Last-Event-ID
-    get "/mcp",
+    get "/",
         headers: {
           "ACCEPT" => "text/event-stream",
           "Mcp-Session-Id" => session.id,

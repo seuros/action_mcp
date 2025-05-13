@@ -58,7 +58,7 @@ module TransportMocks
         id:     @initialize_req_id,
         method: "initialize",
         params: {
-          protocolVersion: "2024-11-05",
+          protocolVersion: "2025-03-26",
           capabilities:    {},
           clientInfo:      { name: "TestClient", version: "1.0.0" }
         }
@@ -113,7 +113,7 @@ module TransportMocks
         id: @initialize_req_id,
         method: "initialize",
         params: {
-          protocolVersion: "2024-11-05",
+          protocolVersion: "2025-03-26",
           capabilities: {},
           clientInfo: { name: "TestClient", version: "1.0.0" }
         }
@@ -167,7 +167,7 @@ module TransportMocks
       resp = JSON_RPC::Response.new(
         id:     request_id,
         result: {
-          protocolVersion: "2024-11-05",
+          protocolVersion: "2025-03-26",
           serverInfo:      { name: "TestServer", version: "1.0.0" },
           capabilities:    {
             tools: { listChanged: false },

@@ -22,8 +22,7 @@ module ActionMCP
                   :logging_level,
                   :active_profile,
                   :profiles,
-                  # --- New Transport Options ---
-                  :mcp_endpoint_path,
+                  # --- Transport Options ---
                   :sse_heartbeat_interval,
                   :post_response_preference, # :json or :sse
                   :protocol_version,
@@ -40,10 +39,9 @@ module ActionMCP
       @active_profile = :primary
       @profiles = default_profiles
 
-      @mcp_endpoint_path = "/mcp"
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
-      @protocol_version = "2024-11-05"
+      @protocol_version = "2025-03-26"
 
       # Resumability defaults
       @enable_sse_resumability = true

@@ -34,9 +34,9 @@ module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/client"
   include Logging
-  PROTOCOL_VERSION = "2024-11-05"  # Default version
-  CURRENT_VERSION = "2025-03-26"   # Current version for the /mcp endpoint
-  SUPPORTED_VERSIONS = %w[2024-11-05 2025-03-26].freeze
+  PROTOCOL_VERSION = "2025-03-26"  # Default version
+  CURRENT_VERSION = "2025-03-26"   # Current version
+  SUPPORTED_VERSIONS = %w[2025-03-26].freeze
   class << self
     delegate :server, to: "ActionMCP::Server"
     # Returns the configuration instance.

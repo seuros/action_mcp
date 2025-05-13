@@ -23,8 +23,14 @@ class SessionManagementThroughToolsTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post sse_in_path(session_id: @session.id), params: params
-    assert_response :accepted
+    post "/",
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
+           "Mcp-Session-Id" => @session.id
+         },
+         params: params.to_json
+    assert_includes [ 200, 202 ], response.status
 
     # Verify tool was added
     @session.reload
