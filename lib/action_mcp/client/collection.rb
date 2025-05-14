@@ -6,23 +6,76 @@ module ActionMCP
     class Collection
       include RequestTimeouts
 
-      attr_reader :client, :loaded
+      attr_reader :client, :loaded, :next_cursor, :total
 
       def initialize(items, client, silence_sql: true)
         @collection_data = items || []
         @client = client
         @loaded = !@collection_data.empty?
         @silence_sql = silence_sql
+        @next_cursor = nil
+        @total = items&.size || 0
       end
 
-      def all
-        silence_logs { load_items unless @loaded }
-        @collection_data
+      def all(limit: nil)
+        if limit
+          # If a limit is provided, use pagination
+          result = []
+          each_page(limit: limit) { |page| result.concat(page) }
+          result
+        else
+          # Otherwise, maintain the old behavior
+          silence_logs { load_items unless @loaded }
+          @collection_data
+        end
       end
 
       def all!(timeout: DEFAULT_TIMEOUT)
         silence_logs { load_items(force: true, timeout: timeout) }
         @collection_data
+      end
+
+      # Fetch a single page of results
+      #
+      # @param cursor [String, nil] Optional cursor for pagination
+      # @param limit [Integer, nil] Optional limit for page size
+      # @return [Array<Object>] The page of items
+      def page(cursor: nil, limit: nil)
+        silence_logs { load_page(cursor: cursor, limit: limit) }
+        @collection_data
+      end
+
+      # Check if there are more pages available
+      #
+      # @return [Boolean] true if there are more pages to fetch
+      def has_more_pages?
+        !@next_cursor.nil?
+      end
+
+      # Fetch the next page of results
+      #
+      # @param limit [Integer, nil] Optional limit for page size
+      # @return [Array<Object>] The next page of items, or empty array if no more pages
+      def next_page(limit: nil)
+        return [] unless has_more_pages?
+        page(cursor: @next_cursor, limit: limit)
+      end
+
+      # Iterate through all pages of results
+      #
+      # @param limit [Integer, nil] Optional limit for page size
+      # @yield [page] Block to process each page
+      # @yieldparam page [Array<Object>] A page of items
+      def each_page(limit: nil, &block)
+        return unless block_given?
+
+        current_page = page(limit: limit)
+        yield current_page
+
+        while has_more_pages?
+          current_page = next_page(limit: limit)
+          yield current_page unless current_page.empty?
+        end
       end
 
       # Filter items based on a given block
@@ -61,6 +114,29 @@ module ActionMCP
 
         # Use the RequestTimeouts module to handle the request
         load_with_timeout(@load_method, force: force, timeout: timeout)
+      end
+
+      def load_page(cursor: nil, limit: nil, timeout: DEFAULT_TIMEOUT)
+        # Make sure @load_method is defined in the subclass
+        raise NotImplementedError, "Subclass must define @load_method" unless defined?(@load_method)
+
+        # Use the RequestTimeouts module to handle the request with pagination params
+        params = {}
+        params[:cursor] = cursor if cursor
+        params[:limit] = limit if limit
+
+        request_id = client.send(@load_method, params)
+
+        start_time = Time.now
+        while !@loaded && (Time.now - start_time) < timeout
+          sleep(0.1)
+        end
+
+        # Update @loaded status even if we timed out
+        @loaded = true
+
+        # Return the loaded data
+        @collection_data
       end
 
       private
