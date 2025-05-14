@@ -4,39 +4,56 @@ module ActionMCP
   # Implements the MCP endpoints according to the 2025-03-26 specification.
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
-  class UnifiedController < MCPController
+  class ApplicationController < ActionController::Metal
     REQUIRED_PROTOCOL_VERSION = "2025-03-26"
+    MCP_SESSION_ID_HEADER = "Mcp-Session-Id"
 
+    ActionController::API.without_modules(:StrongParameters, :ParamsWrapper).each do |left|
+      include left
+    end
+    include Engine.routes.url_helpers
     include JSONRPC_Rails::ControllerHelpers
     include ActionController::Live
+
+    # Provides the ActionMCP::Session for the current request.
+    # Handles finding existing sessions via header/param or initializing a new one.
+    # Specific controllers/handlers might need to enforce session ID presence based on context.
+    # @return [ActionMCP::Session] The session object (might be unsaved if new)
+    def mcp_session
+      @mcp_session ||= find_or_initialize_session
+    end
+
+    # Provides a unique key for caching or pub/sub based on the session ID.
+    # Ensures mcp_session is called first to establish the session ID.
+    # @return [String] The session key string.
+    def session_key
+      @session_key ||= "action_mcp-sessions-#{mcp_session.id}"
+    end
+
+    # --- MCP UnifiedController actions ---
 
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
     # @route GET /
     def show
-      # 1. Check Accept Header
       unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
         return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
       end
 
-      # 2. Check Session (Must exist and be initialized)
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for GET requests.") unless session_id_from_header
 
-      session = mcp_session # Finds based on header
+      session = mcp_session
       if session.nil? || session.new_record?
         return render_not_found("Session not found.")
       elsif !session.initialized?
-        # Spec doesn't explicitly forbid GET before initialized, but it seems logical
         return render_bad_request("Session is not fully initialized.")
       elsif session.status == "closed"
         return render_not_found("Session has been terminated.")
       end
 
-      # Check for Last-Event-ID header for resumability
       last_event_id = request.headers["Last-Event-ID"].presence
       Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}" if last_event_id
 
-      # 3. Set SSE Headers
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["X-Accel-Buffering"] = "no"
       response.headers["Cache-Control"] = "no-cache"
@@ -44,7 +61,6 @@ module ActionMCP
 
       Rails.logger.info "Unified SSE (GET): Starting stream for session: #{session.id}"
 
-      # 4. Setup Stream, Listener, and Heartbeat
       sse = SSE.new(response.stream)
       listener = SSEListener.new(session)
       connection_active = Concurrent::AtomicBoolean.new
@@ -53,29 +69,21 @@ module ActionMCP
       heartbeat_active.make_true
       heartbeat_task = nil
 
-      # Start listener
       listener_started = listener.start do |message|
-        # Write message using helper to include event ID
         write_sse_event(sse, session, message)
       end
 
       unless listener_started
         Rails.logger.error "Unified SSE (GET): Listener failed to activate for session: #{session.id}"
-        # Don't write error to stream as per spec for GET, just close
         connection_active.make_false
-        return # Error logged, connection will close in ensure block
+        return
       end
 
-      # Handle resumability by sending missed events if Last-Event-ID is provided
       if last_event_id.present? && last_event_id.to_i.positive?
         begin
-          # Fetch events that occurred after the Last-Event-ID
           missed_events = session.get_sse_events_after(last_event_id.to_i)
-
           if missed_events.any?
             Rails.logger.info "Unified SSE (GET): Sending #{missed_events.size} missed events for session: #{session.id}"
-
-            # Send each missed event to the client
             missed_events.each do |event|
               sse.write(event.to_sse)
             end
@@ -87,14 +95,12 @@ module ActionMCP
         end
       end
 
-      # Heartbeat sender proc
       heartbeat_interval = ActionMCP.configuration.sse_heartbeat_interval || 15.seconds
       heartbeat_sender = lambda do
         if connection_active.true? && !response.stream.closed?
           begin
-            # Use helper to send ping with event ID
             future = Concurrent::Promises.future { write_sse_event(sse, session, { type: "ping" }) }
-            future.value!(5) # 5 second timeout for write
+            future.value!(5)
             if heartbeat_active.true?
               heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
             end
@@ -110,26 +116,18 @@ module ActionMCP
         end
       end
 
-      # Start first heartbeat
       heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
-
-      # Keep connection alive while active
       sleep 0.1 while connection_active.true? && !response.stream.closed?
     rescue ActionController::Live::ClientDisconnected, IOError => e
       Rails.logger.debug "Unified SSE (GET): Client disconnected for session: #{session&.id}: #{e.message}"
     rescue StandardError => e
       Rails.logger.error "Unified SSE (GET): Unexpected error for session: #{session&.id}: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
     ensure
-      # Cleanup
       Rails.logger.debug "Unified SSE (GET): Cleaning up connection for session: #{session&.id}"
       heartbeat_active&.make_false
       heartbeat_task&.cancel
       listener&.stop
-
-      # Clean up old SSE events if resumability is enabled
       cleanup_old_sse_events(session) if session
-
-      # Don't close the session itself here, it might be used by other connections/requests
       sse&.close
       begin
         response.stream&.close
@@ -141,22 +139,18 @@ module ActionMCP
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
     # @route POST /mcp
     def create
-      # 1. Check Accept Header
       unless accepts_valid_content_types?
         return render_not_acceptable("Client must accept 'application/json' and 'text/event-stream'")
       end
 
-      # 2. Determine if this is an initialize request (before session check)
       is_initialize_request = check_if_initialize_request(jsonrpc_params)
-
-      # 3. Check Session (unless it's an initialize request)
       session_initially_missing = extract_session_id.nil?
-      session = mcp_session # This finds or initializes
+      session = mcp_session
 
       unless is_initialize_request
         if session_initially_missing
           return render_bad_request("Mcp-Session-Id header is required for this request.")
-        elsif session.nil? || session.new_record? # Should be found if ID was provided
+        elsif session.nil? || session.new_record?
           return render_not_found("Session not found.")
         elsif session.status == "closed"
           return render_not_found("Session has been terminated.")
@@ -168,17 +162,11 @@ module ActionMCP
         response.headers[MCP_SESSION_ID_HEADER] = session.id
       end
 
-      # 4. Instantiate Handlers
       transport_handler = Server::TransportHandler.new(session)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
-
-      # 5. Call Handler
       handler_results = json_rpc_handler.call(jsonrpc_params)
-
-      # 6. Process Results
       process_handler_results(handler_results, session, session_initially_missing, is_initialize_request)
     rescue ActionController::Live::ClientDisconnected, IOError => e
-      # Ensure stream is closed if SSE response was attempted and client disconnected
       Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}"
       begin
         response.stream&.close
@@ -193,23 +181,18 @@ module ActionMCP
     # Handles DELETE requests for session termination (2025-03-26 spec).
     # @route DELETE /
     def destroy
-      # 1. Check Session Header
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for DELETE requests.") unless session_id_from_header
 
-      # 2. Find Session
       session = Session.find_by(id: session_id_from_header)
-
       if session.nil?
         return render_not_found("Session not found.")
       elsif session.status == "closed"
-        # Session already closed, treat as success (idempotent)
         return head :no_content
       end
 
-      # 3. Terminate Session
       begin
-        session.close! # This should handle cleanup like unsubscribing etc.
+        session.close!
         Rails.logger.info "Unified DELETE: Terminated session: #{session.id}"
         head :no_content
       rescue StandardError => e
@@ -219,6 +202,21 @@ module ActionMCP
     end
 
     private
+
+    # Finds an existing session based on header or param, or initializes a new one.
+    # Note: This doesn't save the new session; that happens upon first use or explicitly.
+    def find_or_initialize_session
+      session_id = extract_session_id
+      if session_id
+        session = Session.find_by(id: session_id)
+        if session && session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+          session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+        end
+        session
+      else
+        Session.new(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+      end
+    end
 
     # @return [String, nil] The extracted session ID or nil if not found.
     def extract_session_id
@@ -234,63 +232,43 @@ module ActionMCP
     # Checks if the parsed body represents an 'initialize' request.
     def check_if_initialize_request(payload)
       return false unless payload.is_a?(JSON_RPC::Request) && !jsonrpc_params_batch?
-
       payload.method == "initialize"
     end
 
     # Processes the results from the JsonRpcHandler.
     def process_handler_results(results, session, session_initially_missing, is_initialize_request)
-      # Make sure we always have a results hash
       results ||= {}
-
-      # Check if this is a notification request
       is_notification = jsonrpc_params.is_a?(JSON_RPC::Notification)
-
-      # Extract request ID from results
       request_id = nil
       if results.is_a?(Hash)
         request_id = results[:request_id] || results[:id]
-        # If we have a payload that's a response, extract ID from there as well
         request_id ||= results[:payload][:id] if results[:payload].is_a?(Hash) && results[:payload][:id]
       end
-
-      # Default to empty hash for response payload if nil
       result_type = results[:type]
       result_payload = results[:payload] || {}
-
-      # Ensure payload has the correct ID if it's a hash
       result_payload[:id] = request_id if result_payload.is_a?(Hash) && request_id && !result_payload.key?(:id)
 
       case result_type
       when :error
-        # Ensure error responses preserve the ID
         error_payload = result_payload
         error_payload[:id] = request_id if error_payload.is_a?(Hash) && !error_payload.key?(:id) && request_id
         render json: error_payload, status: results.fetch(:status, :bad_request)
-
       when :notifications_only
         head :accepted
-
       when :responses
         server_preference = ActionMCP.configuration.post_response_preference
         use_sse = (server_preference == :sse)
         add_session_header = is_initialize_request && session_initially_missing && session.persisted?
-
         if use_sse
           render_sse_response(result_payload, session, add_session_header)
         else
           render_json_response(result_payload, session, add_session_header)
         end
-
       else
-        # Handle unknown result types
         Rails.logger.error "Unknown handler result type: #{result_type.inspect}"
-
-        # If the original request was a notification, don't send back a response with an ID
         if is_notification
           head :accepted
         else
-          # For regular requests, return a proper JSON-RPC response
           render json: {
             jsonrpc: "2.0",
             id: request_id,
@@ -314,11 +292,9 @@ module ActionMCP
       response.headers["X-Accel-Buffering"] = "no"
       response.headers["Cache-Control"] = "no-cache"
       response.headers["Connection"] = "keep-alive"
-
       sse = SSE.new(response.stream)
       write_sse_event(sse, session, payload)
     ensure
-      # Close the stream after sending the response(s)
       sse&.close
       begin
         response.stream&.close
@@ -328,42 +304,14 @@ module ActionMCP
       Rails.logger.debug "Unified SSE (POST): Response stream closed."
     end
 
-    # Renders a 500 Internal Server Error response.
-    def render_internal_server_error(message = "Internal Server Error", id = nil)
-      # Using -32000 for generic server error
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
-    end
-
-    # Helper to clean up old SSE events for a session
-    def cleanup_old_sse_events(session)
-      return unless ActionMCP.configuration.enable_sse_resumability
-
-      begin
-        # Get retention period from configuration
-        retention_period = session.sse_event_retention_period
-        count = session.cleanup_old_sse_events(retention_period)
-
-        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}" if count.positive?
-      rescue StandardError => e
-        Rails.logger.error "Error cleaning up old SSE events: #{e.message}"
-      end
-    end
-
     # Helper to write a JSON payload as an SSE event with a unique ID.
     # Also stores the event for potential resumability.
     def write_sse_event(sse, session, payload)
       event_id = session.increment_sse_counter!
-
-      # Manually format the SSE event string including the ID
       data = payload.is_a?(String) ? payload : MultiJson.dump(payload)
       sse_event = "id: #{event_id}\ndata: #{data}\n\n"
-
-      # Write to the stream
       sse.write(sse_event)
-
-      # Store the event for potential resumption if resumability is enabled
       return unless ActionMCP.configuration.enable_sse_resumability
-
       begin
         session.store_sse_event(event_id, payload, session.max_stored_sse_events)
       rescue StandardError => e
@@ -371,10 +319,53 @@ module ActionMCP
       end
     end
 
+    # Helper to clean up old SSE events for a session
+    def cleanup_old_sse_events(session)
+      return unless ActionMCP.configuration.enable_sse_resumability
+      begin
+        retention_period = session.sse_event_retention_period
+        count = session.cleanup_old_sse_events(retention_period)
+        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}" if count.positive?
+      rescue StandardError => e
+        Rails.logger.error "Error cleaning up old SSE events: #{e.message}"
+      end
+    end
+
     def format_tools_list(tools, session)
-      # Pass the session's protocol version when formatting tools
       protocol_version = session.protocol_version || ActionMCP.configuration.protocol_version
       tools.map { |tool| tool.klass.to_h(protocol_version: protocol_version) }
+    end
+
+    # --- Error Rendering Methods ---
+
+    # Renders a 400 Bad Request response with a JSON-RPC-like error structure.
+    def render_bad_request(message = "Bad Request")
+      render json: { jsonrpc: "2.0", error: { code: -32_600, message: message } }
+    end
+
+    # Renders a 404 Not Found response with a JSON-RPC-like error structure.
+    def render_not_found(message = "Not Found")
+      render json: { jsonrpc: "2.0", error: { code: -32_001, message: message } }
+    end
+
+    # Renders a 405 Method Not Allowed response.
+    def render_method_not_allowed(message = "Method Not Allowed")
+      render json: { jsonrpc: "2.0", error: { code: -32_601, message: message } }
+    end
+
+    # Renders a 406 Not Acceptable response.
+    def render_not_acceptable(message = "Not Acceptable")
+      render json: { jsonrpc: "2.0", error: { code: -32_002, message: message } }
+    end
+
+    # Renders a 501 Not Implemented response.
+    def render_not_implemented(message = "Not Implemented")
+      render json: { jsonrpc: "2.0", error: { code: -32_003, message: message } }
+    end
+
+    # Renders a 500 Internal Server Error response.
+    def render_internal_server_error(message = "Internal Server Error", id = nil)
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
     end
   end
 end
