@@ -89,18 +89,19 @@ module ActionMCP
 
       # Internal Blueprint class to represent individual URI templates
       class ResourceTemplate
-        attr_reader :pattern, :name, :description, :mime_type
+        attr_reader :pattern, :name, :description, :mime_type, :annotations
 
         # Initialize a new ResourceTemplate instance
         #
         # @param data [Hash] ResourceTemplate definition hash containing uriTemplate, name, description,
-        #   and optionally mimeType
+        #   and optionally mimeType, and annotations
         def initialize(data)
           @pattern = data["uriTemplate"]
           @name = data["name"]
           @description = data["description"]
           @mime_type = data["mimeType"]
           @variable_pattern = /{([^}]+)}/
+          @annotations = data["annotations"] || {}
         end
 
         # Extract variable names from the template pattern
@@ -152,7 +153,8 @@ module ActionMCP
             "uriTemplate" => @pattern,
             "name" => @name,
             "description" => @description,
-            "mimeType" => @mime_type
+            "mimeType" => @mime_type,
+            "annotations" => @annotations
           }
         end
       end

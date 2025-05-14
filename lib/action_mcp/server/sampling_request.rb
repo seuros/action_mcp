@@ -92,7 +92,7 @@ module ActionMCP
         if content.is_a?(Content::Base) || (content.respond_to?(:to_h) && !content.is_a?(Hash))
           @messages << { role: role, content: content.to_h }
         else
-          content = Content::Text.new(content).to_h if content.is_a?(String)
+          content = Content::Text.new(content, annotations: nil).to_h if content.is_a?(String)
           @messages << { role: role, content: content }
         end
       end

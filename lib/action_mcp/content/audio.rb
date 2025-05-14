@@ -12,8 +12,9 @@ module ActionMCP
       #
       # @param data [String] The base64-encoded audio data.
       # @param mime_type [String] The MIME type of the audio data.
-      def initialize(data, mime_type)
-        super("audio")
+      # @param annotations [Hash, nil] Optional annotations for the audio content.
+      def initialize(data, mime_type, annotations: nil)
+        super("audio", annotations: annotations)
         @data = data
         @mime_type = mime_type
       end

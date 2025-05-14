@@ -104,15 +104,17 @@ module ActionMCP
 
       # Internal Tool class to represent individual tools
       class Tool
-        attr_reader :name, :description, :input_schema
+        attr_reader :name, :description, :input_schema, :annotations
 
         # Initialize a new Tool instance
         #
         # @param data [Hash] Tool definition hash containing name, description, and inputSchema
+        #  and optionally annotations
         def initialize(data)
           @name = data["name"]
           @description = data["description"]
           @input_schema = data["inputSchema"] || {}
+          @annotations = data["annotations"] || {}
         end
 
         # Get all required properties for this tool
@@ -160,7 +162,8 @@ module ActionMCP
           {
             "name" => @name,
             "description" => @description,
-            "inputSchema" => @input_schema
+            "inputSchema" => @input_schema,
+            "annotations" => @annotations
           }
         end
 
@@ -171,7 +174,8 @@ module ActionMCP
           {
             "name" => @name,
             "description" => @description,
-            "input_schema" => @input_schema.transform_keys { |k| k == "inputSchema" ? "input_schema" : k }
+            "input_schema" => @input_schema.transform_keys { |k| k == "inputSchema" ? "input_schema" : k },
+            "annotations" => @annotations
           }
         end
 
@@ -184,7 +188,8 @@ module ActionMCP
             "function" => {
               "name" => @name,
               "description" => @description,
-              "parameters" => @input_schema
+              "parameters" => @input_schema,
+              "annotations" => @annotations
             }
           }
         end

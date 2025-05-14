@@ -2,6 +2,7 @@
 
 require "test_helper"
 
+
 module ActionMCP
   module Client
     class ToolboxTest < ActiveSupport::TestCase
@@ -96,6 +97,14 @@ module ActionMCP
         assert_equal "calculate_sum", hash["name"]
         assert_equal "Calculate the sum of two numbers", hash["description"]
         assert hash["inputSchema"].key?("properties")
+        assert hash["annotations"].is_a?(Hash)
+      end
+
+      test "tool with annotations" do
+        toolbox = Toolbox.new(load_fixture("toolbox_with_annotations"), nil)
+        tool = toolbox.find("annotated_tool")
+        assert_equal "Annotated Tool", tool.description
+        assert_equal({ "safety" => "safe", "category" => "test" }, tool.annotations)
       end
 
       test "toolbox generates default hash representation with all tools" do

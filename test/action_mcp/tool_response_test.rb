@@ -6,8 +6,8 @@ module ActionMCP
   class ToolResponseTest < ActiveSupport::TestCase
     setup do
       @response = ToolResponse.new
-      @text_content = Content::Text.new("Hello world")
-      @image_content = Content::Image.new("base64data", "image/png")
+      @text_content = Content::Text.new("Hello world", annotations: nil)
+      @image_content = Content::Image.new("base64data", "image/png", annotations: nil)
     end
 
     test "initializes with empty contents and no error" do

@@ -12,8 +12,9 @@ module ActionMCP
       #
       # @param data [String] The base64-encoded image data.
       # @param mime_type [String] The MIME type of the image data.
-      def initialize(data, mime_type)
-        super("image")
+      # @param annotations [Hash, nil] Optional annotations for the image content.
+      def initialize(data, mime_type, annotations: nil)
+        super("image", annotations: annotations)
         @data = data
         @mime_type = mime_type
       end
@@ -22,7 +23,8 @@ module ActionMCP
       #
       # @return [Hash] The hash representation of the image content.
       def to_h
-        super.merge(data: @data, mimeType: @mime_type)
+        h = super.merge(data: @data, mimeType: @mime_type)
+        h
       end
     end
   end
