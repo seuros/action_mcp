@@ -24,6 +24,9 @@ module ActionMCP
         rpc_method = request.method
         params = request.params
 
+        # Try to handle common methods first (like ping)
+        return if handle_common_methods(rpc_method, id, params)
+
         case rpc_method
         when "initialize"
           message = transport.send_capabilities(id, params)
