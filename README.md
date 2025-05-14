@@ -346,7 +346,7 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 ## Engine and Mounting
 
-**ActionMCP** runs as a standalone Rack application. It is **not** mounted in `routes.rb`.
+**ActionMCP** runs as a standalone Rack application. **Do not attempt to mount it in your application's `routes.rb`**—it is not designed to be mounted as an engine at a custom path. When you use `run ActionMCP::Engine` in your `mcp.ru`, the MCP endpoint is always available at the root path (`/`).
 
 ### Installing the Configuration Generator
 
@@ -367,16 +367,68 @@ This will create `config/mcp.yml` with example configurations for all environmen
 # Load the full Rails environment to access models, DB, Redis, etc.
 require_relative "config/environment"
 
-ActionMCP.configure do |config|
-  config.mcp_endpoint_path = "/mcp"
-end
-
+# No need to set a custom endpoint path. The MCP endpoint is always served at root ("/")
+# when using ActionMCP::Engine directly.
 run ActionMCP::Engine
 ```
 ### 2. Start the server
 ```bash
-bin/rails s -c mcp.ru -p 6277 -P tmp/pids/mcp.pid
+bin/rails s -c mcp.ru -p 62770 -P tmp/pids/mcps0.pid
 ```
+
+## Production Deployment of MCPS0
+
+In production, **MCPS0** (the MCP server) is a standard Rack application. You can run it using any Rack-compatible server (such as Puma, Unicorn, or Passenger). 
+
+> **For best performance and concurrency, it is highly recommended to use a modern, synchronous server like [Falcon](https://github.com/socketry/falcon)**. Falcon is optimized for streaming and concurrent workloads, making it ideal for MCP servers. You can still use Puma, Unicorn, or Passenger, but Falcon will generally provide superior throughput and responsiveness for real-time and streaming use cases.
+
+You have two main options for exposing the server:
+
+### 1. Dedicated Port
+
+Run MCPS0 on its own TCP port (commonly `62770`):
+
+**With Falcon:**
+```bash
+bundle exec falcon serve --bind http://0.0.0.0:62770 mcp.ru
+```
+
+**With Puma:**
+```bash
+bundle exec rails s -c mcp.ru -p 62770
+```
+
+Then, use your web server (Nginx, Apache, etc.) to reverse proxy requests to this port.
+
+### 2. Unix Socket
+
+Alternatively, you can run MCPS0 on a Unix socket for improved performance and security (especially when the web server and app server are on the same machine):
+
+**With Falcon:**
+```bash
+bundle exec falcon serve --bind unix:/tmp/mcps0.sock mcp.ru
+```
+
+**With Puma:**
+```bash
+bundle exec puma -C config/puma.rb -b unix:///tmp/mcps0.sock -c mcp.ru
+```
+
+And configure your web server to proxy to the socket:
+
+```nginx
+location /mcp/ {
+  proxy_pass http://unix:/tmp/mcps0.sock:;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+**Key Points:**
+- MCPS0 is a standalone Rack app—run it separately from your main Rails server.
+- You can expose it via a TCP port (e.g., 62770) or a Unix socket.
+- Use a reverse proxy (Nginx, Apache, etc.) to route requests to MCPS0 as needed.
+- This separation ensures reliability and scalability for both your main app and MCP services.
 
 ## Generators
 
