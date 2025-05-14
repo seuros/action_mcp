@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class MCPSchemaValidationTest < ActiveSupport::TestCase
@@ -28,32 +30,32 @@ class MCPSchemaValidationTest < ActiveSupport::TestCase
 
       # Check schema structure
       assert_equal "object", schema[:type],
-        "Tool #{tool[:name]} schema must be of type 'object'"
+                   "Tool #{tool[:name]} schema must be of type 'object'"
 
       # Verify properties are properly nested
       assert schema.key?(:properties),
-        "Tool #{tool[:name]} schema must have a 'properties' field"
+             "Tool #{tool[:name]} schema must have a 'properties' field"
       assert schema[:properties].is_a?(Hash),
-        "Tool #{tool[:name]} properties must be a hash"
+             "Tool #{tool[:name]} properties must be a hash"
 
       # Check each property
       schema[:properties].each do |prop_name, prop_def|
         assert prop_def.is_a?(Hash),
-          "Property #{prop_name} in #{tool[:name]} must be a hash"
+               "Property #{prop_name} in #{tool[:name]} must be a hash"
         assert prop_def[:type].present?,
-          "Property #{prop_name} in #{tool[:name]} must have a type"
+               "Property #{prop_name} in #{tool[:name]} must have a type"
       end
 
       # Check required fields format
-      if schema.key?(:required)
-        assert schema[:required].is_a?(Array),
-          "Tool #{tool[:name]} required field must be an array"
+      next unless schema.key?(:required)
 
-        # Make sure all required properties exist in the properties hash
-        schema[:required].each do |req_prop|
-          assert schema[:properties].key?(req_prop),
-            "Required property #{req_prop} must be defined in properties for #{tool[:name]}"
-        end
+      assert schema[:required].is_a?(Array),
+             "Tool #{tool[:name]} required field must be an array"
+
+      # Make sure all required properties exist in the properties hash
+      schema[:required].each do |req_prop|
+        assert schema[:properties].key?(req_prop),
+               "Required property #{req_prop} must be defined in properties for #{tool[:name]}"
       end
     end
   end
@@ -117,10 +119,10 @@ class MCPSchemaValidationTest < ActiveSupport::TestCase
       end
 
       # Each property should have a valid type
-      valid_types = [ "string", "number", "integer", "boolean", "array", "object", "null" ]
+      valid_types = %w[string number integer boolean array object null]
       schema[:properties].each do |prop_name, prop_def|
         assert valid_types.include?(prop_def[:type]),
-          "Property #{prop_name} type in #{tool[:name]} must be one of #{valid_types.join(', ')}"
+               "Property #{prop_name} type in #{tool[:name]} must be one of #{valid_types.join(', ')}"
       end
     end
   end

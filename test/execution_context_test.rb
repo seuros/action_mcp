@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # test/action_mcp/execution_context_test.rb
 require "test_helper"
 

@@ -39,8 +39,10 @@ module ActionMCP
 
         yaml = ERB.new(File.read(@config_path)).result
         YAML.safe_load(yaml, aliases: true) || {}
-      rescue => e
-        Rails.logger.error("Error loading ActionMCP config: #{e.message}") if defined?(Rails) && Rails.respond_to?(:logger)
+      rescue StandardError => e
+        if defined?(Rails) && Rails.respond_to?(:logger)
+          Rails.logger.error("Error loading ActionMCP config: #{e.message}")
+        end
         {}
       end
 
@@ -52,6 +54,7 @@ module ActionMCP
         while path != "/"
           config_path = File.join(path, "config", "mcp.yml")
           return config_path if File.exist?(config_path)
+
           path = File.dirname(path)
         end
 

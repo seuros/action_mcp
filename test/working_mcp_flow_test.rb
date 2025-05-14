@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
@@ -232,7 +234,7 @@ module ActionMCP
       assert_equal "2.0", error_response["jsonrpc"]
       assert_equal "bad-tool-1", error_response["id"], "Error response should preserve ID"
       assert_not_nil error_response["error"]
-      assert_equal -32601, error_response["error"]["code"]
+      assert_equal(-32_601, error_response["error"]["code"])
 
       # ====================================================================
       # STEP 6: Cleanup - terminate the session
@@ -254,7 +256,7 @@ module ActionMCP
         id: "bad-protocol",
         method: "initialize",
         params: {
-          protocolVersion: "1.0.0",  # Unsupported version
+          protocolVersion: "1.0.0", # Unsupported version
           clientInfo: { name: "Test", version: "1.0" },
           capabilities: {}
         }
@@ -271,7 +273,7 @@ module ActionMCP
       assert_includes [ 200, 400 ], response.status
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
-      assert_includes [ -32000, -32602 ], error_response["error"]["code"]
+      assert_includes [ -32_000, -32_602 ], error_response["error"]["code"]
       assert_match(/Unsupported protocol version/, error_response["error"]["message"])
       assert_equal "bad-protocol", error_response["id"], "Error response must preserve request ID"
 

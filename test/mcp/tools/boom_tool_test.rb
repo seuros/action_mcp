@@ -9,6 +9,6 @@ class BoomToolTest < ActiveSupport::TestCase
   test "always returns internal_error" do
     resp = BoomTool.new.call
     assert resp.error?
-    assert_mcp_error_code -32_603, resp
+    assert_mcp_error_code(-32_603, resp)
   end
 end

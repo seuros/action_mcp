@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/models/concerns/mcp_console_helpers.rb
 module MCPConsoleHelpers
   extend ActiveSupport::Concern
@@ -12,9 +14,7 @@ module MCPConsoleHelpers
 
       messages.each do |msg|
         puts msg.inspect
-        if msg.data&.dig("method")
-          puts "  └─ #{msg.data['method']}"
-        end
+        puts "  └─ #{msg.data['method']}" if msg.data&.dig("method")
         puts
       end
     end

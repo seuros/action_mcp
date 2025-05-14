@@ -57,6 +57,9 @@ module ActionMCP
       scope :notifications, -> { where(message_type: "notification") }
       scope :responses, -> { where(message_type: "response") }
 
+      validates :message_json, presence: true
+      validates :message_type, presence: true
+
       # @param payload [String, Hash]
       def data=(payload)
         # Convert string payloads to JSON
@@ -114,22 +117,28 @@ module ActionMCP
       end
 
       def process_json_content(content)
-        if content.is_a?(Hash) && content["jsonrpc"] == "2.0"
-          if content.key?("id") && content.key?("method")
-            self.message_type = "request"
-            self.jsonrpc_id = content["id"].to_s
-            # Set is_ping to true if the method is "ping"
-            self.is_ping = true if content["method"] == "ping"
-          elsif content.key?("method") && !content.key?("id")
-            self.message_type = "notification"
-          elsif content.key?("id") && content.key?("result")
-            self.message_type = "response"
-            self.jsonrpc_id = content["id"].to_s
-          elsif content.key?("id") && content.key?("error")
-            self.message_type = "error"
-            self.jsonrpc_id = content["id"].to_s
-          else
-            self.message_type = "invalid_jsonrpc"
+        if content.is_a?(JSON_RPC::Notification) || content.is_a?(JSON_RPC::Request) || content.is_a?(JSON_RPC::Response)
+          content = content.to_h.with_indifferent_access
+        end
+        if content.is_a?(Hash)
+          content = content.with_indifferent_access
+          if content["jsonrpc"] == "2.0"
+            if content.key?("id") && content.key?("method")
+              self.message_type = "request"
+              self.jsonrpc_id = content["id"].to_s
+              # Set is_ping to true if the method is "ping"
+              self.is_ping = true if content["method"] == "ping"
+            elsif content.key?("method") && !content.key?("id")
+              self.message_type = "notification"
+            elsif content.key?("id") && content.key?("result")
+              self.message_type = "response"
+              self.jsonrpc_id = content["id"].to_s
+            elsif content.key?("id") && content.key?("error")
+              self.message_type = "error"
+              self.jsonrpc_id = content["id"].to_s
+            else
+              self.message_type = "invalid_jsonrpc"
+            end
           end
         else
           self.message_type = "non_jsonrpc_json"

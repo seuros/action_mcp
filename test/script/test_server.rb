@@ -19,7 +19,7 @@ def wait_for_condition(timeout = 5, interval = 0.01)
           result = true
           break
         end
-      rescue => e
+      rescue StandardError => e
         puts "Error in condition check: #{e.message}"
       end
       sleep interval
@@ -29,11 +29,11 @@ def wait_for_condition(timeout = 5, interval = 0.01)
 
   # Wait for the future to complete with a timeout
   begin
-    future.value(timeout + 0.5) || false  # Add a small buffer to the timeout
+    future.value(timeout + 0.5) || false # Add a small buffer to the timeout
   rescue Concurrent::TimeoutError
     puts "Timed out waiting for condition"
     false
-  rescue => e
+  rescue StandardError => e
     puts "Error waiting for condition: #{e.message}"
     false
   end
@@ -45,19 +45,19 @@ FileUtils.mkdir_p(File.dirname(__FILE__))
 # Create a test configuration file
 config_file = Tempfile.new([ "test_mcp", ".yml" ])
 config_file.write(YAML.dump({
-  "development" => {
-    "adapter" => "simple",
-    "min_threads" => 2,
-    "max_threads" => 5,
-    "max_queue" => 50
-  },
-  "production" => {
-    "adapter" => "solid_cable",
-    "polling_interval" => 0.5,
-    "min_threads" => 5,
-    "max_threads" => 10
-  }
-}))
+                              "development" => {
+                                "adapter" => "simple",
+                                "min_threads" => 2,
+                                "max_threads" => 5,
+                                "max_queue" => 50
+                              },
+                              "production" => {
+                                "adapter" => "solid_cable",
+                                "polling_interval" => 0.5,
+                                "min_threads" => 5,
+                                "max_threads" => 10
+                              }
+                            }))
 config_file.close
 
 puts "Testing ActionMCP::Server with MCP configuration from #{config_file.path}"
@@ -71,7 +71,7 @@ puts "Adapter class: #{adapter.class}"
 
 # Test subscribing to a channel
 received_messages = []
-callback = ->(message) {
+callback = lambda { |message|
   puts "Received message: #{message}"
   received_messages << message
 }
@@ -98,9 +98,7 @@ end
 # Using a future with a timeout to avoid blocking indefinitely
 timeout = 0.5
 delay_future = Concurrent::Promises.future { sleep 0.2 }
-unless delay_future.wait(timeout)
-  puts "Warning: Delay timed out, continuing anyway"
-end
+puts "Warning: Delay timed out, continuing anyway" unless delay_future.wait(timeout)
 
 # Test unsubscribing
 puts "Unsubscribing from test-channel..."
@@ -116,9 +114,9 @@ puts "Broadcasting message after unsubscribe..."
 adapter.broadcast("test-channel", "This should not be received")
 
 # Use wait_for_condition with a shorter timeout to verify no message is received
-unexpected_message_received = wait_for_condition(1) {
+unexpected_message_received = wait_for_condition(1) do
   received_messages.include?("This should not be received")
-}
+end
 
 if unexpected_message_received
   puts "ERROR: Message was received after unsubscribe"
@@ -135,7 +133,7 @@ begin
 
   # Remove the temporary config file
   config_file.unlink
-rescue => e
+rescue StandardError => e
   puts "Error during cleanup: #{e.message}"
 ensure
   puts "All tests passed!"

@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # app/models/concerns/mcp_message_inspect.rb
 module MCPMessageInspect
   extend ActiveSupport::Concern
 
   def inspect(show_data: false)
     if show_data
-      super()  # Rails default inspect
+      super() # Rails default inspect
     else
       build_summary_inspect
     end
@@ -54,9 +56,7 @@ module MCPMessageInspect
 
   def console?
     # Check if we're in a Rails console environment
-    defined?(Rails::Console) ||
-      defined?(::Rails.application) && Rails.application.console? ||
-      (defined?(IRB) && IRB.CurrentContext.kind_of?(IRB::ExtendCommandBundle))
+    defined?(Rails::Console)
   end
 
   def colorize(text, color)

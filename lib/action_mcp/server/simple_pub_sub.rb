@@ -13,7 +13,7 @@ module ActionMCP
       DEFAULT_MIN_THREADS = 5
       DEFAULT_MAX_THREADS = 10
       DEFAULT_MAX_QUEUE = 100
-      DEFAULT_THREAD_TIMEOUT = 60  # seconds
+      DEFAULT_THREAD_TIMEOUT = 60 # seconds
 
       def initialize(options = {})
         @subscriptions = Concurrent::Map.new
@@ -58,6 +58,7 @@ module ActionMCP
       def subscribed_to?(channel)
         channel_subs = @channels[channel]
         return false if channel_subs.nil?
+
         !channel_subs.empty?
       end
 
@@ -91,11 +92,9 @@ module ActionMCP
           next unless subscription && subscription[:message_callback]
 
           @thread_pool.post do
-            begin
-              subscription[:message_callback].call(message)
-            rescue StandardError => e
-              log_error("Error in message callback: #{e.message}\n#{e.backtrace.join("\n")}")
-            end
+            subscription[:message_callback].call(message)
+          rescue StandardError => e
+            log_error("Error in message callback: #{e.message}\n#{e.backtrace.join("\n")}")
           end
         end
       end
@@ -106,6 +105,7 @@ module ActionMCP
       def has_subscribers?(channel)
         subscribers = @channels[channel]
         return false unless subscribers
+
         !subscribers.empty?
       end
 
@@ -138,6 +138,7 @@ module ActionMCP
 
       def log_error(message)
         return unless defined?(Rails) && Rails.respond_to?(:logger)
+
         Rails.logger.error("SimplePubSub: #{message}")
       end
     end

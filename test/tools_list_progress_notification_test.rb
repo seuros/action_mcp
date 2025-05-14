@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
@@ -59,7 +61,6 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
     }
 
     # Setup to capture progress notifications
-    progress_notifications = []
     original_send_progress = ActionMCP::Session.instance_method(:send_progress_notification)
     ActionMCP::Session.class_eval do
       define_method(:send_progress_notification) do |progressToken:, progress:, total: nil, message: nil, **options|
@@ -101,9 +102,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       tools_response = response.parsed_body
       assert_equal "2.0", tools_response["jsonrpc"]
 
-      if tools_response["id"]
-        assert_equal "list-tools-1", tools_response["id"]
-      end
+      assert_equal "list-tools-1", tools_response["id"] if tools_response["id"]
 
       if tools_response["result"] && tools_response["result"]["tools"]
         assert tools_response["result"]["tools"].is_a?(Array)

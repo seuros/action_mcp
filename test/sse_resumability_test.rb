@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class SSEResumabilityTest < ActionDispatch::IntegrationTest
@@ -85,7 +87,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     # Mock the write_sse_event method in the controller
     controller = ActionMCP::UnifiedController.new
     sse_mock = Struct.new(:stream).new(Struct.new(:closed?).new(false))
-    sse_mock.stream.define_singleton_method(:write) { |data| true }
+    sse_mock.stream.define_singleton_method(:write) { |_data| true }
 
     # Call the write_sse_event method
     payload = { test: "payload" }.to_json
@@ -163,7 +165,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     # Mock the write_sse_event method in the controller
     controller = ActionMCP::UnifiedController.new
     sse_mock = Struct.new(:stream).new(Struct.new(:closed?).new(false))
-    sse_mock.stream.define_singleton_method(:write) { |data| true }
+    sse_mock.stream.define_singleton_method(:write) { |_data| true }
 
     # Call the write_sse_event method
     controller.send(:write_sse_event, sse_mock, @session, { test: "payload" }.to_json)

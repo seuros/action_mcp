@@ -28,7 +28,7 @@ module ActionMCP
         def log_process_action(payload)
           messages = super
           mcp_runtime = payload[:mcp_runtime]
-          messages << (format("MCP: %.1fms", mcp_runtime.to_f)) if mcp_runtime
+          messages << format("MCP: %.1fms", mcp_runtime.to_f) if mcp_runtime
           messages
         end
       end

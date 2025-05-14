@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class InspectorSchemaValidationTest < ActiveSupport::TestCase
@@ -28,7 +30,7 @@ class InspectorSchemaValidationTest < ActiveSupport::TestCase
       assert prop_def.key?(:type), "Property #{prop_name} must have a type for tool #{tool_definition[:name]}"
 
       # Validate type is one of the allowed JSON Schema types
-      valid_types = [ "string", "number", "integer", "boolean", "array", "object", "null" ]
+      valid_types = %w[string number integer boolean array object null]
       assert valid_types.include?(prop_def[:type]),
              "Property #{prop_name} has invalid type '#{prop_def[:type]}' for tool #{tool_definition[:name]}"
     end
@@ -137,7 +139,7 @@ class InspectorSchemaValidationTest < ActiveSupport::TestCase
     assert schema[:properties].is_a?(Hash), "Properties must be an object"
 
     # 5. Properties must all have valid types
-    schema[:properties].each do |name, prop|
+    schema[:properties].each_value do |prop|
       assert prop.is_a?(Hash), "Property definition must be an object"
       assert prop[:type].is_a?(String), "Property type must be a string"
     end

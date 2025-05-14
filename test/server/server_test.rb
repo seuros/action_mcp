@@ -12,7 +12,11 @@ module ActionMCP
       def teardown
         @temp_files.each do |file|
           file.close
-          file.unlink rescue nil
+          begin
+            file.unlink
+          rescue StandardError
+            nil
+          end
         end
       end
 
@@ -73,18 +77,18 @@ module ActionMCP
         assert_instance_of SimplePubSub, adapter1
 
         # Now update to solid_cable adapter if available
-        if defined?(SolidCable)
-          config_file2 = create_temp_config_file(
-            "test" => { "adapter" => "solid_cable" }
-          )
-          @temp_files << config_file2
+        return unless defined?(SolidCable)
 
-          server.configure(config_file2.path)
-          adapter2 = server.pubsub
+        config_file2 = create_temp_config_file(
+          "test" => { "adapter" => "solid_cable" }
+        )
+        @temp_files << config_file2
 
-          assert_instance_of SolidCableAdapter, adapter2
-          refute_same adapter1, adapter2
-        end
+        server.configure(config_file2.path)
+        adapter2 = server.pubsub
+
+        assert_instance_of SolidCableAdapter, adapter2
+        refute_same adapter1, adapter2
       end
 
       def test_fallback_to_simple_for_missing_adapter

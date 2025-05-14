@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # This file is auto-generated from the current state of the database. Instead
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
@@ -10,7 +12,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
+ActiveRecord::Schema[8.0].define(version: 20_250_512_154_359) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,7 +79,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "created_at" ], name: "index_action_mcp_sse_events_on_created_at"
-    t.index [ "session_id", "event_id" ], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
+    t.index %w[session_id event_id], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
     t.index [ "session_id" ], name: "index_action_mcp_sse_events_on_session_id"
   end
 
@@ -98,7 +100,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.bigint "key_hash", null: false
     t.integer "byte_size", null: false
     t.index [ "byte_size" ], name: "index_solid_cache_entries_on_byte_size"
-    t.index [ "key_hash", "byte_size" ], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index %w[key_hash byte_size], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
     t.index [ "key_hash" ], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
@@ -109,8 +111,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.string "concurrency_key", null: false
     t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
-    t.index [ "concurrency_key", "priority", "job_id" ], name: "index_solid_queue_blocked_executions_for_release"
-    t.index [ "expires_at", "concurrency_key" ], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index %w[concurrency_key priority job_id], name: "index_solid_queue_blocked_executions_for_release"
+    t.index %w[expires_at concurrency_key], name: "index_solid_queue_blocked_executions_for_maintenance"
     t.index [ "job_id" ], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
   end
 
@@ -119,7 +121,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.bigint "process_id"
     t.datetime "created_at", null: false
     t.index [ "job_id" ], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
-    t.index [ "process_id", "job_id" ], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+    t.index %w[process_id job_id], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
   end
 
   create_table "solid_queue_failed_executions", force: :cascade do |t|
@@ -143,8 +145,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.index [ "active_job_id" ], name: "index_solid_queue_jobs_on_active_job_id"
     t.index [ "class_name" ], name: "index_solid_queue_jobs_on_class_name"
     t.index [ "finished_at" ], name: "index_solid_queue_jobs_on_finished_at"
-    t.index [ "queue_name", "finished_at" ], name: "index_solid_queue_jobs_for_filtering"
-    t.index [ "scheduled_at", "finished_at" ], name: "index_solid_queue_jobs_for_alerting"
+    t.index %w[queue_name finished_at], name: "index_solid_queue_jobs_for_filtering"
+    t.index %w[scheduled_at finished_at], name: "index_solid_queue_jobs_for_alerting"
   end
 
   create_table "solid_queue_pauses", force: :cascade do |t|
@@ -163,7 +165,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.index [ "last_heartbeat_at" ], name: "index_solid_queue_processes_on_last_heartbeat_at"
-    t.index [ "name", "supervisor_id" ], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index %w[name supervisor_id], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
     t.index [ "supervisor_id" ], name: "index_solid_queue_processes_on_supervisor_id"
   end
 
@@ -173,8 +175,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.integer "priority", default: 0, null: false
     t.datetime "created_at", null: false
     t.index [ "job_id" ], name: "index_solid_queue_ready_executions_on_job_id", unique: true
-    t.index [ "priority", "job_id" ], name: "index_solid_queue_poll_all"
-    t.index [ "queue_name", "priority", "job_id" ], name: "index_solid_queue_poll_by_queue"
+    t.index %w[priority job_id], name: "index_solid_queue_poll_all"
+    t.index %w[queue_name priority job_id], name: "index_solid_queue_poll_by_queue"
   end
 
   create_table "solid_queue_recurring_executions", force: :cascade do |t|
@@ -183,7 +185,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.datetime "run_at", null: false
     t.datetime "created_at", null: false
     t.index [ "job_id" ], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
-    t.index [ "task_key", "run_at" ], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+    t.index %w[task_key run_at], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at",
+                                 unique: true
   end
 
   create_table "solid_queue_recurring_tasks", force: :cascade do |t|
@@ -209,7 +212,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.datetime "scheduled_at", null: false
     t.datetime "created_at", null: false
     t.index [ "job_id" ], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
-    t.index [ "scheduled_at", "priority", "job_id" ], name: "index_solid_queue_dispatch_all"
+    t.index %w[scheduled_at priority job_id], name: "index_solid_queue_dispatch_all"
   end
 
   create_table "solid_queue_semaphores", force: :cascade do |t|
@@ -219,11 +222,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_154359) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "expires_at" ], name: "index_solid_queue_semaphores_on_expires_at"
-    t.index [ "key", "value" ], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index %w[key value], name: "index_solid_queue_semaphores_on_key_and_value"
     t.index [ "key" ], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
-  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id", name: "fk_action_mcp_session_messages_session_id", on_update: :cascade, on_delete: :cascade
+  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id",
+                                                                        name: "fk_action_mcp_session_messages_session_id", on_update: :cascade, on_delete: :cascade
   add_foreign_key "action_mcp_session_resources", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_session_subscriptions", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_sse_events", "action_mcp_sessions", column: "session_id"

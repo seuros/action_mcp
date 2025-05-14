@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 # This test simulates how MCP Inspector would interact with our server
@@ -160,12 +162,11 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
          },
          params: cancel_notification.to_json
 
-    assert_includes [ 200, 202 ], response.status, "Cancellation notification should be accepted with 200 OK or 202 Accepted"
+    assert_includes [ 200, 202 ], response.status,
+                    "Cancellation notification should be accepted with 200 OK or 202 Accepted"
   end
 
   def track_progress_notifications(progress_token)
-    notifications = []
-
     original_send_progress = ActionMCP::Session.instance_method(:send_progress_notification)
     ActionMCP::Session.class_eval do
       define_method(:send_progress_notification) do |progressToken:, progress:, total: nil, message: nil, **options|

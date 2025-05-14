@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # test/dummy/app/mcp/tools/progress_2025_demo_tool.rb
 class Progress2025DemoTool < ApplicationMCPTool
   tool_name "progress_2025_demo"
@@ -48,7 +50,7 @@ class Progress2025DemoTool < ApplicationMCPTool
     end
 
     # For testing, generate a consistent test token based on the execution time
-    @progress_token ||= "test_progress_token_#{Time.now.to_i}"
+    @extract_progress_token ||= "test_progress_token_#{Time.now.to_i}"
   end
 
   def send_2025_progress_notification(progress_token:, current:, total:, item_name:)

@@ -47,5 +47,32 @@ module ActionMCP
     initializer "action_mcp.logger" do
       ActionMCP.logger = ::Rails.logger
     end
+
+    # Add metrics instrumentation
+    initializer "action_mcp.metrics" do
+      ActiveSupport::Notifications.subscribe "process_action.action_controller" do |name, start, finish, id, payload|
+        if payload[:controller].to_s.start_with?("ActionMCP::")
+          # Process action through our log subscriber
+          ActionMCP::LogSubscriber.new.process_action(
+            ActiveSupport::Notifications::Event.new(name, start, finish, id, payload)
+          )
+        end
+      end
+
+      # Set up default event metrics
+      # SQL queries
+      ActionMCP::LogSubscriber.subscribe_event "sql.active_record", :db_queries, accumulate: true
+
+      # Query runtime
+      ActionMCP::LogSubscriber.subscribe_event "sql.active_record", :sql_runtime,
+                                               duration: true, accumulate: true
+
+      # View rendering
+      ActionMCP::LogSubscriber.subscribe_event "render_template.action_view", :view_runtime,
+                                               duration: true, accumulate: true
+
+      # Cache operations
+      ActionMCP::LogSubscriber.subscribe_event "cache_*.*", :cache_operations, accumulate: true
+    end
   end
 end

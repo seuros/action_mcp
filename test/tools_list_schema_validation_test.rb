@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
@@ -78,9 +80,9 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
 
     # Call the format_source tool
     response = call_tool(@session_id, "format_source", {
-      source_code: "function   hello()   {   return   'world';   }",
-      language: "javascript"
-    })
+                           source_code: "function   hello()   {   return   'world';   }",
+                           language: "javascript"
+                         })
 
     # Verify response
     assert_response :ok

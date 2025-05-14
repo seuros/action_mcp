@@ -6,10 +6,14 @@ module TransportMocks
   class DummySession
     attr_reader :written
 
-    def write(data)  = @written = data            # Capture the data like it's a rare Pokémon.
-    def read         = nil                        # Input? Absolutely not. This is a write-only lifestyle.
-    def initialize!  = true                       # Pretend everything's fine. It’s faster that way.
-    def initialized? = true                       # We’re *always* ready. Emotionally? Not so much.
+    # Capture the data like it's a rare Pokémon.
+    def write(data)  = @written = data
+    # Input? Absolutely not. This is a write-only lifestyle.
+    def read         = nil
+    # Pretend everything's fine. It’s faster that way.
+    def initialize!  = true
+    # We’re *always* ready. Emotionally? Not so much.
+    def initialized? = true
 
     def send_progress_notification(**params)
       handler = ActionMCP::Server::TransportHandler.new(self)
@@ -55,12 +59,12 @@ module TransportMocks
     def send_initialize_request
       @initialize_req_id = "init-#{SecureRandom.hex(4)}"
       req = JSON_RPC::Request.new(
-        id:     @initialize_req_id,
+        id: @initialize_req_id,
         method: "initialize",
         params: {
           protocolVersion: "2025-03-26",
-          capabilities:    {},
-          clientInfo:      { name: "TestClient", version: "1.0.0" }
+          capabilities: {},
+          clientInfo: { name: "TestClient", version: "1.0.0" }
         }
       )
       send_message(req.to_json)
@@ -165,11 +169,11 @@ module TransportMocks
     # Sends a hardcoded capabilities payload. Basically a resumé, but JSONRPC
     def send_capabilities_response(request_id)
       resp = JSON_RPC::Response.new(
-        id:     request_id,
+        id: request_id,
         result: {
           protocolVersion: "2025-03-26",
-          serverInfo:      { name: "TestServer", version: "1.0.0" },
-          capabilities:    {
+          serverInfo: { name: "TestServer", version: "1.0.0" },
+          capabilities: {
             tools: { listChanged: false },
             prompts: { listChanged: false },
             resources: { subscribe: true, listChanged: false },

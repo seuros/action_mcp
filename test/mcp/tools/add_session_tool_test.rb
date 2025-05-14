@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class AddSessionToolTest < ActiveSupport::TestCase
@@ -16,7 +18,7 @@ class AddSessionToolTest < ActiveSupport::TestCase
     assert result.success?
     assert_includes result.contents.first.text, "successfully added"
     assert_includes @session.tool_registry, "calculate_sum"
-    assert @session.registered_tools.any? { |t| t.tool_name == "calculate_sum" }
+    assert(@session.registered_tools.any? { |t| t.tool_name == "calculate_sum" })
   end
 
   test "handles non-existent tool gracefully" do

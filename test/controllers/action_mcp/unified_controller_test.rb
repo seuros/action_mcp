@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
-  class BasicMCPFlowTest < ActionDispatch::IntegrationTest
+  class UnifiedControllerTest < ActionDispatch::IntegrationTest
     def app
       ActionMCP::Engine
     end
@@ -32,43 +34,29 @@ module ActionMCP
            },
            params: init_request.to_json
 
-      # Both 200 OK and 400 Bad Request are valid responses for unsupported protocol version
-      assert_includes [ 200, 400 ], response.status
+      assert_response :success
 
       # Parse the initialization response
       init_response = response.parsed_body
       assert_equal "2.0", init_response["jsonrpc"]
-      # ID might be nil in current implementation
-      if init_response["id"].nil?
-        # If ID is nil, that's acceptable in this implementation
-        assert_nil init_response["id"]
-      else
-        # If ID is provided, it should match the request ID
-        assert_equal "init-1", init_response["id"], "ID should be preserved in response"
-      end
-      # We might get a result or an error
-      if init_response.key?("error")
-        assert_not_nil init_response["error"], "Should have error details if error present"
-      else
-        assert_not_nil init_response["result"], "Should have a result if no error"
-      end
+
+      assert_equal "init-1", init_response["id"], "ID should be preserved in response"
+      assert_not_nil init_response["result"], "Should have a result if no error"
 
       # Extract session ID from header
       session_id = response.headers["Mcp-Session-Id"]
       assert_not_nil session_id, "Session ID should be present in Mcp-Session-Id header"
 
       # Only verify capabilities if we got a success result
-      if init_response.key?("result") && init_response["result"]
-        # Verify server capabilities
-        capabilities = init_response["result"]["capabilities"]
-        if capabilities
-          assert_not_nil capabilities["tools"], "Server should expose tools capability"
-          assert_not_nil capabilities["prompts"], "Server should expose prompts capability"
-        end
+      capabilities = init_response["result"]["capabilities"]
+      assert_not_nil capabilities["tools"], "Server should expose tools capability"
+      assert_not_nil capabilities["prompts"], "Server should expose prompts capability"
+      assert_not_nil capabilities["resources"]
+      assert_not_nil capabilities["logging"]
+      assert_not_nil capabilities["resumability"]
 
-        # Verify protocol version matches
-        assert_equal "2025-03-26", init_response["result"]["protocolVersion"]
-      end
+      # Verify protocol version matches
+      assert_equal "2025-03-26", init_response["result"]["protocolVersion"]
 
       # ====================================================================
       # STEP 2: Send initialized notification (required by protocol)
@@ -87,9 +75,8 @@ module ActionMCP
            },
            params: initialized_notification.to_json
 
-      # The server might return 200 OK or 202 Accepted for notifications
-      assert_includes [ 200, 202 ], response.status
-      # Body might be empty or have a minimal response
+      # The server might return 202 Accepted for notifications
+      assert_response :accepted
 
       # ====================================================================
       # STEP 3: List available tools
@@ -114,18 +101,10 @@ module ActionMCP
       # Parse the tools list response
       tools_response = response.parsed_body
       assert_equal "2.0", tools_response["jsonrpc"]
-      # ID might be nil in current implementation
-      if tools_response["id"].nil?
-        # If ID is nil, that's acceptable in this implementation
-        assert_nil tools_response["id"]
-      else
-        # If ID is provided, it should match the request ID
-        assert_equal "list-tools-1", tools_response["id"], "ID should be preserved in response"
-      end
+      assert_equal "list-tools-1", tools_response["id"], "ID should be preserved in response"
       assert_not_nil tools_response["result"]
 
-      # Verify tools are returned if result is present
-      if tools_response["result"] && tools_response["result"]["tools"]
+        # Verify tools are returned if result is present
         tools = tools_response["result"]["tools"]
         assert_instance_of Array, tools
         assert_not_empty tools, "Server should have at least one tool"
@@ -136,14 +115,6 @@ module ActionMCP
 
         # Verify tool structure
         assert_equal "calculate_sum", calculate_sum_tool["name"]
-      else
-        skip "No tools returned in response - implementation might have changed"
-      end
-
-      # Skip the remaining tool structure checks if we didn't get a valid tool
-      unless defined?(calculate_sum_tool) && calculate_sum_tool
-        skip "calculate_sum_tool is not available - implementation might have changed"
-      end
 
       # These checks only run if we found the calculate_sum_tool
       assert_not_nil calculate_sum_tool["description"]
@@ -183,20 +154,11 @@ module ActionMCP
       # Parse the tool call response
       call_response = response.parsed_body
       assert_equal "2.0", call_response["jsonrpc"]
-      # ID might be nil in current implementation
-      if call_response["id"].nil?
-        # If ID is nil, that's acceptable in this implementation
-        assert_nil call_response["id"]
-      else
-        # If ID is provided, it should match the request ID
         assert_equal "call-tool-1", call_response["id"], "ID should be preserved in response"
-      end
 
-      if call_response["result"]
         assert_not_nil call_response["result"]
 
-        # Verify tool execution result if we have content
-        if call_response["result"]["content"]
+          # Verify tool execution result if we have content
           content = call_response["result"]["content"]
           assert_instance_of Array, content
           assert_not_empty content
@@ -205,12 +167,6 @@ module ActionMCP
           text_content = content.find { |item| item["type"] == "text" }
           assert_not_nil text_content, "Tool should return text content"
           assert_equal "40.0", text_content["text"], "15 + 25 should equal 40"
-        else
-          skip "No content in tool response - implementation might have changed"
-        end
-      else
-        skip "No result in tool response - implementation might have changed"
-      end
 
       # ====================================================================
       # STEP 5: List available prompts (optional verification)
@@ -233,10 +189,7 @@ module ActionMCP
       assert_response :ok
 
       prompts_response = response.parsed_body
-      if prompts_response["result"]
-        assert_not_nil prompts_response["result"]["prompts"]
-      end
-
+      assert_not_nil prompts_response["result"]["prompts"] if prompts_response["result"]
       # ====================================================================
       # STEP 6: Verify session state
       # ====================================================================
@@ -289,7 +242,7 @@ module ActionMCP
         id: "bad-init",
         method: "initialize",
         params: {
-          protocolVersion: "1.0.0",  # Wrong version
+          protocolVersion: "1.0.0", # Wrong version
           clientInfo: { name: "Test", version: "1.0" },
           capabilities: {}
         }
@@ -307,12 +260,10 @@ module ActionMCP
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
       # Error code can be -32000 (server error) or -32602 (invalid params)
-      assert_includes [ -32000, -32602 ], error_response["error"]["code"]
+      assert_includes [ -32_000, -32_602 ], error_response["error"]["code"]
       assert_match(/Unsupported protocol version/, error_response["error"]["message"])
       # The ID should match the request ID if present
-      if error_response["id"]
-        assert_equal "bad-init", error_response["id"]
-      end
+      assert_equal "bad-init", error_response["id"] if error_response["id"]
     end
   end
 end

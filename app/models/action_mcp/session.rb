@@ -167,9 +167,7 @@ module ActionMCP
       )
 
       # Maintain cache limit by removing oldest events if needed
-      if sse_events.count > max_events
-        sse_events.order(event_id: :asc).limit(sse_events.count - max_events).destroy_all
-      end
+      sse_events.order(event_id: :asc).limit(sse_events.count - max_events).destroy_all if sse_events.count > max_events
 
       event
     end
@@ -240,10 +238,10 @@ module ActionMCP
       tool_name = normalize_name(tool_class_or_name, :tool)
       self.tool_registry ||= []
 
-      if self.tool_registry.delete(tool_name)
-        save!
-        send_tools_list_changed_notification
-      end
+      return unless self.tool_registry.delete(tool_name)
+
+      save!
+      send_tools_list_changed_notification
     end
 
     def register_prompt(prompt_class_or_name)
@@ -263,10 +261,10 @@ module ActionMCP
       prompt_name = normalize_name(prompt_class_or_name, :prompt)
       self.prompt_registry ||= []
 
-      if self.prompt_registry.delete(prompt_name)
-        save!
-        send_prompts_list_changed_notification
-      end
+      return unless self.prompt_registry.delete(prompt_name)
+
+      save!
+      send_prompts_list_changed_notification
     end
 
     def register_resource_template(template_class_or_name)
@@ -286,28 +284,34 @@ module ActionMCP
       template_name = normalize_name(template_class_or_name, :resource_template)
       self.resource_registry ||= []
 
-      if self.resource_registry.delete(template_name)
-        save!
-        send_resources_list_changed_notification
-      end
+      return unless self.resource_registry.delete(template_name)
+
+      save!
+      send_resources_list_changed_notification
     end
 
     # Get registered items for this session
     def registered_tools
       (self.tool_registry || []).filter_map do |tool_name|
-        ActionMCP::ToolsRegistry.find(tool_name) rescue nil
+        ActionMCP::ToolsRegistry.find(tool_name)
+      rescue StandardError
+        nil
       end
     end
 
     def registered_prompts
       (self.prompt_registry || []).filter_map do |prompt_name|
-        ActionMCP::PromptsRegistry.find(prompt_name) rescue nil
+        ActionMCP::PromptsRegistry.find(prompt_name)
+      rescue StandardError
+        nil
       end
     end
 
     def registered_resource_templates
       (self.resource_registry || []).filter_map do |template_name|
-        ActionMCP::ResourceTemplatesRegistry.find(template_name) rescue nil
+        ActionMCP::ResourceTemplatesRegistry.find(template_name)
+      rescue StandardError
+        nil
       end
     end
 
@@ -379,21 +383,21 @@ module ActionMCP
 
     def send_tools_list_changed_notification
       # Only send if server capabilities allow it
-      if server_capabilities.dig("tools", "listChanged")
-        write(JSON_RPC::Notification.new(method: "notifications/tools/list_changed"))
-      end
+      return unless server_capabilities.dig("tools", "listChanged")
+
+      write(JSON_RPC::Notification.new(method: "notifications/tools/list_changed"))
     end
 
     def send_prompts_list_changed_notification
-      if server_capabilities.dig("prompts", "listChanged")
-        write(JSON_RPC::Notification.new(method: "notifications/prompts/list_changed"))
-      end
+      return unless server_capabilities.dig("prompts", "listChanged")
+
+      write(JSON_RPC::Notification.new(method: "notifications/prompts/list_changed"))
     end
 
     def send_resources_list_changed_notification
-      if server_capabilities.dig("resources", "listChanged")
-        write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
-      end
+      return unless server_capabilities.dig("resources", "listChanged")
+
+      write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
     end
   end
 end
