@@ -11,7 +11,7 @@ module ActionMCP
     include ActionController::Live
 
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
-    # @route GET /mcp
+    # @route GET /
     def show
       # 1. Check Accept Header
       unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
@@ -77,7 +77,7 @@ module ActionMCP
 
             # Send each missed event to the client
             missed_events.each do |event|
-              sse.stream.write(event.to_sse)
+              sse.write(event.to_sse)
             end
           else
             Rails.logger.info "Unified SSE (GET): No missed events to send for session: #{session.id}"
@@ -191,7 +191,7 @@ module ActionMCP
     end
 
     # Handles DELETE requests for session termination (2025-03-26 spec).
-    # @route DELETE /mcp
+    # @route DELETE /
     def destroy
       # 1. Check Session Header
       session_id_from_header = extract_session_id
@@ -359,7 +359,7 @@ module ActionMCP
       sse_event = "id: #{event_id}\ndata: #{data}\n\n"
 
       # Write to the stream
-      sse.stream.write(sse_event)
+      sse.write(sse_event)
 
       # Store the event for potential resumption if resumability is enabled
       return unless ActionMCP.configuration.enable_sse_resumability
