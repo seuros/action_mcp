@@ -8,6 +8,58 @@ module ActionMCP
       ActionMCP::Engine
     end
 
+    test "SSE response and JSON responses work correctly" do
+      # Save original preference
+      original_preference = ActionMCP.configuration.post_response_preference
+
+      # Setup a session
+      session = ActionMCP::Session.create!(initialized: true)
+      session_id = session.id
+
+      # Create a JSON-RPC request to trigger response
+      request_payload = {
+        jsonrpc: "2.0",
+        id: "test-sse-1",
+        method: "tools/list"
+      }
+
+      # Test 1: Force SSE response by setting server preference
+      ActionMCP.configuration.post_response_preference = :sse
+
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
+             "Mcp-Session-Id" => session_id
+           },
+           params: request_payload.to_json
+
+      # Verify SSE response
+      assert_response :success
+      assert_equal "text/event-stream", response.headers["Content-Type"]
+      assert_match(/id: \d+/, response.body)
+      assert_match(/data:/, response.body)
+
+      # Test 2: Force JSON response by setting server preference
+      ActionMCP.configuration.post_response_preference = :json
+
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
+             "Mcp-Session-Id" => session_id
+           },
+           params: request_payload.to_json
+
+      # Verify JSON response
+      assert_response :success
+      assert_equal "application/json", response.headers["Content-Type"]
+      assert_not_nil response.parsed_body["result"]
+
+      # Restore original preference
+      ActionMCP.configuration.post_response_preference = original_preference
+    end
+
     test "complete basic MCP workflow - initialize, list tools, call tool" do
       # ====================================================================
       # STEP 1: Initialize the session
