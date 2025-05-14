@@ -6,20 +6,25 @@ module ActionMCP
     # Base class for MCP content items.
     class Base
       # @return [Symbol] The type of content.
-      attr_reader :type
+      # @return [Hash, nil] Optional annotations for the content.
+      attr_reader :type, :annotations
 
       # Initializes a new content item.
       #
       # @param type [Symbol] The type of content.
-      def initialize(type)
+      # @param annotations [Hash, nil] Optional annotations for the content.
+      def initialize(type, annotations: nil)
         @type = type
+        @annotations = annotations
       end
 
       # Returns a hash representation of the content.
       #
       # @return [Hash] The hash representation.
       def to_h
-        { type: @type }
+        h = { type: @type }
+        h[:annotations] = @annotations if @annotations
+        h
       end
 
       # Returns a JSON representation of the content.

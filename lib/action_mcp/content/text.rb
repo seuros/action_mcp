@@ -10,8 +10,9 @@ module ActionMCP
       # Initializes a new Text content.
       #
       # @param text [String] The text content.
-      def initialize(text)
-        super("text")
+      # @param annotations [Hash, nil] Optional annotations for the content.
+      def initialize(text, annotations: nil)
+        super("text", annotations: annotations)
         @text = text.to_s
       end
 

@@ -104,6 +104,19 @@ module ActionMCP
         assert_equal "Primary application entry point", hash["description"]
         assert_equal "text/x-rust", hash["mimeType"]
       end
+
+      test "resource supports annotations" do
+        annotated_resource = Catalog::Resource.new({
+          "uri" => "file:///tmp/annotated.txt",
+          "name" => "annotated.txt",
+          "description" => "Annotated resource",
+          "mimeType" => "text/plain",
+          "annotations" => { "audience" => [ "user" ], "priority" => 1 }
+        })
+        assert_equal({ "audience" => [ "user" ], "priority" => 1 }, annotated_resource.annotations)
+        hash = annotated_resource.to_h
+        assert_equal({ "audience" => [ "user" ], "priority" => 1 }, hash["annotations"])
+      end
     end
   end
 end

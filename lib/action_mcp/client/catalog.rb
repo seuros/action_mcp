@@ -103,7 +103,7 @@ module ActionMCP
 
       # Internal Resource class to represent individual resources
       class Resource
-        attr_reader :uri, :name, :description, :mime_type
+        attr_reader :uri, :name, :description, :mime_type, :annotations
 
         # Initialize a new Resource instance
         #
@@ -113,6 +113,7 @@ module ActionMCP
           @name = data["name"]
           @description = data["description"]
           @mime_type = data["mimeType"]
+          @annotations = data["annotations"] || {}
         end
 
         # Get the file extension from the resource name
@@ -153,7 +154,8 @@ module ActionMCP
             "uri" => @uri,
             "name" => @name,
             "description" => @description,
-            "mimeType" => @mime_type
+            "mimeType" => @mime_type,
+            "annotations" => @annotations
           }
         end
       end

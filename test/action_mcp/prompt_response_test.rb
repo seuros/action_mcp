@@ -6,8 +6,8 @@ module ActionMCP
   class PromptResponseTest < ActiveSupport::TestCase
     setup do
       @response = PromptResponse.new
-      @text_content = Content::Text.new("Hello world")
-      @image_content = Content::Image.new("base64data", "image/png")
+      @text_content = Content::Text.new("Hello world", annotations: nil)
+      @image_content = Content::Image.new("base64data", "image/png", annotations: nil)
     end
 
     test "initializes with empty messages" do
