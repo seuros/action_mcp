@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.2...action_mcp/v0.50.3) (2025-05-14)
+
+
+### Bug Fixes
+
+* don't ask for sse for clients that don't support it ([#66](https://github.com/seuros/action_mcp/issues/66)) ([ac59ca4](https://github.com/seuros/action_mcp/commit/ac59ca491a25c89561dbc8c3c9ae27fccfa00363))
+* fix streaming answer ([#63](https://github.com/seuros/action_mcp/issues/63)) ([2fed687](https://github.com/seuros/action_mcp/commit/2fed6874a72f79444c2a01e34cf510c814f6076f))
+* merge controllers , we need just one now ([#65](https://github.com/seuros/action_mcp/issues/65)) ([c89e538](https://github.com/seuros/action_mcp/commit/c89e538c7154330b11296ba27809303ae6e19a24))
+
 ## [0.50.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.1...action_mcp/v0.50.2) (2025-05-14)
 
 
