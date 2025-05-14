@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.6](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.5...action_mcp/v0.50.6) (2025-05-14)
+
+
+### Bug Fixes
+
+* restore pings, become somehow i removed them while sleep coding ([#72](https://github.com/seuros/action_mcp/issues/72)) ([99f13d0](https://github.com/seuros/action_mcp/commit/99f13d01311c3bcbef831bd90e764e93379841f4))
+
 ## [0.50.5](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.4...action_mcp/v0.50.5) (2025-05-14)
 
 
