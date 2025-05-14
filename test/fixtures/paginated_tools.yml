@@ -1,0 +1,94 @@
+---
+page1:
+  items:
+    - name: "weather_forecast"
+      description: "Get detailed weather forecast for a location with progressive updates"
+      inputSchema:
+        type: "object"
+        properties:
+          location:
+            type: "string"
+            description: "City name or postal code"
+          days:
+            type: "integer"
+            description: "Number of forecast days (1-7)"
+        required:
+          - location
+    - name: "calculate_sum"
+      description: "Calculate the sum of two numbers"
+      inputSchema:
+        type: "object"
+        properties:
+          number1:
+            type: "number"
+            description: "The first number"
+          number2:
+            type: "number"
+            description: "The second number"
+        required:
+          - number1
+          - number2
+    - name: "format_code"
+      description: "Format source code according to style guidelines"
+      inputSchema:
+        type: "object"
+        properties:
+          code:
+            type: "string"
+            description: "Source code to format"
+        required:
+          - code
+  next_cursor: "next-page-2"
+  total: 7
+
+page2:
+  items:
+    - name: "add_tool"
+      description: "Add a new tool to the toolbox"
+      inputSchema:
+        type: "object"
+        properties:
+          tool_name:
+            type: "string"
+            description: "Name of the tool to add"
+        required:
+          - tool_name
+    - name: "checksum_checker"
+      description: "Check the checksum of a file"
+      inputSchema:
+        type: "object"
+        properties:
+          file_path:
+            type: "string"
+            description: "Path to the file"
+        required:
+          - file_path
+    - name: "numeric_array_tool"
+      description: "Perform operations on numeric arrays"
+      inputSchema:
+        type: "object"
+        properties:
+          numbers:
+            type: "array"
+            items:
+              type: "number"
+            description: "Array of numbers"
+        required:
+          - numbers
+  next_cursor: "next-page-3"
+  total: 7
+
+page3:
+  items:
+    - name: "progress2025_demo_tool"
+      description: "Demonstrate progress notifications for MCP 2025"
+      inputSchema:
+        type: "object"
+        properties:
+          demo_param:
+            type: "string"
+            description: "Demo parameter"
+        required:
+          - demo_param
+  next_cursor: null
+  total: 7

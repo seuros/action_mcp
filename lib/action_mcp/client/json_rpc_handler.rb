@@ -85,15 +85,23 @@ module ActionMCP
         case request.rpc_method
         when "tools/list"
           client.toolbox.tools = result["tools"]
+          client.toolbox.instance_variable_set(:@next_cursor, result["nextCursor"])
+          client.toolbox.instance_variable_set(:@total, result["tools"]&.size || 0)
           return true
         when "prompts/list"
           client.prompt_book.prompts = result["prompts"]
+          client.prompt_book.instance_variable_set(:@next_cursor, result["nextCursor"])
+          client.prompt_book.instance_variable_set(:@total, result["prompts"]&.size || 0)
           return true
         when "resources/list"
           client.catalog.resources = result["resources"]
+          client.catalog.instance_variable_set(:@next_cursor, result["nextCursor"])
+          client.catalog.instance_variable_set(:@total, result["resources"]&.size || 0)
           return true
         when "resources/templates/list"
           client.blueprint.templates = result["resourceTemplates"]
+          client.blueprint.instance_variable_set(:@next_cursor, result["nextCursor"])
+          client.blueprint.instance_variable_set(:@total, result["resourceTemplates"]&.size || 0)
           return true
         end
 

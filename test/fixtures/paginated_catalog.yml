@@ -1,0 +1,55 @@
+---
+page1:
+  items:
+    - uri: "file:///page1/item1.rb"
+      name: "item1.rb"
+      description: "First item on page 1"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page1/item2.rb"
+      name: "item2.rb"
+      description: "Second item on page 1"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page1/item3.md"
+      name: "item3.md"
+      description: "Third item on page 1"
+      mimeType: "text/markdown"
+  next_cursor: "next-page-2"
+  total: 10
+
+page2:
+  items:
+    - uri: "file:///page2/item4.rb"
+      name: "item4.rb"
+      description: "First item on page 2"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page2/item5.js"
+      name: "item5.js"
+      description: "Second item on page 2"
+      mimeType: "application/javascript"
+    - uri: "file:///page2/item6.md"
+      name: "item6.md"
+      description: "Third item on page 2"
+      mimeType: "text/markdown"
+  next_cursor: "next-page-3"
+  total: 10
+
+page3:
+  items:
+    - uri: "file:///page3/item7.rb"
+      name: "item7.rb"
+      description: "First item on page 3"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page3/item8.css"
+      name: "item8.css"
+      description: "Second item on page 3"
+      mimeType: "text/css"
+    - uri: "file:///page3/item9.html"
+      name: "item9.html"
+      description: "Third item on page 3"
+      mimeType: "text/html"
+    - uri: "file:///page3/item10.js"
+      name: "item10.js"
+      description: "Fourth item on page 3"
+      mimeType: "application/javascript"
+  next_cursor: null
+  total: 10

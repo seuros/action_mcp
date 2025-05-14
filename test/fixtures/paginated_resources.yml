@@ -1,0 +1,47 @@
+---
+page1:
+  items:
+    - uri: "file:///page1/resource1.txt"
+      name: "resource1.txt"
+      description: "First resource on page 1"
+      mimeType: "text/plain"
+    - uri: "file:///page1/resource2.rb"
+      name: "resource2.rb"
+      description: "Second resource on page 1"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page1/resource3.md"
+      name: "resource3.md"
+      description: "Third resource on page 1"
+      mimeType: "text/markdown"
+  next_cursor: "next-page-2"
+  total: 8
+
+page2:
+  items:
+    - uri: "file:///page2/resource4.rb"
+      name: "resource4.rb"
+      description: "First resource on page 2"
+      mimeType: "text/x-ruby"
+    - uri: "file:///page2/resource5.js"
+      name: "resource5.js"
+      description: "Second resource on page 2"
+      mimeType: "application/javascript"
+    - uri: "file:///page2/resource6.md"
+      name: "resource6.md"
+      description: "Third resource on page 2"
+      mimeType: "text/markdown"
+  next_cursor: "next-page-3"
+  total: 8
+
+page3:
+  items:
+    - uri: "file:///page3/resource7.css"
+      name: "resource7.css"
+      description: "First resource on page 3"
+      mimeType: "text/css"
+    - uri: "file:///page3/resource8.html"
+      name: "resource8.html"
+      description: "Second resource on page 3"
+      mimeType: "text/html"
+  next_cursor: null
+  total: 8
