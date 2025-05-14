@@ -20,7 +20,7 @@ module ActionMCP
                    payload: { jsonrpc: "2.0", id: request_id, error: { code: -32_602, message: "Missing or invalid 'protocolVersion'" } } }
         end
         # Check if the protocol version is supported
-        unless ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
+        unless ActionMCP.configuration.vibed_ignore_version || ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
           error_data = {
             supported: ActionMCP::SUPPORTED_VERSIONS,
             requested: client_protocol_version
@@ -53,9 +53,15 @@ module ActionMCP
                    payload: { jsonrpc: "2.0", id: request_id, error: { code: -32_603, message: "Failed to initialize session" } } }
         end
 
-        # Send the successful response with the protocol version the client requested
+        # Send the successful response with the correct protocol version
         capabilities_payload = session.server_capabilities_payload
-        capabilities_payload[:protocolVersion] = client_protocol_version # Use the client's requested version
+        # If vibed_ignore_version is true, always use the latest supported version in the response
+        # Otherwise, use the client's requested version
+        if ActionMCP.configuration.vibed_ignore_version
+          capabilities_payload[:protocolVersion] = PROTOCOL_VERSION
+        else
+          capabilities_payload[:protocolVersion] = client_protocol_version
+        end
 
         send_jsonrpc_response(request_id, result: capabilities_payload)
         { type: :responses, id: request_id, payload: { jsonrpc: "2.0", id: request_id, result: capabilities_payload } }

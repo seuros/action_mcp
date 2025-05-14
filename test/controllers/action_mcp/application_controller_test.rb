@@ -346,5 +346,71 @@ module ActionMCP
       # The ID should match the request ID if present
       assert_equal "bad-init", error_response["id"] if error_response["id"]
     end
+
+    test "vibed_ignore_version: if true, protocol is always latest regardless of client version" do
+        original_vibed_ignore_version = ActionMCP.configuration.vibed_ignore_version
+
+        # First, observe default behavior (vibed_ignore_version = false)
+        ActionMCP.configuration.vibed_ignore_version = false
+
+        init_request = {
+          jsonrpc: "2.0",
+          id: "vibed-ignore-false",
+          method: "initialize",
+          params: {
+            protocolVersion: "1.0.0", # Wrong version that should cause error
+            clientInfo: { name: "Test", version: "1.0" },
+            capabilities: {}
+          }
+        }
+
+        post "/",
+             headers: {
+               "CONTENT_TYPE" => "application/json",
+               "ACCEPT" => "application/json, text/event-stream"
+             },
+             params: init_request.to_json
+
+        # With vibed_ignore_version = false, should get error response
+        error_response = response.parsed_body
+        assert_not_nil error_response["error"]
+        assert_match(/Unsupported protocol version/, error_response["error"]["message"])
+
+        # Now enable vibed_ignore_version and try again
+        ActionMCP.configuration.vibed_ignore_version = true
+
+        init_request = {
+          jsonrpc: "2.0",
+          id: "vibed-ignore-true",
+          method: "initialize",
+          params: {
+            protocolVersion: "1.0.0", # Wrong version, but should be ignored now
+            clientInfo: { name: "Test", version: "1.0" },
+            capabilities: {}
+          }
+        }
+
+        post "/",
+             headers: {
+               "CONTENT_TYPE" => "application/json",
+               "ACCEPT" => "application/json, text/event-stream"
+             },
+             params: init_request.to_json
+
+        # With vibed_ignore_version = true, should get successful response
+        assert_response :success
+        response_body = response.parsed_body
+        assert_equal "2.0", response_body["jsonrpc"]
+        assert_equal "vibed-ignore-true", response_body["id"]
+        assert_not_nil response_body["result"]
+        assert_equal "2025-03-26", response_body["result"]["protocolVersion"]
+
+        session_id = response.headers["Mcp-Session-Id"]
+        assert_not_nil session_id
+        session = ActionMCP::Session.find(session_id)
+        assert_equal "2025-03-26", session.protocol_version
+
+        ActionMCP.configuration.vibed_ignore_version = original_vibed_ignore_version
+      end
   end
 end
