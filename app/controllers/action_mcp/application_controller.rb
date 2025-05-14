@@ -35,8 +35,10 @@ module ActionMCP
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
     # @route GET /
     def show
-      unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
-        return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
+      if ActionMCP.configuration.post_response_preference == :sse
+        unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
+          return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
+        end
       end
 
       session_id_from_header = extract_session_id
