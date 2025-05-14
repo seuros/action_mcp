@@ -3,7 +3,7 @@
 require "test_helper"
 
 module ActionMCP
-  class UnifiedControllerTest < ActionDispatch::IntegrationTest
+  class ApplicationControllerTest < ActionDispatch::IntegrationTest
     def app
       ActionMCP::Engine
     end

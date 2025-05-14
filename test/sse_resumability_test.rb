@@ -85,7 +85,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
 
   test "events are stored when sent through SSE stream" do
     # Mock the write_sse_event method in the controller
-    controller = ActionMCP::UnifiedController.new
+    controller = ActionMCP::ApplicationController.new
     sse_mock = Object.new
     def sse_mock.write(data); true; end
     def sse_mock.close; end
@@ -167,7 +167,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     ActionMCP.configuration.enable_sse_resumability = false
 
     # Mock the write_sse_event method in the controller
-    controller = ActionMCP::UnifiedController.new
+    controller = ActionMCP::ApplicationController.new
     sse_mock = Object.new
     def sse_mock.write(data); true; end
     def sse_mock.close; end
