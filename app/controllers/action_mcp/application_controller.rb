@@ -30,15 +30,11 @@ module ActionMCP
       @session_key ||= "action_mcp-sessions-#{mcp_session.id}"
     end
 
-    # --- MCP UnifiedController actions ---
-
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
     # @route GET /
     def show
-      if ActionMCP.configuration.post_response_preference == :sse
-        unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
-          return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
-        end
+      unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
+        return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
       end
 
       session_id_from_header = extract_session_id
@@ -141,8 +137,8 @@ module ActionMCP
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
     # @route POST /mcp
     def create
-      unless accepts_valid_content_types?
-        return render_not_acceptable("Client must accept 'application/json' and 'text/event-stream'")
+      unless post_accept_headers_valid?
+        return render_not_acceptable(post_accept_headers_error_message)
       end
 
       is_initialize_request = check_if_initialize_request(jsonrpc_params)
@@ -229,6 +225,24 @@ module ActionMCP
     def accepts_valid_content_types?
       request.accepts.any? { |type| type.to_s == "application/json" } &&
         request.accepts.any? { |type| type.to_s == "text/event-stream" }
+    end
+
+    # Checks if the Accept headers for POST are valid according to server preference.
+    def post_accept_headers_valid?
+      if ActionMCP.configuration.post_response_preference == :sse
+        accepts_valid_content_types?
+      else
+        request.accepts.any? { |type| type.to_s == "application/json" }
+      end
+    end
+
+    # Returns the appropriate error message for POST Accept header validation.
+    def post_accept_headers_error_message
+      if ActionMCP.configuration.post_response_preference == :sse
+        "Client must accept 'application/json' and 'text/event-stream'"
+      else
+        "Client must accept 'application/json'"
+      end
     end
 
     # Checks if the parsed body represents an 'initialize' request.

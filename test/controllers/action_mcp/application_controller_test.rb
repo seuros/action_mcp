@@ -14,84 +14,49 @@ module ActionMCP
     end
   end
 
-  # Skip SSE tests as they tend to hang in test environment
-  class ApplicationControllerSSETest < ApplicationControllerTestBase
-    def test_all_sse_tests_skipped
-      skip "SSE tests tend to hang in test environment - all tests in this class are skipped"
+  class ApplicationControllerAcceptHeaderTest < ApplicationControllerTestBase
+    test "GET / always requires Accept: text/event-stream" do
+      skip "Skipping due to SSE stream hang in test environment"
     end
 
-    # Commented out to prevent test hangs
-    #
-    # test "GET / enforces Accept header for SSE only when preference is :sse" do
-    #   original_preference = ActionMCP.configuration.post_response_preference
-    #
-    #   # Setup a session
-    #   session = ActionMCP::Session.create!(initialized: true)
-    #   session_id = session.id
-    #
-    #   # Case 1: SSE preference, missing Accept header for text/event-stream
-    #   ActionMCP.configuration.post_response_preference = :sse
-    #
-    #   get "/",
-    #       headers: {
-    #         "Mcp-Session-Id" => session_id,
-    #         "ACCEPT" => "application/json"
-    #       }
-    #
-    #   assert_response :success
-    #   body = response.parsed_body
-    #   assert_equal(-32_002, body.dig("error", "code"))
-    #   assert_match(/Client must accept 'text\/event-stream'/, body.dig("error", "message"))
-    #
-    #   # Case 2: JSON preference, missing Accept header for text/event-stream
-    #   ActionMCP.configuration.post_response_preference = :json
-    #
-    #   get "/",
-    #       headers: {
-    #         "Mcp-Session-Id" => session_id,
-    #         "ACCEPT" => "application/json"
-    #       }
-    #
-    #   # Should not return Accept error
-    #   body = response.parsed_body
-    #   if body.is_a?(Hash) && body["error"].is_a?(Hash)
-    #     refute_match(/Client must accept 'text\/event-stream'/, body["error"]["message"])
-    #   end
-    #
-    #   # Restore original preference
-    #   ActionMCP.configuration.post_response_preference = original_preference
-    # end
-    #
-    # test "SSE response works correctly" do
-    #   original_preference = ActionMCP.configuration.post_response_preference
-    #
-    #   session = create_initialized_session
-    #   session_id = session.id
-    #
-    #   request_payload = {
-    #     jsonrpc: "2.0",
-    #     id: "test-sse-1",
-    #     method: "tools/list"
-    #   }
-    #
-    #   ActionMCP.configuration.post_response_preference = :sse
-    #
-    #   post "/",
-    #        headers: {
-    #          "CONTENT_TYPE" => "application/json",
-    #          "ACCEPT" => "application/json, text/event-stream",
-    #          "Mcp-Session-Id" => session_id
-    #        },
-    #        params: request_payload.to_json
-    #
-    #   assert_response :success
-    #   assert_equal "text/event-stream", response.headers["Content-Type"]
-    #   first_event = read_first_sse_event(response)
-    #   assert_match(/id: \d+/, first_event)
-    #   assert_match(/data:/, first_event)
-    #
-    #   ActionMCP.configuration.post_response_preference = original_preference
-    # end
+    test "POST / requires Accept: text/event-stream only if preference is :sse" do
+      session = create_initialized_session
+      session_id = session.id
+      payload = { jsonrpc: "2.0", id: "test", method: "tools/list" }
+
+      # When preference is :sse, missing Accept should error
+      ActionMCP.configuration.post_response_preference = :sse
+      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
+      assert_response :success
+      body = response.parsed_body
+      assert_equal(-32_002, body.dig("error", "code"))
+      assert_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body.dig("error", "message"))
+
+      # When preference is :sse, with both Accepts, should proceed (no Accept error)
+      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json, text/event-stream" }, params: payload.to_json
+      body = response.parsed_body
+      if body.is_a?(Hash) && body["error"].is_a?(Hash)
+        refute_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body["error"]["message"])
+      end
+
+      # When preference is :json, missing text/event-stream is OK, but missing application/json is not
+      ActionMCP.configuration.post_response_preference = :json
+      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
+      body = response.parsed_body
+      if body.is_a?(Hash) && body["error"].is_a?(Hash)
+        refute_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body["error"]["message"])
+        refute_match(/Client must accept 'text\/event-stream'/, body["error"]["message"])
+      end
+
+      # When preference is :json, missing application/json should error
+      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "text/event-stream" }, params: payload.to_json
+      body = response.parsed_body
+      assert_equal(-32_002, body.dig("error", "code"))
+      assert_match(/Client must accept 'application\/json'/, body.dig("error", "message"))
+
+      # Restore preference
+      ActionMCP.configuration.post_response_preference = :json
+    end
   end
 
   class ApplicationControllerJSONTest < ApplicationControllerTestBase
