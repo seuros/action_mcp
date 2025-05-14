@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.5](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.4...action_mcp/v0.50.5) (2025-05-14)
+
+
+### Bug Fixes
+
+* add annotations to content and client ([#68](https://github.com/seuros/action_mcp/issues/68)) ([84b7493](https://github.com/seuros/action_mcp/commit/84b7493f2d4313a91e2c868da5fed85c0b21eef7))
+* add paginations for client ([#70](https://github.com/seuros/action_mcp/issues/70)) ([626135d](https://github.com/seuros/action_mcp/commit/626135d642775c6f41d0a494deb5a62dfe698958))
+* support clients powered by vibes, not documentation ([#71](https://github.com/seuros/action_mcp/issues/71)) ([f46f5c3](https://github.com/seuros/action_mcp/commit/f46f5c3a42c8a99f20c375ef7a123a01ef5ca649))
+
 ## [0.50.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.3...action_mcp/v0.50.4) (2025-05-14)
 
 
