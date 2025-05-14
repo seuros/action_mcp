@@ -207,8 +207,12 @@ module ActionMCP
       session_id = extract_session_id
       if session_id
         session = Session.find_by(id: session_id)
-        if session && session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
-          session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+        if session
+          if ActionMCP.configuration.vibed_ignore_version
+            session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION) if session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+          elsif session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+            session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+          end
         end
         session
       else

@@ -26,6 +26,8 @@ module ActionMCP
                   :sse_heartbeat_interval,
                   :post_response_preference, # :json or :sse
                   :protocol_version,
+                  # --- VibedIgnoreVersion Option ---
+                  :vibed_ignore_version,
                   # --- SSE Resumability Options ---
                   :enable_sse_resumability,
                   :sse_event_retention_period,
@@ -38,10 +40,10 @@ module ActionMCP
       @resources_subscribe = false
       @active_profile = :primary
       @profiles = default_profiles
-
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
       @protocol_version = "2025-03-26"
+      @vibed_ignore_version = false
 
       # Resumability defaults
       @enable_sse_resumability = true
