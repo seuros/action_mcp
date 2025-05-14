@@ -1,0 +1,27 @@
+---
+- name: annotated_tool
+  description: Annotated Tool
+  inputSchema:
+    type: object
+    properties:
+      input1:
+        type: string
+  annotations:
+    safety: "safe"
+    category: "test"
+- name: calculate_sum
+  description: Calculate the sum of two numbers
+  inputSchema:
+    type: object
+    properties:
+      number1:
+        type: number
+        description: First number
+        required: true
+      number2:
+        type: number
+        description: Second number
+        required: true
+    required:
+      - number1
+      - number2
