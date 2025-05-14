@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.3...action_mcp/v0.50.4) (2025-05-14)
+
+
+### Bug Fixes
+
+* fix post method not get ([9194de0](https://github.com/seuros/action_mcp/commit/9194de022b44a5d3ab74d2fbc1e26a6fefea083e))
+
 ## [0.50.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.2...action_mcp/v0.50.3) (2025-05-14)
 
 
