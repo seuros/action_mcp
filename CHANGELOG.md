@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.1...action_mcp/v0.50.2) (2025-05-14)
+
+
+### Bug Fixes
+
+* clean up , start using data object, test instrumentation ([#61](https://github.com/seuros/action_mcp/issues/61)) ([2208ca7](https://github.com/seuros/action_mcp/commit/2208ca7b8ece747aae05e887fba069cb922b114b))
+
 ## [0.50.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.0...action_mcp/v0.50.1) (2025-05-13)
 
 
