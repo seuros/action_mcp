@@ -1,4 +1,5 @@
-# Session fixtures for testing
+_fixture:
+  model_class: ActionMCP::Session
 
 # A basic initialized server session at step1
 step1_session:
@@ -14,6 +15,8 @@ step1_session:
   prompt_registry: '[]'
   resource_registry: '[]'
   sse_event_counter: 0
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
 # A server session at step2 of a workflow
 step2_session:
@@ -29,6 +32,8 @@ step2_session:
   prompt_registry: '[]'
   resource_registry: '[]'
   sse_event_counter: 0
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
 # A server session at final step of a workflow
 final_step_session:
@@ -44,6 +49,8 @@ final_step_session:
   prompt_registry: '[]'
   resource_registry: '[]'
   sse_event_counter: 0
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
 # A pre-initialized server session (for testing initialization process)
 pre_initialized_session:
@@ -59,6 +66,8 @@ pre_initialized_session:
   prompt_registry: '[]'
   resource_registry: '[]'
   sse_event_counter: 0
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
 # A closed server session  
 closed_session:
@@ -75,3 +84,5 @@ closed_session:
   prompt_registry: '[]'
   resource_registry: '[]'
   sse_event_counter: 3
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

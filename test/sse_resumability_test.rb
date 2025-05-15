@@ -3,25 +3,13 @@
 require "test_helper"
 
 class SSEResumabilityTest < ActionDispatch::IntegrationTest
+  fixtures :action_mcp_sessions
   def app
     ActionMCP::Engine
   end
 
   setup do
-    # Ensure resumability is enabled for tests
-    @original_resumability = ActionMCP.configuration.enable_sse_resumability
-    ActionMCP.configuration.enable_sse_resumability = true
-
-    # Setup a session
-    @session = ActionMCP::Session.create!(initialized: true)
-
-    # Clear any existing SSE events to ensure test isolation
-    @session.sse_events.destroy_all
-  end
-
-  teardown do
-    # Restore original configuration
-    ActionMCP.configuration.enable_sse_resumability = @original_resumability
+    @session = action_mcp_sessions(:step1_session)
   end
 
   test "SSE events are stored in the database" do
@@ -157,25 +145,5 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     assert_match(/id: 42/, sse_formatted)
     assert_match(/data: .*test.*data.*/, sse_formatted)
     assert_match(/\n\n$/, sse_formatted) # Should end with double newline
-  end
-
-  # Add missing require for Timeout
-  require "timeout"
-
-  test "Resumability can be disabled" do
-    # Disable resumability
-    ActionMCP.configuration.enable_sse_resumability = false
-
-    # Mock the write_sse_event method in the controller
-    controller = ActionMCP::ApplicationController.new
-    sse_mock = Object.new
-    def sse_mock.write(data); true; end
-    def sse_mock.close; end
-
-    # Call the write_sse_event method
-    controller.send(:write_sse_event, sse_mock, @session, { test: "payload" }.to_json)
-
-    # Verify no event was stored
-    assert_equal 0, @session.sse_events.count
   end
 end

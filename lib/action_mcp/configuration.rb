@@ -29,7 +29,6 @@ module ActionMCP
                   # --- VibedIgnoreVersion Option ---
                   :vibed_ignore_version,
                   # --- SSE Resumability Options ---
-                  :enable_sse_resumability,
                   :sse_event_retention_period,
                   :max_stored_sse_events
 
@@ -46,7 +45,6 @@ module ActionMCP
       @vibed_ignore_version = false
 
       # Resumability defaults
-      @enable_sse_resumability = true
       @sse_event_retention_period = 15.minutes
       @max_stored_sse_events = 100
     end
@@ -140,9 +138,6 @@ module ActionMCP
       capabilities[:logging] = {} if @logging_enabled
 
       capabilities[:resources] = { subscribe: @resources_subscribe } if filtered_resources.any?
-
-      # Add resumability capability if enabled
-      capabilities[:resumability] = { enabled: @enable_sse_resumability } if @enable_sse_resumability
 
       capabilities
     end

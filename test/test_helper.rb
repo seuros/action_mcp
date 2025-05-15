@@ -10,6 +10,10 @@ require "rails/test_help"
 
 require "action_mcp/test_helper"
 
+## Configure ActiveRecord Fixtures
+ActiveRecord::Migration.maintain_test_schema!
+ActiveSupport::TestCase.fixture_paths = [ File.expand_path("fixtures", __dir__) ]
+
 class MockOrder
   def self.find_by(id:)
     new(id: id) if id.to_i.positive?
