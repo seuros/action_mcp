@@ -56,22 +56,6 @@ module ActionMCP
         if raw_message.is_a?(String) && valid_json_format?(raw_message)
           message = MultiJson.load(raw_message)
           callback&.call(message)
-        elsif raw_message.respond_to?(:message) && raw_message.message.is_a?(String) && valid_json_format?(raw_message.message)
-          message = MultiJson.load(raw_message.message)
-          callback&.call(message)
-        elsif raw_message.respond_to?(:to_json)
-          # Try to serialize the message object to JSON if it responds to to_json
-          message_json = raw_message.to_json
-          if valid_json_format?(message_json)
-            message = MultiJson.load(message_json)
-            callback&.call(message)
-          else
-            Rails.logger.warn "SSEListener: Message cannot be converted to valid JSON"
-          end
-        else
-          # Log that we received an invalid message format
-          display_message = raw_message.to_s[0..100]
-          Rails.logger.warn "SSEListener: Received invalid JSON format: #{display_message}..."
         end
       rescue StandardError => e
         Rails.logger.error "SSEListener: Error processing message: #{e.message}"

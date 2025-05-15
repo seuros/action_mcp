@@ -32,14 +32,11 @@ module ActionMCP
         def handle_prompts_get(id, params)
           name = extract_name(params)
           arguments = extract_arguments(params)
-
-          message = transport.send_prompts_get(id, name, arguments)
-          extract_message_payload(message, id)
+          transport.send_prompts_get(id, name, arguments)
         end
 
         def handle_prompts_list(id, _params)
-          message = transport.send_prompts_list(id)
-          extract_message_payload(message, id)
+          transport.send_prompts_list(id)
         end
 
         def extract_name(params)

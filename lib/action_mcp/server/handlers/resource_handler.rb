@@ -33,20 +33,16 @@ module ActionMCP
         end
 
         def handle_resources_list(id, _params)
-          message = transport.send_resources_list(id)
-          extract_message_payload(message, id)
+          transport.send_resources_list(id)
         end
 
         def handle_resources_templates_list(id, _params)
-          message = transport.send_resource_templates_list(id)
-          extract_message_payload(message, id)
+          transport.send_resource_templates_list(id)
         end
 
         def handle_resources_read(id, params)
           validate_params_present(params, "Resource URI is required")
-
-          message = transport.send_resource_read(id, params)
-          extract_message_payload(message, id)
+          transport.send_resource_read(id, params)
         end
 
         def handle_resources_subscribe(id, params)

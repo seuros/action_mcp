@@ -32,10 +32,7 @@ module ActionMCP
         params = request.params
 
         with_error_handling(id) do
-          # Try to handle common methods first (like ping)
           return if handle_common_methods(rpc_method, id, params)
-
-          # Route to appropriate handler
           route_to_handler(rpc_method, id, params)
         end
       end
@@ -58,8 +55,7 @@ module ActionMCP
       end
 
       def handle_initialize(id, params)
-        message = transport.send_capabilities(id, params)
-        extract_message_payload(message, id)
+        transport.send_capabilities(id, params)
       end
 
       def handle_notification(notification)
@@ -67,29 +63,17 @@ module ActionMCP
         params = notification.params || {}
 
         process_notifications(method_name, params)
-        { type: :notifications_only }
+        nil
       end
 
       def handle_response(response)
         Rails.logger.debug("Received response: #{response.inspect}")
-
-        {
-          type: :responses,
-          request_id: response.id,
-          payload: build_response_payload(response)
-        }
+        response
       end
 
+
       def process_completion_complete(id, params)
-        params ||= {}
-
-        result = transport.send_jsonrpc_response(id, result: build_completion_result)
-
-        if result.is_a?(ActionMCP::Session::Message)
-          extract_message_payload(result, id)
-        else
-          wrap_transport_result(result, id)
-        end
+        transport.send_jsonrpc_response(id, result: build_completion_result)
       end
 
       def process_notifications(rpc_method, params)
@@ -98,30 +82,6 @@ module ActionMCP
           transport.initialize!
         else
           super
-        end
-      end
-
-      def extract_message_payload(message, id)
-        if message.is_a?(ActionMCP::Session::Message)
-          {
-            type: :responses,
-            request_id: id,
-            payload: message.message_json
-          }
-        else
-          message
-        end
-      end
-
-      def wrap_transport_result(transport_result, id)
-        if transport_result.is_a?(Hash) && transport_result[:type]
-          transport_result
-        else
-          {
-            type: :responses,
-            request_id: id,
-            payload: transport_result
-          }
         end
       end
 

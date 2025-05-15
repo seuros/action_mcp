@@ -26,10 +26,7 @@ module ActionMCP
           )
 
           # Process the notification
-          result = @handler.call(notification)
-
-          # Verify the result type
-          assert_equal :notifications_only, result[:type]
+          assert_nil @handler.call(notification)
         end
 
         test "notification method returns true from handle_common_methods" do
@@ -46,10 +43,7 @@ module ActionMCP
           )
 
           # Process the notification
-          result = @handler.call(notification)
-
-          # Should still return notifications_only without error
-          assert_equal :notifications_only, result[:type]
+          assert_nil @handler.call(notification)
         end
       end
     end

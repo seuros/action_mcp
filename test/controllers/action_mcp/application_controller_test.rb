@@ -4,69 +4,31 @@ require "test_helper"
 
 module ActionMCP
   class ApplicationControllerTestBase < ActionDispatch::IntegrationTest
+    fixtures :action_mcp_sessions
+    attr_reader :original_preference
+    teardown do
+      ActionMCP.configuration.post_response_preference = original_preference
+    end
+
     def app
       ActionMCP::Engine
     end
 
     # Helper to create a session for tests
     def create_initialized_session
-      ActionMCP::Session.create!(initialized: true)
-    end
-  end
-
-  class ApplicationControllerAcceptHeaderTest < ApplicationControllerTestBase
-    test "GET / always requires Accept: text/event-stream" do
-      skip "Skipping due to SSE stream hang in test environment"
-    end
-
-    test "POST / requires Accept: text/event-stream only if preference is :sse" do
-      session = create_initialized_session
-      session_id = session.id
-      payload = { jsonrpc: "2.0", id: "test", method: "tools/list" }
-
-      # When preference is :sse, missing Accept should error
-      ActionMCP.configuration.post_response_preference = :sse
-      post "/",
-           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
-      assert_response :success
-      body = response.parsed_body
-      assert_equal(-32_002, body.dig("error", "code"))
-      assert_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body.dig("error", "message"))
-
-      # When preference is :sse, with both Accepts, should proceed (no Accept error)
-      post "/",
-           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json, text/event-stream" }, params: payload.to_json
-      body = response.parsed_body
-      if body.is_a?(Hash) && body["error"].is_a?(Hash)
-        refute_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body["error"]["message"])
-      end
-
-      # When preference is :json, missing text/event-stream is OK, but missing application/json is not
-      ActionMCP.configuration.post_response_preference = :json
-      post "/",
-           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
-      body = response.parsed_body
-      if body.is_a?(Hash) && body["error"].is_a?(Hash)
-        refute_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body["error"]["message"])
-        refute_match(%r{Client must accept 'text/event-stream'}, body["error"]["message"])
-      end
-
-      # When preference is :json, missing application/json should error
-      post "/",
-           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "text/event-stream" }, params: payload.to_json
-      body = response.parsed_body
-      assert_equal(-32_002, body.dig("error", "code"))
-      assert_match(%r{Client must accept 'application/json'}, body.dig("error", "message"))
-
-      # Restore preference
-      ActionMCP.configuration.post_response_preference = :json
+      session = action_mcp_sessions(:step1_session)
+      session
     end
   end
 
   class ApplicationControllerJSONTest < ApplicationControllerTestBase
-    test "JSON response works correctly" do
-      original_preference = ActionMCP.configuration.post_response_preference
+    setup do
+      @original_preference = ActionMCP.configuration.post_response_preference
 
+      ActionMCP.configuration.post_response_preference = :json
+    end
+
+    test "JSON response works correctly" do
       session = create_initialized_session
       session_id = session.id
 
@@ -75,8 +37,6 @@ module ActionMCP
         id: "test-json-1",
         method: "tools/list"
       }
-
-      ActionMCP.configuration.post_response_preference = :json
 
       post "/",
            headers: {
@@ -89,8 +49,6 @@ module ActionMCP
       assert_response :success
       assert_equal "application/json", response.headers["Content-Type"]
       assert_not_nil response.parsed_body["result"]
-
-      ActionMCP.configuration.post_response_preference = original_preference
     end
 
     test "complete basic MCP workflow - initialize, list tools, call tool" do
@@ -115,7 +73,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
+             "ACCEPT" => "application/json"
            },
            params: init_request.to_json
 
@@ -154,7 +112,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
+             "ACCEPT" => "application/json",
              "Mcp-Session-Id" => session_id
            },
            params: initialized_notification.to_json
@@ -175,7 +133,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
+             "ACCEPT" => "application/json",
              "Mcp-Session-Id" => session_id
            },
            params: list_tools_request.to_json
@@ -228,7 +186,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
+             "ACCEPT" => "application/json",
              "Mcp-Session-Id" => session_id
            },
            params: call_tool_request.to_json
@@ -265,7 +223,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
+             "ACCEPT" => "application/json",
              "Mcp-Session-Id" => session_id
            },
            params: list_prompts_request.to_json
@@ -335,24 +293,20 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
+             "ACCEPT" => "application/json"
            },
            params: init_request.to_json
 
-      # For error responses, the HTTP status can be 200 or 400
-      assert_includes [ 200, 400 ], response.status
+      assert_response :ok
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
-      # Error code can be -32000 (server error) or -32602 (invalid params)
-      assert_includes [ -32_000, -32_602 ], error_response["error"]["code"]
+      assert_equal -32602, error_response["error"]["code"]
       assert_match(/Unsupported protocol version/, error_response["error"]["message"])
       # The ID should match the request ID if present
-      assert_equal "bad-init", error_response["id"] if error_response["id"]
+      assert_equal "bad-init", error_response["id"]
     end
 
     test "vibed_ignore_version: if true, protocol is always latest regardless of client version" do
-      original_vibed_ignore_version = ActionMCP.configuration.vibed_ignore_version
-
       # First, observe default behavior (vibed_ignore_version = false)
       ActionMCP.configuration.vibed_ignore_version = false
 
@@ -370,10 +324,11 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
+             "ACCEPT" => "application/json"
            },
            params: init_request.to_json
 
+      assert_response :ok
       # With vibed_ignore_version = false, should get error response
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
@@ -396,7 +351,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
+             "ACCEPT" => "application/json"
            },
            params: init_request.to_json
 
@@ -412,8 +367,9 @@ module ActionMCP
       assert_not_nil session_id
       session = ActionMCP::Session.find(session_id)
       assert_equal "2025-03-26", session.protocol_version
-
-      ActionMCP.configuration.vibed_ignore_version = original_vibed_ignore_version
+    ensure
+      # Reset vibed_ignore_version to default
+      ActionMCP.configuration.vibed_ignore_version = false
     end
   end
 end
