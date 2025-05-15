@@ -16,7 +16,8 @@ module ActionMCP
 
     # Helper to create a session for tests
     def create_initialized_session
-      action_mcp_sessions(:step1_session)
+      session = action_mcp_sessions(:step1_session)
+      session
     end
   end
 
