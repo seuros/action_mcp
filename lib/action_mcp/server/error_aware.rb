@@ -25,10 +25,6 @@ module ActionMCP
         yield
       rescue JSON_RPC::JsonRpcError => e
         error_response(request_id, e)
-      rescue StandardError => e
-        Rails.logger.error("Unexpected error: #{e.message}")
-        Rails.logger.error(e.backtrace.join("\n"))
-        error_response(request_id, :internal_error, e.message)
       end
     end
   end

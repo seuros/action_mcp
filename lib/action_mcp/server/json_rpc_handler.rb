@@ -27,7 +27,7 @@ module ActionMCP
       private
 
       def handle_request(request)
-        @current_request_id = id = request.id
+        id = request.id
         rpc_method = request.method
         params = request.params
 
@@ -63,8 +63,6 @@ module ActionMCP
       end
 
       def handle_notification(notification)
-        @current_request_id = nil
-
         method_name = notification.method.to_s
         params = notification.params || {}
 
@@ -97,7 +95,6 @@ module ActionMCP
       def process_notifications(rpc_method, params)
         case rpc_method
         when Methods::NOTIFICATIONS_INITIALIZED
-          Rails.logger.info "Client notified initialization complete"
           transport.initialize!
         else
           super
