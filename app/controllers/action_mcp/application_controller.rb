@@ -160,8 +160,10 @@ module ActionMCP
 
       transport_handler = Server::TransportHandler.new(session)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
-      handler_results = json_rpc_handler.call(jsonrpc_params)
-      process_handler_results(handler_results, session, session_initially_missing, is_initialize_request)
+
+      result = json_rpc_handler.call(jsonrpc_params)
+
+      process_handler_results(result, session, session_initially_missing, is_initialize_request)
     rescue ActionController::Live::ClientDisconnected, IOError => e
       Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}"
       begin
@@ -257,45 +259,25 @@ module ActionMCP
     end
 
     # Processes the results from the JsonRpcHandler.
-    def process_handler_results(results, session, session_initially_missing, is_initialize_request)
-      results ||= {}
-      is_notification = jsonrpc_params.is_a?(JSON_RPC::Notification)
-      request_id = nil
-      if results.is_a?(Hash)
-        request_id = results[:request_id] || results[:id]
-        request_id ||= results[:payload][:id] if results[:payload].is_a?(Hash) && results[:payload][:id]
-      end
-      result_type = results[:type]
-      result_payload = results[:payload] || {}
-      result_payload[:id] = request_id if result_payload.is_a?(Hash) && request_id && !result_payload.key?(:id)
+    def process_handler_results(result, session, session_initially_missing, is_initialize_request)
 
-      case result_type
-      when :error
-        error_payload = result_payload
-        error_payload[:id] = request_id if error_payload.is_a?(Hash) && !error_payload.key?(:id) && request_id
-        render json: error_payload, status: results.fetch(:status, :bad_request)
-      when :notifications_only
-        head :accepted
-      when :responses
-        server_preference = ActionMCP.configuration.post_response_preference
-        use_sse = (server_preference == :sse)
-        add_session_header = is_initialize_request && session_initially_missing && session.persisted?
-        if use_sse
-          render_sse_response(result_payload, session, add_session_header)
-        else
-          render_json_response(result_payload, session, add_session_header)
-        end
+      # Handle empty result (notifications)
+      if result.nil?
+        return head :accepted
+      end
+
+      # Convert to hash for rendering
+      payload = result.message_json
+
+      # Determine response format
+      server_preference = ActionMCP.configuration.post_response_preference
+      use_sse = (server_preference == :sse)
+      add_session_header = is_initialize_request && session_initially_missing && session.persisted?
+
+      if use_sse
+        render_sse_response(payload, session, add_session_header)
       else
-        Rails.logger.error "Unknown handler result type: #{result_type.inspect}"
-        if is_notification
-          head :accepted
-        else
-          render json: {
-            jsonrpc: "2.0",
-            id: request_id,
-            result: result_payload
-          }, status: :ok
-        end
+        render_json_response(payload, session, add_session_header)
       end
     end
 
