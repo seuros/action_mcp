@@ -1,0 +1,210 @@
+# Message fixtures for testing
+
+# Step 1 initialization request
+step1_request:
+  id: 1
+  session_id: "step1_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"step1","method":"start_workflow","params":{"step":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step1"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 5.minutes %>
+  updated_at: <%= Time.zone.now - 5.minutes %>
+
+# Step 1 initialization response
+step1_response:
+  id: 2
+  session_id: "step1_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"step1","result":{"status":"started","currentStep":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step1"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 4.minutes %>
+  updated_at: <%= Time.zone.now - 4.minutes %>
+
+# Step 1 to Step 2 transition request
+step2_request:
+  id: 3
+  session_id: "step2_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"step1to2","method":"advance_workflow","params":{"fromStep":"step1","toStep":"step2","data":{"key":"value"}},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step1to2"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 3.minutes %>
+  updated_at: <%= Time.zone.now - 3.minutes %>
+
+# Step 2 transition response
+step2_response:
+  id: 4
+  session_id: "step2_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"step1to2","result":{"status":"advanced","currentStep":"step2","previousStep":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step1to2"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 2.minutes %>
+  updated_at: <%= Time.zone.now - 2.minutes %>
+
+# Initial setup messages for step2_session
+step2_initial_request:
+  id: 5
+  session_id: "step2_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"init2","method":"start_workflow","params":{"step":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "init2"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 6.minutes %>
+  updated_at: <%= Time.zone.now - 6.minutes %>
+
+# Initial response for step2_session
+step2_initial_response:
+  id: 6
+  session_id: "step2_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"init2","result":{"status":"started","currentStep":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "init2"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 5.minutes %>
+  updated_at: <%= Time.zone.now - 5.minutes %>
+
+# Step 2 to final step transition request
+final_step_request:
+  id: 7
+  session_id: "final_step_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"step2tofinal","method":"advance_workflow","params":{"fromStep":"step2","toStep":"final","data":{"complete":true}},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step2tofinal"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 2.minutes %>
+  updated_at: <%= Time.zone.now - 2.minutes %>
+
+# Final step transition response
+final_step_response:
+  id: 8
+  session_id: "final_step_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"step2tofinal","result":{"status":"completed","currentStep":"final","previousStep":"step2"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "step2tofinal"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 1.minute %>
+  updated_at: <%= Time.zone.now - 1.minute %>
+
+# Earlier step transitions for final_step_session
+step1_to_2_request_final:
+  id: 9
+  session_id: "final_step_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"s1to2","method":"advance_workflow","params":{"fromStep":"step1","toStep":"step2","data":{"progress":50}},"jsonrpc":"2.0"}'
+  jsonrpc_id: "s1to2"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 4.minutes %>
+  updated_at: <%= Time.zone.now - 4.minutes %>
+
+# Response for step1 to step2 in final_step_session
+step1_to_2_response_final:
+  id: 10
+  session_id: "final_step_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"s1to2","result":{"status":"advanced","currentStep":"step2","previousStep":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "s1to2"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 3.minutes %>
+  updated_at: <%= Time.zone.now - 3.minutes %>
+
+# Initial setup for final_step_session
+initial_request_final:
+  id: 11
+  session_id: "final_step_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"initfinal","method":"start_workflow","params":{"step":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "initfinal"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 6.minutes %>
+  updated_at: <%= Time.zone.now - 6.minutes %>
+
+# Initial response for final_step_session
+initial_response_final:
+  id: 12
+  session_id: "final_step_session"
+  direction: "server"
+  message_type: "response"
+  message_json: '{"id":"initfinal","result":{"status":"started","currentStep":"step1"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "initfinal"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 5.minutes %>
+  updated_at: <%= Time.zone.now - 5.minutes %>
+
+# A notification message
+notification_message:
+  id: 13
+  session_id: "step2_session"
+  direction: "server"
+  message_type: "notification"
+  message_json: '{"method":"notifications/progress","params":{"progressToken":"token123","progress":75},"jsonrpc":"2.0"}'
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 1.minute %>
+  updated_at: <%= Time.zone.now - 1.minute %>
+
+# An error response
+error_message:
+  id: 14
+  session_id: "closed_session"
+  direction: "server"
+  message_type: "error"
+  message_json: '{"id":"error1","error":{"code":-32603,"message":"Internal error"},"jsonrpc":"2.0"}'
+  jsonrpc_id: "error1"
+  is_ping: false
+  request_acknowledged: false
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 1.hour %>
+  updated_at: <%= Time.zone.now - 1.hour %>
+
+# Failed operation request
+failed_request:
+  id: 15
+  session_id: "closed_session"
+  direction: "client"
+  message_type: "request"
+  message_json: '{"id":"error1","method":"invalid_operation","params":{},"jsonrpc":"2.0"}'
+  jsonrpc_id: "error1"
+  is_ping: false
+  request_acknowledged: true
+  request_cancelled: false
+  created_at: <%= Time.zone.now - 1.1.hours %>
+  updated_at: <%= Time.zone.now - 1.1.hours %>

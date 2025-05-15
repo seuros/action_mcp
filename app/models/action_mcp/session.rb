@@ -64,7 +64,9 @@ module ActionMCP
     before_create :set_server_info, if: -> { role == "server" }
     before_create :set_server_capabilities, if: -> { role == "server" }
 
-    validates :protocol_version, inclusion: { in: SUPPORTED_VERSIONS }, allow_nil: true, unless: -> { ActionMCP.configuration.vibed_ignore_version }
+    validates :protocol_version, inclusion: { in: SUPPORTED_VERSIONS }, allow_nil: true, unless: lambda {
+      ActionMCP.configuration.vibed_ignore_version
+    }
 
     def close!
       dummy_callback = ->(*) { } # this callback seem broken

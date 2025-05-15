@@ -58,6 +58,7 @@ module ActionMCP
       # @return [Array<Object>] The next page of items, or empty array if no more pages
       def next_page(limit: nil)
         return [] unless has_more_pages?
+
         page(cursor: @next_cursor, limit: limit)
       end
 
@@ -66,7 +67,7 @@ module ActionMCP
       # @param limit [Integer, nil] Optional limit for page size
       # @yield [page] Block to process each page
       # @yieldparam page [Array<Object>] A page of items
-      def each_page(limit: nil, &block)
+      def each_page(limit: nil)
         return unless block_given?
 
         current_page = page(limit: limit)
@@ -125,12 +126,10 @@ module ActionMCP
         params[:cursor] = cursor if cursor
         params[:limit] = limit if limit
 
-        request_id = client.send(@load_method, params)
+        client.send(@load_method, params)
 
         start_time = Time.now
-        while !@loaded && (Time.now - start_time) < timeout
-          sleep(0.1)
-        end
+        sleep(0.1) while !@loaded && (Time.now - start_time) < timeout
 
         # Update @loaded status even if we timed out
         @loaded = true

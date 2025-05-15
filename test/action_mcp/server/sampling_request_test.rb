@@ -16,7 +16,9 @@ module ActionMCP
           config.messages [
             {
               role: "user",
-              content: ActionMCP::Content::Text.new("Analyze the code files in the /project directory and suggest ways to complain about that", annotations: nil)
+              content: ActionMCP::Content::Text.new(
+                "Analyze the code files in the /project directory and suggest ways to complain about that", annotations: nil
+              )
             }
           ]
           config.system_prompt "You are a wicked senior software engineer using Windows 95 plotting world domination"

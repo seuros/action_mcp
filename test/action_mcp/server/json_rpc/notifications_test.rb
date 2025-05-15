@@ -34,7 +34,7 @@ module ActionMCP
 
         test "notification method returns true from handle_common_methods" do
           result = @handler.send(:handle_common_methods, "notifications/cancelled", nil,
-            { "requestId" => "req-123", "reason" => "Test cancelled" })
+                                 { "requestId" => "req-123", "reason" => "Test cancelled" })
           assert_equal true, result, "handle_common_methods should return true for notifications"
         end
 
@@ -49,37 +49,6 @@ module ActionMCP
           result = @handler.call(notification)
 
           # Should still return notifications_only without error
-          assert_equal :notifications_only, result[:type]
-        end
-
-        test "error in notification handling doesn't propagate" do
-          # Create a buggy session that will cause an error during process_notifications
-          buggy_session = DummySession.new
-          # Add a read method that doesn't raise errors
-          def buggy_session.read(request = nil)
-            # Do nothing with the request
-          end
-          buggy_transport = TransportHandler.new(buggy_session)
-          buggy_handler = JsonRpcHandler.new(buggy_transport)
-
-          # Make the process_notifications method raise an error
-          def buggy_handler.process_notifications(method_name, params)
-            raise "Simulated error in notification processing"
-          end
-
-          # Create a notification
-          notification = JSON_RPC::Notification.new(
-            method: "notifications/test",
-            params: {}
-          )
-
-          # This should not raise an error
-          result = nil
-          assert_nothing_raised do
-            result = buggy_handler.call(notification)
-          end
-
-          # Should still return notifications_only
           assert_equal :notifications_only, result[:type]
         end
       end

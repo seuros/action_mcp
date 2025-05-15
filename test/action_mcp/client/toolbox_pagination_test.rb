@@ -32,7 +32,7 @@ module ActionMCP
         def load_items(force: false, timeout: DEFAULT_TIMEOUT)
           @load_count += 1
           all_items = []
-          @fixture_data.each do |_page, data|
+          @fixture_data.each_value do |data|
             all_items.concat(data["items"])
           end
           @collection_data = all_items.map { |h| Toolbox::Tool.new(h) }
@@ -43,10 +43,10 @@ module ActionMCP
         def load_page(cursor: nil, limit: nil, timeout: DEFAULT_TIMEOUT)
           @load_count += 1
 
-          if cursor.nil?
-            @current_page = 1
+          @current_page = if cursor.nil?
+                            1
           else
-            @current_page = cursor.split("-").last.to_i
+                            cursor.split("-").last.to_i
           end
 
           page_key = "page#{@current_page}"
@@ -101,10 +101,10 @@ module ActionMCP
       test "each_page iterates through all pages" do
         names = []
         @toolbox.each_page { |page| names.concat(page.map(&:name)) }
-        assert_equal [
-          "weather_forecast", "calculate_sum", "format_code",
-          "add_tool", "checksum_checker", "numeric_array_tool",
-          "progress2025_demo_tool"
+        assert_equal %w[
+          weather_forecast calculate_sum format_code
+          add_tool checksum_checker numeric_array_tool
+          progress2025_demo_tool
         ], names
       end
 

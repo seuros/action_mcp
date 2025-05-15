@@ -137,9 +137,7 @@ module ActionMCP
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
     # @route POST /mcp
     def create
-      unless post_accept_headers_valid?
-        return render_not_acceptable(post_accept_headers_error_message)
-      end
+      return render_not_acceptable(post_accept_headers_error_message) unless post_accept_headers_valid?
 
       is_initialize_request = check_if_initialize_request(jsonrpc_params)
       session_initially_missing = extract_session_id.nil?
@@ -209,7 +207,9 @@ module ActionMCP
         session = Session.find_by(id: session_id)
         if session
           if ActionMCP.configuration.vibed_ignore_version
-            session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION) if session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+            if session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
+              session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+            end
           elsif session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
             session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
           end
@@ -252,6 +252,7 @@ module ActionMCP
     # Checks if the parsed body represents an 'initialize' request.
     def check_if_initialize_request(payload)
       return false unless payload.is_a?(JSON_RPC::Request) && !jsonrpc_params_batch?
+
       payload.method == "initialize"
     end
 
@@ -332,6 +333,7 @@ module ActionMCP
       sse_event = "id: #{event_id}\ndata: #{data}\n\n"
       sse.write(sse_event)
       return unless ActionMCP.configuration.enable_sse_resumability
+
       begin
         session.store_sse_event(event_id, payload, session.max_stored_sse_events)
       rescue StandardError => e
@@ -342,6 +344,7 @@ module ActionMCP
     # Helper to clean up old SSE events for a session
     def cleanup_old_sse_events(session)
       return unless ActionMCP.configuration.enable_sse_resumability
+
       begin
         retention_period = session.sse_event_retention_period
         count = session.cleanup_old_sse_events(retention_period)

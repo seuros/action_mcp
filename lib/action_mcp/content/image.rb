@@ -23,8 +23,7 @@ module ActionMCP
       #
       # @return [Hash] The hash representation of the image content.
       def to_h
-        h = super.merge(data: @data, mimeType: @mime_type)
-        h
+        super.merge(data: @data, mimeType: @mime_type)
       end
     end
   end

@@ -107,12 +107,12 @@ module ActionMCP
 
       test "resource supports annotations" do
         annotated_resource = Catalog::Resource.new({
-          "uri" => "file:///tmp/annotated.txt",
-          "name" => "annotated.txt",
-          "description" => "Annotated resource",
-          "mimeType" => "text/plain",
-          "annotations" => { "audience" => [ "user" ], "priority" => 1 }
-        })
+                                                     "uri" => "file:///tmp/annotated.txt",
+                                                     "name" => "annotated.txt",
+                                                     "description" => "Annotated resource",
+                                                     "mimeType" => "text/plain",
+                                                     "annotations" => { "audience" => [ "user" ], "priority" => 1 }
+                                                   })
         assert_equal({ "audience" => [ "user" ], "priority" => 1 }, annotated_resource.annotations)
         hash = annotated_resource.to_h
         assert_equal({ "audience" => [ "user" ], "priority" => 1 }, hash["annotations"])
