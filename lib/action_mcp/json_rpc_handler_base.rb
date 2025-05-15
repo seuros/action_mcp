@@ -56,12 +56,8 @@ module ActionMCP
       case rpc_method
       when Methods::PING
         transport.send_pong(id)
-        true
       when %r{^notifications/}
         process_notifications(rpc_method, params)
-        true
-      else
-        false
       end
     end
 

@@ -39,7 +39,7 @@ module ActionMCP
 
         test "ping method returns true from handle_common_methods" do
           result = @handler.send(:handle_common_methods, "ping", "test-id", nil)
-          assert_equal true, result, "handle_common_methods should return true for 'ping'"
+          assert_instance_of JSON_RPC::Response, result, "handle_common_methods should return a JSON-RPC response"
         end
       end
     end

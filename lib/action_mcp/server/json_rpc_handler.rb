@@ -32,7 +32,8 @@ module ActionMCP
         params = request.params
 
         with_error_handling(id) do
-          return if handle_common_methods(rpc_method, id, params)
+          common_method = handle_common_methods(rpc_method, id, params)
+          return common_method if common_method
           route_to_handler(rpc_method, id, params)
         end
       end

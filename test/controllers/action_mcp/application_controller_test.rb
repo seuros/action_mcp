@@ -5,7 +5,9 @@ require "test_helper"
 module ActionMCP
   class ApplicationControllerTestBase < ActionDispatch::IntegrationTest
     fixtures :action_mcp_sessions
+
     attr_reader :original_preference
+
     teardown do
       ActionMCP.configuration.post_response_preference = original_preference
     end
@@ -370,6 +372,29 @@ module ActionMCP
     ensure
       # Reset vibed_ignore_version to default
       ActionMCP.configuration.vibed_ignore_version = false
+    end
+
+    test "ping" do
+      session = create_initialized_session
+      session_id = session.id
+
+      request_payload = {
+        jsonrpc: "2.0",
+        id: "ping-1",
+        method: "ping"
+      }
+
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
+             "Mcp-Session-Id" => session_id
+           },
+           params: request_payload.to_json
+
+      assert_response :success
+      assert_equal "application/json", response.headers["Content-Type"]
+      assert_equal "ping-1", response.parsed_body["id"]
     end
   end
 end
