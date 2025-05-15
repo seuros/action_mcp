@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.7](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.6...action_mcp/v0.50.7) (2025-05-15)
+
+
+### Bug Fixes
+
+* refactoring jsonrpc handler ([#74](https://github.com/seuros/action_mcp/issues/74)) ([021477b](https://github.com/seuros/action_mcp/commit/021477b220f3877138d9ecfad1710cc777e49ed7))
+
 ## [0.50.6](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.5...action_mcp/v0.50.6) (2025-05-14)
 
 
