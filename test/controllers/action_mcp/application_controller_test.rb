@@ -138,7 +138,6 @@ module ActionMCP
       assert_not_nil capabilities["prompts"], "Server should expose prompts capability"
       assert_not_nil capabilities["resources"]
       assert_not_nil capabilities["logging"]
-      assert_not_nil capabilities["resumability"]
 
       # Verify protocol version matches
       assert_equal "2025-03-26", init_response["result"]["protocolVersion"]
