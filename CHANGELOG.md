@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.8](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.7...action_mcp/v0.50.8) (2025-05-15)
+
+
+### Bug Fixes
+
+* remove rogue feature, not experiemental anymore ([#76](https://github.com/seuros/action_mcp/issues/76)) ([303e02e](https://github.com/seuros/action_mcp/commit/303e02efbc7313d93604d5b0cd20f5b1c6de5ab5))
+
 ## [0.50.7](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.6...action_mcp/v0.50.7) (2025-05-15)
 
 
