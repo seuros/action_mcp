@@ -2,7 +2,7 @@
 
 require_relative "gem_version"
 module ActionMCP
-  VERSION = "0.50.7"
+  VERSION = "0.50.8"
 
   class << self
     alias version gem_version
