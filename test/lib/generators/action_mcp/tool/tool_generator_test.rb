@@ -41,8 +41,8 @@ class ToolGeneratorTest < Rails::Generators::TestCase
 
   test "generator sets read_only and destructive annotations" do
     run_generator_with_args %w[AnnTest --read_only --destructive]
-    assert_file generated_tool_path("ann_test"), /read_only\(true\)/
-    assert_file generated_tool_path("ann_test"), /destructive\(true\)/
+    assert_file generated_tool_path("ann_test"), /read_only$/
+    assert_file generated_tool_path("ann_test"), /destructive$/
   end
 
   test "generator sets category annotation" do

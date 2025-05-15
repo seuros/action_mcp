@@ -3,10 +3,26 @@
 class <%= class_name %> < ApplicationMCPTool
   tool_name "<%= tool_name %>"
   description "<%= description %>"
-
-    <% annotations.each do |k, v| %>
-    <%= k == :read_only ? "read_only(#{v})" : k == :destructive ? "destructive(#{v})" : "annotate(:#{k}, #{v.inspect})" %>
-    <% end %>
+<% if options[:title] %>
+  title "<%= options[:title] %>"
+<% end %>
+<% if options[:read_only] %>
+  read_only
+<% end %>
+<% if options[:destructive] %>
+  destructive
+<% end %>
+<% if options[:idempotent] %>
+  idempotent
+<% end %>
+<% if options[:open_world] %>
+  open_world
+<% end %>
+<% annotations.each do |k, v| %>
+  <% unless [:read_only, :destructive, :idempotent, :open_world, :title].include?(k) %>
+  annotate(:<%= k %>, <%= v.inspect %>)
+  <% end %>
+<% end %>
 
     <% if properties.empty? %>
   property :input, type: "string", description: "Input", required: true

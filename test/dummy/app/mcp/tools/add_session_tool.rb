@@ -3,7 +3,11 @@
 # app/mcp/tools/add_session_tool.rb
 class AddSessionTool < ApplicationMCPTool
   tool_name "add_session_tool"
+  title "Add Session Tool"
   description "Add a tool to the current session's registry"
+  destructive
+  idempotent
+  open_world
 
   property :tool_name,
            type: "string",
