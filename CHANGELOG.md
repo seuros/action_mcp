@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.9](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.8...action_mcp/v0.50.9) (2025-05-15)
+
+
+### Bug Fixes
+
+* Remove legacy test and streamline JSON response logic ([#78](https://github.com/seuros/action_mcp/issues/78)) ([5c9549a](https://github.com/seuros/action_mcp/commit/5c9549a024fefbfa99cdaed80a798c56054047d5))
+
 ## [0.50.8](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.7...action_mcp/v0.50.8) (2025-05-15)
 
 
