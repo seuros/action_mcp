@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.11](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.10...action_mcp/v0.50.11) (2025-05-15)
+
+
+### Bug Fixes
+
+* add test for tool generator ([#81](https://github.com/seuros/action_mcp/issues/81)) ([04b3cb2](https://github.com/seuros/action_mcp/commit/04b3cb26e07ad3b99f1aa73131cca971ea71d2f4))
+
 ## [0.50.10](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.9...action_mcp/v0.50.10) (2025-05-15)
 
 
