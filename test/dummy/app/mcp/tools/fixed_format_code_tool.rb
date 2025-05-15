@@ -3,7 +3,10 @@
 class FixedFormatCodeTool < ApplicationMCPTool
   # Setting a specific name for the tool
   tool_name "format_source_fixed"
+  title "Code Formatter"
   description "Format source code according to a specific style"
+  read_only
+  idempotent
 
   # Define properties with proper schema structure
   property :source_code, type: "string", description: "The code to be formatted", required: true

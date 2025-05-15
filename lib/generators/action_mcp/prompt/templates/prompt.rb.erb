@@ -6,16 +6,20 @@ class <%= class_name %> < ApplicationMCPPrompt
   prompt_name "<%= prompt_name %>"
 
   # Provide a user-facing description for your prompt.
-  description "Analyze code for potential improvements"
+  description "<%= description || 'Describe what this prompt does' %>"
 
-  # Configure arguments via the new DSL
-  argument :language, description: "Programming language", default: "Ruby"
-  argument :code, description: "Code to explain", required: true
+  # Configure arguments (example structure — override as needed)
+  argument :input, description: "Main input", required: true
 
-  # Add validations (note: "Ruby" is not allowed per the validation)
-  validates :language, inclusion: { in: %w[Ruby C Cobol FORTRAN] }
+  # Optional: add more arguments if needed
+  # argument :context, description: "Context for the input", default: ""
 
-  # Implement your prompt's behavior here
-  def call
+  # Optional: validations can be added as needed
+  # validates :input, presence: true
+  # validates :context, length: { maximum: 500 }
+
+  # Main logic for prompt
+  def perform
+    # Implement behavior here
   end
 end

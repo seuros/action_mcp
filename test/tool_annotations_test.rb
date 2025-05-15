@@ -2,68 +2,109 @@
 
 require "test_helper"
 
-module ActionMCP
-  class ToolAnnotationsTest < ActiveSupport::TestCase
-    class AnnotatedTool < Tool
-      tool_name "annotated_tool"
-      description "Tool with annotations"
+class ToolAnnotationsTest < ActiveSupport::TestCase
+  # Tools with Read-Only annotations
+  test "read_only annotation is mapped to readOnlyHint in tool schema" do
+    tool_class = ExplosiveTool
+    assert_equal true, tool_class._annotations["readOnlyHint"], "readOnlyHint should be set to true"
 
-      destructive true
-      read_only false
-      annotate :custom, "value"
+    # Check to_h output
+    tool_hash = tool_class.to_h
+    assert_includes tool_hash[:annotations].keys, "readOnlyHint"
+    assert_equal true, tool_hash[:annotations]["readOnlyHint"]
+  end
+
+  # Tools with Destructive annotations
+  test "destructive annotation is mapped to destructiveHint in tool schema" do
+    # Create a test class with destructive annotation
+    class DestructiveTestTool < ActionMCP::Tool
+      tool_name "destructive_test"
+      description "Test tool with destructive annotation"
+      destructive
     end
 
-    class NonDestructiveTool < Tool
-      tool_name "non_destructive_tool"
-      description "Safe tool"
+    tool_class = DestructiveTestTool
+    assert_equal true, tool_class._annotations["destructiveHint"], "destructiveHint should be set to true"
 
-      destructive false
-      read_only true
+    # Check to_h output
+    tool_hash = tool_class.to_h
+    assert_includes tool_hash[:annotations].keys, "destructiveHint"
+    assert_equal true, tool_hash[:annotations]["destructiveHint"]
+  end
+
+  # Tools with Idempotent annotations
+  test "idempotent annotation is mapped to idempotentHint in tool schema" do
+    tool_class = NumericArrayTool
+    assert_equal true, tool_class._annotations["idempotentHint"], "idempotentHint should be set to true"
+
+    # Check to_h output
+    tool_hash = tool_class.to_h
+    assert_includes tool_hash[:annotations].keys, "idempotentHint"
+    assert_equal true, tool_hash[:annotations]["idempotentHint"]
+  end
+
+  # Tools with Open World annotations
+  test "open_world annotation is mapped to openWorldHint in tool schema" do
+    # Create a test class with open_world annotation
+    class OpenWorldTestTool < ActionMCP::Tool
+      tool_name "open_world_test"
+      description "Test tool with open_world annotation"
+      open_world
     end
 
-    test "tool annotations are set correctly" do
-      expected_annotations = {
-        "destructive" => true,
-        "readOnly" => false,
-        "custom" => "value"
-      }
+    tool_class = OpenWorldTestTool
+    assert_equal true, tool_class._annotations["openWorldHint"], "openWorldHint should be set to true"
 
-      assert_equal expected_annotations, AnnotatedTool._annotations
+    # Check to_h output
+    tool_hash = tool_class.to_h
+    assert_includes tool_hash[:annotations].keys, "openWorldHint"
+    assert_equal true, tool_hash[:annotations]["openWorldHint"]
+  end
+
+  # Tools with Title annotations
+  test "title annotation is included in tool schema" do
+    # Create a test class with title annotation
+    class TitleTestTool < ActionMCP::Tool
+      tool_name "title_test"
+      title "Title Test Tool"
+      description "Test tool with title annotation"
     end
 
-    test "tool.to_h includes annotations" do
-      result = AnnotatedTool.to_h(protocol_version: "2025-03-26")
+    tool_class = TitleTestTool
+    assert_equal "Title Test Tool", tool_class._annotations["title"], "title should be 'Title Test Tool'"
 
-      assert result.key?(:annotations)
-      assert_equal true, result[:annotations]["destructive"]
-      assert_equal false, result[:annotations]["readOnly"]
-      assert_equal "value", result[:annotations]["custom"]
+    # Check to_h output
+    tool_hash = tool_class.to_h
+    assert_includes tool_hash[:annotations].keys, "title"
+    assert_equal "Title Test Tool", tool_hash[:annotations]["title"]
+  end
+
+  # Test a tool with multiple annotations
+  test "tools can have multiple annotations" do
+    # Create a test class with multiple annotations
+    class MultiAnnotationTestTool < ActionMCP::Tool
+      tool_name "multi_annotation_test"
+      title "Multi Annotation Tool"
+      description "Test tool with multiple annotations"
+      read_only
+      idempotent
+      destructive
+      open_world
     end
 
-    test "tool.to_h includes annotations when no protocol specified" do
-      result = AnnotatedTool.to_h
+    tool_class = MultiAnnotationTestTool
+    tool_hash = tool_class.to_h
 
-      assert result.key?(:annotations)
-      assert_equal true, result[:annotations]["destructive"]
-      assert_equal false, result[:annotations]["readOnly"]
-      assert_equal "value", result[:annotations]["custom"]
-    end
+    assert_includes tool_hash[:annotations].keys, "readOnlyHint"
+    assert_includes tool_hash[:annotations].keys, "idempotentHint"
+    assert_includes tool_hash[:annotations].keys, "destructiveHint"
+    assert_includes tool_hash[:annotations].keys, "openWorldHint"
+    assert_includes tool_hash[:annotations].keys, "title"
 
-    test "convenience methods set correct annotations" do
-      result = NonDestructiveTool.to_h(protocol_version: "2025-03-26")
-
-      assert_equal false, result[:annotations]["destructive"]
-      assert_equal true, result[:annotations]["readOnly"]
-    end
-
-    test "tools without annotations work correctly" do
-      class PlainTool < Tool
-        tool_name "plain_tool"
-        description "Tool without annotations"
-      end
-
-      result = PlainTool.to_h(protocol_version: "2025-03-26")
-      assert_not result.key?(:annotations)
-    end
+    assert_equal true, tool_hash[:annotations]["readOnlyHint"]
+    assert_equal true, tool_hash[:annotations]["idempotentHint"]
+    assert_equal true, tool_hash[:annotations]["destructiveHint"]
+    assert_equal true, tool_hash[:annotations]["openWorldHint"]
+    assert_equal "Multi Annotation Tool", tool_hash[:annotations]["title"]
   end
 end

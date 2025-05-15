@@ -3,7 +3,10 @@
 # test/dummy/app/mcp/tools/progress_2025_demo_tool.rb
 class Progress2025DemoTool < ApplicationMCPTool
   tool_name "progress_2025_demo"
+  title "Progress Demo Tool"
   description "Demo tool showing 2025-03-26 progress notifications"
+  read_only
+  idempotent
 
   property :total_items, type: "integer", description: "Total items to process", default: 5
   property :delay_ms, type: "integer", description: "Delay between items in milliseconds", default: 10

@@ -1,17 +1,46 @@
 # frozen_string_literal: true
 
-# Template for generating new tools.
 class <%= class_name %> < ApplicationMCPTool
-  # Set the tool name.
   tool_name "<%= tool_name %>"
-  description "Calculate the sum of two numbers"
+  description "<%= description %>"
+<% if options[:title] %>
+  title "<%= options[:title] %>"
+<% end %>
+<% if options[:read_only] %>
+  read_only
+<% end %>
+<% if options[:destructive] %>
+  destructive
+<% end %>
+<% if options[:idempotent] %>
+  idempotent
+<% end %>
+<% if options[:open_world] %>
+  open_world
+<% end %>
+<% annotations.each do |k, v| %>
+  <% unless [:read_only, :destructive, :idempotent, :open_world, :title].include?(k) %>
+  annotate(:<%= k %>, <%= v.inspect %>)
+  <% end %>
+<% end %>
 
-  # Define input properties.
-  property :a, type: "number", description: "First number", required: true
-  property :b, type: "number", description: "Second number", required: true
+    <% if properties.empty? %>
+  property :input, type: "string", description: "Input", required: true
+    <% else %>
+    <% properties.each do |prop| %>
+  property :<%= prop[:name] %>, type: "<%= prop[:type] %>", description: "<%= prop[:description] %>"<%= ", required: true" if prop[:required] %>
+    <% end %>
+    <% end %>
 
-  # Implement the tool's logic here.
-  def call
-    render(text: a + b)
+  def perform
+    render(text: "Processing <%= properties.map { |p| p[:name] }.join(', ') %>")
+
+    # Optional outputs:
+    # render(audio: "<base64_data>", mime_type: "audio/mpeg")
+    # render(image: "<base64_data>", mime_type: "image/png")
+    # render(resource: "file://path", mime_type: "application/json", text: "{}")
+    # render(resource: "file://path", mime_type: "application/octet-stream", blob: "<base64_data>")
+  rescue => e
+    render(error: ["Error: #{e.message}"])
   end
 end

@@ -52,12 +52,28 @@ module ActionMCP
       end
 
       # Convenience methods for common annotations
+      def title(value = nil)
+        if value
+          annotate(:title, value)
+        else
+          _annotations["title"]
+        end
+      end
+
       def destructive(enabled = true)
-        annotate(:destructive, enabled)
+        annotate(:destructiveHint, enabled)
       end
 
       def read_only(enabled = true)
-        annotate(:readOnly, enabled)
+        annotate(:readOnlyHint, enabled)
+      end
+
+      def idempotent(enabled = true)
+        annotate(:idempotentHint, enabled)
+      end
+
+      def open_world(enabled = true)
+        annotate(:openWorldHint, enabled)
       end
 
       # Return annotations for the tool
