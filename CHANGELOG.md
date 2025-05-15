@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.10](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.9...action_mcp/v0.50.10) (2025-05-15)
+
+
+### Bug Fixes
+
+* update handle_common_methods to return JSON-RPC response and enhance ping tests ([f1c314d](https://github.com/seuros/action_mcp/commit/f1c314d6b3ff67ca738e49275abea76d8b62b82b))
+
 ## [0.50.9](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.8...action_mcp/v0.50.9) (2025-05-15)
 
 
