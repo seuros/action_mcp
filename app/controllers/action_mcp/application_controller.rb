@@ -260,7 +260,6 @@ module ActionMCP
 
     # Processes the results from the JsonRpcHandler.
     def process_handler_results(result, session, session_initially_missing, is_initialize_request)
-
       # Handle empty result (notifications)
       if result.nil?
         return head :accepted

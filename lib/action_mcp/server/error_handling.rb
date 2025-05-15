@@ -7,13 +7,13 @@ module ActionMCP
 
       def error_response(id, error_or_symbol, message = nil, data = nil)
         json_rpc_error = case error_or_symbol
-                         when JSON_RPC::JsonRpcError
+        when JSON_RPC::JsonRpcError
                            error_or_symbol
-                         when Symbol
+        when Symbol
                            JSON_RPC::JsonRpcError.new(error_or_symbol, message: message, data: data)
-                         else
+        else
                            error_or_symbol
-                         end
+        end
 
         JSON_RPC::Response.new(id: id, error: json_rpc_error)
       end
