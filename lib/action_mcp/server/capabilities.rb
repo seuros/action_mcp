@@ -57,10 +57,10 @@ module ActionMCP
         capabilities_payload = session.server_capabilities_payload
         # If vibed_ignore_version is true, always use the latest supported version in the response
         # Otherwise, use the client's requested version
-        if ActionMCP.configuration.vibed_ignore_version
-          capabilities_payload[:protocolVersion] = PROTOCOL_VERSION
+        capabilities_payload[:protocolVersion] = if ActionMCP.configuration.vibed_ignore_version
+                                                   PROTOCOL_VERSION
         else
-          capabilities_payload[:protocolVersion] = client_protocol_version
+                                                   client_protocol_version
         end
 
         send_jsonrpc_response(request_id, result: capabilities_payload)

@@ -26,33 +26,37 @@ module ActionMCP
 
       # When preference is :sse, missing Accept should error
       ActionMCP.configuration.post_response_preference = :sse
-      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
+      post "/",
+           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
       assert_response :success
       body = response.parsed_body
       assert_equal(-32_002, body.dig("error", "code"))
-      assert_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body.dig("error", "message"))
+      assert_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body.dig("error", "message"))
 
       # When preference is :sse, with both Accepts, should proceed (no Accept error)
-      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json, text/event-stream" }, params: payload.to_json
+      post "/",
+           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json, text/event-stream" }, params: payload.to_json
       body = response.parsed_body
       if body.is_a?(Hash) && body["error"].is_a?(Hash)
-        refute_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body["error"]["message"])
+        refute_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body["error"]["message"])
       end
 
       # When preference is :json, missing text/event-stream is OK, but missing application/json is not
       ActionMCP.configuration.post_response_preference = :json
-      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
+      post "/",
+           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "application/json" }, params: payload.to_json
       body = response.parsed_body
       if body.is_a?(Hash) && body["error"].is_a?(Hash)
-        refute_match(/Client must accept 'application\/json' and 'text\/event-stream'/, body["error"]["message"])
-        refute_match(/Client must accept 'text\/event-stream'/, body["error"]["message"])
+        refute_match(%r{Client must accept 'application/json' and 'text/event-stream'}, body["error"]["message"])
+        refute_match(%r{Client must accept 'text/event-stream'}, body["error"]["message"])
       end
 
       # When preference is :json, missing application/json should error
-      post "/", headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "text/event-stream" }, params: payload.to_json
+      post "/",
+           headers: { "CONTENT_TYPE" => "application/json", "Mcp-Session-Id" => session_id, "ACCEPT" => "text/event-stream" }, params: payload.to_json
       body = response.parsed_body
       assert_equal(-32_002, body.dig("error", "code"))
-      assert_match(/Client must accept 'application\/json'/, body.dig("error", "message"))
+      assert_match(%r{Client must accept 'application/json'}, body.dig("error", "message"))
 
       # Restore preference
       ActionMCP.configuration.post_response_preference = :json
@@ -185,17 +189,17 @@ module ActionMCP
       assert_equal "list-tools-1", tools_response["id"], "ID should be preserved in response"
       assert_not_nil tools_response["result"]
 
-        # Verify tools are returned if result is present
-        tools = tools_response["result"]["tools"]
-        assert_instance_of Array, tools
-        assert_not_empty tools, "Server should have at least one tool"
+      # Verify tools are returned if result is present
+      tools = tools_response["result"]["tools"]
+      assert_instance_of Array, tools
+      assert_not_empty tools, "Server should have at least one tool"
 
-        # Find a specific tool (calculate_sum)
-        calculate_sum_tool = tools.find { |tool| tool["name"] == "calculate_sum" }
-        assert_not_nil calculate_sum_tool, "calculate_sum tool should be available"
+      # Find a specific tool (calculate_sum)
+      calculate_sum_tool = tools.find { |tool| tool["name"] == "calculate_sum" }
+      assert_not_nil calculate_sum_tool, "calculate_sum tool should be available"
 
-        # Verify tool structure
-        assert_equal "calculate_sum", calculate_sum_tool["name"]
+      # Verify tool structure
+      assert_equal "calculate_sum", calculate_sum_tool["name"]
 
       # These checks only run if we found the calculate_sum_tool
       assert_not_nil calculate_sum_tool["description"]
@@ -235,19 +239,19 @@ module ActionMCP
       # Parse the tool call response
       call_response = response.parsed_body
       assert_equal "2.0", call_response["jsonrpc"]
-        assert_equal "call-tool-1", call_response["id"], "ID should be preserved in response"
+      assert_equal "call-tool-1", call_response["id"], "ID should be preserved in response"
 
-        assert_not_nil call_response["result"]
+      assert_not_nil call_response["result"]
 
-          # Verify tool execution result if we have content
-          content = call_response["result"]["content"]
-          assert_instance_of Array, content
-          assert_not_empty content
+      # Verify tool execution result if we have content
+      content = call_response["result"]["content"]
+      assert_instance_of Array, content
+      assert_not_empty content
 
-          # The calculate_sum tool should return the sum as text
-          text_content = content.find { |item| item["type"] == "text" }
-          assert_not_nil text_content, "Tool should return text content"
-          assert_equal "40.0", text_content["text"], "15 + 25 should equal 40"
+      # The calculate_sum tool should return the sum as text
+      text_content = content.find { |item| item["type"] == "text" }
+      assert_not_nil text_content, "Tool should return text content"
+      assert_equal "40.0", text_content["text"], "15 + 25 should equal 40"
 
       # ====================================================================
       # STEP 5: List available prompts (optional verification)
@@ -348,69 +352,69 @@ module ActionMCP
     end
 
     test "vibed_ignore_version: if true, protocol is always latest regardless of client version" do
-        original_vibed_ignore_version = ActionMCP.configuration.vibed_ignore_version
+      original_vibed_ignore_version = ActionMCP.configuration.vibed_ignore_version
 
-        # First, observe default behavior (vibed_ignore_version = false)
-        ActionMCP.configuration.vibed_ignore_version = false
+      # First, observe default behavior (vibed_ignore_version = false)
+      ActionMCP.configuration.vibed_ignore_version = false
 
-        init_request = {
-          jsonrpc: "2.0",
-          id: "vibed-ignore-false",
-          method: "initialize",
-          params: {
-            protocolVersion: "1.0.0", # Wrong version that should cause error
-            clientInfo: { name: "Test", version: "1.0" },
-            capabilities: {}
-          }
+      init_request = {
+        jsonrpc: "2.0",
+        id: "vibed-ignore-false",
+        method: "initialize",
+        params: {
+          protocolVersion: "1.0.0", # Wrong version that should cause error
+          clientInfo: { name: "Test", version: "1.0" },
+          capabilities: {}
         }
+      }
 
-        post "/",
-             headers: {
-               "CONTENT_TYPE" => "application/json",
-               "ACCEPT" => "application/json, text/event-stream"
-             },
-             params: init_request.to_json
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream"
+           },
+           params: init_request.to_json
 
-        # With vibed_ignore_version = false, should get error response
-        error_response = response.parsed_body
-        assert_not_nil error_response["error"]
-        assert_match(/Unsupported protocol version/, error_response["error"]["message"])
+      # With vibed_ignore_version = false, should get error response
+      error_response = response.parsed_body
+      assert_not_nil error_response["error"]
+      assert_match(/Unsupported protocol version/, error_response["error"]["message"])
 
-        # Now enable vibed_ignore_version and try again
-        ActionMCP.configuration.vibed_ignore_version = true
+      # Now enable vibed_ignore_version and try again
+      ActionMCP.configuration.vibed_ignore_version = true
 
-        init_request = {
-          jsonrpc: "2.0",
-          id: "vibed-ignore-true",
-          method: "initialize",
-          params: {
-            protocolVersion: "1.0.0", # Wrong version, but should be ignored now
-            clientInfo: { name: "Test", version: "1.0" },
-            capabilities: {}
-          }
+      init_request = {
+        jsonrpc: "2.0",
+        id: "vibed-ignore-true",
+        method: "initialize",
+        params: {
+          protocolVersion: "1.0.0", # Wrong version, but should be ignored now
+          clientInfo: { name: "Test", version: "1.0" },
+          capabilities: {}
         }
+      }
 
-        post "/",
-             headers: {
-               "CONTENT_TYPE" => "application/json",
-               "ACCEPT" => "application/json, text/event-stream"
-             },
-             params: init_request.to_json
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream"
+           },
+           params: init_request.to_json
 
-        # With vibed_ignore_version = true, should get successful response
-        assert_response :success
-        response_body = response.parsed_body
-        assert_equal "2.0", response_body["jsonrpc"]
-        assert_equal "vibed-ignore-true", response_body["id"]
-        assert_not_nil response_body["result"]
-        assert_equal "2025-03-26", response_body["result"]["protocolVersion"]
+      # With vibed_ignore_version = true, should get successful response
+      assert_response :success
+      response_body = response.parsed_body
+      assert_equal "2.0", response_body["jsonrpc"]
+      assert_equal "vibed-ignore-true", response_body["id"]
+      assert_not_nil response_body["result"]
+      assert_equal "2025-03-26", response_body["result"]["protocolVersion"]
 
-        session_id = response.headers["Mcp-Session-Id"]
-        assert_not_nil session_id
-        session = ActionMCP::Session.find(session_id)
-        assert_equal "2025-03-26", session.protocol_version
+      session_id = response.headers["Mcp-Session-Id"]
+      assert_not_nil session_id
+      session = ActionMCP::Session.find(session_id)
+      assert_equal "2025-03-26", session.protocol_version
 
-        ActionMCP.configuration.vibed_ignore_version = original_vibed_ignore_version
-      end
+      ActionMCP.configuration.vibed_ignore_version = original_vibed_ignore_version
+    end
   end
 end

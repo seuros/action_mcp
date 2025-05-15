@@ -110,12 +110,13 @@ module ActionMCP
 
       test "resource template supports annotations" do
         annotated_template = Blueprint::ResourceTemplate.new({
-          "uriTemplate" => "annotated://{id}",
-          "name" => "Annotated Template",
-          "description" => "Annotated resource template",
-          "mimeType" => "application/json",
-          "annotations" => { "audience" => [ "assistant" ], "priority" => 0.5 }
-        })
+                                                               "uriTemplate" => "annotated://{id}",
+                                                               "name" => "Annotated Template",
+                                                               "description" => "Annotated resource template",
+                                                               "mimeType" => "application/json",
+                                                               "annotations" => { "audience" => [ "assistant" ],
+                                                                                  "priority" => 0.5 }
+                                                             })
         assert_equal({ "audience" => [ "assistant" ], "priority" => 0.5 }, annotated_template.annotations)
         hash = annotated_template.to_h
         assert_equal({ "audience" => [ "assistant" ], "priority" => 0.5 }, hash["annotations"])

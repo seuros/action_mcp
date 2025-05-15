@@ -1,0 +1,77 @@
+# Session fixtures for testing
+
+# A basic initialized server session at step1
+step1_session:
+  id: "step1_session"
+  initialized: true
+  status: "initialized"
+  role: "server"
+  messages_count: 2
+  protocol_version: "2025-03-26"
+  server_info: '{"name":"Test Server","version":"1.0.0"}'
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}'
+  tool_registry: '["weather_forecast","format_source","execute_command"]'
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 0
+
+# A server session at step2 of a workflow
+step2_session:
+  id: "step2_session"
+  initialized: true
+  status: "initialized"
+  role: "server"
+  messages_count: 4
+  protocol_version: "2025-03-26"
+  server_info: '{"name":"Test Server","version":"1.0.0"}'
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}'
+  tool_registry: '["weather_forecast","format_source","execute_command"]'
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 0
+
+# A server session at final step of a workflow
+final_step_session:
+  id: "final_step_session"
+  initialized: true
+  status: "initialized"
+  role: "server"
+  messages_count: 6
+  protocol_version: "2025-03-26"
+  server_info: '{"name":"Test Server","version":"1.0.0"}'
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}'
+  tool_registry: '["weather_forecast","format_source","execute_command"]'
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 0
+
+# A pre-initialized server session (for testing initialization process)
+pre_initialized_session:
+  id: "pre_init_session"
+  initialized: false
+  status: "pre_initialize"
+  role: "server"
+  messages_count: 0
+  protocol_version: "2025-03-26"
+  server_info: '{"name":"Test Server","version":"1.0.0"}'
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}'
+  tool_registry: '["weather_forecast","format_source"]'
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 0
+
+# A closed server session  
+closed_session:
+  id: "closed_session"
+  initialized: true
+  status: "closed"
+  role: "server"
+  messages_count: 5
+  ended_at: <%= Time.zone.now %>
+  protocol_version: "2025-03-26"
+  server_info: '{"name":"Test Server","version":"1.0.0"}'
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}'
+  tool_registry: '["weather_forecast","format_source"]'
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 3

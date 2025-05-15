@@ -2,7 +2,6 @@
 
 require "test_helper"
 
-
 module ActionMCP
   module Client
     class ToolboxTest < ActiveSupport::TestCase

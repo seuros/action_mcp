@@ -34,7 +34,7 @@ module ActionMCP
           # Load all data at once for regular load_items
           all_items = []
 
-          @fixture_data.each do |page, data|
+          @fixture_data.each_value do |data|
             all_items.concat(data["items"])
           end
 
@@ -46,12 +46,12 @@ module ActionMCP
         def load_page(cursor: nil, limit: nil, timeout: DEFAULT_TIMEOUT)
           @load_count += 1
 
-          if cursor.nil?
-            # Load first page
-            @current_page = 1
+          @current_page = if cursor.nil?
+                            # Load first page
+                            1
           else
-            # Parse page number from cursor
-            @current_page = cursor.split("-").last.to_i
+                            # Parse page number from cursor
+                            cursor.split("-").last.to_i
           end
 
           page_key = "page#{@current_page}"

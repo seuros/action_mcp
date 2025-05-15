@@ -3,10 +3,17 @@
 module ActionMCP
   module Server
     class JsonRpcHandler < JsonRpcHandlerBase
+      include Handlers::ResourceHandler
+      include Handlers::ToolHandler
+      include Handlers::PromptHandler
+      include ErrorHandling
+      include ErrorAware
+
       # Handle server-specific methods
       # @param request [JSON_RPC::Request, JSON_RPC::Notification, JSON_RPC::Response]
       def call(request)
         read(request.to_h)
+
         case request
         when JSON_RPC::Request
           handle_request(request)
@@ -24,133 +31,61 @@ module ActionMCP
         rpc_method = request.method
         params = request.params
 
-        # Try to handle common methods first (like ping)
-        return if handle_common_methods(rpc_method, id, params)
+        with_error_handling(id) do
+          # Try to handle common methods first (like ping)
+          return if handle_common_methods(rpc_method, id, params)
 
+          # Route to appropriate handler
+          route_to_handler(rpc_method, id, params)
+        end
+      end
+
+      def route_to_handler(rpc_method, id, params)
         case rpc_method
-        when "initialize"
-          message = transport.send_capabilities(id, params)
-          extract_message_payload(message, id)
+        when Methods::INITIALIZE
+          handle_initialize(id, params)
         when %r{^prompts/}
           process_prompts(rpc_method, id, params)
         when %r{^resources/}
           process_resources(rpc_method, id, params)
         when %r{^tools/}
           process_tools(rpc_method, id, params)
-        when "completion/complete"
+        when Methods::COMPLETION_COMPLETE
           process_completion_complete(id, params)
         else
-          error_response(id, :method_not_found, "Method not found: #{rpc_method}")
+          raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Method not found: #{rpc_method}")
         end
+      end
+
+      def handle_initialize(id, params)
+        message = transport.send_capabilities(id, params)
+        extract_message_payload(message, id)
       end
 
       def handle_notification(notification)
         @current_request_id = nil
 
-        begin
-          method_name = notification.method.to_s
-          params = notification.params || {}
+        method_name = notification.method.to_s
+        params = notification.params || {}
 
-          process_notifications(method_name, params)
-          { type: :notifications_only }
-        rescue StandardError => e
-          Rails.logger.error("Error handling notification #{notification.method}: #{e.message}")
-          Rails.logger.error(e.backtrace.join("\n"))
-          { type: :notifications_only }
-        end
+        process_notifications(method_name, params)
+        { type: :notifications_only }
       end
 
       def handle_response(response)
         Rails.logger.debug("Received response: #{response.inspect}")
+
         {
           type: :responses,
           request_id: response.id,
-          payload: {
-            jsonrpc: "2.0",
-            id: response.id,
-            result: response.result
-          }
+          payload: build_response_payload(response)
         }
-      end
-
-      def process_prompts(rpc_method, id, params)
-        params ||= {}
-
-        case rpc_method
-        when "prompts/get"
-          name = params["name"] || params[:name]
-          arguments = params["arguments"] || params[:arguments] || {}
-          message = transport.send_prompts_get(id, name, arguments)
-          extract_message_payload(message, id)
-        when "prompts/list"
-          message = transport.send_prompts_list(id)
-          extract_message_payload(message, id)
-        else
-          Rails.logger.warn("Unknown prompts method: #{rpc_method}")
-          error_response(id, :method_not_found, "Unknown prompts method: #{rpc_method}")
-        end
-      end
-
-      def process_tools(rpc_method, id, params)
-        params ||= {}
-
-        case rpc_method
-        when "tools/list"
-          message = transport.send_tools_list(id, params)
-          extract_message_payload(message, id)
-        when "tools/call"
-          name = params["name"] || params[:name]
-          arguments = params["arguments"] || params[:arguments] || {}
-
-          return error_response(id, :invalid_params, "Tool name is required") if name.nil?
-
-          message = transport.send_tools_call(id, name, arguments)
-          extract_message_payload(message, id)
-        else
-          Rails.logger.warn("Unknown tools method: #{rpc_method}")
-          error_response(id, :method_not_found, "Unknown tools method: #{rpc_method}")
-        end
-      end
-
-      def process_resources(rpc_method, id, params)
-        params ||= {}
-
-        case rpc_method
-        when "resources/list"
-          message = transport.send_resources_list(id)
-          extract_message_payload(message, id)
-        when "resources/templates/list"
-          message = transport.send_resource_templates_list(id)
-          extract_message_payload(message, id)
-        when "resources/read"
-          return error_response(id, :invalid_params, "Resource URI is required") if params.nil? || params.empty?
-
-          message = transport.send_resource_read(id, params)
-          extract_message_payload(message, id)
-        when "resources/subscribe"
-          uri = params["uri"] || params[:uri]
-          return error_response(id, :invalid_params, "Resource URI is required") if uri.nil?
-
-          message = transport.send_resource_subscribe(id, uri)
-          extract_message_payload(message, id)
-        when "resources/unsubscribe"
-          uri = params["uri"] || params[:uri]
-          return error_response(id, :invalid_params, "Resource URI is required") if uri.nil?
-
-          message = transport.send_resource_unsubscribe(id, uri)
-          extract_message_payload(message, id)
-        else
-          Rails.logger.warn("Unknown resources method: #{rpc_method}")
-          error_response(id, :method_not_found, "Unknown resources method: #{rpc_method}")
-        end
       end
 
       def process_completion_complete(id, params)
         params ||= {}
 
-        result = transport.send_jsonrpc_response(id, result: {
-          completion: { values: [], total: 0, hasMore: false }
-        })
+        result = transport.send_jsonrpc_response(id, result: build_completion_result)
 
         if result.is_a?(ActionMCP::Session::Message)
           extract_message_payload(result, id)
@@ -161,7 +96,7 @@ module ActionMCP
 
       def process_notifications(rpc_method, params)
         case rpc_method
-        when "notifications/initialized"
+        when Methods::NOTIFICATIONS_INITIALIZED
           Rails.logger.info "Client notified initialization complete"
           transport.initialize!
         else
@@ -177,7 +112,7 @@ module ActionMCP
             payload: message.message_json
           }
         else
-        message
+          message
         end
       end
 
@@ -193,23 +128,17 @@ module ActionMCP
         end
       end
 
-      def error_response(id, code, message)
-        error_code = case code
-        when :method_not_found then -32_601
-        when :invalid_params then -32_602
-        when :internal_error then -32_603
-        else -32_000
-        end
-
+      def build_response_payload(response)
         {
-          type: :error,
-          request_id: id,
-          payload: {
-            jsonrpc: "2.0",
-            id: id,
-            error: { code: error_code, message: message }
-          },
-          status: :bad_request
+          jsonrpc: "2.0",
+          id: response.id,
+          result: response.result
+        }
+      end
+
+      def build_completion_result
+        {
+          completion: { values: [], total: 0, hasMore: false }
         }
       end
     end
