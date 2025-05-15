@@ -332,7 +332,6 @@ module ActionMCP
       data = payload.is_a?(String) ? payload : MultiJson.dump(payload)
       sse_event = "id: #{event_id}\ndata: #{data}\n\n"
       sse.write(sse_event)
-      return unless ActionMCP.configuration.enable_sse_resumability
 
       begin
         session.store_sse_event(event_id, payload, session.max_stored_sse_events)
@@ -343,8 +342,6 @@ module ActionMCP
 
     # Helper to clean up old SSE events for a session
     def cleanup_old_sse_events(session)
-      return unless ActionMCP.configuration.enable_sse_resumability
-
       begin
         retention_period = session.sse_event_retention_period
         count = session.cleanup_old_sse_events(retention_period)
