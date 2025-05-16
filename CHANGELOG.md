@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.12](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.11...action_mcp/v0.50.12) (2025-05-16)
+
+
+### Bug Fixes
+
+* correct rendering ([e830ade](https://github.com/seuros/action_mcp/commit/e830ade77a9580d1810510be0253d475e08b215e))
+
 ## [0.50.11](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.10...action_mcp/v0.50.11) (2025-05-15)
 
 
