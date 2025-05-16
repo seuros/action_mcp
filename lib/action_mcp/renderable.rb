@@ -21,14 +21,14 @@ module ActionMCP
     #   render(text: "Hello, world!")
     #
     def render(text: nil, audio: nil, image: nil, resource: nil, mime_type: nil, blob: nil)
-      if text
+      if resource && mime_type
+        Content::Resource.new(resource, mime_type, text: text, blob: blob, annotations: nil)
+      elsif text
         Content::Text.new(text, annotations: nil)
       elsif audio && mime_type
         Content::Audio.new(audio, mime_type, annotations: nil)
       elsif image && mime_type
         Content::Image.new(image, mime_type, annotations: nil)
-      elsif resource && mime_type
-        Content::Resource.new(resource, mime_type, text: text, blob: blob, annotations: nil)
       else
         raise ArgumentError, "No content to render"
       end
