@@ -3,6 +3,7 @@
 module ActionMCP
   module Generators
     class ConfigGenerator < Rails::Generators::Base
+      namespace "action_mcp:config"
       source_root File.expand_path("templates", __dir__)
 
       desc "Creates ActionMCP configuration file (config/mcp.yml)"
@@ -21,8 +22,6 @@ module ActionMCP
         say "  - solid_cable : Database-backed adapter (requires solid_cable gem)"
         say "  - redis    : Redis-backed adapter (requires redis gem)"
         say ""
-        say "Example usage:"
-        say "  rails g action_mcp:install  # Main generator"
       end
     end
   end
