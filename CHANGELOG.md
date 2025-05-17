@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.13](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.12...action_mcp/v0.50.13) (2025-05-17)
+
+
+### Bug Fixes
+
+* action_mcp:config has wrong namespace ([3363d12](https://github.com/seuros/action_mcp/commit/3363d12042628789fcbac8fa7554d650545b493d))
+
 ## [0.50.12](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.11...action_mcp/v0.50.12) (2025-05-16)
 
 
