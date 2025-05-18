@@ -171,7 +171,11 @@ module ActionMCP
       )
 
       # Maintain cache limit by removing oldest events if needed
-      sse_events.order(event_id: :asc).limit(sse_events.count - max_events).destroy_all if sse_events.count > max_events
+      count = sse_events.count
+      excess = count - max_events
+      if excess.positive?
+        sse_events.order(event_id: :asc).limit(excess).destroy_all
+      end
 
       event
     end
