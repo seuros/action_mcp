@@ -174,7 +174,7 @@ module ActionMCP
       count = sse_events.count
       excess = count - max_events
       if excess.positive?
-        sse_events.order(event_id: :asc).limit(excess).destroy_all
+        sse_events.order(event_id: :asc).limit(excess).delete_all
       end
 
       event
