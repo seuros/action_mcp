@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "gateway"
+require "active_support/core_ext/integer/time"
+
 module ActionMCP
   # Configuration class to hold settings for the ActionMCP server.
   class Configuration
@@ -30,7 +33,10 @@ module ActionMCP
                   :vibed_ignore_version,
                   # --- SSE Resumability Options ---
                   :sse_event_retention_period,
-                  :max_stored_sse_events
+                  :max_stored_sse_events,
+                  # --- Gateway Options ---
+                  :gateway_class,
+                  :current_class
 
     def initialize
       @logging_enabled = true
@@ -47,6 +53,10 @@ module ActionMCP
       # Resumability defaults
       @sse_event_retention_period = 15.minutes
       @max_stored_sse_events = 100
+
+      # Gateway
+      @gateway_class = ActionMCP::Gateway
+      @current_class = nil
     end
 
     def name
