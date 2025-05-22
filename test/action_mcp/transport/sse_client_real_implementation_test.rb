@@ -48,7 +48,6 @@ class SSEClientRealImplementationTest < ActiveSupport::TestCase
 
     @received_messages = []
     @client.on_message do |msg|
-      binding.irb
       @received_messages << msg
     end
   end
