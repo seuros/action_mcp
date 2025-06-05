@@ -4,6 +4,7 @@ module ActionMCP
   # Abstract base class for Prompts
   class Prompt < Capability
     include ActionMCP::Callbacks
+    include ActionMCP::CurrentHelpers
     class_attribute :_argument_definitions, instance_accessor: false, default: []
 
     # ---------------------------------------------------
@@ -158,16 +159,6 @@ module ActionMCP
     # Expected to use render to produce Content objects or add_message for messages
     def perform
       raise NotImplementedError, "Subclasses must implement the perform method"
-    end
-
-    # Access the current user from ActionMCP::Current
-    def current_user
-      ActionMCP::Current.user
-    end
-
-    # Access the current gateway from ActionMCP::Current
-    def current_gateway
-      ActionMCP::Current.gateway
     end
   end
 end

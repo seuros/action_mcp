@@ -7,6 +7,7 @@ module ActionMCP
   # Tools are registered automatically in the ToolsRegistry unless marked as abstract.
   class Tool < Capability
     include ActionMCP::Callbacks
+    include ActionMCP::CurrentHelpers
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
@@ -228,16 +229,6 @@ module ActionMCP
     # Expected to use render to produce Content objects
     def perform
       raise NotImplementedError, "Subclasses must implement the perform method"
-    end
-
-    # Access the current user from ActionMCP::Current
-    def current_user
-      ActionMCP::Current.user
-    end
-
-    # Access the current gateway from ActionMCP::Current
-    def current_gateway
-      ActionMCP::Current.gateway
     end
 
     private
