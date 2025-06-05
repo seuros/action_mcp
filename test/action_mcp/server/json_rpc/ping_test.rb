@@ -14,7 +14,7 @@ module ActionMCP
           def @session.read(request = nil)
             # Do nothing with the request in the test
           end
-          @transport = TransportHandler.new(@session)
+          @transport = TransportHandler.new(@session, messaging_mode: :return)
           @handler = JsonRpcHandler.new(@transport)
         end
 
@@ -26,11 +26,9 @@ module ActionMCP
             params: nil
           )
 
-          # Process the request
-          @handler.call(request)
+          # Process the request and get the response
+          response = @handler.call(request)
 
-          # Check the JSON-RPC response in the transport
-          response = @session.written
           assert_instance_of JSON_RPC::Response, response
           assert_equal "test-ping-1", response.id
           assert_equal({}, response.result)

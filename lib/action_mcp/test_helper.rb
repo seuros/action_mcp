@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "active_support/testing/assertions"
+require_relative "test_helper/session_store_assertions"
 
 module ActionMCP
   #---------------------------------------------------------------------------
@@ -23,6 +24,7 @@ module ActionMCP
   #---------------------------------------------------------------------------
   module TestHelper
     include ActiveSupport::Testing::Assertions
+    include SessionStoreAssertions
 
     # ──── Registry assertions ────────────────────────────────────────────────
     def assert_mcp_tool_findable(name, msg = nil)

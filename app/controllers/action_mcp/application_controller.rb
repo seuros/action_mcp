@@ -158,11 +158,11 @@ module ActionMCP
         response.headers[MCP_SESSION_ID_HEADER] = session.id
       end
 
-      transport_handler = Server::TransportHandler.new(session)
+      # Use return mode for the transport handler when we need to capture responses
+      transport_handler = Server::TransportHandler.new(session, messaging_mode: :return)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
 
       result = json_rpc_handler.call(jsonrpc_params)
-
       process_handler_results(result, session, session_initially_missing, is_initialize_request)
     rescue ActionController::Live::ClientDisconnected, IOError => e
       Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}"
@@ -182,7 +182,7 @@ module ActionMCP
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for DELETE requests.") unless session_id_from_header
 
-      session = Session.find_by(id: session_id_from_header)
+      session = Server.session_store.load_session(session_id_from_header)
       if session.nil?
         return render_not_found("Session not found.")
       elsif session.status == "closed"
@@ -206,7 +206,7 @@ module ActionMCP
     def find_or_initialize_session
       session_id = extract_session_id
       if session_id
-        session = Session.find_by(id: session_id)
+        session = Server.session_store.load_session(session_id)
         if session
           if ActionMCP.configuration.vibed_ignore_version
             if session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
@@ -218,7 +218,7 @@ module ActionMCP
         end
         session
       else
-        Session.new(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+        Server.session_store.create_session(nil, protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
       end
     end
 
@@ -266,7 +266,13 @@ module ActionMCP
       end
 
       # Convert to hash for rendering
-      payload = result.message_json
+      payload = if result.respond_to?(:to_h)
+                  result.to_h
+      elsif result.respond_to?(:to_json)
+                  JSON.parse(result.to_json)
+      else
+                  result
+      end
 
       # Determine response format
       server_preference = ActionMCP.configuration.post_response_preference

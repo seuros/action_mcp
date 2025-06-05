@@ -98,7 +98,7 @@ class ProgressNotification2025IntegrationTest < ActionDispatch::IntegrationTest
       if captured_notifications.any?
         assert_equal 3, captured_notifications.length, "Should have 3 progress notifications"
       else
-        puts "INFO: No progress notifications were captured in this test run"
+        # No progress notifications were captured in this test run
         # Skip assertions if no notifications
         skip "No progress notifications were captured - implementation might have changed"
       end

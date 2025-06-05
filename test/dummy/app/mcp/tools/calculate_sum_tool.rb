@@ -11,22 +11,36 @@ class CalculateSumTool < ApplicationMCPTool
 
   validates :number1, numericality: { less_than_or_equal_to: 100, message: "must be 100 or less" }
 
+  # Class-level callback tracking for tests
+  class << self
+    attr_accessor :callback_tracker
+
+    def reset_callback_tracker
+      @callback_tracker = []
+    end
+
+    def track_callback(name)
+      @callback_tracker ||= []
+      @callback_tracker << name if Rails.env.test?
+    end
+  end
+
   before_perform do
-    logger.tagged("CalculateSumTool") { logger.info("before_perform") }
+    self.class.track_callback(:before_perform)
   end
 
   around_perform do |_tool, block|
-    logger.tagged("CalculateSumTool") { logger.info("around_perform (before)") }
+    self.class.track_callback(:around_perform_before)
     block.call
-    logger.tagged("CalculateSumTool") { logger.info("around_perform (after)") }
+    self.class.track_callback(:around_perform_after)
   end
 
   after_perform do
-    logger.tagged("CalculateSumTool") { logger.info("after_perform") }
+    self.class.track_callback(:after_perform)
   end
 
   def perform
-    logger.tagged("CalculateSumTool") { logger.info("perform") }
+    self.class.track_callback(:perform)
     sum = number1 + number2
     render text: sum
   end

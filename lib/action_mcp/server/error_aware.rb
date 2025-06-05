@@ -24,7 +24,14 @@ module ActionMCP
       def with_error_handling(request_id)
         yield
       rescue JSON_RPC::JsonRpcError => e
-        error_response(request_id, e)
+        if transport.messaging_mode == :return
+          response = error_response(request_id, e)
+          transport.write_message(response)
+          response
+        else
+          transport.send_jsonrpc_response(request_id, error: e)
+          nil
+        end
       end
     end
   end

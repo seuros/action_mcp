@@ -28,6 +28,13 @@ module ActionMCP
       @server = nil
     end
 
+    # Access the session store
+    def session_store
+      @session_store ||= SessionStoreFactory.create(
+        ActionMCP.configuration.session_store_type
+      )
+    end
+
     # Available pubsub adapter types
     ADAPTERS = {
       "test" => "SimplePubSub",
