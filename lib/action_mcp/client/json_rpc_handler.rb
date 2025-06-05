@@ -70,13 +70,16 @@ module ActionMCP
       end
 
       def process_response(id, result)
-        if transport.id == id
-          ## This initializes the transport
-          client.server = Client::Server.new(result)
+        # Check if this is a response to an initialize request
+        # We need to check the actual request method, not just compare IDs
+        request = client.session ? transport.messages.requests.find_by(jsonrpc_id: id) : nil
+
+        # If no session yet, this might be the initialize response
+        if !client.session && result["serverInfo"]
+          handle_initialize_response(id, result)
           return send_initialized_notification
         end
 
-        request = transport.messages.requests.find_by(jsonrpc_id: id)
         return unless request
 
         # Mark the request as acknowledged
@@ -113,8 +116,42 @@ module ActionMCP
         puts "\e[31mUnknown error: #{id} #{error}\e[0m"
       end
 
+      def handle_initialize_response(request_id, result)
+        # Session ID comes from HTTP headers, not the response body
+        # The transport should have already extracted it
+        session_id = transport.instance_variable_get(:@session_id)
+
+        if session_id.nil?
+          client.log_error("No session ID received from server")
+          return
+        end
+
+        # Check if we're resuming an existing session
+        if client.instance_variable_get(:@session_id) && session_id == client.instance_variable_get(:@session_id)
+          # We're resuming an existing session
+          client.instance_variable_set(:@session, ActionMCP::Session.find(session_id))
+          client.log_info("Resumed existing session: #{session_id}")
+        else
+          # Create a new session with the server-provided ID
+          client.instance_variable_set(:@session, ActionMCP::Session.from_client.new(
+            id: session_id,
+            protocol_version: result["protocolVersion"] || PROTOCOL_VERSION,
+            client_info: client.client_info,
+            client_capabilities: client.client_capabilities,
+            server_info: result["serverInfo"],
+            server_capabilities: result["capabilities"]
+          ))
+          client.session.save
+          client.log_info("Created new session: #{session_id}")
+        end
+
+        # Set the server info
+        client.server = Client::Server.new(result)
+        client.instance_variable_set(:@initialized, true)
+      end
+
       def send_initialized_notification
-        transport.initialize!
+        transport.initialize! if transport.respond_to?(:initialize!)
         client.send_jsonrpc_notification("notifications/initialized")
       end
     end

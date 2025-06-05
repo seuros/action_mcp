@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "transport"
+
 module ActionMCP
   module Client
     # Base client class containing common MCP functionality
@@ -12,25 +14,20 @@ module ActionMCP
       include Roots
       include Logging
 
-      attr_reader :logger, :type,
+      attr_reader :logger, :transport,
                   :connection_error, :server,
                   :server_capabilities, :session,
                   :catalog, :blueprint,
                   :prompt_book, :toolbox
 
-      delegate :initialized?, to: :session
+      delegate :connected?, :ready?, to: :transport
 
-      def initialize(logger: ActionMCP.logger)
+      def initialize(transport:, logger: ActionMCP.logger, **options)
         @logger = logger
-        @connected = false
-        @session = Session.from_client.new(
-          protocol_version: PROTOCOL_VERSION,
-          client_info: client_info,
-          client_capabilities: client_capabilities
-        )
+        @transport = transport
+        @session = nil  # Session will be created/loaded based on server response
+        @session_id = options[:session_id]  # Optional session ID for resumption
         @server_capabilities = nil
-        @message_callback = nil
-        @error_callback = nil
         @connection_error = nil
         @initialized = false
 
@@ -42,108 +39,64 @@ module ActionMCP
         @prompt_book = PromptBook.new([], self)
         # Tool objects
         @toolbox = Toolbox.new([], self)
+
+        setup_transport_callbacks
       end
 
-      def connected?
-        @connected
-      end
-
-      # Connect to the MCP server, if something went wrong at initialization
+      # Connect to the MCP server
       def connect
-        return true if @connected
+        return true if connected?
 
         begin
-          log_debug("Connecting to MCP server...")
+          log_debug("Connecting to MCP server via #{transport.class.name}...")
           @connection_error = nil
 
-          # Start transport with proper error handling
-          success = start_transport
-
+          success = @transport.connect
           unless success
-            log_error("Failed to establish connection to MCP server")
+            log_error("Failed to establish transport connection")
             return false
           end
 
-          @connected = true
           log_debug("Connected to MCP server")
-
-          # Create handler only if it doesn't exist yet
-          @json_rpc_handler ||= JsonRpcHandler.new(session, self)
-
-          # Clear any existing message callback and set a new one
-          @message_callback = lambda do |response|
-            @json_rpc_handler.call(response)
-          end
-
           true
         rescue StandardError => e
           @connection_error = e.message
           log_error("Failed to connect to MCP server: #{e.message}")
-          @error_callback&.call(e)
           false
         end
       end
 
       # Disconnect from the MCP server
       def disconnect
-        return true unless @connected
+        return true unless connected?
 
         begin
-          stop_transport
-          @connected = false
+          @transport.disconnect
           log_debug("Disconnected from MCP server")
           true
         rescue StandardError => e
           log_error("Error disconnecting from MCP server: #{e.message}")
-          @error_callback&.call(e)
           false
         end
-      end
-
-      # Set a callback for incoming messages
-      def on_message(&block)
-        @message_callback = block
-      end
-
-      # Set a callback for errors
-      def on_error(&block)
-        @error_callback = block
       end
 
       # Send a request to the MCP server
       def write_message(payload)
-        unless @connected
-          log_error("Cannot send request - not connected")
+        unless ready?
+          log_error("Cannot send request - transport not ready")
           return false
         end
 
         begin
-          session.write(payload)
+          # Only write to session if it exists (after initialization)
+          session.write(payload) if session
           data = payload.to_json unless payload.is_a?(String)
-          send_message(data)
+          @transport.send_message(data)
           true
         rescue StandardError => e
           log_error("Failed to send request: #{e.message}")
-          @error_callback&.call(e)
           false
         end
-      end
-
-      # Methods to be implemented by subclasses
-      def start_transport
-        raise NotImplementedError, "#{self.class} must implement #start_transport"
-      end
-
-      def stop_transport
-        raise NotImplementedError, "#{self.class} must implement #stop_transport"
-      end
-
-      def send_message(json)
-        raise NotImplementedError, "#{self.class} must implement #send_message"
-      end
-
-      def ready?
-        raise NotImplementedError, "#{self.class} must implement #ready?"
       end
 
       def server=(server)
@@ -152,38 +105,91 @@ module ActionMCP
         else
                     Client::Server.new(server)
         end
-        session.server_capabilities = server.capabilities
-        session.server_info = server.server_info
-        session.save
+
+        # Only update session if it exists
+        if @session
+          @session.server_capabilities = server.capabilities
+          @session.server_info = server.server_info
+          @session.save
+        end
+      end
+
+      def initialized?
+        @initialized && @session&.initialized?
       end
 
       def inspect
-        "#<#{self.class.name} server: #{server}, client_name: #{client_info[:name]}, client_version: #{client_info[:version]}, capabilities: #{client_capabilities} , connected: #{connected?}, initialized: #{initialized?}, session: #{session.id}>"
+        session_info = @session ? "session: #{@session.id}" : "session: none"
+        "#<#{self.class.name} transport: #{transport.class.name}, server: #{server}, client_name: #{client_info[:name]}, client_version: #{client_info[:version]}, capabilities: #{client_capabilities}, connected: #{connected?}, initialized: #{initialized?}, #{session_info}>"
       end
 
       protected
 
+      def setup_transport_callbacks
+        # Create JSON-RPC handler
+        @json_rpc_handler = JsonRpcHandler.new(session, self)
+
+        # Set up transport callbacks
+        @transport.on_message do |message|
+          handle_raw_message(message)
+        end
+
+        @transport.on_error do |error|
+          handle_transport_error(error)
+        end
+
+        @transport.on_connect do
+          handle_transport_connect
+        end
+
+        @transport.on_disconnect do
+          handle_transport_disconnect
+        end
+      end
+
       def handle_raw_message(raw)
-        @message_callback&.call(raw)
+        @json_rpc_handler.call(raw)
       rescue MultiJson::ParseError => e
         log_error("JSON parse error: #{e} (raw: #{raw})")
-        @error_callback&.call(e)
       rescue StandardError => e
         log_error("Error handling message: #{e} (raw: #{raw})")
-        @error_callback&.call(e)
+      end
+
+      def handle_transport_error(error)
+        @connection_error = error.message
+        log_error("Transport error: #{error.message}")
+      end
+
+      def handle_transport_connect
+        log_debug("Transport connected")
+        # Send initial capabilities after connection
+        send_initial_capabilities
+      end
+
+      def handle_transport_disconnect
+        log_debug("Transport disconnected")
       end
 
       def send_initial_capabilities
         log_debug("Sending client capabilities")
-        # We have contact! Let's send our CV to the recruiter.
-        # We persist the session object to the database
-        session.save
+
+        # If we have a session_id, we're trying to resume
+        if @session_id
+          log_debug("Attempting to resume session: #{@session_id}")
+        end
+
         params = {
-          protocolVersion: session.protocol_version,
-          capabilities: session.client_capabilities,
-          clientInfo: session.client_info
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: client_capabilities,
+          clientInfo: client_info
         }
-        send_jsonrpc_request("initialize", params: params, id: session.id)
+
+        # Include session_id if we're trying to resume
+        params[:sessionId] = @session_id if @session_id
+
+        # Use a unique request ID (not session ID since we don't have one yet)
+        request_id = SecureRandom.uuid
+        send_jsonrpc_request("initialize", params: params, id: request_id)
       end
 
       def client_capabilities
