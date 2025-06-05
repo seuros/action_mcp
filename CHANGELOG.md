@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.51.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.13...action_mcp/v0.51.0) (2025-06-05)
+
+
+### Features
+
+* refactor client with new architecture ([#86](https://github.com/seuros/action_mcp/issues/86)) ([465bdb1](https://github.com/seuros/action_mcp/commit/465bdb1d8b782858ccbb674db6f7f2bfc0320a8f))
+
 ## [0.50.13](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.12...action_mcp/v0.50.13) (2025-05-17)
 
 
