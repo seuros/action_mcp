@@ -23,6 +23,10 @@ module ActionMcp
       def create_mcp_profile_file
         template "mcp.yml", File.join("config", "mcp.yml")
       end
+
+      def create_application_gateway_file
+        template "application_gateway.rb", File.join("app/mcp", "application_gateway.rb")
+      end
     end
   end
 end

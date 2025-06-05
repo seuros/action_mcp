@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-# frozen_string_literal: true
-
-# lib/action_mcp/tagged_io_logging.rb
-
 module ActionMCP
   module TaggedStreamLogging
     # ────────────  ANSI COLOURS  ────────────

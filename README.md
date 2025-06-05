@@ -380,6 +380,89 @@ This will create `config/mcp.yml` with example configurations for all environmen
 
 > **Note:** Authentication and authorization are not included. You are responsible for securing the endpoint.
 
+## Authentication with Gateway
+
+ActionMCP provides a Gateway system similar to ActionCable's Connection for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
+
+### Creating an ApplicationGateway
+
+When you run the install generator, it creates an `ApplicationGateway` class:
+
+```ruby
+# app/mcp/application_gateway.rb
+class ApplicationGateway < ActionMCP::Gateway
+  # Specify what attributes identify a connection
+  identified_by :user
+
+  protected
+
+  def authenticate!
+    token = extract_bearer_token
+    raise ActionMCP::UnauthorizedError, "Missing token" unless token
+
+    payload = ActionMCP::JwtDecoder.decode(token)
+    user = resolve_user(payload)
+    
+    raise ActionMCP::UnauthorizedError, "Unauthorized" unless user
+
+    # Return a hash with all identified_by attributes
+    { user: user }
+  end
+
+  private
+
+  def resolve_user(payload)
+    user_id = payload["user_id"] || payload["sub"]
+    User.find_by(id: user_id) if user_id
+  end
+end
+```
+
+### Using Multiple Identifiers
+
+You can identify connections by multiple attributes:
+
+```ruby
+class ApplicationGateway < ActionMCP::Gateway
+  identified_by :user, :organization
+  
+  protected
+  
+  def authenticate!
+    # ... authentication logic ...
+    
+    { 
+      user: user,
+      organization: user.organization
+    }
+  end
+end
+```
+
+### Accessing Current User in Components
+
+Once authenticated, the current user (and other identifiers) are available in your tools, prompts, and resource templates:
+
+```ruby
+class MyTool < ApplicationMCPTool
+  def perform
+    # Access the authenticated user
+    if current_user
+      render text: "Hello, #{current_user.name}!"
+    else
+      render text: "Hi Stranger! It's been a while "
+    end
+  end
+end
+```
+
+### Current Attributes
+
+ActionMCP uses Rails' CurrentAttributes to store the authenticated context. The `ActionMCP::Current` class provides:
+- `ActionMCP::Current.user` - The authenticated user
+- `ActionMCP::Current.gateway` - The gateway instance
+- Any other attributes you define with `identified_by`
+
 ### 1. Create `mcp.ru`
 
 ```ruby

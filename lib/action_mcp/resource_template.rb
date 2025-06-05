@@ -10,6 +10,7 @@ module ActionMCP
     include ResourceCallbacks
     include Logging
     include UriAmbiguityChecker
+    include CurrentHelpers
 
     # Track all registered templates
     @registered_templates = []

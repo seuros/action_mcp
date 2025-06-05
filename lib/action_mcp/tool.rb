@@ -7,6 +7,7 @@ module ActionMCP
   # Tools are registered automatically in the ToolsRegistry unless marked as abstract.
   class Tool < Capability
     include ActionMCP::Callbacks
+    include ActionMCP::CurrentHelpers
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------

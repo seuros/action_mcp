@@ -4,6 +4,7 @@ module ActionMCP
   # Abstract base class for Prompts
   class Prompt < Capability
     include ActionMCP::Callbacks
+    include ActionMCP::CurrentHelpers
     class_attribute :_argument_definitions, instance_accessor: false, default: []
 
     # ---------------------------------------------------
