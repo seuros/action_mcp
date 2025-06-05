@@ -25,7 +25,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
     t.boolean "request_cancelled", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["session_id"], name: "index_action_mcp_session_messages_on_session_id"
+    t.index [ "session_id" ], name: "index_action_mcp_session_messages_on_session_id"
   end
 
   create_table "action_mcp_session_resources", force: :cascade do |t|
@@ -39,7 +39,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
     t.json "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["session_id"], name: "index_action_mcp_session_resources_on_session_id"
+    t.index [ "session_id" ], name: "index_action_mcp_session_resources_on_session_id"
   end
 
   create_table "action_mcp_session_subscriptions", force: :cascade do |t|
@@ -48,7 +48,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
     t.datetime "last_notification_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["session_id"], name: "index_action_mcp_session_subscriptions_on_session_id"
+    t.index [ "session_id" ], name: "index_action_mcp_session_subscriptions_on_session_id"
   end
 
   create_table "action_mcp_sessions", id: :string, force: :cascade do |t|
@@ -76,9 +76,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
     t.text "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_action_mcp_sse_events_on_created_at"
-    t.index ["session_id", "event_id"], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
-    t.index ["session_id"], name: "index_action_mcp_sse_events_on_session_id"
+    t.index [ "created_at" ], name: "index_action_mcp_sse_events_on_created_at"
+    t.index [ "session_id", "event_id" ], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
+    t.index [ "session_id" ], name: "index_action_mcp_sse_events_on_session_id"
   end
 
   create_table "users", force: :cascade do |t|

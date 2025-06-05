@@ -4,10 +4,6 @@ module ActionMCP
   module Generators
     class ConfigGenerator < Rails::Generators::Base
       namespace "action_mcp:config"
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
       source_root File.expand_path("templates", __dir__)
 
       desc "Creates ActionMCP configuration file (config/mcp.yml)"

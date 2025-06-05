@@ -7,7 +7,10 @@ class MCPGatewayTestController < ApplicationController
     gateway.call(request)
 
     render json: {
-      user_id: ActionMCP.configuration.current_class.user&.id
+      user_id: ActionMCP::Current.user&.id,
+      user_email: ActionMCP::Current.user&.email
     }
+  rescue ActionMCP::UnauthorizedError => e
+    render json: { error: e.message }, status: :unauthorized
   end
 end

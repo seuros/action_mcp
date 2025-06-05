@@ -54,8 +54,8 @@ module ActionMCP
       @sse_event_retention_period = 15.minutes
       @max_stored_sse_events = 100
 
-      # Gateway
-      @gateway_class = ActionMCP::Gateway
+      # Gateway - default to ApplicationGateway if it exists, otherwise ActionMCP::Gateway
+      @gateway_class = defined?(::ApplicationGateway) ? ::ApplicationGateway : ActionMCP::Gateway
       @current_class = nil
     end
 

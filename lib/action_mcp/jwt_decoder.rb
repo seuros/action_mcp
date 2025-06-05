@@ -1,4 +1,3 @@
-# lib/action_mcp/jwt_decoder.rb
 require "jwt"
 
 module ActionMCP
@@ -15,7 +14,8 @@ module ActionMCP
       rescue JWT::ExpiredSignature
         raise DecodeError, "Token has expired"
       rescue JWT::DecodeError => e
-        raise DecodeError, e.message
+        # Simplify the error message for invalid tokens
+        raise DecodeError, "Invalid token"
       end
     end
 

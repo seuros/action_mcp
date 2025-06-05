@@ -37,12 +37,12 @@ module ActionMCP
 
         public_send("#{id}=", value)
 
-        # Set to configured context class (if any)
-        current_class = ActionMCP.configuration.current_class
-        if current_class
-          current_class.public_send("#{id}=", value)
-        end
+        # Set to ActionMCP::Current
+        ActionMCP::Current.public_send("#{id}=", value)
       end
+
+      # Also set the gateway instance itself
+      ActionMCP::Current.gateway = self
     end
 
 
@@ -68,11 +68,18 @@ module ActionMCP
       return nil unless payload.is_a?(Hash)
       user_id = payload["user_id"] || payload["sub"]
       return nil unless user_id
-      User.find_by(id: user_id)
+      user = User.find_by(id: user_id)
+      return nil unless user
+
+      # Return a hash with all identified_by attributes
+      self.class.identifiers.each_with_object({}) do |identifier, hash|
+        hash[identifier] = user if identifier == :user
+        # Add support for other identifiers as needed
+      end
     end
 
     def reject_unauthorized_connection
-      raise UnauthorizedError, "Unauthorized access"
+      raise UnauthorizedError, "Unauthorized"
     end
   end
 end
