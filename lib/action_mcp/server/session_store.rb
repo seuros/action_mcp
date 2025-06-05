@@ -598,7 +598,7 @@ module ActionMCP
     # Test session store that tracks all operations for assertions
     class TestSessionStore < VolatileSessionStore
       attr_reader :operations, :created_sessions, :loaded_sessions,
-                  :saved_sessions, :deleted_sessions
+                  :saved_sessions, :deleted_sessions, :notifications_sent
 
       def initialize
         super
@@ -607,12 +607,29 @@ module ActionMCP
         @loaded_sessions = Concurrent::Array.new
         @saved_sessions = Concurrent::Array.new
         @deleted_sessions = Concurrent::Array.new
+        @notifications_sent = Concurrent::Array.new
+        @notification_callbacks = Concurrent::Array.new
       end
 
       def create_session(session_id = nil, attributes = {})
         session = super
         @operations << { type: :create, session_id: session.id, attributes: attributes }
         @created_sessions << session.id
+        
+        # Hook into the session's write method to capture notifications
+        test_store = self
+        original_write = session.method(:write)
+        session.define_singleton_method(:write) do |data|
+          result = original_write.call(data)
+          
+          # Track progress notifications
+          if data.is_a?(JSON_RPC::Notification) && data.method == "notifications/progress"
+            test_store.track_notification(data)
+          end
+          
+          result
+        end
+        
         session
       end
 
@@ -667,12 +684,34 @@ module ActionMCP
         end
       end
 
+      # Notification tracking methods
+      def track_notification(notification)
+        @notifications_sent << notification
+        @notification_callbacks.each { |cb| cb.call(notification) }
+      end
+      
+      def on_notification(&block)
+        @notification_callbacks << block
+      end
+      
+      def notifications_for_token(token)
+        @notifications_sent.select do |n|
+          n.params[:progressToken] == token
+        end
+      end
+      
+      def clear_notifications
+        @notifications_sent.clear
+      end
+      
       def reset_tracking!
         @operations.clear
         @created_sessions.clear
         @loaded_sessions.clear
         @saved_sessions.clear
         @deleted_sessions.clear
+        @notifications_sent.clear
+        @notification_callbacks.clear
       end
     end
 
