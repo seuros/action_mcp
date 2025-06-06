@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.0...action_mcp/v0.52.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* autoloading bug ([3488c62](https://github.com/seuros/action_mcp/commit/3488c625b88266f17c16bf1b3bfac4f91686f80f))
+
 ## [0.52.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.51.0...action_mcp/v0.52.0) (2025-06-06)
 
 
