@@ -4,6 +4,7 @@ require "test_helper"
 
 module ActionMCP
   class ApplicationControllerTestBase < ActionDispatch::IntegrationTest
+    include SessionFixtureHelper
     fixtures :action_mcp_sessions
 
     attr_reader :original_preference
@@ -21,22 +22,10 @@ module ActionMCP
       # Get fixture data
       fixture_session = action_mcp_sessions(:step1_session)
 
-      # Create session in the session store with fixture attributes
+      # Create session in the session store using the helper
       session = Server.session_store.create_session(
         fixture_session.id,
-        {
-          initialized: fixture_session.initialized,
-          status: fixture_session.status,
-          role: fixture_session.role,
-          messages_count: fixture_session.messages_count,
-          protocol_version: fixture_session.protocol_version,
-          server_info: fixture_session.server_info,
-          server_capabilities: fixture_session.server_capabilities,
-          tool_registry: fixture_session.tool_registry,
-          prompt_registry: fixture_session.prompt_registry,
-          resource_registry: fixture_session.resource_registry,
-          sse_event_counter: fixture_session.sse_event_counter
-        }
+        session_payload_from_fixture(fixture_session)
       )
       session
     end

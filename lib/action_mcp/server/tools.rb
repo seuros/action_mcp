@@ -39,14 +39,25 @@ module ActionMCP
         tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
 
         if tool_class
-          # Create tool and set execution context
+          # Create tool and set execution context with request info
           tool = tool_class.new(arguments)
-          tool.with_context({ session: session })
+          tool.with_context({
+            session: session,
+            request: {
+              params: {
+                name: tool_name,
+                arguments: arguments,
+                _meta: _meta
+              }
+            }
+          })
 
           result = tool.call
 
           if result.is_error
-            send_jsonrpc_response(request_id, error: result)
+            # Convert ToolResponse error to proper JSON-RPC error format
+            error_hash = result.to_h
+            send_jsonrpc_response(request_id, error: error_hash)
           else
             send_jsonrpc_response(request_id, result: result)
           end

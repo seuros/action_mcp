@@ -615,21 +615,10 @@ module ActionMCP
         session = super
         @operations << { type: :create, session_id: session.id, attributes: attributes }
         @created_sessions << session.id
-        
+
         # Hook into the session's write method to capture notifications
-        test_store = self
-        original_write = session.method(:write)
-        session.define_singleton_method(:write) do |data|
-          result = original_write.call(data)
-          
-          # Track progress notifications
-          if data.is_a?(JSON_RPC::Notification) && data.method == "notifications/progress"
-            test_store.track_notification(data)
-          end
-          
-          result
-        end
-        
+        intercept_session_write(session)
+
         session
       end
 
@@ -637,6 +626,10 @@ module ActionMCP
         session = super
         @operations << { type: :load, session_id: session_id, found: !session.nil? }
         @loaded_sessions << session_id if session
+
+        # Hook into the session's write method to capture notifications
+        intercept_session_write(session) if session
+
         session
       end
 
@@ -689,21 +682,21 @@ module ActionMCP
         @notifications_sent << notification
         @notification_callbacks.each { |cb| cb.call(notification) }
       end
-      
+
       def on_notification(&block)
         @notification_callbacks << block
       end
-      
+
       def notifications_for_token(token)
         @notifications_sent.select do |n|
           n.params[:progressToken] == token
         end
       end
-      
+
       def clear_notifications
         @notifications_sent.clear
       end
-      
+
       def reset_tracking!
         @operations.clear
         @created_sessions.clear
@@ -712,6 +705,29 @@ module ActionMCP
         @deleted_sessions.clear
         @notifications_sent.clear
         @notification_callbacks.clear
+      end
+
+      private
+
+      def intercept_session_write(session)
+        return unless session
+
+        # Skip if already intercepted
+        return if session.singleton_methods.include?(:write)
+
+        test_store = self
+
+        # Intercept write method to capture all notifications
+        original_write = session.method(:write)
+
+        session.define_singleton_method(:write) do |data|
+          # Track progress notifications before calling original write
+          if data.is_a?(JSON_RPC::Notification) && data.method == "notifications/progress"
+            test_store.track_notification(data)
+          end
+
+          original_write.call(data)
+        end
       end
     end
 

@@ -36,7 +36,8 @@ module ActionMCP
         def handle_tools_call(id, params)
           name = validate_required_param(params, "name", "Tool name is required")
           arguments = extract_arguments(params)
-          transport.send_tools_call(id, name, arguments)
+          _meta = params["_meta"] || params[:_meta] || {}
+          transport.send_tools_call(id, name, arguments, _meta)
         end
 
         def extract_arguments(params)
