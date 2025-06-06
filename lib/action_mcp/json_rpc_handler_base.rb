@@ -51,13 +51,18 @@ module ActionMCP
     # @param rpc_method [String]
     # @param id [String, Integer]
     # @param params [Hash]
-    # @return [Boolean] true if handled, false otherwise
+    # @return [JSON_RPC::Response, nil] Response if handled, nil otherwise
     def handle_common_methods(rpc_method, id, params)
       case rpc_method
       when Methods::PING
         transport.send_pong(id)
+        # In return mode, get the response that was just created
+        transport.messaging_mode == :return ? transport.get_last_response : true
       when %r{^notifications/}
         process_notifications(rpc_method, params)
+        true
+      else
+        nil
       end
     end
 

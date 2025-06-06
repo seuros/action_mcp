@@ -3,6 +3,11 @@
 module ActionMCP
   module Server
     module Messaging
+      # Operation mode for the messaging module
+      # :write - writes messages directly (default, for SSE)
+      # :return - returns messages without writing (for JSON responses)
+      attr_accessor :messaging_mode
+
       def send_jsonrpc_request(method, params: nil, id: SecureRandom.uuid_v7)
         send_message(:request, method: method, params: params, id: id)
       end
@@ -44,7 +49,13 @@ module ActionMCP
                     )
         end
 
-        write_message(message)
+        if messaging_mode == :return
+          write_message(message)  # This will be intercepted by ResponseCollector
+          message
+        else
+          write_message(message)
+          nil
+        end
       end
     end
   end

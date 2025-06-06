@@ -35,7 +35,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
     assert_not_nil session_id, "Session ID should be present in header"
 
     # Find the session and register a tool
-    session = ActionMCP::Session.find(session_id)
+    session = ActionMCP::Server.session_store.load_session(session_id)
     assert_not_nil session, "Session should be found in database"
     session.register_tool("calculate_sum")
 

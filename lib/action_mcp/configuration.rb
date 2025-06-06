@@ -36,7 +36,9 @@ module ActionMCP
                   :max_stored_sse_events,
                   # --- Gateway Options ---
                   :gateway_class,
-                  :current_class
+                  :current_class,
+                  # --- Session Store Options ---
+                  :session_store_type
 
     def initialize
       @logging_enabled = true
@@ -57,6 +59,9 @@ module ActionMCP
       # Gateway - default to ApplicationGateway if it exists, otherwise ActionMCP::Gateway
       @gateway_class = defined?(::ApplicationGateway) ? ::ApplicationGateway : ActionMCP::Gateway
       @current_class = nil
+
+      # Session Store
+      @session_store_type = Rails.env.production? ? :active_record : :volatile
     end
 
     def name

@@ -31,11 +31,18 @@ module ActionMCP
         rpc_method = request.method
         params = request.params
 
-        with_error_handling(id) do
-          common_method = handle_common_methods(rpc_method, id, params)
-          return common_method if common_method
-          route_to_handler(rpc_method, id, params)
+        result = with_error_handling(id) do
+          common_result = handle_common_methods(rpc_method, id, params)
+          if common_result
+            common_result
+          else
+            route_to_handler(rpc_method, id, params)
+            # In return mode, get the last response that was collected
+            transport.messaging_mode == :return ? transport.get_last_response : nil
+          end
         end
+
+        result
       end
 
       def route_to_handler(rpc_method, id, params)
@@ -64,6 +71,7 @@ module ActionMCP
         params = notification.params || {}
 
         process_notifications(method_name, params)
+        # Notifications don't expect a response
         nil
       end
 

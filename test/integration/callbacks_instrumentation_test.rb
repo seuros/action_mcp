@@ -4,29 +4,24 @@ require "test_helper"
 
 class CallbacksInstrumentationTest < ActionDispatch::IntegrationTest
   test "callbacks and instrumentation are executed in the correct order for CalculateSumTool" do
+    # Reset callback tracker before test
+    CalculateSumTool.reset_callback_tracker
+
     tool = CalculateSumTool.new(number1: 1, number2: 2)
+    tool.call
 
-    with_silenced_logger(tool) do |io|
-      tool.call
+    # Test using callback tracker
+    expected_callbacks = [
+      :before_perform,
+      :around_perform_before,
+      :perform,
+      :after_perform,
+      :around_perform_after
+    ]
 
-      # Get all the log lines
-      log_lines = io.string.lines.map(&:strip)
-
-      # Filter relevant log entries
-      relevant_logs = log_lines.select { |line| line.include?("[CalculateSumTool]") }
-
-      expected_logs = [
-        "[CalculateSumTool] before_perform",
-        "[CalculateSumTool] around_perform (before)",
-        "[CalculateSumTool] perform",
-        "[CalculateSumTool] after_perform",
-        "[CalculateSumTool] around_perform (after)"
-      ]
-
-      # Test the order - each log message should appear exactly once
-      assert_equal expected_logs, relevant_logs.uniq
-    end
+    assert_equal expected_callbacks, CalculateSumTool.callback_tracker
   end
+
 
   test "callbacks and instrumentation are executed in the correct order for GreetingPrompt" do
     prompt = GreetingPrompt.new(name: "Test")

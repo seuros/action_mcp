@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "response_collector"
+require_relative "base_messaging"
+
 module ActionMCP
   module Server
     class TransportHandler
@@ -9,6 +12,7 @@ module ActionMCP
       delegate :read, :write, to: :session
       include Logging
 
+      include  BaseMessaging  # Provides basic write_message
       include  Messaging
       include  Capabilities
       include  Tools
@@ -17,10 +21,14 @@ module ActionMCP
       include  Notifications
       include  Sampling
       include  Roots
+      include  ResponseCollector  # Must be included last to override write_message
 
       # @param [ActionMCP::Session] session
-      def initialize(session)
+      # @param messaging_mode [:write, :return] The mode for message handling
+      def initialize(session, messaging_mode: :write)
         @session = session
+        @messaging_mode = messaging_mode
+        initialize_response_collector if messaging_mode == :return
       end
 
       def send_pong(request_id)
@@ -28,10 +36,6 @@ module ActionMCP
       end
 
       private
-
-      def write_message(data)
-        session.write(data)
-      end
 
       def format_registry_items(registry)
         registry.map { |item| item.klass.to_h }

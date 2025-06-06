@@ -104,7 +104,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
     assert_not_nil session_id, "Session ID should be present in header"
 
     # Enhance the session with a tool for testing
-    session = ActionMCP::Session.find(session_id)
+    session = ActionMCP::Server.session_store.load_session(session_id)
     session.register_tool("calculate_sum")
 
     session_id
