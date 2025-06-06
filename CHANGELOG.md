@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.52.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.51.0...action_mcp/v0.52.0) (2025-06-06)
+
+
+### Features
+
+* gateway ([#88](https://github.com/seuros/action_mcp/issues/88)) ([6055d16](https://github.com/seuros/action_mcp/commit/6055d1682b6b4dc130888a0007f3196fb08eea32))
+* pluggable session store ([#90](https://github.com/seuros/action_mcp/issues/90)) ([42a6ea0](https://github.com/seuros/action_mcp/commit/42a6ea0a16a3ce6c488f55e95a5ba69c4d286922))
+
 ## [0.51.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.50.13...action_mcp/v0.51.0) (2025-06-05)
 
 
