@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.1...action_mcp/v0.52.2) (2025-06-06)
+
+
+### Bug Fixes
+
+* split server classes too ([4c940f6](https://github.com/seuros/action_mcp/commit/4c940f6d7dc0afa7c168c096926e7cedc6604d78))
+
 ## [0.52.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.0...action_mcp/v0.52.1) (2025-06-06)
 
 
