@@ -330,6 +330,115 @@ production:
   max_queue: 500      # Maximum number of tasks that can be queued
 ```
 
+## Session Storage
+
+ActionMCP provides a pluggable session storage system that allows you to choose how sessions are persisted based on your environment and requirements.
+
+### Session Store Types
+
+ActionMCP includes three session store implementations:
+
+1. **`:volatile`** - In-memory storage using Concurrent::Hash
+   - Default for development and test environments
+   - Sessions are lost on server restart
+   - Fast and lightweight for local development
+   - No external dependencies
+
+2. **`:active_record`** - Database-backed storage
+   - Default for production environment
+   - Sessions persist across server restarts
+   - Supports session resumability
+   - Requires database migrations
+
+3. **`:test`** - Special store for testing
+   - Tracks notifications and method calls
+   - Provides assertion helpers
+   - Automatically used in test environment when using TestHelper
+
+### Configuration
+
+You can configure the session store type in your Rails configuration:
+
+```ruby
+# config/application.rb or environment files
+Rails.application.configure do
+  config.action_mcp.session_store_type = :active_record  # or :volatile
+end
+```
+
+The defaults are:
+- Production: `:active_record`
+- Development: `:volatile`
+- Test: `:volatile` (or `:test` when using TestHelper)
+
+### Using Different Session Stores
+
+```ruby
+# The session store is automatically selected based on configuration
+# You can access it directly if needed:
+session_store = ActionMCP::Server.session_store
+
+# Create a session
+session = session_store.create_session(session_id, {
+  status: "initialized",
+  protocol_version: "2025-03-26",
+  # ... other session attributes
+})
+
+# Load a session
+session = session_store.load_session(session_id)
+
+# Update a session
+session_store.update_session(session_id, { status: "active" })
+
+# Delete a session
+session_store.delete_session(session_id)
+```
+
+### Session Resumability
+
+With the `:active_record` store, clients can resume sessions after disconnection:
+
+```ruby
+# Client includes session ID in request headers
+# Server automatically resumes the existing session
+headers["Mcp-Session-Id"] = "existing-session-id"
+
+# If the session exists, it will be resumed
+# If not, a new session will be created
+```
+
+### Custom Session Stores
+
+You can create custom session stores by inheriting from `ActionMCP::Server::SessionStore::Base`:
+
+```ruby
+class MyCustomSessionStore < ActionMCP::Server::SessionStore::Base
+  def create_session(session_id, payload = {})
+    # Implementation
+  end
+
+  def load_session(session_id)
+    # Implementation
+  end
+
+  def update_session(session_id, updates)
+    # Implementation
+  end
+
+  def delete_session(session_id)
+    # Implementation
+  end
+
+  def exists?(session_id)
+    # Implementation
+  end
+end
+
+# Register your custom store
+ActionMCP::Server.session_store = MyCustomSessionStore.new
+```
+
 ## Thread Pool Management
 
 ActionMCP uses thread pools to efficiently handle message callbacks. This prevents the system from being overwhelmed by too many threads under high load.
