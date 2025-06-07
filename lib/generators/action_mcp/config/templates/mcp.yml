@@ -1,9 +1,41 @@
 # ActionMCP Configuration
-# This file contains configuration for the ActionMCP pub/sub system.
-# Different environments can use different adapters.
+# This file contains configuration for the ActionMCP server including
+# authentication, profiles, and pub/sub system settings.
 
 development:
-  # In-memory adapter for development
+  # Authentication configuration - array of methods to try in order
+  authentication: ["none"]  # No authentication required for development
+  
+  # OAuth configuration (if using OAuth authentication)
+  # oauth:
+  #   provider: "demo_oauth_provider"
+  #   scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
+  #   enable_dynamic_registration: true
+  #   enable_token_revocation: true
+  #   pkce_required: true
+  
+  # MCP capability profiles
+  profiles:
+    primary:
+      tools: ["all"]
+      prompts: ["all"] 
+      resources: ["all"]
+      options:
+        list_changed: false
+        logging_enabled: true
+        resources_subscribe: false
+        
+    minimal:
+      tools: []
+      prompts: []
+      resources: []
+      options:
+        list_changed: false
+        logging_enabled: false
+        logging_level: :warn
+        resources_subscribe: false
+
+  # Pub/sub adapter configuration
   adapter: simple
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool
@@ -11,10 +43,48 @@ development:
   # max_queue: 100     # Maximum number of tasks that can be queued
 
 test:
+  # JWT authentication for testing
+  authentication: ["jwt"]
+  
+  profiles:
+    primary:
+      tools: ["all"]
+      prompts: ["all"]
+      resources: ["all"]
+      
   # Test adapter for testing
   adapter: test
 
 production:
+  # Multiple authentication methods - try OAuth first, fallback to JWT
+  authentication: ["oauth", "jwt"]
+  
+  # OAuth configuration for production
+  oauth:
+    provider: "application_oauth_provider"  # Your custom provider class
+    scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
+    enable_dynamic_registration: true
+    enable_token_revocation: true
+    pkce_required: true
+    # issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
+  
+  profiles:
+    primary:
+      tools: ["all"]
+      prompts: ["all"]
+      resources: ["all"]
+      options:
+        list_changed: false
+        logging_enabled: true
+        resources_subscribe: false
+        
+    external_clients:
+      tools: ["WeatherForecastTool"]  # Limited tool access for external clients
+      prompts: []
+      resources: []
+      options:
+        authentication: ["oauth"]  # OAuth only for external clients
+  
   # Choose one of the following adapters:
   
   # 1. Database-backed adapter (recommended)
