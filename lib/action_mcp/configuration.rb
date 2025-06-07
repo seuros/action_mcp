@@ -39,9 +39,15 @@ module ActionMCP
                   :max_stored_sse_events,
                   # --- Gateway Options ---
                   :gateway_class,
-                  :current_class,
                   # --- Session Store Options ---
-                  :session_store_type
+                  :session_store_type,
+                  # --- Pub/Sub and Thread Pool Options ---
+                  :adapter,
+                  :min_threads,
+                  :max_threads,
+                  :max_queue,
+                  :polling_interval,
+                  :connects_to
 
     def initialize
       @logging_enabled = true
@@ -66,7 +72,6 @@ module ActionMCP
 
       # Gateway - default to ApplicationGateway if it exists, otherwise ActionMCP::Gateway
       @gateway_class = defined?(::ApplicationGateway) ? ::ApplicationGateway : ActionMCP::Gateway
-      @current_class = nil
 
       # Session Store
       @session_store_type = Rails.env.production? ? :active_record : :volatile
@@ -105,6 +110,9 @@ module ActionMCP
         if app_config["oauth"]
           @oauth_config = app_config["oauth"]
         end
+
+        # Extract other top-level configuration settings
+        extract_top_level_settings(app_config)
 
         # Extract profiles configuration
         if app_config["profiles"]
@@ -215,6 +223,37 @@ module ActionMCP
           }
         }
       }
+    end
+
+    def extract_top_level_settings(app_config)
+      # Extract adapter configuration
+      if app_config["adapter"]
+        # This will be handled by the pub/sub system, we just store it for now
+        @adapter = app_config["adapter"]
+      end
+
+      # Extract thread pool settings
+      if app_config["min_threads"]
+        @min_threads = app_config["min_threads"]
+      end
+
+      if app_config["max_threads"]
+        @max_threads = app_config["max_threads"]
+      end
+
+      if app_config["max_queue"]
+        @max_queue = app_config["max_queue"]
+      end
+
+      # Extract polling interval for solid_cable
+      if app_config["polling_interval"]
+        @polling_interval = app_config["polling_interval"]
+      end
+
+      # Extract connects_to setting
+      if app_config["connects_to"]
+        @connects_to = app_config["connects_to"]
+      end
     end
 
     def should_include_all?(type)

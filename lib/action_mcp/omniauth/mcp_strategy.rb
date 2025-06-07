@@ -6,7 +6,7 @@ module ActionMCP
   module Omniauth
     # MCP-specific Omniauth strategy for OAuth 2.1 authentication
     # This strategy integrates with ActionMCP's configuration system and provider interface
-    class McpStrategy < ::OmniAuth::Strategies::OAuth2
+    class MCPStrategy < ::OmniAuth::Strategies::OAuth2
       # Strategy name used in configuration
       option :name, "mcp"
 
@@ -138,7 +138,7 @@ module ActionMCP
 
         # Set client options from MCP config
         if oauth_config["issuer_url"]
-          options.client_options.site = oauth_config["issuer_url"]
+          options.client_options[:site] = oauth_config["issuer_url"]
         end
 
         if oauth_config["client_id"]

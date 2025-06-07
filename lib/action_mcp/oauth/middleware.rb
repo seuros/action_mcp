@@ -46,7 +46,7 @@ module ActionMCP
       end
 
       def validate_oauth_token(request, token)
-        strategy_class = ActionMCP::Omniauth::McpStrategy
+        strategy_class = ActionMCP::Omniauth::MCPStrategy
         oauth_config = ActionMCP.configuration.oauth_config
 
         token_info = strategy_class.validate_token(token, oauth_config)
