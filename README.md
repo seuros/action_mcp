@@ -493,6 +493,8 @@ This will create `config/mcp.yml` with example configurations for all environmen
 
 ActionMCP provides a Gateway system similar to ActionCable's Connection for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
 
+ActionMCP supports multiple authentication methods including OAuth 2.1, JWT tokens, and no authentication for development. For detailed OAuth 2.1 configuration and usage, see the [OAuth Authentication Guide](OAUTH.md).
+
 ### Creating an ApplicationGateway
 
 When you run the install generator, it creates an `ApplicationGateway` class:

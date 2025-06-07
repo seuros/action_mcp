@@ -13,6 +13,10 @@ require "action_mcp/log_subscriber"
 require "action_mcp/engine"
 require "zeitwerk"
 
+# OAuth 2.1 support via Omniauth
+require "omniauth"
+require "omniauth-oauth2"
+
 lib = File.dirname(__FILE__)
 
 Zeitwerk::Loader.for_gem.tap do |loader|
@@ -25,8 +29,9 @@ Zeitwerk::Loader.for_gem.tap do |loader|
 
   loader.inflector.inflect("action_mcp" => "ActionMCP")
   loader.inflector.inflect("sse_client" => "SSEClient")
-  loader.inflector.inflect("sse_server" => "SSEServer")
   loader.inflector.inflect("sse_listener" => "SSEListener")
+  loader.inflector.inflect("oauth" => "OAuth")
+  loader.inflector.inflect("mcp_strategy" => "MCPStrategy")
 end.setup
 
 module ActionMCP

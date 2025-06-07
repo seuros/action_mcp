@@ -25,6 +25,9 @@ module ActionMCP
                   :logging_level,
                   :active_profile,
                   :profiles,
+                  # --- Authentication Options ---
+                  :authentication_methods,
+                  :oauth_config,
                   # --- Transport Options ---
                   :sse_heartbeat_interval,
                   :post_response_preference, # :json or :sse
@@ -36,9 +39,15 @@ module ActionMCP
                   :max_stored_sse_events,
                   # --- Gateway Options ---
                   :gateway_class,
-                  :current_class,
                   # --- Session Store Options ---
-                  :session_store_type
+                  :session_store_type,
+                  # --- Pub/Sub and Thread Pool Options ---
+                  :adapter,
+                  :min_threads,
+                  :max_threads,
+                  :max_queue,
+                  :polling_interval,
+                  :connects_to
 
     def initialize
       @logging_enabled = true
@@ -47,6 +56,11 @@ module ActionMCP
       @resources_subscribe = false
       @active_profile = :primary
       @profiles = default_profiles
+
+      # Authentication defaults
+      @authentication_methods = Rails.env.production? ? [ "jwt" ] : [ "none" ]
+      @oauth_config = {}
+
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
       @protocol_version = "2025-03-26"
@@ -58,7 +72,6 @@ module ActionMCP
 
       # Gateway - default to ApplicationGateway if it exists, otherwise ActionMCP::Gateway
       @gateway_class = defined?(::ApplicationGateway) ? ::ApplicationGateway : ActionMCP::Gateway
-      @current_class = nil
 
       # Session Store
       @session_store_type = Rails.env.production? ? :active_record : :volatile
@@ -77,7 +90,7 @@ module ActionMCP
       ActionMCP.thread_profiles.value || @active_profile
     end
 
-    # Load custom profiles from Rails configuration
+    # Load custom configuration from Rails configuration
     def load_profiles
       # First load defaults from the gem
       @profiles = default_profiles
@@ -88,8 +101,23 @@ module ActionMCP
 
         raise "Invalid MCP config file" unless app_config.is_a?(Hash)
 
-        # Merge with defaults so user config overrides gem defaults
-        @profiles = app_config
+        # Extract authentication configuration if present
+        if app_config["authentication"]
+          @authentication_methods = Array(app_config["authentication"])
+        end
+
+        # Extract OAuth configuration if present
+        if app_config["oauth"]
+          @oauth_config = app_config["oauth"]
+        end
+
+        # Extract other top-level configuration settings
+        extract_top_level_settings(app_config)
+
+        # Extract profiles configuration
+        if app_config["profiles"]
+          @profiles = app_config["profiles"]
+        end
       rescue StandardError
         # If the config file doesn't exist in the Rails app, just use the defaults
         Rails.logger.debug "No MCP config found in Rails app, using defaults from gem"
@@ -195,6 +223,37 @@ module ActionMCP
           }
         }
       }
+    end
+
+    def extract_top_level_settings(app_config)
+      # Extract adapter configuration
+      if app_config["adapter"]
+        # This will be handled by the pub/sub system, we just store it for now
+        @adapter = app_config["adapter"]
+      end
+
+      # Extract thread pool settings
+      if app_config["min_threads"]
+        @min_threads = app_config["min_threads"]
+      end
+
+      if app_config["max_threads"]
+        @max_threads = app_config["max_threads"]
+      end
+
+      if app_config["max_queue"]
+        @max_queue = app_config["max_queue"]
+      end
+
+      # Extract polling interval for solid_cable
+      if app_config["polling_interval"]
+        @polling_interval = app_config["polling_interval"]
+      end
+
+      # Extract connects_to setting
+      if app_config["connects_to"]
+        @connects_to = app_config["connects_to"]
+      end
     end
 
     def should_include_all?(type)

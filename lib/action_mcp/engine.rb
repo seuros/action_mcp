@@ -28,6 +28,13 @@ module ActionMCP
       ActionMCP.configuration.load_profiles
     end
 
+    # Add OAuth middleware if OAuth is configured
+    initializer "action_mcp.oauth_middleware", after: "action_mcp.load_profiles" do
+      if ActionMCP.configuration.authentication_methods&.include?("oauth")
+        config.middleware.use ActionMCP::OAuth::Middleware
+      end
+    end
+
     # Configure autoloading for the mcp/tools directory
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|
       mcp_path = app.root.join("app/mcp")
