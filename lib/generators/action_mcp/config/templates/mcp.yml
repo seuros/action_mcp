@@ -82,8 +82,6 @@ production:
       tools: ["WeatherForecastTool"]  # Limited tool access for external clients
       prompts: []
       resources: []
-      options:
-        authentication: ["oauth"]  # OAuth only for external clients
   
   # Choose one of the following adapters:
   
