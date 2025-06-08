@@ -15,9 +15,10 @@ module ActionMCP
 
       attr_reader :session_id, :last_event_id
 
-      def initialize(url, session_store:, session_id: nil, **options)
+      def initialize(url, session_store:, session_id: nil, oauth_provider: nil, **options)
         super(url, session_store: session_store, **options)
         @session_id = session_id
+        @oauth_provider = oauth_provider
         @last_event_id = nil
         @buffer = +""
         @current_event = nil
@@ -97,6 +98,7 @@ module ActionMCP
         }
         headers["mcp-session-id"] = @session_id if @session_id
         headers["Last-Event-ID"] = @last_event_id if @last_event_id
+        headers.merge!(oauth_headers)
         headers
       end
 
@@ -106,6 +108,7 @@ module ActionMCP
           "Accept" => "application/json, text/event-stream"
         }
         headers["mcp-session-id"] = @session_id if @session_id
+        headers.merge!(oauth_headers)
         headers
       end
 
@@ -190,6 +193,7 @@ module ActionMCP
           # Accepted - message received, no immediate response
           log_debug("Message accepted (202)")
         when 401
+          handle_authentication_error(response)
           raise AuthenticationError, "Authentication required"
         when 405
           # Method not allowed - server doesn't support this operation
@@ -281,6 +285,26 @@ module ActionMCP
 
         @session_store.save_session(@session_id, session_data)
         log_debug("Saved session state")
+      end
+
+      def oauth_headers
+        return {} unless @oauth_provider&.authenticated?
+
+        @oauth_provider.authorization_headers
+      rescue StandardError => e
+        log_error("Failed to get OAuth headers: #{e.message}")
+        {}
+      end
+
+      def handle_authentication_error(response)
+        return unless @oauth_provider
+
+        # Check for OAuth challenge in WWW-Authenticate header
+        www_auth = response.headers["www-authenticate"]
+        if www_auth&.include?("Bearer")
+          log_debug("Received OAuth challenge, clearing tokens")
+          @oauth_provider.clear_tokens!
+        end
       end
 
       def user_agent
