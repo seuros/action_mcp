@@ -26,3 +26,4 @@ gem "pg"
 # gem "redis"
 
 gem "faraday" # used by the client
+gem "webmock", group: :test # for testing HTTP requests

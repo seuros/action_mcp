@@ -31,6 +31,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'omniauth', '~> 2.1'
   spec.add_dependency 'omniauth-oauth2', '~> 1.7'
   spec.add_dependency 'ostruct'
+  # OAuth client support
+  spec.add_dependency 'faraday', '~> 2.7'
+  spec.add_dependency 'pkce_challenge', '~> 1.0'
 
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
