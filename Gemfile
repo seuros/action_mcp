@@ -22,7 +22,10 @@ gem "solid_cache"
 gem "solid_queue"
 
 gem "annotaterb"
+
+# Database adapters for testing
 gem "pg"
+gem "sqlite3", "~> 2.0"
 # gem "redis"
 
 gem "faraday" # used by the client

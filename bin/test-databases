@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Testing ActionMCP with multiple databases..."
+echo
+
+# Test PostgreSQL
+echo "🐘 Testing with PostgreSQL..."
+export DATABASE_URL="postgresql://ubuntu:password@localhost/actionmcp_test"
+bundle exec rails db:drop db:create db:migrate
+bundle exec rails test test/models/action_mcp/session_oauth_test.rb test/models/action_mcp/session_test.rb
+echo "✅ PostgreSQL tests passed!"
+echo
+
+# Test SQLite3
+echo "🗃️  Testing with SQLite3..."
+export DATABASE_URL="sqlite3:tmp/test.sqlite3"
+rm -f tmp/test.sqlite3
+bundle exec rails db:create db:migrate
+bundle exec rails test test/models/action_mcp/session_oauth_test.rb test/models/action_mcp/session_test.rb
+echo "✅ SQLite3 tests passed!"
+echo
+
+echo "🎉 All database tests passed! ActionMCP is database-agnostic."

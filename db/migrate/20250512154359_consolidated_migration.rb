@@ -11,16 +11,16 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
         t.string :status, null: false, default: 'pre_initialize'
         t.datetime :ended_at, comment: 'The time the session ended'
         t.string :protocol_version
-        t.jsonb :server_capabilities, comment: 'The capabilities of the server'
-        t.jsonb :client_capabilities, comment: 'The capabilities of the client'
-        t.jsonb :server_info, comment: 'The information about the server'
-        t.jsonb :client_info, comment: 'The information about the client'
+        t.json :server_capabilities, comment: 'The capabilities of the server'
+        t.json :client_capabilities, comment: 'The capabilities of the client'
+        t.json :server_info, comment: 'The information about the server'
+        t.json :client_info, comment: 'The information about the client'
         t.boolean :initialized, null: false, default: false
         t.integer :messages_count, null: false, default: 0
         t.integer :sse_event_counter, default: 0, null: false
-        t.jsonb :tool_registry, default: []
-        t.jsonb :prompt_registry, default: []
-        t.jsonb :resource_registry, default: []
+        t.json :tool_registry, default: []
+        t.json :prompt_registry, default: []
+        t.json :resource_registry, default: []
         t.timestamps
       end
     end
@@ -36,7 +36,7 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
         t.string :direction, null: false, comment: 'The message recipient', default: 'client'
         t.string :message_type, null: false, comment: 'The type of the message'
         t.string :jsonrpc_id
-        t.jsonb :message_json
+        t.json :message_json
         t.boolean :is_ping, default: false, null: false, comment: 'Whether the message is a ping'
         t.boolean :request_acknowledged, default: false, null: false
         t.boolean :request_cancelled, null: false, default: false
@@ -98,15 +98,15 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
       end
 
       unless column_exists?(:action_mcp_sessions, :tool_registry)
-        add_column :action_mcp_sessions, :tool_registry, :jsonb, default: []
+        add_column :action_mcp_sessions, :tool_registry, :json, default: []
       end
 
       unless column_exists?(:action_mcp_sessions, :prompt_registry)
-        add_column :action_mcp_sessions, :prompt_registry, :jsonb, default: []
+        add_column :action_mcp_sessions, :prompt_registry, :json, default: []
       end
 
       unless column_exists?(:action_mcp_sessions, :resource_registry)
-        add_column :action_mcp_sessions, :resource_registry, :jsonb, default: []
+        add_column :action_mcp_sessions, :resource_registry, :json, default: []
       end
     end
 
@@ -132,7 +132,10 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
 
     return unless column_exists?(:action_mcp_session_messages, :direction)
 
-    change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
+    # SQLite3 doesn't support changing column comments
+    if connection.adapter_name.downcase != 'sqlite'
+      change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
+    end
   end
 
   private

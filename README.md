@@ -476,16 +476,21 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 **ActionMCP** runs as a standalone Rack application. **Do not attempt to mount it in your application's `routes.rb`**—it is not designed to be mounted as an engine at a custom path. When you use `run ActionMCP::Engine` in your `mcp.ru`, the MCP endpoint is always available at the root path (`/`).
 
-### Installing the Configuration Generator
+### Installing ActionMCP
 
-ActionMCP includes a generator to help you create the configuration file:
+ActionMCP includes generators to help you set up your project quickly. The install generator creates all necessary base classes and configuration files:
 
 ```bash
-# Generate the mcp.yml configuration file
-bin/rails generate action_mcp:config
+# Install ActionMCP with base classes and configuration
+bin/rails generate action_mcp:install
 ```
 
-This will create `config/mcp.yml` with example configurations for all environments.
+This will create:
+- `app/mcp/prompts/application_mcp_prompt.rb` - Base prompt class
+- `app/mcp/tools/application_mcp_tool.rb` - Base tool class  
+- `app/mcp/resource_templates/application_mcp_res_template.rb` - Base resource template class
+- `app/mcp/application_gateway.rb` - Gateway for authentication
+- `config/mcp.yml` - Configuration file with example settings for all environments
 
 > **Note:** Authentication and authorization are not included. You are responsible for securing the endpoint.
 
@@ -647,14 +652,14 @@ location /mcp/ {
 
 ActionMCP includes Rails generators to help you quickly set up your MCP server components.
 
-You can generate the base classes for your MCP Prompt and Tool using the following command:
+First, install ActionMCP to create base classes and configuration:
 
 ```bash
 bin/rails action_mcp:install:migrations  # to copy the migrations
 bin/rails generate action_mcp:install 
 ```
 
-This will create the base application classes in your app directory.
+This will create the base application classes, configuration file, and authentication gateway in your app directory.
 
 ### Generate a New Prompt
 
