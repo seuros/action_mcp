@@ -4,28 +4,28 @@
 #
 # Table name: action_mcp_sessions
 #
-#  id                                                  :string           not null, primary key
-#  authentication_method                               :string           default("none")
-#  client_capabilities(The capabilities of the client) :jsonb
-#  client_info(The information about the client)       :jsonb
-#  ended_at(The time the session ended)                :datetime
-#  initialized                                         :boolean          default(FALSE), not null
-#  messages_count                                      :integer          default(0), not null
-#  oauth_access_token                                  :string
-#  oauth_refresh_token                                 :string
-#  oauth_token_expires_at                              :datetime
-#  oauth_user_context                                  :jsonb
-#  prompt_registry                                     :jsonb
-#  protocol_version                                    :string
-#  resource_registry                                   :jsonb
-#  role(The role of the session)                       :string           default("server"), not null
-#  server_capabilities(The capabilities of the server) :jsonb
-#  server_info(The information about the server)       :jsonb
-#  sse_event_counter                                   :integer          default(0), not null
-#  status                                              :string           default("pre_initialize"), not null
-#  tool_registry                                       :jsonb
-#  created_at                                          :datetime         not null
-#  updated_at                                          :datetime         not null
+#  id                     :string           not null, primary key
+#  authentication_method  :string           default("none")
+#  client_capabilities    :json
+#  client_info            :json
+#  ended_at               :datetime
+#  initialized            :boolean          default(FALSE), not null
+#  messages_count         :integer          default(0), not null
+#  oauth_access_token     :string
+#  oauth_refresh_token    :string
+#  oauth_token_expires_at :datetime
+#  oauth_user_context     :json
+#  prompt_registry        :json
+#  protocol_version       :string
+#  resource_registry      :json
+#  role                   :string           default("server"), not null
+#  server_capabilities    :json
+#  server_info            :json
+#  sse_event_counter      :integer          default(0), not null
+#  status                 :string           default("pre_initialize"), not null
+#  tool_registry          :json
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
 #
 # Indexes
 #

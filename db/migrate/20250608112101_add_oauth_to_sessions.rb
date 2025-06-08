@@ -2,8 +2,8 @@
 
 class AddOAuthToSessions < ActiveRecord::Migration[8.0]
   def change
-    # Use jsonb for PostgreSQL, json for other databases (SQLite3, MySQL)
-    json_type = connection.adapter_name.downcase == 'postgresql' ? :jsonb : :json
+    # Use json for all databases (PostgreSQL, SQLite3, MySQL) for consistency
+    json_type = :json
 
     add_column :action_mcp_sessions, :oauth_access_token, :string
     add_column :action_mcp_sessions, :oauth_refresh_token, :string

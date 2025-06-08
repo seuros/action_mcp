@@ -20,18 +20,21 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
-  test:
+  test-postgresql:
+    name: Tests (PostgreSQL)
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
-      DATABASE_URL: postgresql://ubuntu:password@localhost
+      DATABASE_URL: postgresql://ubuntu:password@localhost/actionmcp_test
+
     services:
       db:
         image: "ghcr.io/seuros/postgis-with-extensions:17-4"
         env:
           POSTGRES_USER: ubuntu
           POSTGRES_PASSWORD: password
-        ports: [ "5432:5432" ]
+        ports:
+          - "5432:5432"
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
@@ -47,8 +50,34 @@ jobs:
       - name: Create and migrate test database
         run: |
           cd test/dummy
+          bin/rails db:create
           bin/rails db:migrate
-          bin/rails db:prepare
+
+      - name: Run tests
+        run: bin/rails test
+
+  test-sqlite3:
+    name: Tests (SQLite3)
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: sqlite3:tmp/test.sqlite3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ruby-3.4.3
+          bundler-cache: true
+
+      - name: Create and migrate test database
+        run: |
+          cd test/dummy
+          bin/rails db:create
+          bin/rails db:migrate
 
       - name: Run tests
         run: bin/rails test
