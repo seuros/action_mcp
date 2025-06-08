@@ -5,11 +5,16 @@
 # Table name: action_mcp_sessions
 #
 #  id                                                  :string           not null, primary key
+#  authentication_method                               :string           default("none")
 #  client_capabilities(The capabilities of the client) :jsonb
 #  client_info(The information about the client)       :jsonb
 #  ended_at(The time the session ended)                :datetime
 #  initialized                                         :boolean          default(FALSE), not null
 #  messages_count                                      :integer          default(0), not null
+#  oauth_access_token                                  :string
+#  oauth_refresh_token                                 :string
+#  oauth_token_expires_at                              :datetime
+#  oauth_user_context                                  :jsonb
 #  prompt_registry                                     :jsonb
 #  protocol_version                                    :string
 #  resource_registry                                   :jsonb
@@ -21,6 +26,12 @@
 #  tool_registry                                       :jsonb
 #  created_at                                          :datetime         not null
 #  updated_at                                          :datetime         not null
+#
+# Indexes
+#
+#  index_action_mcp_sessions_on_authentication_method   (authentication_method)
+#  index_action_mcp_sessions_on_oauth_access_token      (oauth_access_token) UNIQUE
+#  index_action_mcp_sessions_on_oauth_token_expires_at  (oauth_token_expires_at)
 #
 module ActionMCP
   ##
@@ -321,6 +332,94 @@ module ActionMCP
       rescue StandardError
         nil
       end
+    end
+
+    # OAuth Session Management
+    # Required by MCP 2025-03-26 specification for session binding
+
+    # Store OAuth token and user context in session
+    def store_oauth_token(access_token:, refresh_token: nil, expires_at:, user_context: {})
+      update!(
+        oauth_access_token: access_token,
+        oauth_refresh_token: refresh_token,
+        oauth_token_expires_at: expires_at,
+        oauth_user_context: user_context,
+        authentication_method: "oauth"
+      )
+    end
+
+    # Retrieve OAuth token information
+    def oauth_token_info
+      return nil unless oauth_access_token
+
+      {
+        access_token: oauth_access_token,
+        refresh_token: oauth_refresh_token,
+        expires_at: oauth_token_expires_at,
+        user_context: oauth_user_context || {},
+        authentication_method: authentication_method
+      }
+    end
+
+    # Check if OAuth token is valid and not expired
+    def oauth_token_valid?
+      return false unless oauth_access_token
+      return true unless oauth_token_expires_at
+
+      oauth_token_expires_at > Time.current
+    end
+
+    # Clear OAuth token data
+    def clear_oauth_token!
+      update!(
+        oauth_access_token: nil,
+        oauth_refresh_token: nil,
+        oauth_token_expires_at: nil,
+        oauth_user_context: nil,
+        authentication_method: "none"
+      )
+    end
+
+    # Update OAuth token (for refresh flow)
+    def update_oauth_token(access_token:, refresh_token: nil, expires_at:)
+      update!(
+        oauth_access_token: access_token,
+        oauth_refresh_token: refresh_token,
+        oauth_token_expires_at: expires_at
+      )
+    end
+
+    # Get user information from OAuth context
+    def oauth_user
+      return nil unless oauth_user_context.is_a?(Hash)
+
+      OpenStruct.new(oauth_user_context)
+    end
+
+    # Check if session is authenticated via OAuth
+    def oauth_authenticated?
+      authentication_method == "oauth" && oauth_token_valid?
+    end
+
+    # Find session by OAuth access token (class method)
+    def self.find_by_oauth_token(access_token)
+      find_by(oauth_access_token: access_token)
+    end
+
+    # Find sessions with expired OAuth tokens (class method)
+    def self.with_expired_oauth_tokens
+      where("oauth_token_expires_at IS NOT NULL AND oauth_token_expires_at < ?", Time.current)
+    end
+
+    # Cleanup expired OAuth tokens (class method)
+    def self.cleanup_expired_oauth_tokens
+      with_expired_oauth_tokens.update_all(
+        oauth_access_token: nil,
+        oauth_refresh_token: nil,
+        oauth_token_expires_at: nil,
+        oauth_user_context: nil,
+        authentication_method: "none"
+      )
     end
 
     private

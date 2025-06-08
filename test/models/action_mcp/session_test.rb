@@ -5,11 +5,16 @@
 # Table name: action_mcp_sessions
 #
 #  id                                                  :string           not null, primary key
+#  authentication_method                               :string           default("none")
 #  client_capabilities(The capabilities of the client) :jsonb
 #  client_info(The information about the client)       :jsonb
 #  ended_at(The time the session ended)                :datetime
 #  initialized                                         :boolean          default(FALSE), not null
 #  messages_count                                      :integer          default(0), not null
+#  oauth_access_token                                  :string
+#  oauth_refresh_token                                 :string
+#  oauth_token_expires_at                              :datetime
+#  oauth_user_context                                  :jsonb
 #  prompt_registry                                     :jsonb
 #  protocol_version                                    :string
 #  resource_registry                                   :jsonb
@@ -21,6 +26,12 @@
 #  tool_registry                                       :jsonb
 #  created_at                                          :datetime         not null
 #  updated_at                                          :datetime         not null
+#
+# Indexes
+#
+#  index_action_mcp_sessions_on_authentication_method   (authentication_method)
+#  index_action_mcp_sessions_on_oauth_access_token      (oauth_access_token) UNIQUE
+#  index_action_mcp_sessions_on_oauth_token_expires_at  (oauth_token_expires_at)
 #
 require "test_helper"
 
