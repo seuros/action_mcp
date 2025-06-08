@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_08_112101) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,6 +68,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_17_135611) do
     t.jsonb "resource_registry", default: []
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "oauth_access_token"
+    t.string "oauth_refresh_token"
+    t.datetime "oauth_token_expires_at"
+    t.jsonb "oauth_user_context"
+    t.string "authentication_method", default: "none"
+    t.index [ "authentication_method" ], name: "index_action_mcp_sessions_on_authentication_method"
+    t.index [ "oauth_access_token" ], name: "index_action_mcp_sessions_on_oauth_access_token", unique: true
+    t.index [ "oauth_token_expires_at" ], name: "index_action_mcp_sessions_on_oauth_token_expires_at"
   end
 
   create_table "action_mcp_sse_events", force: :cascade do |t|
