@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.54.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.53.0...action_mcp/v0.54.0) (2025-06-08)
+
+
+### Features
+
+* Gem can work databaseless for dev/test ([#98](https://github.com/seuros/action_mcp/issues/98)) ([986b69d](https://github.com/seuros/action_mcp/commit/986b69d995920d0a400229776d3583e709656536))
+
 ## [0.53.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.2...action_mcp/v0.53.0) (2025-06-08)
 
 
