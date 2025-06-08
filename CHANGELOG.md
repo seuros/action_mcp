@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.53.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.2...action_mcp/v0.53.0) (2025-06-08)
+
+
+### Features
+
+* add client oauth ([#97](https://github.com/seuros/action_mcp/issues/97)) ([641b0d9](https://github.com/seuros/action_mcp/commit/641b0d9f0bf48590fa43dbeae46e0c2f4265d494))
+* Add OAuth 2.1 authorization server implementation ([#95](https://github.com/seuros/action_mcp/issues/95)) ([8c5f315](https://github.com/seuros/action_mcp/commit/8c5f3158e4f41665a30a5b94dbf07bf4a8365e85))
+* auth field to session ([#96](https://github.com/seuros/action_mcp/issues/96)) ([b2c71db](https://github.com/seuros/action_mcp/commit/b2c71dbc0f7c360cf55e1bfce75d7532d92bc0d6))
+* implement Oauth 2.1 spec ([#93](https://github.com/seuros/action_mcp/issues/93)) ([362df6c](https://github.com/seuros/action_mcp/commit/362df6c8a7d21d8df6dae84c46ddd3922cac24f4))
+
 ## [0.52.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.52.1...action_mcp/v0.52.2) (2025-06-06)
 
 
