@@ -46,12 +46,10 @@ module ActionMCP
       end
 
       def validate_oauth_token(request, token)
-        strategy_class = ActionMCP::Omniauth::MCPStrategy
-        oauth_config = ActionMCP.configuration.oauth_config
+        # Use the OAuth provider for token introspection
+        token_info = ActionMCP::OAuth::Provider.introspect_token(token)
 
-        token_info = strategy_class.validate_token(token, oauth_config)
-
-        if token_info && token_info["active"]
+        if token_info && token_info[:active]
           # Store OAuth token info in request environment for Gateway
           request.env["action_mcp.oauth_token_info"] = token_info
           request.env["action_mcp.oauth_token"] = token

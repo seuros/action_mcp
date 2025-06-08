@@ -12,6 +12,7 @@ module ActionMCP
     ActiveSupport::Inflector.inflections(:en) do |inflect|
       inflect.acronym "SSE"
       inflect.acronym "MCP"
+      inflect.acronym "OAuth"
     end
 
     # Provide a configuration namespace for ActionMCP
