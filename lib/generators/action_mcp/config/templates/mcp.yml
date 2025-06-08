@@ -2,9 +2,9 @@
 # This file contains configuration for the ActionMCP server including
 # authentication, profiles, and pub/sub system settings.
 
-development:
+shared:
   # Authentication configuration - array of methods to try in order
-  authentication: ["none"]  # No authentication required for development
+  authentication: ["none"]  # No authentication required by default
   
   # OAuth configuration (if using OAuth authentication)
   # oauth:
@@ -13,13 +13,17 @@ development:
   #   enable_dynamic_registration: true
   #   enable_token_revocation: true
   #   pkce_required: true
+  #   issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
   
   # MCP capability profiles
   profiles:
     primary:
-      tools: ["all"]
-      prompts: ["all"] 
-      resources: ["all"]
+      tools:
+        - all
+      prompts:
+        - all
+      resources:
+        - all
       options:
         list_changed: false
         logging_enabled: true
@@ -35,26 +39,24 @@ development:
         logging_level: :warn
         resources_subscribe: false
 
-  # Pub/sub adapter configuration
+# Development environment
+development:
+  # Use simple pub/sub adapter for development
   adapter: simple
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool
   # max_threads: 10    # Maximum number of threads in the pool
   # max_queue: 100     # Maximum number of tasks that can be queued
 
+# Test environment
 test:
-  # JWT authentication for testing
+  # JWT authentication for testing environment
   authentication: ["jwt"]
   
-  profiles:
-    primary:
-      tools: ["all"]
-      prompts: ["all"]
-      resources: ["all"]
-      
   # Test adapter for testing
   adapter: test
 
+# Production environment
 production:
   # Multiple authentication methods - try OAuth first, fallback to JWT
   authentication: ["oauth", "jwt"]
@@ -66,18 +68,10 @@ production:
     enable_dynamic_registration: true
     enable_token_revocation: true
     pkce_required: true
-    # issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
+    issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
   
+  # Additional production profiles for external clients
   profiles:
-    primary:
-      tools: ["all"]
-      prompts: ["all"]
-      resources: ["all"]
-      options:
-        list_changed: false
-        logging_enabled: true
-        resources_subscribe: false
-        
     external_clients:
       tools: ["WeatherForecastTool"]  # Limited tool access for external clients
       prompts: []
