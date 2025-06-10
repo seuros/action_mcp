@@ -13,7 +13,7 @@ shared:
   #   enable_dynamic_registration: true
   #   enable_token_revocation: true
   #   pkce_required: true
-  #   issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
+  #   issuer_url: https://yourapp.com
   
   # MCP capability profiles
   profiles:
@@ -36,7 +36,7 @@ shared:
       options:
         list_changed: false
         logging_enabled: false
-        logging_level: :warn
+        logging_level: warn
         resources_subscribe: false
 
 # Development environment
@@ -68,7 +68,7 @@ production:
     enable_dynamic_registration: true
     enable_token_revocation: true
     pkce_required: true
-    issuer_url: <%= ENV.fetch("OAUTH_ISSUER_URL") { "https://yourapp.com" } %>
+    issuer_url: https://yourapp.com
   
   # Additional production profiles for external clients
   profiles:
@@ -91,8 +91,8 @@ production:
 
   # 2. Redis-backed adapter (alternative)
   # adapter: redis
-  # url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  # channel_prefix: <%= Rails.application.class.module_parent_name.underscore %>_production
+  # url: redis://localhost:6379/1
+  # channel_prefix: my_mcp_app_production
   # min_threads: 10    # Minimum number of threads in the pool
   # max_threads: 20    # Maximum number of threads in the pool
   # max_queue: 500     # Maximum number of tasks that can be queued
