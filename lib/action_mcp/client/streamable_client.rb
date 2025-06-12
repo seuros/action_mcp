@@ -3,7 +3,8 @@
 module ActionMCP
   module Client
     # MCP client using Server-Sent Events (SSE) transport
-    class StreamableClient < Base
+    class StreamableClient
+      include Transport
       # Define a custom error class for connection issues
       class ConnectionError < StandardError; end
 
@@ -12,11 +13,14 @@ module ActionMCP
 
       attr_reader :base_url, :sse_path, :post_url, :session
 
+      # Transport interface attributes
+      attr_accessor :onmessage, :onerror, :onclose, :session_id
+
       def initialize(url, connect: true, logger: ActionMCP.logger, **_options)
         gem "faraday", ">= 2.0"
         require "faraday"
         require "uri"
-        super(logger: logger)
+        @logger = logger
         @type = :sse
         setup_connection(url)
         @buffer = +""
@@ -26,8 +30,36 @@ module ActionMCP
         @endpoint_condition = ConditionVariable.new
         @connection_mutex = Mutex.new
         @connection_condition = ConditionVariable.new
+        @connected = false
+        @ready = false
 
-        self.connect if connect
+        # Transport interface callbacks
+        @onmessage = nil
+        @onerror = nil
+        @onclose = nil
+
+        start if connect
+      end
+
+      # Transport interface methods
+      def start
+        start_transport
+      end
+
+      def close
+        stop_transport
+      end
+
+      def send(message)
+        send_message(message)
+      end
+
+      def ready?
+        endpoint_ready?
+      end
+
+      def connected?
+        @connected
       end
 
       protected
@@ -115,6 +147,7 @@ module ActionMCP
         if success
           @connection_mutex.synchronize do
             @connected = true
+            @ready = true
             @connection_condition.broadcast
           end
         end
@@ -165,7 +198,8 @@ module ActionMCP
         log_error("SSE connection failed: #{message}")
         self.connection_error = message
         @connected = false
-        @error_callback&.call(StandardError.new(message))
+        @ready = false
+        @onerror&.call(StandardError.new(message))
       end
 
       def handle_sse_data(chunk, _overall_bytes)
@@ -229,7 +263,13 @@ module ActionMCP
       def process_event(event_data)
         case event_data[:type]
         when "endpoint" then set_post_endpoint(event_data[:data])
-        when "message" then handle_raw_message(event_data[:data])
+        when "message" then
+          begin
+            parsed_message = JSON.parse(event_data[:data])
+            @onmessage&.call(parsed_message)
+          rescue JSON::ParserError => e
+            @onerror&.call(e)
+          end
         else log_error("Unknown event type: #{event_data[:type]}")
         end
       end
@@ -243,9 +283,6 @@ module ActionMCP
           @endpoint_received = true
           @endpoint_condition.broadcast
         end
-
-        # Now that we have the endpoint, send initial capabilities
-        send_initial_capabilities
       end
 
       def build_post_url(endpoint_path)
@@ -258,6 +295,22 @@ module ActionMCP
         return unless @sse_thread
 
         @sse_thread.join(SSE_TIMEOUT) || @sse_thread.kill
+      end
+
+      def connection_error=(message)
+        @connection_error = message
+      end
+
+      def log_debug(message)
+        @logger.debug("[ActionMCP::StreamableClient] #{message}")
+      end
+
+      def log_info(message)
+        @logger.info("[ActionMCP::StreamableClient] #{message}")
+      end
+
+      def log_error(message)
+        @logger.error("[ActionMCP::StreamableClient] #{message}")
       end
     end
   end
