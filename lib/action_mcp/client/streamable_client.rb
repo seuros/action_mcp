@@ -3,7 +3,7 @@
 module ActionMCP
   module Client
     # MCP client using Server-Sent Events (SSE) transport
-    class SSEClient < Base
+    class StreamableClient < Base
       # Define a custom error class for connection issues
       class ConnectionError < StandardError; end
 

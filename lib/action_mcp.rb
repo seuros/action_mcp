@@ -28,7 +28,6 @@ Zeitwerk::Loader.for_gem.tap do |loader|
   )
 
   loader.inflector.inflect("action_mcp" => "ActionMCP")
-  loader.inflector.inflect("sse_client" => "SSEClient")
   loader.inflector.inflect("sse_listener" => "SSEListener")
   loader.inflector.inflect("oauth" => "OAuth")
   loader.inflector.inflect("mcp_strategy" => "MCPStrategy")

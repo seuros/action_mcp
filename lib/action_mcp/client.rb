@@ -68,7 +68,7 @@ module ActionMCP
       Client::StreamableHttpTransport.new(endpoint, **options)
     when :sse
       # Legacy SSE transport (wrapped for compatibility)
-      Client::LegacySSETransport.new(endpoint, **options)
+      Client::StreamableClient.new(endpoint, **options)
     else
       raise ArgumentError, "Unknown transport type: #{type}"
     end
