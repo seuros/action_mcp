@@ -6,6 +6,16 @@ shared:
   # Authentication configuration - array of methods to try in order
   authentication: ["none"]  # No authentication required by default
   
+  # Session store configuration
+  # Global session store type used by both client and server (default: volatile in dev/test, active_record in production)
+  # session_store_type: volatile
+  
+  # Client-specific session store type (falls back to session_store_type if not specified)
+  # client_session_store_type: volatile
+  
+  # Server-specific session store type (falls back to session_store_type if not specified)
+  # server_session_store_type: active_record
+  
   # OAuth configuration (if using OAuth authentication)
   # oauth:
   #   provider: "demo_oauth_provider"
@@ -43,6 +53,13 @@ shared:
 development:
   # Use simple pub/sub adapter for development
   adapter: simple
+  
+  # Session store examples for development
+  # Use volatile client sessions for faster development
+  # client_session_store_type: volatile
+  # Use persistent server sessions to maintain state across restarts
+  # server_session_store_type: active_record
+  
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool
   # max_threads: 10    # Maximum number of threads in the pool
@@ -55,6 +72,9 @@ test:
   
   # Test adapter for testing
   adapter: test
+  
+  # Use volatile sessions for testing (fast cleanup)
+  # session_store_type: volatile
 
 # Production environment
 production:
@@ -76,6 +96,13 @@ production:
       tools: ["WeatherForecastTool"]  # Limited tool access for external clients
       prompts: []
       resources: []
+  
+  # Production session store configuration
+  # Use persistent storage for production reliability
+  # session_store_type: active_record
+  # Or configure separately:
+  # client_session_store_type: active_record  # Client connections persist across restarts
+  # server_session_store_type: active_record  # Server state persists across deployments
   
   # Choose one of the following adapters:
   

@@ -31,7 +31,7 @@ module ActionMCP
     # Access the session store
     def session_store
       @session_store ||= SessionStoreFactory.create(
-        ActionMCP.configuration.session_store_type
+        ActionMCP.configuration.server_session_store_type
       )
     end
 

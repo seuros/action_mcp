@@ -19,13 +19,7 @@ module ActionMCP
       end
 
       def self.default_type
-        if Rails.env.test?
-          :volatile # Use volatile for tests unless explicitly using :test
-        elsif Rails.env.production?
-          :active_record
-        else
-          :volatile
-        end
+        ActionMCP.configuration.server_session_store_type
       end
     end
   end

@@ -20,16 +20,7 @@ module ActionMCP
       end
 
       def self.default_type
-        # Ensure Rails is defined or provide a fallback if this code can run
-        # outside a Rails environment.
-        # Will refactor this soon
-        if defined?(Rails) && Rails.env.test?
-          :volatile  # Use volatile for tests unless explicitly using :test
-        elsif defined?(Rails) && Rails.env.production?
-          :active_record
-        else
-          :volatile # Default for development or non-Rails environments
-        end
+        ActionMCP.configuration.client_session_store_type
       end
     end
   end

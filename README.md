@@ -357,7 +357,7 @@ ActionMCP includes three session store implementations:
 
 ### Configuration
 
-You can configure the session store type in your Rails configuration:
+You can configure the session store type in your Rails configuration or `config/mcp.yml`:
 
 ```ruby
 # config/application.rb or environment files
@@ -366,10 +366,33 @@ Rails.application.configure do
 end
 ```
 
+Or in `config/mcp.yml`:
+
+```yaml
+# Global session store type (used by both client and server)
+session_store_type: volatile
+
+# Client-specific session store type (falls back to session_store_type if not specified)
+client_session_store_type: volatile
+
+# Server-specific session store type (falls back to session_store_type if not specified)  
+server_session_store_type: active_record
+```
+
 The defaults are:
 - Production: `:active_record`
 - Development: `:volatile`
 - Test: `:volatile` (or `:test` when using TestHelper)
+
+### Separate Client and Server Session Stores
+
+You can configure different session store types for client and server operations:
+
+- **`session_store_type`**: Global setting used by both client and server when specific types aren't set
+- **`client_session_store_type`**: Session store used by ActionMCP client connections (falls back to global setting)
+- **`server_session_store_type`**: Session store used by ActionMCP server sessions (falls back to global setting)
+
+This allows you to optimize each component separately. For example, you might use volatile storage for client sessions (faster, temporary) while using persistent storage for server sessions (maintains state across restarts).
 
 ### Using Different Session Stores
 

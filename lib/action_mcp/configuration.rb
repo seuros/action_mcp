@@ -41,6 +41,8 @@ module ActionMCP
                   :gateway_class,
                   # --- Session Store Options ---
                   :session_store_type,
+                  :client_session_store_type,
+                  :server_session_store_type,
                   # --- Pub/Sub and Thread Pool Options ---
                   :adapter,
                   :min_threads,
@@ -75,6 +77,8 @@ module ActionMCP
 
       # Session Store
       @session_store_type = Rails.env.production? ? :active_record : :volatile
+      @client_session_store_type = nil # defaults to session_store_type
+      @server_session_store_type = nil # defaults to session_store_type
     end
 
     def name
@@ -185,6 +189,16 @@ module ActionMCP
       capabilities
     end
 
+    # Get effective client session store type (falls back to global session_store_type)
+    def client_session_store_type
+      @client_session_store_type || @session_store_type
+    end
+
+    # Get effective server session store type (falls back to global session_store_type)
+    def server_session_store_type
+      @server_session_store_type || @session_store_type
+    end
+
     def apply_profile_options
       profile = @profiles[active_profile]
       return unless profile && profile[:options]
@@ -253,6 +267,15 @@ module ActionMCP
       # Extract connects_to setting
       if app_config["connects_to"]
         @connects_to = app_config["connects_to"]
+      end
+
+      # Extract client and server session store types
+      if app_config["client_session_store_type"]
+        @client_session_store_type = app_config["client_session_store_type"].to_sym
+      end
+
+      if app_config["server_session_store_type"]
+        @server_session_store_type = app_config["server_session_store_type"].to_sym
       end
     end
 
