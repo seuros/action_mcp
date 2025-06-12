@@ -3,7 +3,7 @@
 require "test_helper"
 require "stringio"
 
-class SSEClientRealImplementationTest < ActiveSupport::TestCase
+class StreamableClientRealImplementationTest < ActiveSupport::TestCase
   # Simple mock HTTP response class
   class MockHttpResponse
     def success?

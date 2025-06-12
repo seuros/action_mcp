@@ -102,6 +102,37 @@ module ActionMCP
       def set_ready(state)
         @ready = state
       end
+
+      # Logging methods for transport classes
+      def log_debug(message)
+        @logger.debug("[ActionMCP::#{self.class.name.split('::').last}] #{message}")
+      end
+
+      def log_info(message)
+        @logger.info("[ActionMCP::#{self.class.name.split('::').last}] #{message}")
+      end
+
+      def log_error(message)
+        @logger.error("[ActionMCP::#{self.class.name.split('::').last}] #{message}")
+      end
+
+      private
+
+      def handle_connect
+        @connect_callback&.call
+      end
+
+      def handle_disconnect
+        @disconnect_callback&.call
+      end
+
+      def handle_error(error)
+        @error_callback&.call(error)
+      end
+
+      def handle_message(message)
+        @message_callback&.call(message)
+      end
     end
   end
 end
