@@ -10,6 +10,39 @@ module ActionMCP
         @client = client
       end
 
+      # Handle client-side JSON-RPC requests/responses
+      # @param request [JSON_RPC::Request, JSON_RPC::Notification, JSON_RPC::Response]
+      def call(request)
+        case request
+        when JSON_RPC::Request
+          handle_request(request)
+        when JSON_RPC::Notification
+          handle_notification(request)
+        when JSON_RPC::Response
+          handle_response(request)
+        end
+      end
+
+      private
+
+      def handle_request(request)
+        id = request.id
+        rpc_method = request.method
+        params = request.params
+
+        handle_method(rpc_method, id, params)
+      end
+
+      def handle_notification(notification)
+        # Handle server notifications to client
+        puts "\e[33mReceived notification: #{notification.method}\e[0m"
+      end
+
+      def handle_response(response)
+        # Handle server responses to client requests
+        puts "\e[32mReceived response: #{response.id} - #{response.result ? 'success' : 'error'}\e[0m"
+      end
+
       protected
 
       # Handle client-specific methods
