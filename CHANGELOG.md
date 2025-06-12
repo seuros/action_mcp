@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.55.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.54.0...action_mcp/v0.55.0) (2025-06-12)
+
+
+### Features
+
+* add separate client and server session store configuration ([#101](https://github.com/seuros/action_mcp/issues/101)) ([11c433b](https://github.com/seuros/action_mcp/commit/11c433b960d08192164b916431ad81a1d383c4c1))
+
+
+### Bug Fixes
+
+* typo in template ([915ff76](https://github.com/seuros/action_mcp/commit/915ff7689318d1a104ac25890c30d4402fe68fa9))
+
 ## [0.54.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.53.0...action_mcp/v0.54.0) (2025-06-08)
 
 
