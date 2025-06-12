@@ -192,9 +192,10 @@ module ActionMCP
         ar = SessionStoreFactory.create(:active_record)
         assert_instance_of ActiveRecordSessionStore, ar
 
-        # Default based on environment
+        # Default based on configuration
         default = SessionStoreFactory.create
-        if Rails.env.production?
+        expected_type = ActionMCP.configuration.server_session_store_type
+        if expected_type == :active_record
           assert_instance_of ActiveRecordSessionStore, default
         else
           assert_instance_of VolatileSessionStore, default

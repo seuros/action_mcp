@@ -16,11 +16,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_112101) do
 
   create_table "action_mcp_session_messages", force: :cascade do |t|
     t.string "session_id", null: false
-    t.string "direction", default: "client", null: false
-    t.string "message_type", null: false
+    t.string "direction", default: "client", null: false, comment: "The message recipient"
+    t.string "message_type", null: false, comment: "The type of the message"
     t.string "jsonrpc_id"
     t.json "message_json"
-    t.boolean "is_ping", default: false, null: false
+    t.boolean "is_ping", default: false, null: false, comment: "Whether the message is a ping"
     t.boolean "request_acknowledged", default: false, null: false
     t.boolean "request_cancelled", default: false, null: false
     t.datetime "created_at", null: false
@@ -52,14 +52,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_112101) do
   end
 
   create_table "action_mcp_sessions", id: :string, force: :cascade do |t|
-    t.string "role", default: "server", null: false
+    t.string "role", default: "server", null: false, comment: "The role of the session"
     t.string "status", default: "pre_initialize", null: false
-    t.datetime "ended_at"
+    t.datetime "ended_at", comment: "The time the session ended"
     t.string "protocol_version"
-    t.json "server_capabilities"
-    t.json "client_capabilities"
-    t.json "server_info"
-    t.json "client_info"
+    t.json "server_capabilities", comment: "The capabilities of the server"
+    t.json "client_capabilities", comment: "The capabilities of the client"
+    t.json "server_info", comment: "The information about the server"
+    t.json "client_info", comment: "The information about the client"
     t.boolean "initialized", default: false, null: false
     t.integer "messages_count", default: 0, null: false
     t.integer "sse_event_counter", default: 0, null: false
@@ -95,7 +95,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_112101) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id", on_update: :cascade, on_delete: :cascade
+  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id", name: "fk_action_mcp_session_messages_session_id", on_update: :cascade, on_delete: :cascade
   add_foreign_key "action_mcp_session_resources", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_session_subscriptions", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_sse_events", "action_mcp_sessions", column: "session_id"
