@@ -33,6 +33,10 @@ module ActionMCP
         base = base[0...-6] if base.end_with?("Prompt")
         base.underscore.dasherize
       end
+
+      def description
+        "Describe what this prompt does"
+      end
     end
   end
 end
