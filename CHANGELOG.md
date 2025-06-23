@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.55.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.0...action_mcp/v0.55.1) (2025-06-23)
+
+
+### Bug Fixes
+
+* rename client to relect new usage ([#102](https://github.com/seuros/action_mcp/issues/102)) ([18fa9d6](https://github.com/seuros/action_mcp/commit/18fa9d6e25871b54c900c7602826c83c31b7c52d))
+* test generators ([#105](https://github.com/seuros/action_mcp/issues/105)) ([9ae1edf](https://github.com/seuros/action_mcp/commit/9ae1edf7ab8aae639c95dd4ab880bda8d5495999))
+
 ## [0.55.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.54.0...action_mcp/v0.55.0) (2025-06-12)
 
 
