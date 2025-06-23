@@ -2,7 +2,7 @@
 
 require "rails/generators"
 
-module ActionMcp
+module ActionMCP
   module Generators
     class ResourceTemplateGenerator < Rails::Generators::NamedBase
       namespace "action_mcp:resource_template"
