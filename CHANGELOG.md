@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.55.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.1...action_mcp/v0.55.2) (2025-06-24)
+
+
+### Bug Fixes
+
+* update install generator name ([1e8ed8c](https://github.com/seuros/action_mcp/commit/1e8ed8ce22fb488149e5e6d9d868ebac1542a38d))
+
 ## [0.55.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.0...action_mcp/v0.55.1) (2025-06-23)
 
 
