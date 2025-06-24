@@ -5,6 +5,7 @@ require "rails/generators"
 module ActionMCP
   module Generators
     class InstallGenerator < Rails::Generators::Base
+      namespace "action_mcp:install"
       source_root File.expand_path("templates", __dir__)
 
       desc "Install ActionMCP with base classes and configuration"
