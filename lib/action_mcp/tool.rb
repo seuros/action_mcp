@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "action_mcp/types/float_array_type"
+
 module ActionMCP
   # Base class for defining tools.
   #
@@ -8,6 +10,7 @@ module ActionMCP
   class Tool < Capability
     include ActionMCP::Callbacks
     include ActionMCP::CurrentHelpers
+
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
@@ -82,6 +85,28 @@ module ActionMCP
         # Always include annotations now that we only support 2025+
         _annotations
       end
+
+      # Class method to call the tool with arguments
+      def call(arguments = {})
+        new(arguments).call
+      end
+
+      # Helper methods for checking annotations
+      def read_only?
+        _annotations["readOnlyHint"] == true
+      end
+
+      def idempotent?
+        _annotations["idempotentHint"] == true
+      end
+
+      def destructive?
+        _annotations["destructiveHint"] == true
+      end
+
+      def open_world?
+        _annotations["openWorldHint"] == true
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -140,9 +165,24 @@ module ActionMCP
         req << prop_name.to_s if required
       end
 
-      type = map_json_type_to_active_model_type("array_#{type}")
-      attribute prop_name, type, default: default
-      validates prop_name, presence: true, if: -> { required }
+      # Map the type - for number arrays, use our custom type instance
+      mapped_type = if type == "number"
+        Types::FloatArrayType.new
+      else
+        map_json_type_to_active_model_type("array_#{type}")
+      end
+
+      attribute prop_name, mapped_type, default: default
+
+      # For arrays, we need to check if the attribute is nil, not if it's empty
+      if required
+        validates prop_name, presence: true, unless: -> { self.send(prop_name).is_a?(Array) }
+        validate do
+          if self.send(prop_name).nil?
+            errors.add(prop_name, "can't be blank")
+          end
+        end
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -152,7 +192,10 @@ module ActionMCP
     #
     # @return [Hash] The tool definition.
     def self.to_h(protocol_version: nil)
-      schema = { type: "object", properties: _schema_properties }
+      schema = {
+        type: "object",
+        properties: _schema_properties
+      }
       schema[:required] = _required_properties if _required_properties.any?
 
       result = {
@@ -246,8 +289,8 @@ module ActionMCP
     def self.map_json_type_to_active_model_type(type)
       case type.to_s
       when "number" then :float # JSON Schema "number" is a float in Ruby, the spec doesn't have an integer type yet.
-      when "array_number" then :integer_array
-      when "array_integer" then :string_array
+      when "array_number" then :float_array
+      when "array_integer" then :integer_array
       when "array_string" then :string_array
       else :string
       end

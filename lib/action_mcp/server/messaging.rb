@@ -13,7 +13,11 @@ module ActionMCP
       end
 
       def send_jsonrpc_response(request_id, result: nil, error: nil)
-        send_message(:response, id: request_id, result: result, error: error)
+        # Only pass the parameters that are actually provided
+        args = { id: request_id }
+        args[:result] = result unless result.nil?
+        args[:error] = error unless error.nil?
+        send_message(:response, **args)
       end
 
       def send_jsonrpc_notification(method, params = nil)
@@ -37,11 +41,11 @@ module ActionMCP
                       params: args[:params]
                     )
         when :response
-                    JSON_RPC::Response.new(
-                      id: args[:id],
-                      result: args[:result],
-                      error: args[:error]
-                    )
+                    # Pass only the provided parameters to avoid validation errors
+                    response_args = { id: args[:id] }
+                    response_args[:result] = args[:result] if args.key?(:result)
+                    response_args[:error] = args[:error] if args.key?(:error)
+                    JSON_RPC::Response.new(**response_args)
         when :notification
                     JSON_RPC::Notification.new(
                       method: args[:method],

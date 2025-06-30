@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "test_helper"
+
 class CalculateSumToolTest < ActiveSupport::TestCase
   test "should calculate sum" do
     tool = CalculateSumTool.new(number1: 1, number2: 2)

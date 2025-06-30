@@ -4,16 +4,14 @@ module ActionMCP
   # Implements the MCP endpoints according to the 2025-03-26 specification.
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
-  class ApplicationController < ActionController::Metal
+  class ApplicationController < ActionController::API
     REQUIRED_PROTOCOL_VERSION = "2025-03-26"
     MCP_SESSION_ID_HEADER = "Mcp-Session-Id"
 
-    ActionController::API.without_modules(:StrongParameters, :ParamsWrapper).each do |left|
-      include left
-    end
     include Engine.routes.url_helpers
     include JSONRPC_Rails::ControllerHelpers
     include ActionController::Live
+    include ActionController::Instrumentation
 
     # Provides the ActionMCP::Session for the current request.
     # Handles finding existing sessions via header/param or initializing a new one.
@@ -97,7 +95,13 @@ module ActionMCP
       heartbeat_sender = lambda do
         if connection_active.true? && !response.stream.closed?
           begin
-            future = Concurrent::Promises.future { write_sse_event(sse, session, { type: "ping" }) }
+            # Send a proper JSON-RPC notification for heartbeat
+            ping_notification = {
+              jsonrpc: "2.0",
+              method: "notifications/ping",
+              params: {}
+            }
+            future = Concurrent::Promises.future { write_sse_event(sse, session, ping_notification) }
             future.value!(5)
             if heartbeat_active.true?
               heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
@@ -316,9 +320,18 @@ module ActionMCP
     # Also stores the event for potential resumability.
     def write_sse_event(sse, session, payload)
       event_id = session.increment_sse_counter!
-      data = payload.is_a?(String) ? payload : MultiJson.dump(payload)
-      sse_event = "id: #{event_id}\ndata: #{data}\n\n"
-      sse.write(sse_event)
+      # Ensure we're always writing valid JSON strings
+      data = case payload
+      when String
+               payload
+      when Hash
+               MultiJson.dump(payload)
+      else
+               MultiJson.dump(payload.to_h)
+      end
+      # Use the SSE class's write method with proper options
+      # According to MCP spec, we need to send with event type "message"
+      sse.write(data, event: "message", id: event_id)
 
       begin
         session.store_sse_event(event_id, payload, session.max_stored_sse_events)

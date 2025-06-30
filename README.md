@@ -291,22 +291,22 @@ production:
   max_queue: 500      # Maximum number of tasks that can be queued
 ```
 
-#### SolidCable (Database-backed, Recommended)
+#### SolidMCP (Database-backed, Recommended)
 
-For SolidCable, add it to your Gemfile:
+For SolidMCP, add it to your Gemfile:
 
 ```ruby
-gem "solid_cable"  # Database-backed adapter (no Redis needed)
+gem "solid_mcp"  # Database-backed adapter optimized for MCP
 ```
 
 Then install it:
 
 ```bash
 bundle install
-bin/rails solid_cable:install
+bin/rails solid_mcp:install
 ```
 
-The installer will create the necessary database migration. You'll need to configure it in your `config/mcp.yml`. You can create this file with `bin/rails g action_mcp:config`.
+The installer will create the necessary database migration for message storage. Configure it in your `config/mcp.yml`.
 
 #### Redis Adapter
 

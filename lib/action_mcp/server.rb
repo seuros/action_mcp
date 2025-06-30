@@ -5,10 +5,10 @@ require_relative "server/configuration"
 
 # Conditionally load adapters based on available gems
 begin
-  require "solid_cable/pubsub"
-  require_relative "server/solid_cable_adapter"
+  require "solid_mcp"
+  require_relative "server/solid_mcp_adapter"
 rescue LoadError
-  # SolidCable not available
+  # SolidMCP not available
 end
 
 module ActionMCP
@@ -39,7 +39,7 @@ module ActionMCP
     ADAPTERS = {
       "test" => "SimplePubSub",
       "simple" => "SimplePubSub",
-      "solid_cable" => "SolidCableAdapter" # Will use mock version in tests
+      "solid_mcp" => "SolidMcpAdapter" # Database-backed adapter optimized for MCP
     }.compact.freeze
 
     # Custom server base class for PubSub functionality

@@ -19,11 +19,12 @@ module ActionMCP
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
         end
         unless ActionMCP.configuration.vibed_ignore_version || ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
+          error_message = "Unsupported protocol version. Client requested '#{client_protocol_version}' but server supports #{ActionMCP::SUPPORTED_VERSIONS.join(', ')}"
           error_data = {
             supported: ActionMCP::SUPPORTED_VERSIONS,
             requested: client_protocol_version
           }
-          return send_jsonrpc_error(request_id, :invalid_params, "Unsupported protocol version", error_data)
+          return send_jsonrpc_error(request_id, :invalid_params, error_message, error_data)
         end
 
         unless client_info.is_a?(Hash)

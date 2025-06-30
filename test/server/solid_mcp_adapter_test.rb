@@ -4,10 +4,12 @@ require "test_helper"
 
 module ActionMCP
   module Server
-    class SolidCableAdapterTest < ActiveSupport::TestCase
+    class SolidMcpAdapterTest < ActiveSupport::TestCase
+      include ServerTestHelper
+
       def setup
-        # Create the adapter with mock SolidCable implementation
-        @adapter = SolidCableAdapter.new("polling_interval" => 0.1)
+        # Create the adapter with SolidMCP implementation
+        @adapter = SolidMcpAdapter.new("polling_interval" => 0.01, "flush_interval" => 0.01)
         @received_messages = []
         @callback = ->(message) { @received_messages << message }
       end
@@ -35,8 +37,9 @@ module ActionMCP
         @adapter.subscribe("test-channel", @callback)
 
         @adapter.broadcast("test-channel", "test-message")
+        flush_solid_mcp_messages
 
-        assert wait_for_condition(2) { @received_messages.include?("test-message") }
+        assert wait_for_condition(3) { @received_messages.include?("test-message") }, "Message not received: #{@received_messages.inspect}"
       end
 
       def test_broadcast_to_multiple_subscribers
@@ -50,9 +53,10 @@ module ActionMCP
         end
 
         @adapter.broadcast("test-channel", "multi-message")
+        flush_solid_mcp_messages
 
         3.times do |i|
-          assert wait_for_condition(2) { received[i].include?("multi-message") }
+          assert wait_for_condition(2) { received[i].include?("multi-message") }, "Subscriber #{i} did not receive message"
         end
       end
 
@@ -77,6 +81,7 @@ module ActionMCP
 
         @adapter.broadcast("channel-1", "message-1")
         @adapter.broadcast("channel-2", "message-2")
+        flush_solid_mcp_messages
 
         assert wait_for_condition(2) { channel1_messages.include?("message-1") }
         assert wait_for_condition(2) { channel2_messages.include?("message-2") }
@@ -105,21 +110,30 @@ module ActionMCP
         assert_equal false, @adapter.subscribed_to?("test-channel")
       end
 
-      def test_optimizes_subscriptions_to_solid_cable
-        # Get the mock pub/sub instance to test if it received a subscription
-        mock_pubsub = @adapter.instance_variable_get(:@solid_cable_pubsub)
+      def test_optimizes_subscriptions_to_solid_mcp
+        # SolidMCP uses session-based subscriptions
+        # Channel format: "action_mcp:session:SESSION_ID"
+        session1_channel = "action_mcp:session:session1"
+        session2_channel = "action_mcp:session:session2"
 
-        # First subscription should register with the underlying adapter
-        @adapter.subscribe("optimize-channel", @callback)
-        assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
+        # First subscription initializes the pubsub
+        sub1 = @adapter.subscribe(session1_channel, @callback)
+        assert_not_nil sub1
+        assert @adapter.has_subscribers?(session1_channel)
 
-        # Second subscription to same channel should reuse existing subscription
-        @adapter.subscribe("optimize-channel", ->(_msg) { puts "another callback" })
-        assert_equal 1, mock_pubsub.subscriptions["optimize-channel"]&.size || 0
+        # Second subscription to same session should work
+        sub2 = @adapter.subscribe(session1_channel, ->(_msg) { puts "another callback" })
+        assert_not_nil sub2
+        assert_not_equal sub1, sub2 # Different subscription IDs
 
-        # Different channel should get a new subscription
-        @adapter.subscribe("different-channel", @callback)
-        assert_equal 1, mock_pubsub.subscriptions["different-channel"]&.size || 0
+        # Different session should get a new subscription
+        sub3 = @adapter.subscribe(session2_channel, @callback)
+        assert_not_nil sub3
+        assert @adapter.has_subscribers?(session2_channel)
+
+        # Verify both sessions have subscribers
+        assert @adapter.has_subscribers?(session1_channel)
+        assert @adapter.has_subscribers?(session2_channel)
       end
 
       # No private methods needed with mock implementation

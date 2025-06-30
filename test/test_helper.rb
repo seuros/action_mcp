@@ -81,6 +81,14 @@ module ServerTestHelper
     false
   end
 
+  # Helper to ensure SolidMCP messages are flushed during tests
+  def flush_solid_mcp_messages
+    if defined?(SolidMCP::MessageWriter)
+      SolidMCP::MessageWriter.instance.flush
+      sleep 0.1 # Give subscribers time to process
+    end
+  end
+
   # Create a temporary config file for testing
   def create_temp_config_file(config_hash)
     file = Tempfile.new([ "action_mcp_config", ".yml" ])

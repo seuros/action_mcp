@@ -6,6 +6,7 @@
 /test/dummy/db/*.sqlite3
 /test/dummy/db/*.sqlite3-*
 /test/dummy/log/*.log
+/test/dummy/log/*.log.*
 /test/dummy/storage/
 /test/dummy/tmp/
 Gemfile.lock
@@ -13,4 +14,6 @@ Gemfile.lock
 .DS_Store
 coverage/
 .env
+*.log
+*.log.*
 
