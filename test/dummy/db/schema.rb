@@ -25,7 +25,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.boolean "request_cancelled", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "session_id" ], name: "index_action_mcp_session_messages_on_session_id"
+    t.index ["session_id"], name: "index_action_mcp_session_messages_on_session_id"
   end
 
   create_table "action_mcp_session_resources", force: :cascade do |t|
@@ -39,7 +39,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.json "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "session_id" ], name: "index_action_mcp_session_resources_on_session_id"
+    t.index ["session_id"], name: "index_action_mcp_session_resources_on_session_id"
   end
 
   create_table "action_mcp_session_subscriptions", force: :cascade do |t|
@@ -48,7 +48,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.datetime "last_notification_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "session_id" ], name: "index_action_mcp_session_subscriptions_on_session_id"
+    t.index ["session_id"], name: "index_action_mcp_session_subscriptions_on_session_id"
   end
 
   create_table "action_mcp_sessions", id: :string, force: :cascade do |t|
@@ -73,9 +73,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.datetime "oauth_token_expires_at"
     t.json "oauth_user_context"
     t.string "authentication_method", default: "none"
-    t.index [ "authentication_method" ], name: "index_action_mcp_sessions_on_authentication_method"
-    t.index [ "oauth_access_token" ], name: "index_action_mcp_sessions_on_oauth_access_token", unique: true
-    t.index [ "oauth_token_expires_at" ], name: "index_action_mcp_sessions_on_oauth_token_expires_at"
+    t.index ["authentication_method"], name: "index_action_mcp_sessions_on_authentication_method"
+    t.index ["oauth_access_token"], name: "index_action_mcp_sessions_on_oauth_access_token", unique: true
+    t.index ["oauth_token_expires_at"], name: "index_action_mcp_sessions_on_oauth_token_expires_at"
   end
 
   create_table "action_mcp_sse_events", force: :cascade do |t|
@@ -84,9 +84,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.text "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "created_at" ], name: "index_action_mcp_sse_events_on_created_at"
-    t.index [ "session_id", "event_id" ], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
-    t.index [ "session_id" ], name: "index_action_mcp_sse_events_on_session_id"
+    t.index ["created_at"], name: "index_action_mcp_sse_events_on_created_at"
+    t.index ["session_id", "event_id"], name: "index_action_mcp_sse_events_on_session_id_and_event_id", unique: true
+    t.index ["session_id"], name: "index_action_mcp_sse_events_on_session_id"
   end
 
   create_table "solid_mcp_messages", force: :cascade do |t|
@@ -95,8 +95,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.text "data"
     t.datetime "created_at", null: false
     t.datetime "delivered_at"
-    t.index [ "delivered_at", "created_at" ], name: "idx_solid_mcp_messages_on_delivered_and_created"
-    t.index [ "session_id", "id" ], name: "idx_solid_mcp_messages_on_session_and_id"
+    t.index ["delivered_at", "created_at"], name: "idx_solid_mcp_messages_on_delivered_and_created"
+    t.index ["session_id", "id"], name: "idx_solid_mcp_messages_on_session_and_id"
   end
 
   create_table "users", force: :cascade do |t|
