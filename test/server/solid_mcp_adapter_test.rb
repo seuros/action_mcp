@@ -8,6 +8,9 @@ module ActionMCP
       include ServerTestHelper
 
       def setup
+        # Clean up any existing messages before test
+        SolidMCP::Message.delete_all if defined?(SolidMCP::Message)
+        
         # Create the adapter with SolidMCP implementation
         @adapter = SolidMcpAdapter.new("polling_interval" => 0.01, "flush_interval" => 0.01)
         @received_messages = []
@@ -15,7 +18,9 @@ module ActionMCP
       end
 
       def teardown
-        # No cleanup needed with mock implementation
+        # Clean up any messages and shutdown adapter
+        SolidMCP::Message.delete_all if defined?(SolidMCP::Message)
+        @adapter&.shutdown
       end
 
       def test_subscribe_returns_subscription_id
@@ -38,6 +43,7 @@ module ActionMCP
 
         @adapter.broadcast("test-channel", "test-message")
         flush_solid_mcp_messages
+        sleep 0.2 # Give more time for polling
 
         assert wait_for_condition(3) { @received_messages.include?("test-message") }, "Message not received: #{@received_messages.inspect}"
       end
@@ -54,6 +60,7 @@ module ActionMCP
 
         @adapter.broadcast("test-channel", "multi-message")
         flush_solid_mcp_messages
+        sleep 0.2 # Give more time for polling
 
         3.times do |i|
           assert wait_for_condition(2) { received[i].include?("multi-message") }, "Subscriber #{i} did not receive message"
@@ -82,6 +89,7 @@ module ActionMCP
         @adapter.broadcast("channel-1", "message-1")
         @adapter.broadcast("channel-2", "message-2")
         flush_solid_mcp_messages
+        sleep 0.2 # Give more time for polling
 
         assert wait_for_condition(2) { channel1_messages.include?("message-1") }
         assert wait_for_condition(2) { channel2_messages.include?("message-2") }
