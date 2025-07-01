@@ -22,6 +22,12 @@ This means an AI (like an LLM) can request information or actions from your appl
 
 **ActionMCP** is targeted at developers building MCP-enabled Rails applications. It simplifies the process of integrating Ruby and Rails apps with the MCP standard by providing a set of base classes and an easy-to-use server interface.
 
+## Protocol Support
+
+ActionMCP supports **MCP 2025-06-18** (current) with backward compatibility for **MCP 2025-03-26**. For a detailed (and entertaining) breakdown of protocol versions, features, and our design decisions, see [The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md).
+
+*Don't Panic: The guide contains everything you need to know about surviving MCP protocol versions.*
+
 > **Note:** STDIO transport is not supported in ActionMCP. This gem is focused on production-ready, network-based deployments. STDIO is only suitable for desktop or script-based experimentation and is intentionally excluded.
 
 Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs. 

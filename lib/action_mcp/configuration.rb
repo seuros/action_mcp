@@ -25,6 +25,7 @@ module ActionMCP
                   :logging_level,
                   :active_profile,
                   :profiles,
+                  :elicitation_enabled,
                   # --- Authentication Options ---
                   :authentication_methods,
                   :oauth_config,
@@ -56,6 +57,7 @@ module ActionMCP
       @list_changed = false
       @logging_level = :info
       @resources_subscribe = false
+      @elicitation_enabled = false
       @active_profile = :primary
       @profiles = default_profiles
 
@@ -186,6 +188,8 @@ module ActionMCP
 
       capabilities[:resources] = { subscribe: @resources_subscribe } if filtered_resources.any?
 
+      capabilities[:elicitation] = {} if @elicitation_enabled
+
       capabilities
     end
 
@@ -267,6 +271,11 @@ module ActionMCP
       # Extract connects_to setting
       if app_config["connects_to"]
         @connects_to = app_config["connects_to"]
+      end
+
+      # Extract session store configuration
+      if app_config["session_store_type"]
+        @session_store_type = app_config["session_store_type"].to_sym
       end
 
       # Extract client and server session store types

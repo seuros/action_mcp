@@ -1,142 +1,253 @@
-# ActionMCP::Tool
+# ActionMCP Tools Guide
 
-## Overview
-ActionMCP::Tool provides a framework for LLMs to interact with external systems. 
-Each tool has a specific purpose, defined inputs (properties), and structured outputs.
+## 🚀 START HERE: Use the Generator!
 
-## Core Components
+**Don't write tools from scratch!** Use the Rails generator:
 
-### Tool Definition
-- Each tool is a Ruby class inheriting from `ApplicationMCPTool`
-- Required elements:
-    - `title`: Human-readable title for the tool (optional, but recommended)
-    - `description`: Explain what the tool does
-    - `read_only`: If true, the tool does not modify its environment
-    - `destructive`: If true, the tool may perform destructive updates
-    - `idempotent`: If true, repeated calls with same args have no additional effect
-    - `open_world`: If true, tool interacts with external entities
-    - `property`: Define expected inputs with type information
-    - `perform`: Core logic that executes the tool's function
+```bash
+# Simplest tool - just give it a name
+bin/rails generate action_mcp:tool AddNumbers
 
-### Rendering Output
-Use these methods to return information:
-- `render(text: "message")`: Return text responses
-- `render(image: "base64_data", mime_type: "image/png")`: Return images
-- `render(audio: "base64_data", mime_type: "audio/mpeg")`: Return audio
-- `render(resource: "file://path/to/resource", mime_type: "application/json", text: "{}")`: Return resource with text content
-- `render(resource: "file://path/to/resource", mime_type: "application/octet-stream", blob: "base64_data")`: Return resource with base64 encoded data
-- `render(error: ["error_message"])`: Return errors
+# Tool that only reads data
+bin/rails generate action_mcp:tool GetUserInfo --read-only
 
-## Usage Pattern
+# Tool that calls external APIs
+bin/rails generate action_mcp:tool FetchWeather --read-only --open-world
 
-1. **Input validation** happens automatically based on property definitions
-2. **Tool execution** occurs in the `perform` method
-3. **Response handling** uses `render` to format outputs
-4. **Multiple renders** can be called to provide progressive information
+# Tool that changes data
+bin/rails generate action_mcp:tool CreateOrder --destructive
 
-## Example Tools
+# Tool with custom properties
+bin/rails generate action_mcp:tool SendEmail to:string subject:string body:string --destructive --open-world
+```
 
-### Check Inventory
+## Generator Options Explained
+
+- `--read-only` - Tool only reads, doesn't change anything
+- `--destructive` - Tool can delete or modify data
+- `--idempotent` - Running twice with same input = same result
+- `--open-world` - Tool talks to external systems (APIs, files, etc.)
+- `--title "Pretty Name"` - Human-friendly name for UI display
+
+## What the Generator Creates
+
+Running `bin/rails generate action_mcp:tool CalculateSum` creates:
+
+**File:** `app/mcp/tools/calculate_sum_tool.rb`
+
 ```ruby
-class InventoryCheckTool < ApplicationMCPTool
-  title "Inventory Check"
-  description "Check the current stock level of a product"
-  read_only
-  idempotent
+# frozen_string_literal: true
 
-  property :product_id, type: "string", description: "The ID of the product", required: true
-  validates :product_id, length: { is: 6 }
+class CalculateSumTool < ApplicationMCPTool
+  tool_name "calculate_sum"
+  description "Calculate sum"
+
+  property :input, type: "string", description: "Input", required: true
+
+  def perform
+    render(text: "Processing input")
+
+    # Optional outputs:
+    # render(audio: "<base64_data>", mime_type: "audio/mpeg")
+    # render(image: "<base64_data>", mime_type: "image/png")
+    # render(resource: "file://path", mime_type: "application/json", text: "{}")
+    # render(resource: "file://path", mime_type: "application/octet-stream", blob: "<base64_data>")
+  rescue => e
+    render(error: ["Error: #{e.message}"])
+  end
+end
+```
+
+## Three Complete Examples
+
+### 1. Calculator Tool (Simplest)
+
+**Generate:**
+```bash
+bin/rails generate action_mcp:tool AddNumbers a:number b:number
+```
+
+**Modify the `perform` method:**
+```ruby
+def perform
+  result = a + b
+  render(text: "#{a} + #{b} = #{result}")
+end
+```
+
+That's it! The tool now adds two numbers.
+
+### 2. Database Reader Tool
+
+**Generate:**
+```bash
+bin/rails generate action_mcp:tool GetUserCount --read-only
+```
+
+**Modify the `perform` method:**
+```ruby
+def perform
+  count = User.count
+  render(text: "Total users: #{count}")
+end
+```
+
+### 3. Weather API Tool
+
+**Generate:**
+```bash
+bin/rails generate action_mcp:tool GetWeather city:string --read-only --open-world
+```
+
+**Modify the `perform` method:**
+```ruby
+def perform
+  # Your API call here
+  weather_data = fetch_weather_for(city)
+  render(text: "Weather in #{city}: #{weather_data[:temp]}°C, #{weather_data[:description]}")
+rescue => e
+  render(error: ["Could not fetch weather: #{e.message}"])
+end
+
+private
+
+def fetch_weather_for(city)
+  # Your HTTP request logic here
+  { temp: 22, description: "Sunny" }
+end
+```
+
+## The Core Pattern
+
+Every tool follows this pattern:
+
+```ruby
+class YourToolNameTool < ApplicationMCPTool
+  tool_name "your_tool_name"        # Required: unique identifier
+  description "What this tool does"  # Required: explain the purpose
+  
+  # Define inputs (properties become method names!)
+  property :user_id, type: "string", description: "The user's ID", required: true
+  property :limit, type: "number", description: "Max results", required: false
   
   def perform
-    render(image: product_thumbnail(product_id), mime_type: "image/png")
-    stock_level = get_stock_level(product_id)
-    render(text: "The current stock level for product #{product_id} is #{stock_level}")
-    if stock_level < 10
-      render(text: "Warning: Low stock level for product #{product_id}")
-    end
-  rescue => e
-    render(error: ["Could not retrieve stock level: #{e.message}"])
+    # Your logic here
+    # Access properties as methods: user_id, limit
+    
+    # Return results using render
+    render(text: "Your result here")
   end
-
-  private
-  # Implementation methods...
 end
 ```
 
-### Create Order
+## Property Types
+
+- `"string"` - Text input
+- `"number"` - Numeric input (integer or float)
+- `"boolean"` - true/false
+- `"array"` - List of items
+- `"object"` - Complex nested data
+
+## Render Options
+
+You can call `render` multiple times to show progress:
+
 ```ruby
-class CreateOrderTool < ApplicationMCPTool
-  title "Order Creation"
-  description "Create a new order for a customer"
-  destructive
-  open_world
-
-  property :customer_id, type: "string", description: "The ID of the customer", required: true
-  property :product_ids, type: "array", description: "An array of product IDs to add to the order", required: true
-
-  def perform
-    order_id = create_order(customer_id, product_ids)
-    render(text: "Successfully created order #{order_id} for customer #{customer_id} with products #{product_ids.join(', ')}")
-  rescue => e
-    render(error: ["Could not create order: #{e.message}"])
-  end
-
-  private
-  # Implementation methods...
+def perform
+  render(text: "Starting process...")
+  
+  # Do some work
+  result = process_data
+  
+  render(text: "Processing complete!")
+  render(text: "Result: #{result}")
+  
+  # You can also render:
+  render(image: base64_image_data, mime_type: "image/png")
+  render(audio: base64_audio_data, mime_type: "audio/mpeg")
+  render(error: ["Something went wrong"])
 end
 ```
 
-## Tool Annotation Keys
+## Adding Validation
 
-In DSL code, you use:
-- `title "Human-Readable Name"`: Sets a human-readable title for the tool
-- `read_only`: Indicates the tool does not modify its environment
-- `destructive`: Indicates the tool may perform destructive updates
-- `idempotent`: Indicates repeated calls with same args have no additional effect
-- `open_world`: Indicates tool interacts with external entities
+Use standard Rails validations:
 
-These are mapped in the protocol to these annotation keys:
-- `title`: Human-readable title for the tool
-- `readOnlyHint`: If true, the tool does not modify its environment
-- `destructiveHint`: If true, the tool may perform destructive updates
-- `idempotentHint`: If true, repeated calls with same args have no additional effect
-- `openWorldHint`: If true, tool interacts with external entities
+```ruby
+class CreateUserTool < ApplicationMCPTool
+  property :email, type: "string", description: "User email", required: true
+  property :age, type: "number", description: "User age", required: true
+  
+  # Rails validations work!
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :age, numericality: { greater_than: 0, less_than: 150 }
+  
+  def perform
+    # Validation runs automatically before perform
+    User.create!(email: email, age: age)
+    render(text: "User created successfully")
+  end
+end
+```
 
-### Annotation Combinations and Best Practices
+## Testing Your Tool
 
-These annotations should be applied based on the tool's behavior:
+### 1. Check if your tool is registered:
+```bash
+bundle exec rails action_mcp:list_tools
+```
 
-1. **Read-Only Tools**
-   - Use `read_only` for tools that only retrieve or compute data without modifying state
-   - Examples: data retrieval, calculations, validations
-   - Often paired with `idempotent` as read-only operations typically return the same result
+### 2. Test with MCP Inspector:
+```bash
+npx @modelcontextprotocol/inspector --url http://localhost:3000/action_mcp
+```
 
-2. **Destructive Tools**
-   - Use `destructive` for tools that modify state in a way that can't be easily undone
-   - Examples: deleting records, making permanent changes, sending emails
-   - Should NOT be paired with `read_only` (mutually exclusive)
+### 3. Write a test:
+```ruby
+# test/mcp/tools/your_tool_test.rb
+require "test_helper"
 
-3. **Idempotent Tools**
-   - Use `idempotent` for tools where repeated calls with the same arguments produce the same result
-   - Examples: retrieval operations, creating records with explicit IDs
-   - Can be combined with either `read_only` or `destructive`
+class YourToolTest < ActiveSupport::TestCase
+  test "does the thing" do
+    tool = YourTool.new(input: "test")
+    result = tool.call
+    
+    assert_equal "Expected output", result.first[:text]
+  end
+end
+```
 
-4. **Open World Tools**
-   - Use `open_world` for tools that interact with external systems
-   - Examples: API calls, filesystem access, database operations
-   - Common with both `read_only` (data fetching) and `destructive` (external mutations)
+## Quick Checklist
 
-Common valid combinations:
-- `read_only` + `idempotent`: Pure functions, data retrievers
-- `destructive` + `idempotent`: Operations that create/update with predictable results
-- `read_only` + `open_world`: External data fetchers
-- `destructive` + `open_world`: External API calls that cause changes
+✅ Used the generator? `bin/rails generate action_mcp:tool ToolName`  
+✅ Tool inherits from `ApplicationMCPTool`?  
+✅ Has unique `tool_name`?  
+✅ Has clear `description`?  
+✅ Properties match what you use in `perform`?  
+✅ Using `render` to return results?  
+✅ Tool shows up in `rails action_mcp:list_tools`?  
 
-## Key Implementation Notes
+## Common Issues
 
-1. Use ActiveModel validations for input verification
-2. Structure error handling with rescue blocks
-3. Return meaningful error messages when operations fail
-4. Chain multiple `render` calls for progressive responses
-5. Include descriptive property definitions to guide parameter usage
-6. Use callbacks to perform actions before, after, or around the tool's execution
+**Tool not showing up in list?**
+- Make sure it inherits from `ApplicationMCPTool`
+- Check the file is in `app/mcp/tools/`
+- Restart your server
+
+**Getting "undefined method" errors?**
+- Property names become method names: `property :user_id` → use `user_id` in perform
+- Check spelling matches exactly
+
+**Validation errors?**
+- Required properties must be provided
+- Check your validates rules
+- Error will show which validation failed
+
+## Remember
+
+1. **Always use the generator** - It sets up everything correctly
+2. **Properties become methods** - `property :name` means you can use `name` in perform
+3. **Multiple renders are fine** - Show progress with multiple render calls
+4. **Errors are caught** - The rescue block is already there for you
+
+That's it! You now know how to create MCP tools. Start with the generator and modify from there.

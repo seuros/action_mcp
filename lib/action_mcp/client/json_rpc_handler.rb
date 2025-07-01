@@ -50,7 +50,19 @@ module ActionMCP
       # @param id [String, Integer]
       # @param params [Hash]
       def handle_method(rpc_method, id, params)
-        puts "\e[31mUnknown server method: #{rpc_method} #{id} #{params}\e[0m"
+        case rpc_method
+        when Methods::ELICITATION_CREATE
+          client.process_elicitation_request(id, params)
+        when /^roots\//
+          process_roots(rpc_method, id)
+        when /^sampling\//
+          process_sampling(rpc_method, id, params)
+        else
+          common_result = handle_common_methods(rpc_method, id, params)
+          if common_result.nil?
+            puts "\e[31mUnknown server method: #{rpc_method} #{id} #{params}\e[0m"
+          end
+        end
       end
 
       # @param rpc_method [String]

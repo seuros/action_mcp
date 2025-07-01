@@ -6,6 +6,7 @@ module ActionMCP
     include ActionMCP::Callbacks
     include ActionMCP::CurrentHelpers
     class_attribute :_argument_definitions, instance_accessor: false, default: []
+    class_attribute :_meta, instance_accessor: false, default: {}
 
     # ---------------------------------------------------
     # Prompt Name
@@ -34,6 +35,16 @@ module ActionMCP
 
       def type
         :prompt
+      end
+
+      # Sets or retrieves the _meta field
+      def meta(data = nil)
+        if data
+          raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+          self._meta = _meta.merge(data)
+        else
+          _meta
+        end
       end
     end
 
@@ -80,11 +91,16 @@ module ActionMCP
     # ---------------------------------------------------
     # @return [Hash] The prompt definition as a Hash.
     def self.to_h
-      {
+      result = {
         name: prompt_name,
         description: description.presence,
         arguments: arguments.map { |arg| arg.slice(:name, :description, :required, :type) }
       }.compact
+
+      # Add _meta if present
+      result[:_meta] = _meta if _meta.any?
+
+      result
     end
 
     # ---------------------------------------------------

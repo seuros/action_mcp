@@ -21,6 +21,7 @@ module ActionMCP
       include  Notifications
       include  Sampling
       include  Roots
+      include  Elicitation
       include  ResponseCollector  # Must be included last to override write_message
 
       # @param [ActionMCP::Session] session

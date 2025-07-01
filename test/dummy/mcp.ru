@@ -4,22 +4,19 @@
 require_relative "config/environment"
 
 # Ensure STDOUT is not buffered
-$stdout.sync = true
+$stdout.sync = true # for falcon
+
+# Handle Ctrl+C gracefully when using Puma with streaming connections
+Signal.trap("INT") do
+  puts "\nReceived interrupt signal. Shutting down gracefully..."
+  exit(0)
+end  # Puma ghost us when it connect into a sse streaming connection, so we need to handle the INT signal to avoid ghost processes.
+
+Signal.trap("TERM") do
+  puts "\nReceived termination signal. Shutting down gracefully..."
+  exit(0)
+end
 
 Rails.application.eager_load!
 
-# Add Rails logging middleware
-use Rails::Rack::Logger
-use ActionDispatch::RequestId, header: "X-Request-Id"
-
-# Server is ready
-
-# Add a simple health check endpoint
-map "/health" do
-  run lambda { |env| [ 200, { "Content-Type" => "text/plain" }, [ "OK" ] ] }
-end
-
-# Mount the MCP server at the root
-map "/" do
-  run ActionMCP.server
-end
+run ActionMCP.server

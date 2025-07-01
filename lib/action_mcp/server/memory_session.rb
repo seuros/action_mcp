@@ -157,6 +157,12 @@ module ActionMCP
         ActionMCP.configuration.max_stored_sse_events || 100
       end
 
+      # Returns the SSE event retention period from configuration
+      # @return [ActiveSupport::Duration] The retention period (default: 15 minutes)
+      def sse_event_retention_period
+        ActionMCP.configuration.sse_event_retention_period || 15.minutes
+      end
+
       # Adapter methods
       def adapter
         ActionMCP::Server.server.pubsub

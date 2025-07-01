@@ -54,6 +54,8 @@ module ActionMCP
       response.headers["X-Accel-Buffering"] = "no"
       response.headers["Cache-Control"] = "no-cache"
       response.headers["Connection"] = "keep-alive"
+      # Add MCP-Protocol-Version header for established sessions
+      response.headers["MCP-Protocol-Version"] = session.protocol_version
 
       Rails.logger.info "Unified SSE (GET): Starting stream for session: #{session.id}"
 
@@ -143,9 +145,18 @@ module ActionMCP
     def create
       return render_not_acceptable(post_accept_headers_error_message) unless post_accept_headers_valid?
 
+      # Reject JSON-RPC batch requests as per MCP 2025-06-18 spec
+      if jsonrpc_params_batch?
+        return render_bad_request("JSON-RPC batch requests are not supported")
+      end
+
       is_initialize_request = check_if_initialize_request(jsonrpc_params)
       session_initially_missing = extract_session_id.nil?
       session = mcp_session
+
+      # Validate MCP-Protocol-Version header for non-initialize requests
+      # Temporarily disabled to debug session issues
+      # return unless validate_protocol_version_header
 
       unless is_initialize_request
         if session_initially_missing
@@ -205,21 +216,47 @@ module ActionMCP
 
     private
 
+    # Validates the MCP-Protocol-Version header for non-initialize requests
+    # Returns true if valid, renders error and returns false if invalid
+    def validate_protocol_version_header
+      # Skip validation for initialize requests
+      return true if check_if_initialize_request(jsonrpc_params)
+
+      header_version = request.headers["MCP-Protocol-Version"]
+      session = mcp_session
+
+      # If header is missing, assume 2025-03-26 for backward compatibility
+      if header_version.nil?
+        Rails.logger.debug "MCP-Protocol-Version header missing, assuming 2025-03-26 for backward compatibility"
+        return true
+      end
+
+      # Check if the header version is supported
+      unless ActionMCP::SUPPORTED_VERSIONS.include?(header_version)
+        render_bad_request("Unsupported MCP-Protocol-Version: #{header_version}")
+        return false
+      end
+
+      # If we have an initialized session, check if the header matches the negotiated version
+      if session && session.initialized?
+        negotiated_version = session.protocol_version
+        if header_version != negotiated_version
+          Rails.logger.warn "MCP-Protocol-Version mismatch: header=#{header_version}, negotiated=#{negotiated_version}"
+          render_bad_request("MCP-Protocol-Version header (#{header_version}) does not match negotiated version (#{negotiated_version})")
+          return false
+        end
+      end
+
+      true
+    end
+
     # Finds an existing session based on header or param, or initializes a new one.
     # Note: This doesn't save the new session; that happens upon first use or explicitly.
     def find_or_initialize_session
       session_id = extract_session_id
       if session_id
         session = Server.session_store.load_session(session_id)
-        if session
-          if ActionMCP.configuration.vibed_ignore_version
-            if session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
-              session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
-            end
-          elsif session.protocol_version != self.class::REQUIRED_PROTOCOL_VERSION
-            session.update!(protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
-          end
-        end
+        # Session protocol version is set during initialization and should not be overridden
         session
       else
         Server.session_store.create_session(nil, protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
@@ -293,6 +330,10 @@ module ActionMCP
     # Renders the JSON-RPC response(s) as a direct JSON HTTP response.
     def render_json_response(payload, session, add_session_header)
       response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
+      # Add MCP-Protocol-Version header if session has been initialized
+      if session && session.initialized?
+        response.headers["MCP-Protocol-Version"] = session.protocol_version
+      end
       response.headers["Content-Type"] = "application/json"
       render json: payload, status: :ok
     end
@@ -300,6 +341,10 @@ module ActionMCP
     # Renders the JSON-RPC response(s) as an SSE stream.
     def render_sse_response(payload, session, add_session_header)
       response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
+      # Add MCP-Protocol-Version header if session has been initialized
+      if session && session.initialized?
+        response.headers["MCP-Protocol-Version"] = session.protocol_version
+      end
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["X-Accel-Buffering"] = "no"
       response.headers["Cache-Control"] = "no-cache"
