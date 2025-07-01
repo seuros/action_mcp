@@ -10,13 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_01_043545) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_01_045304) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "action_mcp_session_messages", force: :cascade do |t|
     t.string "session_id", null: false
-    t.string "direction", default: "client", null: false
+    t.string "direction", default: "client", null: false, comment: "The message recipient"
     t.string "message_type", null: false
     t.string "jsonrpc_id"
     t.json "message_json"

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# This migration comes from action_mcp (originally 20250608112101)
 class AddOAuthToSessions < ActiveRecord::Migration[8.0]
   def change
     # Use json for all databases (PostgreSQL, SQLite3, MySQL) for consistency
