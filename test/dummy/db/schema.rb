@@ -89,16 +89,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.index ["session_id"], name: "index_action_mcp_sse_events_on_session_id"
   end
 
-  create_table "solid_mcp_messages", force: :cascade do |t|
-    t.string "session_id", limit: 36, null: false
-    t.string "event_type", limit: 50, null: false
-    t.text "data"
-    t.datetime "created_at", null: false
-    t.datetime "delivered_at"
-    t.index ["delivered_at", "created_at"], name: "idx_solid_mcp_messages_on_delivered_and_created"
-    t.index ["session_id", "id"], name: "idx_solid_mcp_messages_on_session_and_id"
-  end
-
   create_table "users", force: :cascade do |t|
     t.string "email"
     t.datetime "created_at", null: false
