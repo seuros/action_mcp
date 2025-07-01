@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.60.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.2...action_mcp/v0.60.0) (2025-07-01)
+
+
+### Features
+
+* Replace SolidCable with SolidMCP for pub/sub messaging ([#108](https://github.com/seuros/action_mcp/issues/108)) ([8b7891f](https://github.com/seuros/action_mcp/commit/8b7891f8507ecad8f914e6d26148becad0a97eb6))
+* support protocol 2025-06-18, nicknamed "Dr. Identity McBouncer". ([#110](https://github.com/seuros/action_mcp/issues/110)) ([554fd77](https://github.com/seuros/action_mcp/commit/554fd77c79643f315d520ad860e9a49b2e6024f0))
+
 ## [0.55.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.1...action_mcp/v0.55.2) (2025-06-24)
 
 
