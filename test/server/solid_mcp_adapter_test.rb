@@ -10,7 +10,7 @@ module ActionMCP
       def setup
         # Clean up any existing messages before test
         SolidMCP::Message.delete_all if defined?(SolidMCP::Message)
-        
+
         # Create the adapter with SolidMCP implementation
         @adapter = SolidMcpAdapter.new("polling_interval" => 0.01, "flush_interval" => 0.01)
         @received_messages = []

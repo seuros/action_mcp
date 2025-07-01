@@ -3,3 +3,5 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
 AllCops:
   TargetRubyVersion: 3.4
+  Exclude:
+    - '**/db/schema.rb'
