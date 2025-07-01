@@ -51,7 +51,7 @@ jobs:
         run: |
           cd test/dummy
           bin/rails db:create
-          bin/rails app:solid_mcp:install:migrations
+          bin/rails solid_mcp:install:migrations
           bin/rails db:migrate
 
       - name: Run tests
@@ -78,7 +78,7 @@ jobs:
         run: |
           cd test/dummy
           bin/rails db:create
-          bin/rails app:solid_mcp:install:migrations
+          bin/rails solid_mcp:install:migrations
           bin/rails db:migrate
 
       - name: Run tests
