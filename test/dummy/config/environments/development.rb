@@ -5,6 +5,17 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Ensure STDOUT is not buffered for immediate log visibility
+  $stdout.sync = true
+
+  # Configure logger to output to STDOUT
+  config.logger = ActiveSupport::Logger.new(STDOUT)
+  config.logger.formatter = Logger::Formatter.new
+  config.log_level = :debug
+
+  # Reduce ActiveRecord query logging noise from solid_mcp
+  config.active_record.logger = nil
+
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 

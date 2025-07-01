@@ -49,7 +49,7 @@ module ActionMCP
         say "Available adapters:"
         say "  - simple      : In-memory adapter for development"
         say "  - test        : Test adapter for testing environments"
-        say "  - solid_cable : Database-backed adapter (requires solid_cable gem)"
+        say "  - solid_mcp   : Database-backed adapter optimized for MCP (requires solid_mcp gem)"
         say "  - redis       : Redis-backed adapter (requires redis gem)"
         say ""
         say "Next steps:"

@@ -50,10 +50,10 @@ module ActionMCP
         assert_instance_of SimplePubSub, adapter
       end
 
-      def test_pubsub_creates_solid_cable_adapter_from_config
+      def test_pubsub_creates_solid_mcp_adapter_from_config
         config_file = create_temp_config_file(
           "test" => {
-            "adapter" => "solid_cable",
+            "adapter" => "solid_mcp",
             "polling_interval" => 0.1
           }
         )
@@ -62,7 +62,7 @@ module ActionMCP
         server = ServerBase.new(config_file.path)
         adapter = server.pubsub
 
-        assert_instance_of SolidCableAdapter, adapter
+        assert_instance_of SolidMcpAdapter, adapter
       end
 
       def test_configure_updates_configuration

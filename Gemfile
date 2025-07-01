@@ -6,6 +6,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "falcon"
+gem "puma"
 
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
 gem "rubocop", require: false
@@ -17,7 +18,7 @@ gem "rails_app_version"
 gem "railties"
 gem "simplecov", require: false
 # Optional PubSub adapters - at least one is recommended for production
-gem "solid_cable" # Database-backed adapter (no Redis needed)
+gem "solid_mcp", "~> 0.2.3" # Database-backed adapter optimized for MCP
 gem "solid_cache"
 gem "solid_queue"
 

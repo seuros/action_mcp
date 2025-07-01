@@ -39,7 +39,7 @@ module ActionMCP
   include Logging
   PROTOCOL_VERSION = "2025-03-26"  # Default version
   CURRENT_VERSION = "2025-03-26"   # Current version
-  SUPPORTED_VERSIONS = %w[2025-03-26].freeze
+  SUPPORTED_VERSIONS = %w[2025-06-18 2025-03-26].freeze
   class << self
     # Returns a Rack-compatible application for serving MCP requests
     # This makes ActionMCP.server work similar to ActionCable.server

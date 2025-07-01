@@ -56,6 +56,7 @@ module ActionMCP
 
           if result.is_error
             # Convert ToolResponse error to proper JSON-RPC error format
+            # Pass the error hash directly - the Response class will handle it
             error_hash = result.to_h
             send_jsonrpc_response(request_id, error: error_hash)
           else

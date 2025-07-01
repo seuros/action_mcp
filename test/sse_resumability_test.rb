@@ -75,7 +75,7 @@ class SSEResumabilityTest < ActionDispatch::IntegrationTest
     # Mock the write_sse_event method in the controller
     controller = ActionMCP::ApplicationController.new
     sse_mock = Object.new
-    def sse_mock.write(data); true; end
+    def sse_mock.write(data, options = {}); true; end
     def sse_mock.close; end
 
     # Call the write_sse_event method

@@ -51,8 +51,11 @@ shared:
 
 # Development environment
 development:
-  # Use simple pub/sub adapter for development
-  adapter: simple
+  # Use solid_mcp pub/sub adapter for development
+  adapter: solid_mcp
+  polling_interval: 0.1
+  batch_size: 100
+  flush_interval: 0.05
   
   # Session store examples for development
   # Use volatile client sessions for faster development
@@ -107,9 +110,10 @@ production:
   # Choose one of the following adapters:
   
   # 1. Database-backed adapter (recommended)
-  adapter: solid_cable
+  adapter: solid_mcp
   polling_interval: 0.5.seconds
-  # connects_to: cable  # Optional: specify a different database connection
+  batch_size: 200      # Number of messages to write in a single batch
+  flush_interval: 0.05 # Seconds between batch flushes
   
   # Thread pool configuration (optional)
   min_threads: 10     # Minimum number of threads in the pool

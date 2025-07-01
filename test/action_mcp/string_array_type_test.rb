@@ -15,6 +15,6 @@ end
 class NumericArrayToolTest < ActiveSupport::TestCase
   test "collection :numbers coerces strings to floats" do
     resp = NumericArrayTool.new(numbers: %w[1 2 3]).call
-    assert_equal "6", resp.contents.first.text
+    assert_equal "6.0", resp.contents.first.text
   end
 end

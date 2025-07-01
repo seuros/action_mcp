@@ -128,7 +128,8 @@ module ActionMCP
         new_value
       end
 
-      def store_sse_event(event_id, data, max_events = 100)
+      def store_sse_event(event_id, data, max_events = nil)
+        max_events ||= max_stored_sse_events
         event = { event_id: event_id, data: data, created_at: Time.current }
         @sse_events << event
 
@@ -148,6 +149,12 @@ module ActionMCP
       def cleanup_old_sse_events(max_age = 15.minutes)
         cutoff_time = Time.current - max_age
         @sse_events.delete_if { |e| e[:created_at] < cutoff_time }
+      end
+
+      # Calculates the maximum number of SSE events to store based on configuration
+      # @return [Integer] The maximum number of events
+      def max_stored_sse_events
+        ActionMCP.configuration.max_stored_sse_events || 100
       end
 
       # Adapter methods

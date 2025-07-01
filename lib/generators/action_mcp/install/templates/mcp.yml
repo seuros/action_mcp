@@ -107,9 +107,10 @@ production:
   # Choose one of the following adapters:
   
   # 1. Database-backed adapter (recommended)
-  adapter: solid_cable
+  adapter: solid_mcp
   polling_interval: 0.5.seconds
-  # connects_to: cable  # Optional: specify a different database connection
+  batch_size: 200      # Number of messages to write in a single batch
+  flush_interval: 0.05 # Seconds between batch flushes
   
   # Thread pool configuration (optional)
   min_threads: 10     # Minimum number of threads in the pool
