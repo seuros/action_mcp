@@ -10,17 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_01_043545) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "action_mcp_session_messages", force: :cascade do |t|
     t.string "session_id", null: false
-    t.string "direction", default: "client", null: false, comment: "The message recipient"
-    t.string "message_type", null: false, comment: "The type of the message"
+    t.string "direction", default: "client", null: false
+    t.string "message_type", null: false
     t.string "jsonrpc_id"
     t.json "message_json"
-    t.boolean "is_ping", default: false, null: false, comment: "Whether the message is a ping"
+    t.boolean "is_ping", default: false, null: false
     t.boolean "request_acknowledged", default: false, null: false
     t.boolean "request_cancelled", default: false, null: false
     t.datetime "created_at", null: false
@@ -52,14 +52,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
   end
 
   create_table "action_mcp_sessions", id: :string, force: :cascade do |t|
-    t.string "role", default: "server", null: false, comment: "The role of the session"
+    t.string "role", default: "server", null: false
     t.string "status", default: "pre_initialize", null: false
-    t.datetime "ended_at", comment: "The time the session ended"
+    t.datetime "ended_at"
     t.string "protocol_version"
-    t.json "server_capabilities", comment: "The capabilities of the server"
-    t.json "client_capabilities", comment: "The capabilities of the client"
-    t.json "server_info", comment: "The information about the server"
-    t.json "client_info", comment: "The information about the client"
+    t.json "server_capabilities"
+    t.json "client_capabilities"
+    t.json "server_info"
+    t.json "client_info"
     t.boolean "initialized", default: false, null: false
     t.integer "messages_count", default: 0, null: false
     t.integer "sse_event_counter", default: 0, null: false
@@ -89,13 +89,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_000001) do
     t.index ["session_id"], name: "index_action_mcp_sse_events_on_session_id"
   end
 
+  create_table "solid_mcp_messages", force: :cascade do |t|
+    t.string "session_id", limit: 36, null: false
+    t.string "event_type", limit: 50, null: false
+    t.text "data"
+    t.datetime "created_at", null: false
+    t.datetime "delivered_at"
+    t.index ["delivered_at", "created_at"], name: "idx_solid_mcp_messages_on_delivered_and_created"
+    t.index ["session_id", "id"], name: "idx_solid_mcp_messages_on_session_and_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id", name: "fk_action_mcp_session_messages_session_id", on_update: :cascade, on_delete: :cascade
+  add_foreign_key "action_mcp_session_messages", "action_mcp_sessions", column: "session_id", on_update: :cascade, on_delete: :cascade
   add_foreign_key "action_mcp_session_resources", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_session_subscriptions", "action_mcp_sessions", column: "session_id", on_delete: :cascade
   add_foreign_key "action_mcp_sse_events", "action_mcp_sessions", column: "session_id"
