@@ -82,7 +82,10 @@ module ActionMCP
 
 
       def process_completion_complete(id, params)
-        transport.send_jsonrpc_response(id, result: build_completion_result)
+        # Extract context if provided
+        context = params["context"] if params.is_a?(Hash)
+
+        transport.send_jsonrpc_response(id, result: build_completion_result(params, context))
       end
 
       def process_notifications(rpc_method, params)
@@ -102,7 +105,16 @@ module ActionMCP
         }
       end
 
-      def build_completion_result
+      def build_completion_result(params = {}, context = nil)
+        # In a real implementation, this would use the params and context
+        # to generate appropriate completion suggestions
+        # For now, we just return an empty result
+        #
+        # params contains:
+        # - ref: reference to prompt or resource template
+        # - argument: { name: string, value: string }
+        # - context: { arguments: { [key]: string } } (previously resolved variables)
+
         {
           completion: { values: [], total: 0, hasMore: false }
         }

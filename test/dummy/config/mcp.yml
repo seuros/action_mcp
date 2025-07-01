@@ -57,11 +57,8 @@ development:
   batch_size: 100
   flush_interval: 0.05
   
-  # Session store examples for development
-  # Use volatile client sessions for faster development
-  # client_session_store_type: volatile
-  # Use persistent server sessions to maintain state across restarts
-  # server_session_store_type: active_record
+  # Session store - use active_record for Falcon multi-process compatibility
+  session_store_type: active_record
   
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool

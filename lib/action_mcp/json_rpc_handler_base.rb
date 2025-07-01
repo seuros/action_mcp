@@ -28,6 +28,9 @@ module ActionMCP
       # Notification methods
       NOTIFICATIONS_INITIALIZED = "notifications/initialized"
       NOTIFICATIONS_CANCELLED = "notifications/cancelled"
+
+      # Elicitation methods
+      ELICITATION_CREATE = "elicitation/create"
     end
 
     delegate :initialize!, :initialized?, to: :transport

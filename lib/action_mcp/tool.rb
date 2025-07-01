@@ -21,6 +21,8 @@ module ActionMCP
     class_attribute :_schema_properties, instance_accessor: false, default: {}
     class_attribute :_required_properties, instance_accessor: false, default: []
     class_attribute :_annotations, instance_accessor: false, default: {}
+    class_attribute :_output_schema, instance_accessor: false, default: nil
+    class_attribute :_meta, instance_accessor: false, default: {}
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -107,6 +109,25 @@ module ActionMCP
       def open_world?
         _annotations["openWorldHint"] == true
       end
+
+      # Sets the output schema for structured content
+      def output_schema(schema = nil)
+        if schema
+          raise NotImplementedError, "Output schema DSL not yet implemented. Coming soon with structured content DSL!"
+        else
+          _output_schema
+        end
+      end
+
+      # Sets or retrieves the _meta field
+      def meta(data = nil)
+        if data
+          raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+          self._meta = _meta.merge(data)
+        else
+          _meta
+        end
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -158,7 +179,8 @@ module ActionMCP
     def self.collection(prop_name, type:, description: nil, required: false, default: [])
       raise ArgumentError, "Type is required for a collection" if type.nil?
 
-      collection_definition = { type: "array", description: description, items: { type: type } }
+      collection_definition = { type: "array", items: { type: type } }
+      collection_definition[:description] = description if description && !description.empty?
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => collection_definition)
       self._required_properties = _required_properties.dup.tap do |req|
@@ -204,9 +226,15 @@ module ActionMCP
         inputSchema: schema
       }.compact
 
+      # Add output schema if defined
+      result[:outputSchema] = _output_schema if _output_schema.present?
+
       # Add annotations if protocol supports them
       annotations = annotations_for_protocol(protocol_version)
       result[:annotations] = annotations if annotations.any?
+
+      # Add _meta if present
+      result[:_meta] = _meta if _meta.any?
 
       result
     end
@@ -266,6 +294,13 @@ module ActionMCP
       content # Return the content for potential use in perform
     end
 
+    # Override render_resource_link to collect ResourceLink objects
+    def render_resource_link(**args)
+      content = super(**args) # Call Renderable's render_resource_link method
+      @response.add(content)  # Add to the response
+      content # Return the content for potential use in perform
+    end
+
     protected
 
     # Abstract method for subclasses to implement their logic
@@ -280,6 +315,22 @@ module ActionMCP
     def report_error(message)
       @response.mark_as_error!
       render text: message
+    end
+
+    # Helper method to set structured content
+    def set_structured_content(content)
+      return unless @response
+
+      # Validate against output schema if defined
+      if self.class._output_schema
+        # TODO: Add JSON Schema validation here
+        # For now, just ensure it's a hash/object
+        unless content.is_a?(Hash)
+          raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
+        end
+      end
+
+      @response.set_structured_content(content)
     end
 
     # Maps a JSON Schema type to an ActiveModel attribute type.

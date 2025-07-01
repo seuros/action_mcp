@@ -18,7 +18,7 @@ module ActionMCP
 
     class << self
       attr_reader :registered_templates, :description, :uri_template,
-                  :mime_type, :template_name, :parameters
+                  :mime_type, :template_name, :parameters, :_meta
 
       def abstract?
         @abstract ||= false
@@ -81,15 +81,31 @@ module ActionMCP
         value ? @mime_type = value : @mime_type
       end
 
+      # Sets or retrieves the _meta field
+      def meta(data = nil)
+        if data
+          raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+          @_meta ||= {}
+          @_meta = @_meta.merge(data)
+        else
+          @_meta || {}
+        end
+      end
+
       def to_h
         name_value = defined?(@template_name) ? @template_name : name.demodulize.underscore.gsub(/_template$/, "")
 
-        {
+        result = {
           uriTemplate: @uri_template,
           name: name_value,
           description: @description,
           mimeType: @mime_type
         }.compact
+
+        # Add _meta if present
+        result[:_meta] = @_meta if @_meta && @_meta.any?
+
+        result
       end
 
       def capability_name
