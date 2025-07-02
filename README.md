@@ -623,6 +623,33 @@ run ActionMCP::Engine
 bin/rails s -c mcp.ru -p 62770 -P tmp/pids/mcps0.pid
 ```
 
+### Dealing with Middleware Conflicts
+
+If your Rails application uses middleware that interferes with MCP server operation (like Devise, Warden, Ahoy, Rack::Cors, etc.), use `mcp_vanilla.ru` instead:
+
+```ruby
+# mcp_vanilla.ru - A minimal Rack app with only essential middleware
+# This avoids conflicts with authentication, tracking, and other web-specific middleware
+# See the file for detailed documentation on when and why to use it
+
+bundle exec rails s -c mcp_vanilla.ru -p 62770
+# Or with Falcon:
+bundle exec falcon serve --bind http://0.0.0.0:62770 mcp_vanilla.ru
+```
+
+Common middleware that can cause issues:
+- **Devise/Warden** - Expects cookies and sessions, throws `Devise::MissingWarden` errors
+- **Ahoy** - Analytics tracking that intercepts requests
+- **Rack::Attack** - Rate limiting designed for web traffic
+- **Rack::Cors** - CORS headers meant for browsers
+- Any middleware assuming HTML responses or cookie-based authentication
+
+An example of a minimal `mcp_vanilla.ru` file is located in the dummy app : test/dummy/mcp_vanilla.ru. 
+This file is a minimal Rack application that only includes the essential middleware needed for MCP server operation, avoiding conflicts with web-specific middleware.
+But remember to add any instrumentation or logging middleware you need, as the minimal setup will not include them by default.
+
+```ruby
+
 ## Production Deployment of MCPS0
 
 In production, **MCPS0** (the MCP server) is a standard Rack application. You can run it using any Rack-compatible server (such as Puma, Unicorn, or Passenger). 
