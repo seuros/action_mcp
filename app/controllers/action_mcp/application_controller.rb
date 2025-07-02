@@ -5,7 +5,6 @@ module ActionMCP
   # Supports GET for server-initiated SSE streams, POST for client messages
   # (responding with JSON or SSE), and optionally DELETE for session termination.
   class ApplicationController < ActionController::API
-    REQUIRED_PROTOCOL_VERSION = "2025-03-26"
     MCP_SESSION_ID_HEADER = "Mcp-Session-Id"
 
     include Engine.routes.url_helpers
@@ -259,7 +258,7 @@ module ActionMCP
         # Session protocol version is set during initialization and should not be overridden
         session
       else
-        Server.session_store.create_session(nil, protocol_version: self.class::REQUIRED_PROTOCOL_VERSION)
+        Server.session_store.create_session(nil, protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION)
       end
     end
 

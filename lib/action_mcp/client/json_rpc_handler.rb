@@ -180,7 +180,7 @@ module ActionMCP
           # Create a new session with the server-provided ID
           client.instance_variable_set(:@session, ActionMCP::Session.from_client.new(
             id: session_id,
-            protocol_version: result["protocolVersion"] || PROTOCOL_VERSION,
+            protocol_version: result["protocolVersion"] || ActionMCP::DEFAULT_PROTOCOL_VERSION,
             client_info: client.client_info,
             client_capabilities: client.client_capabilities,
             server_info: result["serverInfo"],

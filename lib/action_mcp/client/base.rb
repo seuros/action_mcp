@@ -180,7 +180,7 @@ module ActionMCP
         end
 
         params = {
-          protocolVersion: PROTOCOL_VERSION,
+          protocolVersion: ActionMCP::DEFAULT_PROTOCOL_VERSION,
           capabilities: client_capabilities,
           clientInfo: client_info
         }

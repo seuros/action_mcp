@@ -75,7 +75,7 @@ module ActionMCP
     before_create :set_server_info, if: -> { role == "server" }
     before_create :set_server_capabilities, if: -> { role == "server" }
 
-    validates :protocol_version, inclusion: { in: SUPPORTED_VERSIONS }, allow_nil: true, unless: lambda {
+    validates :protocol_version, inclusion: { in: ActionMCP::SUPPORTED_VERSIONS }, allow_nil: true, unless: lambda {
       ActionMCP.configuration.vibed_ignore_version
     }
 
@@ -130,7 +130,7 @@ module ActionMCP
 
     def server_capabilities_payload
       {
-        protocolVersion: PROTOCOL_VERSION,
+        protocolVersion: protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION,
         serverInfo: server_info,
         capabilities: server_capabilities
       }

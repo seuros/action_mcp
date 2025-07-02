@@ -37,9 +37,15 @@ module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/client"
   include Logging
-  PROTOCOL_VERSION = "2025-03-26"  # Default version
-  CURRENT_VERSION = "2025-03-26"   # Current version
-  SUPPORTED_VERSIONS = %w[2025-06-18 2025-03-26].freeze
+
+  # Protocol version constants
+  SUPPORTED_VERSIONS = [
+    "2025-06-18", # Dr. Identity McBouncer - OAuth 2.1, elicitation, structured output, resource links
+    "2025-03-26"  # The Persistent Negotiator - StreamableHTTP, resumability, audio support
+  ].freeze
+
+  LATEST_VERSION = SUPPORTED_VERSIONS.first.freeze
+  DEFAULT_PROTOCOL_VERSION = "2025-03-26".freeze  # Default to initial stable version for backwards compatibility
   class << self
     # Returns a Rack-compatible application for serving MCP requests
     # This makes ActionMCP.server work similar to ActionCable.server
