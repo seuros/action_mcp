@@ -634,7 +634,7 @@ If your Rails application uses middleware that interferes with MCP server operat
 
 bundle exec rails s -c mcp_vanilla.ru -p 62770
 # Or with Falcon:
-bundle exec falcon serve --bind http://0.0.0.0:62770 mcp_vanilla.ru
+bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp_vanilla.ru
 ```
 
 Common middleware that can cause issues:
@@ -664,7 +664,7 @@ Run MCPS0 on its own TCP port (commonly `62770`):
 
 **With Falcon:**
 ```bash
-bundle exec falcon serve --bind http://0.0.0.0:62770 mcp.ru
+bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp.ru
 ```
 
 **With Puma:**

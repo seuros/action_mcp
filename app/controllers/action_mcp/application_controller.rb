@@ -142,11 +142,14 @@ module ActionMCP
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
     # @route POST /mcp
     def create
-      return render_not_acceptable(post_accept_headers_error_message) unless post_accept_headers_valid?
+      unless post_accept_headers_valid?
+        id = extract_jsonrpc_id_from_params
+        return render_not_acceptable(post_accept_headers_error_message, id)
+      end
 
       # Reject JSON-RPC batch requests as per MCP 2025-06-18 spec
       if jsonrpc_params_batch?
-        return render_bad_request("JSON-RPC batch requests are not supported")
+        return render_bad_request("JSON-RPC batch requests are not supported", nil)
       end
 
       is_initialize_request = check_if_initialize_request(jsonrpc_params)
@@ -159,11 +162,14 @@ module ActionMCP
 
       unless is_initialize_request
         if session_initially_missing
-          return render_bad_request("Mcp-Session-Id header is required for this request.")
+          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
+          return render_bad_request("Mcp-Session-Id header is required for this request.", id)
         elsif session.nil? || session.new_record?
-          return render_not_found("Session not found.")
+          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
+          return render_not_found("Session not found.", id)
         elsif session.status == "closed"
-          return render_not_found("Session has been terminated.")
+          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
+          return render_not_found("Session has been terminated.", id)
         end
       end
 
@@ -187,7 +193,8 @@ module ActionMCP
       end
     rescue StandardError => e
       Rails.logger.error "Unified POST Error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
-      render_internal_server_error("An unexpected error occurred.") unless performed?
+      id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil rescue nil
+      render_internal_server_error("An unexpected error occurred.", id) unless performed?
     end
 
     # Handles DELETE requests for session termination (2025-03-26 spec).
@@ -403,33 +410,58 @@ module ActionMCP
     # --- Error Rendering Methods ---
 
     # Renders a 400 Bad Request response with a JSON-RPC-like error structure.
-    def render_bad_request(message = "Bad Request")
-      render json: { jsonrpc: "2.0", error: { code: -32_600, message: message } }
+    def render_bad_request(message = "Bad Request", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_600, message: message } }
     end
 
     # Renders a 404 Not Found response with a JSON-RPC-like error structure.
-    def render_not_found(message = "Not Found")
-      render json: { jsonrpc: "2.0", error: { code: -32_001, message: message } }
+    def render_not_found(message = "Not Found", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_001, message: message } }
     end
 
     # Renders a 405 Method Not Allowed response.
-    def render_method_not_allowed(message = "Method Not Allowed")
-      render json: { jsonrpc: "2.0", error: { code: -32_601, message: message } }
+    def render_method_not_allowed(message = "Method Not Allowed", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_601, message: message } }
     end
 
     # Renders a 406 Not Acceptable response.
-    def render_not_acceptable(message = "Not Acceptable")
-      render json: { jsonrpc: "2.0", error: { code: -32_002, message: message } }
+    def render_not_acceptable(message = "Not Acceptable", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_002, message: message } }
     end
 
     # Renders a 501 Not Implemented response.
-    def render_not_implemented(message = "Not Implemented")
-      render json: { jsonrpc: "2.0", error: { code: -32_003, message: message } }
+    def render_not_implemented(message = "Not Implemented", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_003, message: message } }
     end
 
     # Renders a 500 Internal Server Error response.
     def render_internal_server_error(message = "Internal Server Error", id = nil)
       render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
+    end
+
+    # Extract JSON-RPC ID from request
+    def extract_jsonrpc_id_from_request
+      # Try to get from already parsed jsonrpc_params first
+      if defined?(jsonrpc_params) && jsonrpc_params
+        return jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
+      end
+
+      # Otherwise try to parse from raw body, this need refactoring
+      return nil unless request.post? && request.content_type&.include?("application/json")
+
+      begin
+        body = request.body.read
+        request.body.rewind # Reset for subsequent reads
+        json = JSON.parse(body)
+        json["id"]
+      rescue JSON::ParserError, StandardError
+        nil
+      end
     end
   end
 end
