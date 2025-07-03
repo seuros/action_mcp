@@ -175,14 +175,14 @@ module ActionMCP
       # Capability methods
       def server_capabilities_payload
         {
-          protocolVersion: ActionMCP::ProtocolVersion::LATEST_VERSION,
+          protocolVersion: ActionMCP::LATEST_VERSION,
           serverInfo: server_info,
           capabilities: server_capabilities
         }
       end
 
       def set_protocol_version(version)
-        version = ActionMCP::ProtocolVersion::LATEST_VERSION if ActionMCP.configuration.vibed_ignore_version
+        version = ActionMCP::LATEST_VERSION if ActionMCP.configuration.vibed_ignore_version
         self.protocol_version = version
         save
       end
