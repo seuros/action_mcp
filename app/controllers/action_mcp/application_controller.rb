@@ -157,8 +157,7 @@ module ActionMCP
       session = mcp_session
 
       # Validate MCP-Protocol-Version header for non-initialize requests
-      # Temporarily disabled to debug session issues
-      # return unless validate_protocol_version_header
+      return unless validate_protocol_version_header
 
       unless is_initialize_request
         if session_initially_missing
@@ -228,18 +227,26 @@ module ActionMCP
       # Skip validation for initialize requests
       return true if check_if_initialize_request(jsonrpc_params)
 
-      header_version = request.headers["MCP-Protocol-Version"]
+      # Check for both case variations of the header (spec uses MCP-Protocol-Version)
+      header_version = request.headers["MCP-Protocol-Version"] || request.headers["mcp-protocol-version"]
       session = mcp_session
 
-      # If header is missing, assume 2025-03-26 for backward compatibility
+      # If header is missing, assume 2025-03-26 for backward compatibility as per spec
       if header_version.nil?
-        Rails.logger.debug "MCP-Protocol-Version header missing, assuming 2025-03-26 for backward compatibility"
+        ActionMCP.logger.debug "MCP-Protocol-Version header missing, assuming 2025-03-26 for backward compatibility"
         return true
+      end
+
+      # Handle array values (take the last one as per TypeScript SDK)
+      if header_version.is_a?(Array)
+        header_version = header_version.last
       end
 
       # Check if the header version is supported
       unless ActionMCP::SUPPORTED_VERSIONS.include?(header_version)
-        render_bad_request("Unsupported MCP-Protocol-Version: #{header_version}")
+        supported_versions = ActionMCP::SUPPORTED_VERSIONS.join(", ")
+        ActionMCP.logger.warn "Unsupported MCP-Protocol-Version: #{header_version}. Supported versions: #{supported_versions}"
+        render_protocol_version_error("Unsupported MCP-Protocol-Version: #{header_version}. Supported versions: #{supported_versions}")
         return false
       end
 
@@ -247,12 +254,13 @@ module ActionMCP
       if session && session.initialized?
         negotiated_version = session.protocol_version
         if header_version != negotiated_version
-          Rails.logger.warn "MCP-Protocol-Version mismatch: header=#{header_version}, negotiated=#{negotiated_version}"
-          render_bad_request("MCP-Protocol-Version header (#{header_version}) does not match negotiated version (#{negotiated_version})")
+          ActionMCP.logger.warn "MCP-Protocol-Version mismatch: header=#{header_version}, negotiated=#{negotiated_version}"
+          render_protocol_version_error("MCP-Protocol-Version header (#{header_version}) does not match negotiated version (#{negotiated_version})")
           return false
         end
       end
 
+      ActionMCP.logger.debug "MCP-Protocol-Version header validation passed: #{header_version}"
       true
     end
 
@@ -413,6 +421,12 @@ module ActionMCP
     def render_bad_request(message = "Bad Request", id = nil)
       id ||= extract_jsonrpc_id_from_request
       render json: { jsonrpc: "2.0", id: id, error: { code: -32_600, message: message } }
+    end
+
+    # Renders a 400 Bad Request response for protocol version errors as per MCP spec
+    def render_protocol_version_error(message = "Protocol Version Error", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :bad_request
     end
 
     # Renders a 404 Not Found response with a JSON-RPC-like error structure.

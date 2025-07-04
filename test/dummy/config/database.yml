@@ -1,7 +1,7 @@
 development:
   primary:
-    url: <%= ENV.fetch("DATABASE_URL", "postgresql://ubuntu:password@localhost/actionmcp_development") %>
+    url: <%= ENV.fetch("DATABASE_URL", "sqlite3:db/development.sqlite3") %>
 
 test:
   primary:
-    url: <%= ENV.fetch("DATABASE_URL", "postgresql://ubuntu:password@localhost/actionmcp_test") %>
+    url: <%= ENV.fetch("DATABASE_URL", "sqlite3:db/test.sqlite3") %>
