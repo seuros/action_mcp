@@ -50,12 +50,15 @@ module ActionMCP
           record = template.process(params[:uri])
           record.with_context({ session: session })
 
-          if (resource = record.call)
-            resource = [ resource ] unless resource.respond_to?(:each)
-            content = resource.map(&:to_h)
-            send_jsonrpc_response(id, result: { contents: content })
+          response = record.call
+
+          if response.error?
+            # Convert ResourceResponse errors to JSON-RPC errors
+            error_info = response.to_h
+            send_jsonrpc_error(id, error_info[:code], error_info[:message], error_info[:data])
           else
-            send_jsonrpc_error(id, :invalid_params, "Resource not found")
+            # Handle successful response - ResourceResponse.contents is already an array
+            send_jsonrpc_response(id, result: { contents: response.contents.map(&:to_h) })
           end
         else
           send_jsonrpc_error(id, :invalid_params, "Invalid resource URI")

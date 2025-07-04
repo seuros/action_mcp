@@ -245,9 +245,29 @@ module ActionMCP
     end
 
     def call
-      run_callbacks :resolve do
-        resolve
+      @response = ResourceResponse.new
+
+      # Validate parameters first
+      unless valid?
+        missing_params = errors.full_messages
+        @response.mark_as_parameter_validation_failed!(missing_params, "template://#{self.class.name}")
+        return @response
       end
+
+      begin
+        run_callbacks :resolve do
+          result = resolve
+          if result.nil?
+            @response.mark_as_not_found!("template://#{self.class.name}")
+          else
+            @response.add_content(result)
+          end
+        end
+      rescue StandardError => e
+        @response.mark_as_resolution_failed!("template://#{self.class.name}", e.message)
+      end
+
+      @response
     end
   end
 end
