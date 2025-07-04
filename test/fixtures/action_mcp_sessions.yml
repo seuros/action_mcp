@@ -119,3 +119,20 @@ closed_session:
   sse_event_counter: 3
   created_at: <%= Time.zone.now %>
   updated_at: <%= Time.zone.now %>
+
+# A session with Dr. Identity McBouncer protocol (2025-06-18)
+dr_identity_mcbouncer_session:
+  id: "dr_identity_mcbouncer_session"
+  initialized: true
+  status: "initialized"
+  role: "server"
+  messages_count: 2
+  protocol_version: "2025-06-18"
+  server_info: {"name":"Test Server","version":"1.0.0"}
+  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
+  tool_registry: ["weather_forecast","format_source","execute_command"]
+  prompt_registry: '[]'
+  resource_registry: '[]'
+  sse_event_counter: 0
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
