@@ -376,12 +376,12 @@ module ActionMCP
       assert_equal "2.0", response_body["jsonrpc"]
       assert_equal "vibed-ignore-true", response_body["id"]
       assert_not_nil response_body["result"]
-      assert_equal "2025-03-26", response_body["result"]["protocolVersion"]
+      assert_equal "2025-06-18", response_body["result"]["protocolVersion"]
 
       session_id = response.headers["Mcp-Session-Id"]
       assert_not_nil session_id
       session = Server.session_store.load_session(session_id)
-      assert_equal "2025-03-26", session.protocol_version
+      assert_equal "2025-06-18", session.protocol_version
     ensure
       # Reset vibed_ignore_version to default
       ActionMCP.configuration.vibed_ignore_version = false

@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activerecord', '>= 8.0.1'
   spec.add_dependency 'concurrent-ruby', '>= 1.3.1'
-  spec.add_dependency 'jsonrpc-rails', '>= 0.5.2'
+  spec.add_dependency 'jsonrpc-rails', '>= 0.5.3'
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.0.1'
   spec.add_dependency 'zeitwerk', '~> 2.6'

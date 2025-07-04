@@ -47,28 +47,93 @@ Rails.application.eager_load!
 # Create a custom Rack app with only the middleware MCP needs
 # This explicit middleware stack bypasses the Rails default middleware stack,
 # avoiding any middleware that was auto-injected by gems in the main application
-mcp_app = Rack::Builder.new do
-  # Essential Rails middleware for request handling
-  use ActionDispatch::HostAuthorization, Rails.application.config.hosts
-  use Rack::Sendfile
-  use ActionDispatch::Static, Rails.public_path
-  use ActionDispatch::Executor, Rails.application.executor
-  use ActionDispatch::ServerTiming
-  use ActiveSupport::Cache::Strategy::LocalCache::Middleware
-  use Rack::Runtime
-  use Rack::MethodOverride
-  use ActionDispatch::RequestId
-  use ActionDispatch::RemoteIp, Rails.application.config.action_dispatch.ip_spoofing_check, Rails.application.config.action_dispatch.trusted_proxies
-  use RailsAppVersion::AppInfoMiddleware if defined?(RailsAppVersion::AppInfoMiddleware)
-  use Rails::Rack::Logger, Rails.application.config.log_tags
-  use ActionDispatch::ShowExceptions, Rails.application.config.exceptions_app
-  use ActionDispatch::DebugExceptions, Rails.application, ActionDispatch::DebugExceptions.interceptors
-  use ActionDispatch::ActionableExceptions
-  use ActionDispatch::Reloader
-  use ActionDispatch::Callbacks
-  use JSONRPC_Rails::Middleware::Validator
 
-  run ActionMCP.server
+# Stub out Warden to prevent Devise errors
+module Warden
+  class Proxy
+    def initialize(env)
+      @env = env
+      @users = {}
+      @session_serializer = OpenStruct.new(
+        serialize: ->(record) { record },
+        deserialize: ->(data) { data },
+        store: ->(user, scope) { @users[scope] = user },
+        fetch: ->(scope) { @users[scope] },
+        delete: ->(scope) { @users.delete(scope) }
+      )
+    end
+
+    def user(scope = nil)
+      nil
+    end
+
+    def authenticate(options = {})
+      nil
+    end
+
+    def authenticate!(options = {})
+      nil
+    end
+
+    def authenticated?(scope = nil)
+      false
+    end
+
+    def session(scope = nil)
+      {}
+    end
+
+    def env
+      @env
+    end
+
+    def session_serializer
+      @session_serializer
+    end
+
+    def config
+      OpenStruct.new(
+        default_scope: :user,
+        scope_defaults: {},
+        failure_app: ->(_) { [ 401, {}, [ "Unauthorized" ] ] }
+      )
+    end
+  end
+end
+
+# Inject a fake Warden into the env
+class WarddenInjector
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    env["warden"] = Warden::Proxy.new(env)
+    begin
+      @app.call(env)
+    rescue => e
+      puts "Error: #{e.class} - #{e.message}"
+      puts e.backtrace.first(10)
+      raise
+    end
+  end
+end
+
+Rails.application.eager_load!
+
+# Create a minimal Rack app that bypasses all middleware
+# and goes directly to ActionMCP routes
+mcp_app = Rack::Builder.new do
+  use WarddenInjector
+  use Rack::Runtime
+  use ActionDispatch::RequestId, header: "X-Request-Id"
+  use Rails::Rack::Logger, Rails.application.config.log_tags
+  use ActionDispatch::Executor, Rails.application.executor
+  use ActionDispatch::Reloader, Rails.application.executor
+  use JSONRPC_Rails::Middleware::Validator, "/"
+
+  # Run the ActionMCP routes directly
+  run ActionMCP::Engine.routes
 end
 
 run mcp_app

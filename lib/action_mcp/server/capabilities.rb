@@ -45,7 +45,7 @@ module ActionMCP
             # Return existing session info
             capabilities_payload = existing_session.server_capabilities_payload
             capabilities_payload[:protocolVersion] = if ActionMCP.configuration.vibed_ignore_version
-                                                       PROTOCOL_VERSION
+                                                       ActionMCP::LATEST_VERSION
             else
                                                        client_protocol_version
             end
@@ -66,7 +66,7 @@ module ActionMCP
 
         capabilities_payload = session.server_capabilities_payload
         capabilities_payload[:protocolVersion] = if ActionMCP.configuration.vibed_ignore_version
-                                                   PROTOCOL_VERSION
+                                                   ActionMCP::LATEST_VERSION
         else
                                                    client_protocol_version
         end
