@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.61.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.2...action_mcp/v0.61.0) (2025-07-04)
+
+
+### Features
+
+* remove vibe option ([#117](https://github.com/seuros/action_mcp/issues/117)) ([1b081c6](https://github.com/seuros/action_mcp/commit/1b081c69d001a5e2f79cb99c7a91c3185a341aa4))
+
+
+### Bug Fixes
+
+* implement protocol header detection ([#115](https://github.com/seuros/action_mcp/issues/115)) ([592da12](https://github.com/seuros/action_mcp/commit/592da124e08cea5f85ef9537143c97148f55cf2b))
+
 ## [0.60.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.1...action_mcp/v0.60.2) (2025-07-04)
 
 
