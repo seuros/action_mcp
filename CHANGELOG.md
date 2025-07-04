@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.60.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.0...action_mcp/v0.60.1) (2025-07-04)
+
+
+### Bug Fixes
+
+* consolidated protocol version constants ([#111](https://github.com/seuros/action_mcp/issues/111)) ([b8a8a0d](https://github.com/seuros/action_mcp/commit/b8a8a0d69547a56a806aaf6ca13b5de108f2d4ba))
+
 ## [0.60.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.55.2...action_mcp/v0.60.0) (2025-07-01)
 
 
