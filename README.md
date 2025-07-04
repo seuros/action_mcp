@@ -48,7 +48,16 @@ To start using ActionMCP, add it to your project:
   $ bundle add actionmcp
   ```
 
-This will load the ActionMCP library so you can start defining MCP prompts, tools, and resources in your application.
+After adding the gem, run the install generator to set up the basic ActionMCP structure:
+
+```bash
+bundle install
+bin/rails action_mcp:install:migrations
+bin/rails db:migrate
+bin/rails generate action_mcp:install
+```
+
+This will create the base application classes, configuration file, and necessary database tables for ActionMCP to function properly.
 
 ## Core Components
 
@@ -309,7 +318,8 @@ Then install it:
 
 ```bash
 bundle install
-bin/rails solid_mcp:install
+bin/rails solid_mcp:install:migrations
+bin/rails db:migrate
 ```
 
 The installer will create the necessary database migration for message storage. Configure it in your `config/mcp.yml`.

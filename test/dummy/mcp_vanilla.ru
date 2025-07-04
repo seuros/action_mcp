@@ -95,7 +95,7 @@ module Warden
       OpenStruct.new(
         default_scope: :user,
         scope_defaults: {},
-        failure_app: ->(_) { [401, {}, ['Unauthorized']] }
+        failure_app: ->(_) { [ 401, {}, [ "Unauthorized" ] ] }
       )
     end
   end
@@ -108,7 +108,7 @@ class WarddenInjector
   end
 
   def call(env)
-    env['warden'] = Warden::Proxy.new(env)
+    env["warden"] = Warden::Proxy.new(env)
     begin
       @app.call(env)
     rescue => e
