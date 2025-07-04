@@ -18,7 +18,7 @@ module ActionMCP
         unless client_protocol_version.is_a?(String) && client_protocol_version.present?
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
         end
-        unless ActionMCP.configuration.vibed_ignore_version || ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
+        unless ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
           error_message = "Unsupported protocol version. Client requested '#{client_protocol_version}' but server supports #{ActionMCP::SUPPORTED_VERSIONS.join(', ')}"
           error_data = {
             supported: ActionMCP::SUPPORTED_VERSIONS,
@@ -44,11 +44,7 @@ module ActionMCP
 
             # Return existing session info
             capabilities_payload = existing_session.server_capabilities_payload
-            capabilities_payload[:protocolVersion] = if ActionMCP.configuration.vibed_ignore_version
-                                                       ActionMCP::LATEST_VERSION
-            else
-                                                       client_protocol_version
-            end
+            capabilities_payload[:protocolVersion] = client_protocol_version
             return send_jsonrpc_response(request_id, result: capabilities_payload)
           else
             Rails.logger.warn("Session #{session_id} not found or not initialized, creating new session")
@@ -65,11 +61,7 @@ module ActionMCP
         end
 
         capabilities_payload = session.server_capabilities_payload
-        capabilities_payload[:protocolVersion] = if ActionMCP.configuration.vibed_ignore_version
-                                                   ActionMCP::LATEST_VERSION
-        else
-                                                   client_protocol_version
-        end
+        capabilities_payload[:protocolVersion] = client_protocol_version
 
         send_jsonrpc_response(request_id, result: capabilities_payload)
       end
