@@ -11,7 +11,7 @@ module ActionMCP
       #
       # @return [Hash] A hash of registered items.
       def items
-        @items = item_klass.descendants.each_with_object({}) do |klass, hash|
+        @items ||= item_klass.descendants.each_with_object({}) do |klass, hash|
           next if klass.abstract?
 
           hash[klass.capability_name] = klass
@@ -42,6 +42,13 @@ module ActionMCP
       # @return [RegistryScope] A RegistryScope instance.
       def non_abstract
         RegistryScope.new(items)
+      end
+
+      # Clears the registry cache.
+      #
+      # @return [void]
+      def clear!
+        @items = nil
       end
 
       private

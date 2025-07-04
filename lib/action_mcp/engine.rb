@@ -20,6 +20,8 @@ module ActionMCP
 
     config.to_prepare do
       ActionMCP::ResourceTemplate.registered_templates.clear
+      ActionMCP::ToolsRegistry.clear!
+      ActionMCP::PromptsRegistry.clear!
     end
 
     config.middleware.use JSONRPC_Rails::Middleware::Validator, [ "/" ]
