@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.60.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.1...action_mcp/v0.60.2) (2025-07-04)
+
+
+### Bug Fixes
+
+* restroy call syntax after linting issue ([6e35087](https://github.com/seuros/action_mcp/commit/6e35087c1ff51cc8d6b1b0bf4a395128114857f4))
+
 ## [0.60.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.0...action_mcp/v0.60.1) (2025-07-04)
 
 
