@@ -182,7 +182,6 @@ module ActionMCP
       end
 
       def set_protocol_version(version)
-        version = ActionMCP::LATEST_VERSION if ActionMCP.configuration.vibed_ignore_version
         self.protocol_version = version
         save
       end

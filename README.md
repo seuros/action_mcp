@@ -237,30 +237,12 @@ module Tron
     config.action_mcp.version = "1.2.3"                               # defaults to "0.0.1"
     config.action_mcp.logging_enabled = true                          # defaults to true
     config.action_mcp.logging_level = :info                           # defaults to :info, can be :debug, :info, :warn, :error, :fatal
-    config.action_mcp.vibed_ignore_version = false                    # defaults to false, set to true to ignore client protocol version mismatches
   end
 end
 ```
 
 For dynamic versioning, consider adding the `rails_app_version` gem.
 
-### Protocol Version Compatibility
-
-By default, ActionMCP requires clients to use the exact protocol version supported by the server (currently "2025-03-26"). If the client specifies a different version during initialization, the request will be rejected with an error.
-
-To support clients with incompatible protocol versions, you can enable the `vibed_ignore_version` option:
-
-```ruby
-# In config/application.rb or an initializer
-Rails.application.config.action_mcp.vibed_ignore_version = true
-```
-
-When enabled, the server will ignore protocol version mismatches from clients and always use the latest supported version. This is useful for:
-- Development environments with older client libraries
-- Supporting clients that cannot be easily updated
-- Situations where protocol differences are minor and known to be compatible
-
-> **Note:** Using `vibed_ignore_version = true` in production is not recommended as it may lead to unexpected behavior if clients rely on specific protocol features that differ between versions.
 
 ### PubSub Configuration
 

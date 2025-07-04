@@ -75,9 +75,7 @@ module ActionMCP
     before_create :set_server_info, if: -> { role == "server" }
     before_create :set_server_capabilities, if: -> { role == "server" }
 
-    validates :protocol_version, inclusion: { in: ActionMCP::SUPPORTED_VERSIONS }, allow_nil: true, unless: lambda {
-      ActionMCP.configuration.vibed_ignore_version
-    }
+    validates :protocol_version, inclusion: { in: ActionMCP::SUPPORTED_VERSIONS }, allow_nil: true
 
     def close!
       dummy_callback = ->(*) { } # this callback seem broken
@@ -115,8 +113,6 @@ module ActionMCP
     end
 
     def set_protocol_version(version)
-      # If vibed_ignore_version is true, always use the latest supported version
-      version = PROTOCOL_VERSION if ActionMCP.configuration.vibed_ignore_version
       update(protocol_version: version)
     end
 
