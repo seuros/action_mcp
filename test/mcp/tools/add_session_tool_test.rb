@@ -5,8 +5,10 @@ require "test_helper"
 class AddSessionToolTest < ActiveSupport::TestCase
   setup do
     @session = ActionMCP::Session.create!
+    # Override default wildcard registry for testing
+    @session.update!(tool_registry: [])
     # Register the meta-tool itself
-    @session.register_tool("add_session_tool")
+    @session.register_tool("add_session")
   end
 
   test "adds a tool to the current session using execution context" do
@@ -54,8 +56,16 @@ class AddSessionToolTest < ActiveSupport::TestCase
     assert result.success?
     # Check that the response shows all tools
     response_text = result.contents.map(&:text).join(" ")
+    # The tool should show all three registered tools
     assert_includes response_text, "calculate_sum"
     assert_includes response_text, "weather_forecast"
-    assert_includes response_text, "add_session_tool"
+    assert_includes response_text, "add_session"
+
+    # Also verify the session actually has all tools registered
+    @session.reload
+    assert_equal 3, @session.tool_registry.size
+    assert_includes @session.tool_registry, "calculate_sum"
+    assert_includes @session.tool_registry, "weather_forecast"
+    assert_includes @session.tool_registry, "add_session"
   end
 end

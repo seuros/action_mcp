@@ -307,27 +307,56 @@ module ActionMCP
 
     # Get registered items for this session
     def registered_tools
-      (self.tool_registry || []).filter_map do |tool_name|
-        ActionMCP::ToolsRegistry.find(tool_name)
-      rescue StandardError
-        nil
+      # Special case: ['*'] means use all available tools dynamically
+      if tool_registry == [ "*" ]
+        # filtered_tools returns a RegistryScope with Item objects, need to extract the klass
+        ActionMCP.configuration.filtered_tools.map(&:klass)
+      else
+        (self.tool_registry || []).filter_map do |tool_name|
+          ActionMCP::ToolsRegistry.find(tool_name)
+        rescue StandardError
+          nil
+        end
       end
     end
 
     def registered_prompts
-      (self.prompt_registry || []).filter_map do |prompt_name|
-        ActionMCP::PromptsRegistry.find(prompt_name)
-      rescue StandardError
-        nil
+      if prompt_registry == [ "*" ]
+        # filtered_prompts returns a RegistryScope with Item objects, need to extract the klass
+        ActionMCP.configuration.filtered_prompts.map(&:klass)
+      else
+        (self.prompt_registry || []).filter_map do |prompt_name|
+          ActionMCP::PromptsRegistry.find(prompt_name)
+        rescue StandardError
+          nil
+        end
       end
     end
 
     def registered_resource_templates
-      (self.resource_registry || []).filter_map do |template_name|
-        ActionMCP::ResourceTemplatesRegistry.find(template_name)
-      rescue StandardError
-        nil
+      if resource_registry == [ "*" ]
+        # filtered_resources returns a RegistryScope with Item objects, need to extract the klass
+        ActionMCP.configuration.filtered_resources.map(&:klass)
+      else
+        (self.resource_registry || []).filter_map do |template_name|
+          ActionMCP::ResourceTemplatesRegistry.find(template_name)
+        rescue StandardError
+          nil
+        end
       end
+    end
+
+    # Helper methods to check if using all capabilities
+    def uses_all_tools?
+      tool_registry == [ "*" ]
+    end
+
+    def uses_all_prompts?
+      prompt_registry == [ "*" ]
+    end
+
+    def uses_all_resources?
+      resource_registry == [ "*" ]
     end
 
     # OAuth Session Management
@@ -439,10 +468,10 @@ module ActionMCP
     end
 
     def initialize_registries
-      # Start with default registries from configuration
-      self.tool_registry = ActionMCP.configuration.filtered_tools.map(&:name)
-      self.prompt_registry = ActionMCP.configuration.filtered_prompts.map(&:name)
-      self.resource_registry = ActionMCP.configuration.filtered_resources.map(&:name)
+      # Default to using all available capabilities with '*'
+      self.tool_registry = [ "*" ]
+      self.prompt_registry = [ "*" ]
+      self.resource_registry = [ "*" ]
     end
 
     def normalize_name(class_or_name, type)

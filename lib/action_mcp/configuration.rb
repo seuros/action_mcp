@@ -175,15 +175,25 @@ module ActionMCP
     # Returns capabilities based on active profile
     def capabilities
       capabilities = {}
+      profile = @profiles[active_profile]
 
-      # Only include capabilities if the corresponding filtered registry is non-empty
-      capabilities[:tools] = { listChanged: @list_changed } if filtered_tools.any?
+      # Check profile configuration instead of registry contents
+      # If profile includes tools (either "all" or specific tools), advertise tools capability
+      if profile && profile[:tools] && profile[:tools].any?
+        capabilities[:tools] = { listChanged: @list_changed }
+      end
 
-      capabilities[:prompts] = { listChanged: @list_changed } if filtered_prompts.any?
+      # If profile includes prompts, advertise prompts capability
+      if profile && profile[:prompts] && profile[:prompts].any?
+        capabilities[:prompts] = { listChanged: @list_changed }
+      end
 
       capabilities[:logging] = {} if @logging_enabled
 
-      capabilities[:resources] = { subscribe: @resources_subscribe } if filtered_resources.any?
+      # If profile includes resources, advertise resources capability
+      if profile && profile[:resources] && profile[:resources].any?
+        capabilities[:resources] = { subscribe: @resources_subscribe }
+      end
 
       capabilities[:elicitation] = {} if @elicitation_enabled
 
@@ -209,6 +219,20 @@ module ActionMCP
       @logging_enabled = options[:logging_enabled] unless options[:logging_enabled].nil?
       @logging_level = options[:logging_level] unless options[:logging_level].nil?
       @resources_subscribe = options[:resources_subscribe] unless options[:resources_subscribe].nil?
+    end
+
+    def eager_load_if_needed
+      profile = @profiles[active_profile]
+      return unless profile
+
+      # Check if any component type includes "all"
+      needs_eager_load = profile[:tools]&.include?("all") ||
+                        profile[:prompts]&.include?("all") ||
+                        profile[:resources]&.include?("all")
+
+      if needs_eager_load
+        ensure_mcp_components_loaded
+      end
     end
 
     private
@@ -299,6 +323,41 @@ module ActionMCP
       true
     rescue LoadError
       false
+    end
+
+    def ensure_mcp_components_loaded
+      # Only load if we haven't loaded yet - but in development, always reload
+      return if @mcp_components_loaded && !Rails.env.development?
+
+      # Use Zeitwerk eager loading if available (in to_prepare phase)
+      mcp_path = Rails.root.join("app/mcp")
+      if mcp_path.exist? && Rails.autoloaders.main.respond_to?(:eager_load_dir)
+        # This will trigger all inherited hooks properly
+        Rails.autoloaders.main.eager_load_dir(mcp_path)
+      elsif mcp_path.exist?
+        # Fallback for initialization phase - use require_dependency
+        # Load base classes first in specific order
+        base_files = [
+          mcp_path.join("application_gateway.rb"),
+          mcp_path.join("tools/application_mcp_tool.rb"),
+          mcp_path.join("prompts/application_mcp_prompt.rb"),
+          mcp_path.join("resource_templates/application_mcp_res_template.rb"),
+          # Load ArithmeticTool before other tools that inherit from it
+          mcp_path.join("tools/arithmetic_tool.rb")
+        ]
+
+        base_files.each do |file|
+          require_dependency file.to_s if file.exist?
+        end
+
+        # Then load all other files
+        Dir.glob(mcp_path.join("**/*.rb")).sort.each do |file|
+          # Skip base classes we already loaded
+          next if base_files.any? { |base| file == base.to_s }
+          require_dependency file
+        end
+      end
+      @mcp_components_loaded = true unless Rails.env.development?
     end
   end
 

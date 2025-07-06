@@ -35,12 +35,12 @@ module ActionMCP
 
       def handle_notification(notification)
         # Handle server notifications to client
-        puts "\e[33mReceived notification: #{notification.method}\e[0m"
+        client.log_debug("Received notification: #{notification.method}")
       end
 
       def handle_response(response)
         # Handle server responses to client requests
-        puts "\e[32mReceived response: #{response.id} - #{response.result ? 'success' : 'error'}\e[0m"
+        client.log_debug("Received response: #{response.id} - #{response.result ? 'success' : 'error'}")
       end
 
       protected
@@ -60,7 +60,7 @@ module ActionMCP
         else
           common_result = handle_common_methods(rpc_method, id, params)
           if common_result.nil?
-            puts "\e[31mUnknown server method: #{rpc_method} #{id} #{params}\e[0m"
+            client.log_warn("Unknown server method: #{rpc_method} #{id} #{params}")
           end
         end
       end
@@ -94,19 +94,19 @@ module ActionMCP
       def process_notifications(rpc_method, params)
         case rpc_method
         when "notifications/resources/updated" # Resource update notification
-          puts "\e[31m Resource #{params['uri']} was updated\e[0m"
+          client.log_debug("Resource #{params['uri']} was updated")
           # Handle resource update notification
           # TODO: fetch updated resource or mark it as stale
         when "notifications/tools/list_changed" # Tool list change notification
-          puts "\e[31m Tool list has changed\e[0m"
+          client.log_debug("Tool list has changed")
           # Handle tool list change notification
           # TODO: fetch new tools or mark them as stale
         when "notifications/prompts/list_changed" # Prompt list change notification
-          puts "\e[31m Prompt list has changed\e[0m"
+          client.log_debug("Prompt list has changed")
           # Handle prompt list change notification
           # TODO: fetch new prompts or mark them as stale
         when "notifications/resources/list_changed" # Resource list change notification
-          puts "\e[31m Resource list has changed\e[0m"
+          client.log_debug("Resource list has changed")
           # Handle resource list change notification
           # TODO: fetch new resources or mark them as stale
         else
@@ -153,12 +153,12 @@ module ActionMCP
           return true
         end
 
-        puts "\e[31mUnknown response: #{id} #{result}\e[0m"
+        client.log_warn("Unknown response: #{id} #{result}")
       end
 
       def process_error(id, error)
         # Do something ?
-        puts "\e[31mUnknown error: #{id} #{error}\e[0m"
+        client.log_error("Unknown error: #{id} #{error}")
       end
 
       def handle_initialize_response(request_id, result)

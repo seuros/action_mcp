@@ -18,10 +18,33 @@ module ActionMCP
     # Provide a configuration namespace for ActionMCP
     config.action_mcp = ActionMCP.configuration
 
+    # Create the ActiveSupport load hooks
+    ActiveSupport.on_load(:action_mcp_tool) do
+      # Register the tool when it's loaded
+      ActionMCP::ToolsRegistry.register(self) unless abstract?
+    end
+
+    ActiveSupport.on_load(:action_mcp_prompt) do
+      # Register the prompt when it's loaded
+      ActionMCP::PromptsRegistry.register(self) unless abstract?
+    end
+
+    ActiveSupport.on_load(:action_mcp_resource_template) do
+      # Register the resource template when it's loaded
+      ActionMCP::ResourceTemplatesRegistry.register(self) unless abstract?
+    end
+
     config.to_prepare do
-      ActionMCP::ResourceTemplate.registered_templates.clear
-      ActionMCP::ToolsRegistry.clear!
-      ActionMCP::PromptsRegistry.clear!
+      # Only clear registries if we're in development mode
+      if Rails.env.development?
+        ActionMCP::ResourceTemplate.registered_templates.clear
+        ActionMCP::ToolsRegistry.clear!
+        ActionMCP::PromptsRegistry.clear!
+      end
+
+      # Eager load MCP components if profile includes "all"
+      # This runs after Zeitwerk is fully set up
+      ActionMCP.configuration.eager_load_if_needed
     end
 
     config.middleware.use JSONRPC_Rails::Middleware::Validator, [ "/" ]
