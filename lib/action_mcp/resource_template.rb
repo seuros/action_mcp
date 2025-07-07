@@ -26,6 +26,8 @@ module ActionMCP
 
       def abstract!
         @abstract = true
+        # Unregister from the appropriate registry if already registered
+        ActionMCP::ResourceTemplatesRegistry.unregister(self) if ActionMCP::ResourceTemplatesRegistry.items.values.include?(self)
       end
 
       def inherited(subclass)
@@ -33,6 +35,11 @@ module ActionMCP
         subclass.instance_variable_set(:@abstract, false)
         # Create a copy of validation requirements for subclasses
         subclass.instance_variable_set(:@required_parameters, [])
+
+        # Run the ActiveSupport load hook when a resource template is defined
+        subclass.class_eval do
+          ActiveSupport.run_load_hooks(:action_mcp_resource_template, subclass)
+        end
       end
 
       # Track required parameters for validation
@@ -109,6 +116,7 @@ module ActionMCP
       end
 
       def capability_name
+        return "" if name.nil?
         @capability_name ||= name.demodulize.underscore.sub(/_template$/, "")
       end
 
@@ -245,9 +253,29 @@ module ActionMCP
     end
 
     def call
-      run_callbacks :resolve do
-        resolve
+      @response = ResourceResponse.new
+
+      # Validate parameters first
+      unless valid?
+        missing_params = errors.full_messages
+        @response.mark_as_parameter_validation_failed!(missing_params, "template://#{self.class.name}")
+        return @response
       end
+
+      begin
+        run_callbacks :resolve do
+          result = resolve
+          if result.nil?
+            @response.mark_as_not_found!("template://#{self.class.name}")
+          else
+            @response.add_content(result)
+          end
+        end
+      rescue StandardError => e
+        @response.mark_as_resolution_failed!("template://#{self.class.name}", e.message)
+      end
+
+      @response
     end
   end
 end

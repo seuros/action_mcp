@@ -19,8 +19,11 @@ Rails.application.configure do
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
+  # Use evented file watcher with listen gem for better performance
+  config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
   # Do not eager load code on boot.
-  config.eager_load = true
+  config.eager_load = false
 
   # Show full error reports.
   config.consider_all_requests_local = true

@@ -31,3 +31,6 @@ gem "sqlite3", "~> 2.0"
 
 gem "faraday" # used by the client
 gem "webmock", group: :test # for testing HTTP requests
+
+# File system watching for development
+gem "listen", group: :development

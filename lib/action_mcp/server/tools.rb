@@ -18,7 +18,9 @@ module ActionMCP
         end
 
         # Use session's registered tools instead of global registry
-        tools = session.registered_tools.map do |tool_class|
+        registered_tools = session.registered_tools
+
+        tools = registered_tools.map do |tool_class|
           tool_class.to_h(protocol_version: protocol_version)
         end
 
@@ -52,7 +54,14 @@ module ActionMCP
             }
           })
 
-          result = tool.call
+          # Wrap tool execution with Rails reloader for development
+          result = if Rails.env.development? && defined?(Rails.application.reloader)
+            Rails.application.reloader.wrap do
+              tool.call
+            end
+          else
+            tool.call
+          end
 
           if result.is_error
             # Convert ToolResponse error to proper JSON-RPC error format

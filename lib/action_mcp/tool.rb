@@ -43,6 +43,7 @@ module ActionMCP
     #
     # @return [String] The default tool name.
     def self.default_tool_name
+      return "" if name.nil?
       name.demodulize.underscore.sub(/_tool$/, "")
     end
 
@@ -51,6 +52,19 @@ module ActionMCP
 
       def type
         :tool
+      end
+
+      def unregister_from_registry
+        ActionMCP::ToolsRegistry.unregister(self) if ActionMCP::ToolsRegistry.items.values.include?(self)
+      end
+
+      # Hook called when a class inherits from Tool
+      def inherited(subclass)
+        super
+        # Run the ActiveSupport load hook when a tool is defined
+        subclass.class_eval do
+          ActiveSupport.run_load_hooks(:action_mcp_tool, subclass)
+        end
       end
 
       def annotate(key, value)

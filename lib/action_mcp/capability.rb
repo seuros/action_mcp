@@ -49,6 +49,8 @@ module ActionMCP
     # @return [void]
     def self.abstract!
       self.abstract_capability = true
+      # Unregister from the appropriate registry if already registered
+      unregister_from_registry
     end
 
     # Returns whether this tool is abstract.

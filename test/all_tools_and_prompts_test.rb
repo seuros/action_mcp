@@ -33,11 +33,26 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
   end
 
   test "FormatCodeTool is findable" do
-    assert_tool_findable("format_source")
+    assert_tool_findable("format_code")
   end
 
   test "GitHubCreateIssueTool is findable" do
-    assert_tool_findable("create_github_issue")
+    # Test registry key (internal)
+    assert_tool_findable("git_hub_create_issue")
+
+    # Test custom tool_name (MCP protocol) via session
+    session = ActionMCP::Session.new(protocol_version: "2025-06-18")
+    session.tool_registry = [ "git_hub_create_issue" ]  # Register by registry key
+    registered_tools = session.registered_tools
+
+    # Find tool by its MCP protocol name
+    tool_class = registered_tools.find { |t| t.tool_name == "create_github_issue" }
+    assert_not_nil tool_class, "Tool with tool_name 'create_github_issue' should be findable via session"
+
+    # Execute tool
+    tool = tool_class.new(title: "Test Issue", body: "Test body", labels: [ "bug" ])
+    result = tool.call
+    assert_match(/Issue created:/, result.contents.first.text)
   end
 
   # Prompts

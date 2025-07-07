@@ -17,6 +17,5 @@ Signal.trap("TERM") do
   exit(0)
 end
 
-Rails.application.eager_load!
-
+# Run the server directly - reloading will be handled internally for SSE compatibility
 run ActionMCP.server

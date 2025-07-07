@@ -12,6 +12,7 @@ module ActionMCP
     include ActionController::Live
     include ActionController::Instrumentation
 
+
     # Provides the ActionMCP::Session for the current request.
     # Handles finding existing sessions via header/param or initializing a new one.
     # Specific controllers/handlers might need to enforce session ID presence based on context.
@@ -143,7 +144,7 @@ module ActionMCP
     # @route POST /mcp
     def create
       unless post_accept_headers_valid?
-        id = extract_jsonrpc_id_from_params
+        id = extract_jsonrpc_id_from_request
         return render_not_acceptable(post_accept_headers_error_message, id)
       end
 
@@ -268,12 +269,12 @@ module ActionMCP
     # Note: This doesn't save the new session; that happens upon first use or explicitly.
     def find_or_initialize_session
       session_id = extract_session_id
+      session_store = ActionMCP::Server.session_store
+
       if session_id
-        session = Server.session_store.load_session(session_id)
-        # Session protocol version is set during initialization and should not be overridden
-        session
+        session_store.load_session(session_id)
       else
-        Server.session_store.create_session(nil, protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION)
+        session_store.create_session(nil, protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION)
       end
     end
 

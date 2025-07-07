@@ -4,17 +4,17 @@
 #
 # Table name: action_mcp_session_messages
 #
-#  id                                     :bigint           not null, primary key
-#  direction(The message recipient)       :string           default("client"), not null
-#  is_ping(Whether the message is a ping) :boolean          default(FALSE), not null
-#  message_json                           :json
-#  message_type(The type of the message)  :string           not null
-#  request_acknowledged                   :boolean          default(FALSE), not null
-#  request_cancelled                      :boolean          default(FALSE), not null
-#  created_at                             :datetime         not null
-#  updated_at                             :datetime         not null
-#  jsonrpc_id                             :string
-#  session_id                             :string           not null
+#  id                               :bigint           not null, primary key
+#  direction(The message recipient) :string           default("client"), not null
+#  is_ping                          :boolean          default(FALSE), not null
+#  message_json                     :json
+#  message_type                     :string           not null
+#  request_acknowledged             :boolean          default(FALSE), not null
+#  request_cancelled                :boolean          default(FALSE), not null
+#  created_at                       :datetime         not null
+#  updated_at                       :datetime         not null
+#  jsonrpc_id                       :string
+#  session_id                       :string           not null
 #
 # Indexes
 #
@@ -22,7 +22,7 @@
 #
 # Foreign Keys
 #
-#  fk_action_mcp_session_messages_session_id  (session_id => action_mcp_sessions.id) ON DELETE => cascade ON UPDATE => cascade
+#  fk_rails_...  (session_id => action_mcp_sessions.id) ON DELETE => cascade ON UPDATE => cascade
 #
 module ActionMCP
   class Session

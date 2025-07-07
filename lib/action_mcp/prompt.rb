@@ -27,6 +27,7 @@ module ActionMCP
     #
     # @return [String] The default prompt name.
     def self.default_prompt_name
+      return "" if name.nil?
       name.demodulize.underscore.sub(/_prompt$/, "")
     end
 
@@ -35,6 +36,19 @@ module ActionMCP
 
       def type
         :prompt
+      end
+
+      def unregister_from_registry
+        ActionMCP::PromptsRegistry.unregister(self) if ActionMCP::PromptsRegistry.items.values.include?(self)
+      end
+
+      # Hook called when a class inherits from Prompt
+      def inherited(subclass)
+        super
+        # Run the ActiveSupport load hook when a prompt is defined
+        subclass.class_eval do
+          ActiveSupport.run_load_hooks(:action_mcp_prompt, subclass)
+        end
       end
 
       # Sets or retrieves the _meta field

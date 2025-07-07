@@ -11,11 +11,25 @@ module ActionMCP
       #
       # @return [Hash] A hash of registered items.
       def items
-        @items = item_klass.descendants.each_with_object({}) do |klass, hash|
-          next if klass.abstract?
+        @items ||= {}
+      end
 
-          hash[klass.capability_name] = klass
-        end
+      # Register an item explicitly
+      #
+      # @param klass [Class] The class to register
+      # @return [void]
+      def register(klass)
+        return if klass.abstract?
+
+        items[klass.capability_name] = klass
+      end
+
+      # Unregister an item
+      #
+      # @param klass [Class] The class to unregister
+      # @return [void]
+      def unregister(klass)
+        items.delete(klass.capability_name)
       end
 
       # Retrieve an item by name.
@@ -42,6 +56,13 @@ module ActionMCP
       # @return [RegistryScope] A RegistryScope instance.
       def non_abstract
         RegistryScope.new(items)
+      end
+
+      # Clears the registry cache.
+      #
+      # @return [void]
+      def clear!
+        @items = nil
       end
 
       private
