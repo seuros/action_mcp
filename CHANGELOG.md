@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.70.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.2...action_mcp/v0.70.0) (2025-07-07)
+
+
+### Features
+
+* add session information tool and protocol version tool ([af13227](https://github.com/seuros/action_mcp/commit/af132276f5a243bdcbea2cf74c63f0af6182ab61))
+* allow tools to be reloaded in dev mode. ([382ea1c](https://github.com/seuros/action_mcp/commit/382ea1c2b9f79370cffd16a5b00ce32adb7825d3))
+* implement autoloading for MCP tools and prompts ([07ed6a1](https://github.com/seuros/action_mcp/commit/07ed6a11e84a270cd3bc3c947e5246ab158e9db5))
+* new rake tasks to debug what happening in the database. ([7831f3f](https://github.com/seuros/action_mcp/commit/7831f3fc6e48b18236b124d37c11cdcd2513ab33))
+* prepare to add capabilities in the last spec. ([7831f3f](https://github.com/seuros/action_mcp/commit/7831f3fc6e48b18236b124d37c11cdcd2513ab33))
+* remove vibe option ([#117](https://github.com/seuros/action_mcp/issues/117)) ([1b081c6](https://github.com/seuros/action_mcp/commit/1b081c69d001a5e2f79cb99c7a91c3185a341aa4))
+
+
+### Bug Fixes
+
+* add reloading in dev, now you can edit your tools/prompts , the app will reload them. ([7831f3f](https://github.com/seuros/action_mcp/commit/7831f3fc6e48b18236b124d37c11cdcd2513ab33))
+* implement protocol header detection ([#115](https://github.com/seuros/action_mcp/issues/115)) ([592da12](https://github.com/seuros/action_mcp/commit/592da124e08cea5f85ef9537143c97148f55cf2b))
+
 ## [0.60.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.1...action_mcp/v0.60.2) (2025-07-04)
 
 
