@@ -47,6 +47,10 @@ module ActionMCP
         return render_not_found("Session has been terminated.")
       end
 
+      # Authenticate the request via gateway
+      authenticate_gateway!
+      return if performed?
+
       last_event_id = request.headers["Last-Event-ID"].presence
       Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}" if last_event_id
 
@@ -178,6 +182,10 @@ module ActionMCP
         response.headers[MCP_SESSION_ID_HEADER] = session.id
       end
 
+      # Authenticate the request via gateway (skipped for initialize requests)
+      authenticate_gateway!
+      return if performed?
+
       # Use return mode for the transport handler when we need to capture responses
       transport_handler = Server::TransportHandler.new(session, messaging_mode: :return)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
@@ -209,6 +217,10 @@ module ActionMCP
       elsif session.status == "closed"
         return head :no_content
       end
+
+      # Authenticate the request via gateway
+      authenticate_gateway!
+      return if performed?
 
       begin
         session.close!
@@ -477,6 +489,28 @@ module ActionMCP
       rescue JSON::ParserError, StandardError
         nil
       end
+    end
+
+    # Authenticates the request using the configured gateway
+    def authenticate_gateway!
+      # Only skip for initialize requests in POST method
+      if request.post? && defined?(jsonrpc_params) && jsonrpc_params
+        return if check_if_initialize_request(jsonrpc_params)
+      end
+
+      gateway_class = ActionMCP.configuration.gateway_class
+      return unless gateway_class # Skip if no gateway configured
+
+      gateway = gateway_class.new
+      gateway.call(request)
+    rescue ActionMCP::UnauthorizedError => e
+      render_unauthorized(e.message)
+    end
+
+    # Renders an unauthorized response
+    def render_unauthorized(message = "Unauthorized", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :unauthorized
     end
   end
 end

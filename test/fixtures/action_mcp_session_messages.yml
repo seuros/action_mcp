@@ -4,17 +4,17 @@
 #
 # Table name: action_mcp_session_messages
 #
-#  id                               :bigint           not null, primary key
-#  direction(The message recipient) :string           default("client"), not null
-#  is_ping                          :boolean          default(FALSE), not null
-#  message_json                     :json
-#  message_type                     :string           not null
-#  request_acknowledged             :boolean          default(FALSE), not null
-#  request_cancelled                :boolean          default(FALSE), not null
-#  created_at                       :datetime         not null
-#  updated_at                       :datetime         not null
-#  jsonrpc_id                       :string
-#  session_id                       :string           not null
+#  id                   :bigint           not null, primary key
+#  direction            :string           default("client"), not null
+#  is_ping              :boolean          default(FALSE), not null
+#  message_json         :json
+#  message_type         :string           not null
+#  request_acknowledged :boolean          default(FALSE), not null
+#  request_cancelled    :boolean          default(FALSE), not null
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  jsonrpc_id           :string
+#  session_id           :string           not null
 #
 # Indexes
 #

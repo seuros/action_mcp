@@ -55,8 +55,15 @@ module ActionMCP
           })
 
           # Wrap tool execution with Rails reloader for development
-          result = if Rails.env.development? && defined?(Rails.application.reloader)
+          result = if Rails.env.development?
+            # Preserve Current attributes across reloader boundary
+            current_user = ActionMCP::Current.user
+            current_gateway = ActionMCP::Current.gateway
+
             Rails.application.reloader.wrap do
+              # Restore Current attributes inside reloader
+              ActionMCP::Current.user = current_user
+              ActionMCP::Current.gateway = current_gateway
               tool.call
             end
           else

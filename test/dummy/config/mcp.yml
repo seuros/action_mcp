@@ -3,8 +3,8 @@
 # authentication, profiles, and pub/sub system settings.
 
 shared:
-  # Authentication configuration - array of methods to try in order
-  authentication: ["none"]  # No authentication required by default
+  # Authentication configuration - array of methods to try in order  
+  authentication: ["jwt", "none"]  # Try JWT first, fallback to no auth for dev
   
   # Session store configuration
   # Global session store type used by both client and server (default: volatile in dev/test, active_record in production)
@@ -67,8 +67,8 @@ development:
 
 # Test environment
 test:
-  # JWT authentication for testing environment
-  authentication: ["jwt"]
+  # JWT authentication for testing environment, fallback to none for legacy tests
+  authentication: ["jwt", "none"]
   
   # Test adapter for testing
   adapter: test
