@@ -113,6 +113,7 @@ module ActionMCP
           "Content-Type" => "application/json"
         }
 
+
       assert_response :created
 
       registration = JSON.parse(response.body)
