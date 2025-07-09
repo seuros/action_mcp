@@ -17,8 +17,12 @@ class CreateActionMCPOAuthTokens < ActiveRecord::Migration[7.2]
       # For refresh tokens
       t.string :access_token # Reference to associated access token
 
-      # Additional data
-      t.jsonb :metadata, default: {}
+      # Additional data - use JSON for database compatibility
+      if connection.adapter_name.downcase.include?('postgresql')
+        t.jsonb :metadata, default: {}
+      else
+        t.json :metadata, default: {}
+      end
 
       t.timestamps
     end

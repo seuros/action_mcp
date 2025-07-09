@@ -30,9 +30,9 @@ module ActionMCP
         ActionMCP::OAuth::Provider.register_client(
           client_id: "test_client",
           client_secret: "test_secret", # Add a secret for client_credentials_grant
-          redirect_uris: ["https://example.com/callback"],
-          grant_types: ["authorization_code", "refresh_token", "client_credentials"],
-          response_types: ["code"],
+          redirect_uris: [ "https://example.com/callback" ],
+          grant_types: [ "authorization_code", "refresh_token", "client_credentials" ],
+          response_types: [ "code" ],
           token_endpoint_auth_method: "client_secret_basic"
         )
       end

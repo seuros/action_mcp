@@ -131,17 +131,17 @@ class ToolExecutionTest < ActiveSupport::TestCase
 
   test "AddTool returns the correct sum for integers" do
     result = execute_tool("add", x: 5, y: 10)
-    assert_tool_output([{type: "text", text: "15.0"}], result)
+    assert_tool_output([ { type: "text", text: "15.0" } ], result)
   end
 
   test "AddTool returns the correct sum for floats" do
     result = execute_tool("add", x: 5.5, y: 10.5)
-    assert_tool_output([{type: "text", text: "16.0"}], result)
+    assert_tool_output([ { type: "text", text: "16.0" } ], result)
   end
 
   test "AddTool handles string inputs" do
     result = execute_tool("add", x: "5", y: "10")
-    assert_tool_output([{type: "text", text: "15.0"}], result)
+    assert_tool_output([ { type: "text", text: "15.0" } ], result)
   end
 
   test "AddTool returns an error for invalid input" do

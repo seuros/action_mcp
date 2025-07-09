@@ -7,5 +7,4 @@ class ArithmeticTool < ApplicationMCPTool
 
   property :x, type: "number", description: "First operand", required: true
   property :y, type: "number", description: "Second operand", required: true
-
 end

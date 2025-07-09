@@ -2,45 +2,55 @@
 
 module ActionMCP
   # OAuth 2.0 Client model for storing registered clients
-# == Schema Information
-#
-# Table name: action_mcp_oauth_clients
-#
-#  id                         :bigint           not null, primary key
-#  active                     :boolean          default(TRUE)
-#  client_id_issued_at        :integer
-#  client_name                :string
-#  client_secret              :string
-#  client_secret_expires_at   :integer
-#  client_uri                 :string
-#  contacts                   :text             default([]), is an Array
-#  grant_types                :text             default(["authorization_code"]), is an Array
-#  jwks                       :text
-#  jwks_uri                   :text
-#  logo_uri                   :text
-#  metadata                   :jsonb
-#  policy_uri                 :text
-#  redirect_uris              :text             default([]), is an Array
-#  registration_access_token  :string
-#  response_types             :text             default(["code"]), is an Array
-#  scope                      :text
-#  software_version           :string
-#  token_endpoint_auth_method :string           default("client_secret_basic")
-#  tos_uri                    :text
-#  created_at                 :datetime         not null
-#  updated_at                 :datetime         not null
-#  client_id                  :string           not null
-#  software_id                :string
-#
-# Indexes
-#
-#  index_action_mcp_oauth_clients_on_active               (active)
-#  index_action_mcp_oauth_clients_on_client_id            (client_id) UNIQUE
-#  index_action_mcp_oauth_clients_on_client_id_issued_at  (client_id_issued_at)
-#
+  # == Schema Information
+  #
+  # Table name: action_mcp_oauth_clients
+  #
+  #  id                         :bigint           not null, primary key
+  #  active                     :boolean          default(TRUE)
+  #  client_id_issued_at        :integer
+  #  client_name                :string
+  #  client_secret              :string
+  #  client_secret_expires_at   :integer
+  #  client_uri                 :string
+  #  contacts                   :text             default([]), is an Array
+  #  grant_types                :text             default(["authorization_code"]), is an Array
+  #  jwks                       :text
+  #  jwks_uri                   :text
+  #  logo_uri                   :text
+  #  metadata                   :jsonb
+  #  policy_uri                 :text
+  #  redirect_uris              :text             default([]), is an Array
+  #  registration_access_token  :string
+  #  response_types             :text             default(["code"]), is an Array
+  #  scope                      :text
+  #  software_version           :string
+  #  token_endpoint_auth_method :string           default("client_secret_basic")
+  #  tos_uri                    :text
+  #  created_at                 :datetime         not null
+  #  updated_at                 :datetime         not null
+  #  client_id                  :string           not null
+  #  software_id                :string
+  #
+  # Indexes
+  #
+  #  index_action_mcp_oauth_clients_on_active               (active)
+  #  index_action_mcp_oauth_clients_on_client_id            (client_id) UNIQUE
+  #  index_action_mcp_oauth_clients_on_client_id_issued_at  (client_id_issued_at)
+  #
   # Implements RFC 7591 Dynamic Client Registration
   class OAuthClient < ApplicationRecord
     self.table_name = "action_mcp_oauth_clients"
+
+    # Serialize array fields for non-PostgreSQL databases
+    if connection.adapter_name.downcase.include?("postgresql")
+      # PostgreSQL handles arrays natively
+    else
+      # For SQLite and other databases, arrays are stored as JSON
+      serialize :redirect_uris, Array
+      serialize :grant_types, Array
+      serialize :response_types, Array
+    end
 
     # Validations
     validates :client_id, presence: true, uniqueness: true
