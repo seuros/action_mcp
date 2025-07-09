@@ -20,6 +20,16 @@ module ActionMCP
 
         # Clear cached config
         Provider.instance_variable_set(:@oauth_config, nil)
+
+        # Register a default client for testing
+        Provider.register_client(
+          client_id: "test_client",
+          client_secret: "test_secret", # Add a secret for client_credentials_grant
+          redirect_uris: ["https://example.com/callback"],
+          grant_types: ["authorization_code", "refresh_token", "client_credentials"],
+          response_types: ["code"],
+          token_endpoint_auth_method: "client_secret_basic"
+        )
       end
 
       teardown do
@@ -66,7 +76,8 @@ module ActionMCP
           code: code,
           client_id: "test_client",
           redirect_uri: "https://example.com/callback",
-          code_verifier: code_verifier
+          code_verifier: code_verifier,
+          client_secret: "test_secret"
         )
 
         assert_equal "Bearer", token_response[:token_type]
@@ -95,7 +106,8 @@ module ActionMCP
             code: code,
             client_id: "test_client",
             redirect_uri: "https://example.com/callback",
-            code_verifier: "wrong_verifier"
+            code_verifier: "wrong_verifier",
+            client_secret: "test_secret"
           )
         end
       end
@@ -112,7 +124,8 @@ module ActionMCP
           Provider.exchange_code_for_token(
             code: code,
             client_id: "test_client",
-            redirect_uri: "https://malicious.com/callback"
+            redirect_uri: "https://malicious.com/callback",
+            client_secret: "test_secret"
           )
         end
       end
@@ -129,13 +142,15 @@ module ActionMCP
         initial_response = Provider.exchange_code_for_token(
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         )
 
         # Refresh the token
         refresh_response = Provider.refresh_access_token(
           refresh_token: initial_response[:refresh_token],
-          client_id: "test_client"
+          client_id: "test_client",
+          client_secret: "test_secret"
         )
 
         assert_equal "Bearer", refresh_response[:token_type]
@@ -154,7 +169,8 @@ module ActionMCP
         token_response = Provider.exchange_code_for_token(
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         )
 
         introspection = Provider.introspect_token(token_response[:access_token])
@@ -182,7 +198,8 @@ module ActionMCP
         token_response = Provider.exchange_code_for_token(
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         )
 
         # Token should be active before revocation
@@ -261,7 +278,8 @@ module ActionMCP
           Provider.exchange_code_for_token(
             code: @expired_code,
             client_id: "test_client",
-            redirect_uri: "https://example.com/callback"
+            redirect_uri: "https://example.com/callback",
+            client_secret: "test_secret"
           )
         end
       end

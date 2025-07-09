@@ -6,10 +6,10 @@ class CalculateSumTool < ApplicationMCPTool
   include ActionMCP::Callbacks
   include ActionMCP::Instrumentation
 
-  property :number1, type: "number", description: "The first number", required: true
-  property :number2, type: "number", description: "The second number", required: true
+  property :a, type: "number", description: "The first number", required: true
+  property :b, type: "number", description: "The second number", required: true
 
-  validates :number1, numericality: { less_than_or_equal_to: 100, message: "must be 100 or less" }
+  validates :a, numericality: { less_than_or_equal_to: 100, message: "must be 100 or less" }
 
   # Class-level callback tracking for tests
   class << self
@@ -41,7 +41,7 @@ class CalculateSumTool < ApplicationMCPTool
 
   def perform
     self.class.track_callback(:perform)
-    sum = number1 + number2
+    sum = a + b
     render text: sum
   end
 end

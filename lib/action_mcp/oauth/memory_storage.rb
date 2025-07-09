@@ -9,6 +9,7 @@ module ActionMCP
         @authorization_codes = {}
         @access_tokens = {}
         @refresh_tokens = {}
+        @client_registrations = {}
         @mutex = Mutex.new
       end
 
@@ -77,6 +78,25 @@ module ActionMCP
         end
       end
 
+      # Client registration storage
+      def store_client_registration(client_id, data)
+        @mutex.synchronize do
+          @client_registrations[client_id] = data
+        end
+      end
+
+      def retrieve_client_registration(client_id)
+        @mutex.synchronize do
+          @client_registrations[client_id]
+        end
+      end
+
+      def remove_client_registration(client_id)
+        @mutex.synchronize do
+          @client_registrations.delete(client_id)
+        end
+      end
+
       # Cleanup expired tokens (optional utility method)
       def cleanup_expired
         current_time = Time.current
@@ -94,7 +114,8 @@ module ActionMCP
           {
             authorization_codes: @authorization_codes.size,
             access_tokens: @access_tokens.size,
-            refresh_tokens: @refresh_tokens.size
+            refresh_tokens: @refresh_tokens.size,
+            client_registrations: @client_registrations.size
           }
         end
       end
@@ -105,6 +126,7 @@ module ActionMCP
           @authorization_codes.clear
           @access_tokens.clear
           @refresh_tokens.clear
+          @client_registrations.clear
         end
       end
     end

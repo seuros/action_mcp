@@ -113,11 +113,13 @@ end
 module AuthenticationTestHelper
   # Temporarily override authentication configuration for a test
   def with_authentication_config(auth_methods)
-    original_auth = ActionMCP.configuration.authentication_methods
+    original_auth = Thread.current[:original_auth_methods]
+    Thread.current[:original_auth_methods] = ActionMCP.configuration.authentication_methods
     ActionMCP.configuration.authentication_methods = auth_methods
     yield
   ensure
-    ActionMCP.configuration.authentication_methods = original_auth
+    ActionMCP.configuration.authentication_methods = Thread.current[:original_auth_methods]
+    Thread.current[:original_auth_methods] = original_auth
   end
 end
 

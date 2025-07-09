@@ -19,15 +19,15 @@ page1:
       inputSchema:
         type: "object"
         properties:
-          number1:
+          a:
             type: "number"
             description: "The first number"
-          number2:
+          b:
             type: "number"
             description: "The second number"
         required:
-          - number1
-          - number2
+          - a
+          - b
     - name: "format_code"
       description: "Format source code according to style guidelines"
       inputSchema:

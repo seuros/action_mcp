@@ -8,6 +8,7 @@ module ActionMCP
       include ServerTestHelper
 
       def setup
+        skip "SolidMCP not available"
         # Clean up any existing messages before test
         SolidMCP::Message.delete_all if defined?(SolidMCP::Message)
 

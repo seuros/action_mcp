@@ -30,7 +30,7 @@ ActionMCP supports **MCP 2025-06-18** (current) with backward compatibility for 
 
 > **Note:** STDIO transport is not supported in ActionMCP. This gem is focused on production-ready, network-based deployments. STDIO is only suitable for desktop or script-based experimentation and is intentionally excluded.
 
-Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs. 
+Instead of implementing MCP support from scratch, you can subclass and configure the provided **Prompt**, **Tool**, and **ResourceTemplate** classes to expose your app's functionality to LLMs.
 
 ActionMCP handles the underlying MCP message format and routing, so you can adhere to the open standard with minimal effort.
 
@@ -52,12 +52,17 @@ After adding the gem, run the install generator to set up the basic ActionMCP st
 
 ```bash
 bundle install
-bin/rails action_mcp:install:migrations
-bin/rails db:migrate
-bin/rails generate action_mcp:install
+bin/rails action_mcp:install:migrations  # Copy migrations from the engine
+bin/rails generate action_mcp:install    # Creates base classes and configuration
+bin/rails db:migrate                     # Creates necessary database tables
 ```
 
-This will create the base application classes, configuration file, and necessary database tables for ActionMCP to function properly.
+The `action_mcp:install` generator will:
+- Create base application classes (ApplicationGateway, ApplicationMCPTool, etc.)
+- Generate the MCP configuration file (`config/mcp.yml`)
+- Set up the basic directory structure for MCP components
+
+Database migrations are copied separately using `bin/rails action_mcp:install:migrations`.
 
 ## Core Components
 
@@ -88,18 +93,18 @@ class AnalyzeCodePrompt < ApplicationMCPPrompt
   def perform
     render(text: "Please analyze this #{language} code for improvements:")
     render(text: code)
-    
+
     # You can add assistant messages too
     render(text: "Here are some things to focus on in your analysis:", role: :assistant)
-    
+
     # Even add resources if needed
-    render(resource: "file://documentation/#{language.downcase}_style_guide.pdf", 
-           mime_type: "application/pdf", 
+    render(resource: "file://documentation/#{language.downcase}_style_guide.pdf",
+           mime_type: "application/pdf",
            blob: get_style_guide_pdf(language))
   end
-  
+
   private
-  
+
   def get_style_guide_pdf(language)
     # Implementation to retrieve style guide as base64
   end
@@ -130,25 +135,25 @@ class CalculateSumTool < ApplicationMCPTool
   tool_name "calculate_sum"
   description "Calculate the sum of two numbers"
 
-  property :a, type: "number", description: "First number", required: true
-  property :b, type: "number", description: "Second number", required: true
-  
+  property :a, type: "number", description: "The first number", required: true
+  property :b, type: "number", description: "The second number", required: true
+
   def perform
     sum = a + b
     render(text: "Calculating #{a} + #{b}...")
     render(text: "The sum is #{sum}")
-    
+
     # You can render errors if needed
     if sum > 1000
       render(error: ["Warning: Sum exceeds recommended limit"])
     end
-    
+
     # Or even images
     render(image: generate_visualization(a, b), mime_type: "image/png")
   end
-  
+
   private
-  
+
   def generate_visualization(a, b)
     # Implementation to create a visualization as base64
   end
@@ -164,7 +169,7 @@ result = sum_tool.call
 
 ### ActionMCP::ResourceTemplate
 
-`ActionMCP::ResourceTemplate` facilitates the creation of URI templates for dynamic resources that LLMs can access. 
+`ActionMCP::ResourceTemplate` facilitates the creation of URI templates for dynamic resources that LLMs can access.
 This allows models to request specific data using parameterized URIs.
 
 **Example:**
@@ -197,23 +202,23 @@ end
 
 ```ruby
 before_resolve do |template|
-  logger.tagged("ProductsTemplate") { logger.info("Starting to resolve product: #{template.product_id}") }
+  # Starting to resolve product: #{template.product_id}
 end
 
 after_resolve do |template|
-  logger.tagged("ProductsTemplate") { logger.info("Finished resolving product resource for product: #{template.product_id}") }
+  # Finished resolving product resource for product: #{template.product_id}
 end
 
 around_resolve do |template, block|
   start_time = Time.current
-  logger.tagged("ProductsTemplate") { logger.info("Starting resolution for product: #{template.product_id}") }
+  # Starting resolution for product: #{template.product_id}
 
   resource = block.call
 
   if resource
-    logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s") }
+    # Product #{template.product_id} resolved successfully in #{Time.current - start_time}s
   else
-    logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
+    # Product #{template.product_id} not found
   end
 
   resource
@@ -248,7 +253,7 @@ For dynamic versioning, consider adding the `rails_app_version` gem.
 
 ActionMCP uses a pub/sub system for real-time communication. You can choose between several adapters:
 
-1. **SolidCable** - Database-backed pub/sub (no Redis required)
+1. **SolidMCP** - Database-backed pub/sub (no Redis required)
 2. **Simple** - In-memory pub/sub for development and testing
 3. **Redis** - Redis-backed pub/sub (if you prefer Redis)
 
@@ -257,7 +262,7 @@ ActionMCP uses a pub/sub system for real-time communication. You can choose betw
 If you were previously using ActionCable with ActionMCP, you will need to migrate to the new PubSub system. Here's how:
 
 1. Remove the ActionCable dependency from your Gemfile (if you don't need it for other purposes)
-2. Install one of the PubSub adapters (SolidCable recommended)
+2. Install one of the PubSub adapters (SolidMCP recommended)
 3. Create a configuration file at `config/mcp.yml` (you can use the generator: `bin/rails g action_mcp:config`)
 4. Run your tests to ensure everything works correctly
 
@@ -267,7 +272,7 @@ Configure your adapter in `config/mcp.yml`:
 
 ```yaml
 development:
-  adapter: solid_cable
+  adapter: solid_mcp
   polling_interval: 0.1.seconds
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool
@@ -278,10 +283,10 @@ test:
   adapter: test    # Uses the simple in-memory adapter
 
 production:
-  adapter: solid_cable
+  adapter: solid_mcp
   polling_interval: 0.5.seconds
   # Optional: connects_to: cable  # If using a separate database
-  
+
   # Thread pool configuration for high-traffic environments
   min_threads: 10     # Minimum number of threads in the pool
   max_threads: 20     # Maximum number of threads in the pool
@@ -321,7 +326,7 @@ production:
   adapter: redis
   url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
   channel_prefix: your_app_production
-  
+
   # Thread pool configuration for high-traffic environments
   min_threads: 10     # Minimum number of threads in the pool
   max_threads: 20     # Maximum number of threads in the pool
@@ -373,7 +378,7 @@ session_store_type: volatile
 # Client-specific session store type (falls back to session_store_type if not specified)
 client_session_store_type: volatile
 
-# Server-specific session store type (falls back to session_store_type if not specified)  
+# Server-specific session store type (falls back to session_store_type if not specified)
 server_session_store_type: active_record
 ```
 
@@ -470,7 +475,7 @@ You can configure the thread pool in your `config/mcp.yml`:
 
 ```yaml
 production:
-  adapter: solid_cable
+  adapter: solid_mcp
   # Thread pool configuration
   min_threads: 10    # Minimum number of threads to keep in the pool
   max_threads: 20    # Maximum number of threads the pool can grow to
@@ -508,7 +513,7 @@ bin/rails generate action_mcp:install
 
 This will create:
 - `app/mcp/prompts/application_mcp_prompt.rb` - Base prompt class
-- `app/mcp/tools/application_mcp_tool.rb` - Base tool class  
+- `app/mcp/tools/application_mcp_tool.rb` - Base tool class
 - `app/mcp/resource_templates/application_mcp_res_template.rb` - Base resource template class
 - `app/mcp/application_gateway.rb` - Gateway for authentication
 - `config/mcp.yml` - Configuration file with example settings for all environments
@@ -539,7 +544,7 @@ class ApplicationGateway < ActionMCP::Gateway
 
     payload = ActionMCP::JwtDecoder.decode(token)
     user = resolve_user(payload)
-    
+
     raise ActionMCP::UnauthorizedError, "Unauthorized" unless user
 
     # Return a hash with all identified_by attributes
@@ -562,13 +567,13 @@ You can identify connections by multiple attributes:
 ```ruby
 class ApplicationGateway < ActionMCP::Gateway
   identified_by :user, :organization
-  
+
   protected
-  
+
   def authenticate!
     # ... authentication logic ...
-    
-    { 
+
+    {
       user: user,
       organization: user.organization
     }
@@ -636,7 +641,7 @@ Common middleware that can cause issues:
 - **Rack::Cors** - CORS headers meant for browsers
 - Any middleware assuming HTML responses or cookie-based authentication
 
-An example of a minimal `mcp_vanilla.ru` file is located in the dummy app : test/dummy/mcp_vanilla.ru. 
+An example of a minimal `mcp_vanilla.ru` file is located in the dummy app : test/dummy/mcp_vanilla.ru.
 This file is a minimal Rack application that only includes the essential middleware needed for MCP server operation, avoiding conflicts with web-specific middleware.
 But remember to add any instrumentation or logging middleware you need, as the minimal setup will not include them by default.
 
@@ -644,7 +649,7 @@ But remember to add any instrumentation or logging middleware you need, as the m
 
 ## Production Deployment of MCPS0
 
-In production, **MCPS0** (the MCP server) is a standard Rack application. You can run it using any Rack-compatible server (such as Puma, Unicorn, or Passenger). 
+In production, **MCPS0** (the MCP server) is a standard Rack application. You can run it using any Rack-compatible server (such as Puma, Unicorn, or Passenger).
 
 > **For best performance and concurrency, it is highly recommended to use a modern, synchronous server like [Falcon](https://github.com/socketry/falcon)**. Falcon is optimized for streaming and concurrent workloads, making it ideal for MCP servers. You can still use Puma, Unicorn, or Passenger, but Falcon will generally provide superior throughput and responsiveness for real-time and streaming use cases.
 
@@ -704,7 +709,7 @@ First, install ActionMCP to create base classes and configuration:
 
 ```bash
 bin/rails action_mcp:install:migrations  # to copy the migrations
-bin/rails generate action_mcp:install 
+bin/rails generate action_mcp:install
 ```
 
 This will create the base application classes, configuration file, and authentication gateway in your app directory.

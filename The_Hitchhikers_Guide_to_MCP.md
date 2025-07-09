@@ -63,7 +63,7 @@ URL patterns that work like Rails routes:
 - **Status:** **HISTORICALLY SIGNIFICANT** *(the first official MCP release)*
 - **Background:** The pioneer that established MCP as a legitimate protocol
 - **Key Features:**
-  - **Dual Transport:** STDIO (subprocess) AND HTTP with SSE 
+  - **Dual Transport:** STDIO (subprocess) AND HTTP with SSE
   - **Basic _meta Support:** Already had `_meta` fields in Request, Notification, and Result
   - **Core Features:** Resources, Prompts, Tools, and Client Sampling
   - **JSON-RPC Foundation:** Clean message format without batching complexity
@@ -124,7 +124,7 @@ Born from the wisdom of the Anthropic conference, 2025-06-18 finally learned not
 **🏷️ _meta Fields** *(NOT Facebook Meta!)* - Zuckerberg tried to buy MCP over this confusion
 - Added to ALL interface types (total _meta takeover)
 - Ridiculously picky naming conventions: `prefix.with.dots/name-with-rules`
-- Reserved prefixes like `modelcontextprotocol.io/` and `mcp.dev/` 
+- Reserved prefixes like `modelcontextprotocol.io/` and `mcp.dev/`
 - Names MUST start/end with alphanumeric, MAY contain hyphens, underscores, dots - some people are still trying to find the 6 allowed emojis
 - Extensible metadata system for when you want to attach conspiracy theories to everything
 

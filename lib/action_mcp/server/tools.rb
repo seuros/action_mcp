@@ -41,42 +41,47 @@ module ActionMCP
         tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
 
         if tool_class
-          # Create tool and set execution context with request info
-          tool = tool_class.new(arguments)
-          tool.with_context({
-            session: session,
-            request: {
-              params: {
-                name: tool_name,
-                arguments: arguments,
-                _meta: _meta
+          begin
+            # Create tool and set execution context with request info
+            tool = tool_class.new(arguments)
+            tool.with_context({
+              session: session,
+              request: {
+                params: {
+                  name: tool_name,
+                  arguments: arguments,
+                  _meta: _meta
+                }
               }
-            }
-          })
+            })
 
-          # Wrap tool execution with Rails reloader for development
-          result = if Rails.env.development?
-            # Preserve Current attributes across reloader boundary
-            current_user = ActionMCP::Current.user
-            current_gateway = ActionMCP::Current.gateway
+            # Wrap tool execution with Rails reloader for development
+            result = if Rails.env.development?
+              # Preserve Current attributes across reloader boundary
+              current_user = ActionMCP::Current.user
+              current_gateway = ActionMCP::Current.gateway
 
-            Rails.application.reloader.wrap do
-              # Restore Current attributes inside reloader
-              ActionMCP::Current.user = current_user
-              ActionMCP::Current.gateway = current_gateway
+              Rails.application.reloader.wrap do
+                # Restore Current attributes inside reloader
+                ActionMCP::Current.user = current_user
+                ActionMCP::Current.gateway = current_gateway
+                tool.call
+              end
+            else
               tool.call
             end
-          else
-            tool.call
-          end
 
-          if result.is_error
-            # Convert ToolResponse error to proper JSON-RPC error format
-            # Pass the error hash directly - the Response class will handle it
-            error_hash = result.to_h
-            send_jsonrpc_response(request_id, error: error_hash)
-          else
-            send_jsonrpc_response(request_id, result: result)
+            if result.is_error
+              # Convert ToolResponse error to proper JSON-RPC error format
+              # Pass the error hash directly - the Response class will handle it
+              error_hash = result.to_h
+              send_jsonrpc_response(request_id, error: error_hash)
+            else
+              send_jsonrpc_response(request_id, result: result)
+            end
+          rescue ArgumentError => e
+            # Handle parameter validation errors
+            send_jsonrpc_error(request_id, :invalid_params, e.message)
           end
         else
           send_jsonrpc_error(request_id, :method_not_found, "Tool '#{tool_name}' not available in this session")

@@ -174,8 +174,8 @@ module ActionMCP
       assert_not_nil calculate_sum_tool["inputSchema"]
       assert_equal "object", calculate_sum_tool["inputSchema"]["type"]
       assert_not_nil calculate_sum_tool["inputSchema"]["properties"]
-      assert_includes calculate_sum_tool["inputSchema"]["required"], "number1"
-      assert_includes calculate_sum_tool["inputSchema"]["required"], "number2"
+      assert_includes calculate_sum_tool["inputSchema"]["required"], "a"
+      assert_includes calculate_sum_tool["inputSchema"]["required"], "b"
 
       # ====================================================================
       # STEP 4: Call the calculate_sum tool
@@ -188,8 +188,8 @@ module ActionMCP
         params: {
           name: "calculate_sum",
           arguments: {
-            number1: 15,
-            number2: 25
+            a: 15,
+            b: 25
           }
         }
       }

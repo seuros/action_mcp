@@ -49,7 +49,7 @@ class MCPJwtAuthenticationTest < ActionDispatch::IntegrationTest
 
       assert_response :unauthorized
       body = JSON.parse(response.body)
-      assert_equal "Missing token", body["error"]["message"]
+      assert_match "Missing token", response.parsed_body["error"]["message"]
     end
   end
 

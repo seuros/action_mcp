@@ -25,12 +25,12 @@ module ActionMCP
         }
 
         # Add optional fields based on configuration
-        if oauth_config["enable_dynamic_registration"]
+        if oauth_config[:enable_dynamic_registration]
           metadata[:registration_endpoint] = registration_endpoint
         end
 
-        if oauth_config["jwks_uri"]
-          metadata[:jwks_uri] = oauth_config["jwks_uri"]
+        if oauth_config[:jwks_uri]
+          metadata[:jwks_uri] = oauth_config[:jwks_uri]
         end
 
         render json: metadata
@@ -60,11 +60,11 @@ module ActionMCP
       end
 
       def oauth_config
-        @oauth_config ||= ActionMCP.configuration.oauth_config || {}
+        @oauth_config ||= HashWithIndifferentAccess.new(ActionMCP.configuration.oauth_config || {})
       end
 
       def issuer_url
-        @issuer_url ||= oauth_config["issuer_url"] || request.base_url
+        @issuer_url ||= oauth_config.fetch(:issuer_url, request.base_url)
       end
 
       def authorization_endpoint
@@ -93,36 +93,36 @@ module ActionMCP
 
       def grant_types_supported
         grants = [ "authorization_code" ]
-        grants << "refresh_token" if oauth_config["enable_refresh_tokens"]
-        grants << "client_credentials" if oauth_config["enable_client_credentials"]
+        grants << "refresh_token" if oauth_config[:enable_refresh_tokens]
+        grants << "client_credentials" if oauth_config[:enable_client_credentials]
         grants
       end
 
       def token_endpoint_auth_methods_supported
         methods = [ "client_secret_basic", "client_secret_post" ]
-        methods << "none" if oauth_config["allow_public_clients"]
+        methods << "none" if oauth_config[:allow_public_clients]
         methods
       end
 
       def scopes_supported
-        oauth_config["scopes_supported"] || [ "mcp:tools", "mcp:resources", "mcp:prompts" ]
+        oauth_config.fetch(:scopes_supported, [ "mcp:tools", "mcp:resources", "mcp:prompts" ])
       end
 
       def code_challenge_methods_supported
         methods = []
-        if oauth_config["pkce_required"] || oauth_config["pkce_supported"]
+        if oauth_config[:pkce_required] || oauth_config[:pkce_supported]
           methods << "S256"
-          methods << "plain" if oauth_config["allow_plain_pkce"]
+          methods << "plain" if oauth_config[:allow_plain_pkce]
         end
         methods
       end
 
       def service_documentation
-        oauth_config["service_documentation"] || "#{request.base_url}/docs"
+        oauth_config.fetch(:service_documentation, "#{request.base_url}/docs")
       end
 
       def resource_documentation
-        oauth_config["resource_documentation"] || "#{request.base_url}/docs/api"
+        oauth_config.fetch(:resource_documentation, "#{request.base_url}/docs/api")
       end
     end
   end

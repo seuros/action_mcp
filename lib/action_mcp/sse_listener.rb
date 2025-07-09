@@ -19,10 +19,7 @@ module ActionMCP
     # @yield [Hash] Yields parsed message received from the pub/sub channel
     # @return [Boolean] True if subscription was successful within timeout, false otherwise.
     def start(&callback)
-      Rails.logger.debug "SSEListener: Starting for channel: #{session_key}"
-
       success_callback = lambda {
-        Rails.logger.info "SSEListener: Successfully subscribed to channel: #{session_key}"
         @subscription_active.make_true
       }
 
@@ -41,7 +38,6 @@ module ActionMCP
       return if @stopped.true?
 
       @stopped.make_true
-      Rails.logger.debug "SSEListener: Stopping listener for channel: #{session_key}"
     end
 
     private
@@ -50,8 +46,6 @@ module ActionMCP
       return if @stopped.true?
 
       begin
-        Rails.logger.debug "SSEListener: Received raw message of type: #{raw_message.class}"
-
         # Check if the message is a valid JSON string or has a message attribute
         if raw_message.is_a?(String) && valid_json_format?(raw_message)
           message = MultiJson.load(raw_message)
@@ -80,7 +74,6 @@ module ActionMCP
       begin
         subscription_future.value(5) || @subscription_active.true?
       rescue Concurrent::TimeoutError
-        Rails.logger.warn "SSEListener: Timed out waiting for subscription for #{session_key}"
         false
       end
     end

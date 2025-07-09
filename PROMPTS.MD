@@ -95,7 +95,7 @@ class GreetingPrompt < ApplicationMCPPrompt
   
   # After callback for logging or additional processing
   after_perform do |result|
-    Rails.logger.info("Generated greeting for #{name} in #{style} style")
+    # Generated greeting for #{name} in #{style} style
   end
 end
 ```

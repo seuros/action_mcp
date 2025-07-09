@@ -82,10 +82,10 @@ class ToolTest < ActiveSupport::TestCase
       inputSchema: {
         type: "object",
         properties: {
-          "number1" => { type: "number", description: "The first number" },
-          "number2" => { type: "number", description: "The second number" }
+          "a" => { type: "number", description: "The first number" },
+          "b" => { type: "number", description: "The second number" }
         },
-        required: %w[number1 number2]
+        required: %w[a b]
       }
     }
     assert_equal expected, CalculateSumTool.to_h
@@ -98,12 +98,12 @@ class ToolTest < ActiveSupport::TestCase
       inputSchema: {
         type: "object",
         properties: {
-          "number1" => { type: "number", description: "The first number" },
-          "number2" => { type: "number", description: "The second number" },
+          "a" => { type: "number", description: "The first number" },
+          "b" => { type: "number", description: "The second number" },
           "precision" => { type: "number", description: "Decimal precision" },
           "unit" => { type: "string", description: "Unit of measurement" }
         },
-        required: %w[number1 number2 precision] # "precision" is not required and used only for this test
+        required: %w[a b precision] # "precision" is not required and used only for this test
       }
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
@@ -123,5 +123,36 @@ class ToolTest < ActiveSupport::TestCase
       }
     }
     assert_equal expected, ExecuteCommandTool.to_h
+  end
+end
+
+class ToolExecutionTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "AddTool returns the correct sum for integers" do
+    result = execute_tool("add", x: 5, y: 10)
+    assert_tool_output([{type: "text", text: "15.0"}], result)
+  end
+
+  test "AddTool returns the correct sum for floats" do
+    result = execute_tool("add", x: 5.5, y: 10.5)
+    assert_tool_output([{type: "text", text: "16.0"}], result)
+  end
+
+  test "AddTool handles string inputs" do
+    result = execute_tool("add", x: "5", y: "10")
+    assert_tool_output([{type: "text", text: "15.0"}], result)
+  end
+
+  test "AddTool returns an error for invalid input" do
+    result = execute_tool_with_error("add", x: 5, y: "ten")
+    assert result.error?
+    assert_error_code -32602, result
+  end
+
+  test "AddTool returns an error for missing input" do
+    result = execute_tool_with_error("add", x: 5)
+    assert result.error?
+    assert_error_code -32602, result
   end
 end

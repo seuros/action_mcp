@@ -102,7 +102,7 @@ pre_initialized_session:
   created_at: <%= Time.zone.now %>
   updated_at: <%= Time.zone.now %>
 
-# A closed server session  
+# A closed server session
 closed_session:
   id: "closed_session"
   initialized: true

@@ -49,6 +49,11 @@ module ActionMCP
     end
     alias execute_tool execute_mcp_tool
 
+    def execute_mcp_tool_with_error(name, args = {})
+      ActionMCP::ToolsRegistry.tool_call(name, args)
+    end
+    alias execute_tool_with_error execute_mcp_tool_with_error
+
     def execute_mcp_prompt(name, args = {})
       resp = ActionMCP::PromptsRegistry.prompt_call(name, args)
       assert !resp.is_error, "Prompt #{name.inspect} returned error: #{resp.to_h[:message]}"

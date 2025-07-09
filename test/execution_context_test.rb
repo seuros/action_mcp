@@ -10,7 +10,7 @@ module ActionMCP
     end
 
     test "capabilities can be initialized with execution context" do
-      tool = CalculateSumTool.new(number1: 1, number2: 2)
+      tool = CalculateSumTool.new(a: 1, b: 2)
       context = { session: @session, user: "admin" }
 
       tool.with_context(context)
@@ -22,7 +22,7 @@ module ActionMCP
     end
 
     test "execution context persists through capability execution" do
-      tool = CalculateSumTool.new(number1: 1, number2: 2)
+      tool = CalculateSumTool.new(a: 1, b: 2)
       tool.with_context({ session: @session })
 
       # Create a tool that checks context during execution
@@ -58,8 +58,8 @@ module ActionMCP
     end
 
     test "execution context is thread-safe" do
-      tool1 = CalculateSumTool.new(number1: 1, number2: 2)
-      tool2 = CalculateSumTool.new(number1: 3, number2: 4)
+      tool1 = CalculateSumTool.new(a: 1, b: 2)
+      tool2 = CalculateSumTool.new(a: 3, b: 4)
       session2 = Session.create!
 
       threads = []
@@ -82,7 +82,7 @@ module ActionMCP
     end
 
     test "with_context returns self for chaining" do
-      tool = CalculateSumTool.new(number1: 1, number2: 2)
+      tool = CalculateSumTool.new(a: 1, b: 2)
       result = tool.with_context({ session: @session })
 
       assert_equal tool, result

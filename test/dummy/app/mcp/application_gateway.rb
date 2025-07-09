@@ -11,22 +11,59 @@ class ApplicationGateway < ActionMCP::Gateway
   # Must return a hash with keys matching the identified_by attributes
   # or raise ActionMCP::UnauthorizedError
   def authenticate!
-    # Example using JWT:
-    token = extract_bearer_token
-    raise ActionMCP::UnauthorizedError, "Missing token" unless token
+    # Check authentication methods in order
+    ActionMCP.configuration.authentication_methods.each do |method|
+      case method
+      when "oauth"
+        # OAuth middleware sets token info in request environment
+        token_info = request.env["action_mcp.oauth_token_info"]
+        if token_info
+          user = resolve_user_from_oauth(token_info)
+          return { user: user } if user
+        end
+      when "jwt"
+        # JWT authentication
+        token = extract_bearer_token
+        if token
+          begin
+            payload = ActionMCP::JwtDecoder.decode(token)
+            user = resolve_user(payload)
+            return { user: user } if user
+          rescue ActionMCP::JwtDecoder::DecodeError
+            # Continue to next method
+          end
+        end
+      when "none"
+        # No authentication required
+        return default_identity
+      end
+    end
 
-    payload = ActionMCP::JwtDecoder.decode(token)
-    user = resolve_user(payload)
-
-    raise ActionMCP::UnauthorizedError, "Unauthorized" unless user
-
-    # Return a hash with all identified_by attributes
-    { user: user }
-  rescue ActionMCP::JwtDecoder::DecodeError => e
-    raise ActionMCP::UnauthorizedError, e.message
+    raise ActionMCP::UnauthorizedError, "Unauthorized"
   end
 
   private
+
+  # Resolve user from OAuth token info
+  def resolve_user_from_oauth(token_info)
+    return nil unless token_info.is_a?(Hash)
+
+    # OAuth token info includes user_id which should map to actual user
+    user_id = token_info[:user_id]
+    return nil unless user_id
+
+    # Try to find existing user by email (assuming user_id is email or username)
+    user = User.find_by(email: user_id) || User.find_by(email: "#{user_id}@example.com")
+
+    # If no user found, create one based on user_id
+    unless user
+      email = user_id.include?("@") ? user_id : "#{user_id}@example.com"
+      user = User.create!(email: email)
+      # User created for OAuth user_id: #{user_id}
+    end
+
+    user
+  end
 
   # Example method to resolve user from JWT payload
   def resolve_user(payload)
