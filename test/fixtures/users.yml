@@ -1,3 +1,9 @@
 default:
   id: 1
   email: "test@example.com"
+
+# User for MCP client testing
+# JWT token (with secret "change-me"): eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMDB9.ftOxk6BbPkEs__ofr5oTLWohqh2F7zXQuu-44GYYAhU
+mcp_client:
+  id: 100
+  email: "mcp-client@example.com"

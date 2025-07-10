@@ -40,14 +40,11 @@ module ActionMCP
           if existing_session && existing_session.initialized?
             # Resume existing session - update transport reference
             transport.instance_variable_set(:@session, existing_session)
-            Rails.logger.info("Resuming existing session: #{session_id}")
 
             # Return existing session info
             capabilities_payload = existing_session.server_capabilities_payload
             capabilities_payload[:protocolVersion] = client_protocol_version
             return send_jsonrpc_response(request_id, result: capabilities_payload)
-          else
-            Rails.logger.warn("Session #{session_id} not found or not initialized, creating new session")
           end
         end
 

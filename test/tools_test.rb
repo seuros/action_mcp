@@ -11,7 +11,7 @@ class ToolsTest < ActiveSupport::TestCase
   end
 
   test "CalculateSumWithPrecisionTool should return sum with given precision" do
-    tool = CalculateSumWithPrecisionTool.new(number1: 1.234, number2: 2.345, precision: 3)
+    tool = CalculateSumWithPrecisionTool.new(a: 1.234, b: 2.345, precision: 3)
 
     result = CalculateSumWithPrecisionTool.logger.silence do
       tool.call

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "error"
+
 module ActionMCP
   module OAuth
     # OAuth middleware that integrates with Omniauth for request authentication
@@ -15,6 +17,15 @@ module ActionMCP
         # Skip OAuth processing for non-MCP requests or if OAuth not configured
         return @app.call(env) unless should_process_oauth?(request)
 
+        # Skip OAuth processing for metadata endpoints
+        if request.path.start_with?("/.well-known/") || request.path.start_with?("/oauth/")
+          return @app.call(env)
+        end
+
+        # Skip OAuth processing for initialization-related requests
+        if initialization_related_request?(request)
+          return @app.call(env)
+        end
 
         # Validate Bearer token for API requests
         if bearer_token = extract_bearer_token(request)
@@ -35,6 +46,28 @@ module ActionMCP
 
         # Process all MCP requests (ActionMCP serves at root "/") and OAuth-related paths
         true
+      end
+
+      def initialization_related_request?(request)
+        # Only check JSON-RPC POST requests to MCP endpoints
+        # The path might include the mount path (e.g., /action_mcp/ or just /)
+        return false unless request.post? && request.content_type&.include?("application/json")
+
+        # Check if this is an MCP endpoint (ends with / or is the root)
+        path = request.path
+        return false unless path == "/" || path.match?(/\/action_mcp\/?$/)
+
+        # Read and parse the request body
+        body = request.body.read
+        request.body.rewind # Reset for subsequent reads
+
+        json = JSON.parse(body)
+        method = json["method"]
+
+        # Check if it's an initialization-related method
+        %w[initialize notifications/initialized].include?(method)
+      rescue JSON::ParserError, StandardError
+        false
       end
 
 

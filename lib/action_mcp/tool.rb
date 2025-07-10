@@ -176,7 +176,7 @@ module ActionMCP
 
       return unless %w[number integer].include?(type)
 
-      validates prop_name, numericality: true, allow_nil: true
+      validates prop_name, numericality: true, allow_nil: !required
     end
 
     # --------------------------------------------------------------------------
@@ -257,6 +257,13 @@ module ActionMCP
     # Instance Methods
     # --------------------------------------------------------------------------
 
+    # Override initialize to validate parameters before ActiveModel conversion
+    def initialize(attributes = {})
+      # Validate parameters before ActiveModel processes them
+      validate_parameter_types(attributes)
+      super
+    end
+
     # Public entry point for executing the tool
     # Returns an array of Content objects collected from render calls
     def call
@@ -273,14 +280,16 @@ module ActionMCP
           @response.mark_as_error!(:internal_error, message: e.message)
         end
       else
-        @response.mark_as_error!(:invalid_request,
+        @response.mark_as_error!(:invalid_params,
                                  message: "Invalid input",
                                  data: errors.full_messages)
       end
 
       # If callbacks halted execution (`performed` still false) and
-      # nothing else marked an error, surface it as invalid_request.
-      @response.mark_as_error!(:invalid_request, message: "Aborted by callback") if !performed && !@response.error?
+      # nothing else marked an error, surface it as invalid_params.
+      if !performed && !@response.error?
+        @response.mark_as_error!(:invalid_params, message: "Tool execution was aborted")
+      end
 
       @response
     end
@@ -362,5 +371,86 @@ module ActionMCP
     end
 
     private_class_method :map_json_type_to_active_model_type
+
+    private
+
+    # Validates parameter types before ActiveModel conversion
+    def validate_parameter_types(attributes)
+      return unless attributes.is_a?(Hash)
+
+      attributes.each do |key, value|
+        key_str = key.to_s
+        property_schema = self.class._schema_properties[key_str]
+
+        next unless property_schema
+
+        expected_type = property_schema[:type]
+
+        # Skip validation if value is nil and property is not required
+        next if value.nil? && !self.class._required_properties.include?(key_str)
+
+        # Validate based on expected JSON Schema type
+        case expected_type
+        when "number"
+          validate_number_parameter(key_str, value)
+        when "integer"
+          validate_integer_parameter(key_str, value)
+        when "string"
+          validate_string_parameter(key_str, value)
+        when "boolean"
+          validate_boolean_parameter(key_str, value)
+        when "array"
+          validate_array_parameter(key_str, value, property_schema)
+        end
+      end
+    end
+
+    def validate_number_parameter(key, value)
+      return if value.is_a?(Numeric)
+
+      if value.is_a?(String)
+        # Check if string can be converted to a valid number
+        begin
+          Float(value)
+        rescue ArgumentError, TypeError
+          raise ArgumentError, "Parameter '#{key}' must be a valid number, got: #{value.inspect}"
+        end
+      else
+        raise ArgumentError, "Parameter '#{key}' must be a number, got: #{value.class}"
+      end
+    end
+
+    def validate_integer_parameter(key, value)
+      return if value.is_a?(Integer)
+
+      if value.is_a?(String)
+        # Check if string can be converted to a valid integer
+        begin
+          Integer(value)
+        rescue ArgumentError, TypeError
+          raise ArgumentError, "Parameter '#{key}' must be a valid integer, got: #{value.inspect}"
+        end
+      else
+        raise ArgumentError, "Parameter '#{key}' must be an integer, got: #{value.class}"
+      end
+    end
+
+    def validate_string_parameter(key, value)
+      return if value.is_a?(String)
+
+      raise ArgumentError, "Parameter '#{key}' must be a string, got: #{value.class}"
+    end
+
+    def validate_boolean_parameter(key, value)
+      return if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+
+      raise ArgumentError, "Parameter '#{key}' must be a boolean, got: #{value.class}"
+    end
+
+    def validate_array_parameter(key, value, property_schema)
+      return if value.is_a?(Array)
+
+      raise ArgumentError, "Parameter '#{key}' must be an array, got: #{value.class}"
+    end
   end
 end

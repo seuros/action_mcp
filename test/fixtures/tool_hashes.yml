@@ -33,13 +33,13 @@ calculate_sum:
   inputSchema:
     type: object
     properties:
-      number1:
+      a:
         type: number
         description: "The first number"
-      number2:
+      b:
         type: number
         description: "The second number"
-    required: ["number1", "number2"]
+    required: ["a", "b"]
 
 calculate_sum_with_precision:
   name: "calculate_sum_with_precision"
@@ -47,10 +47,10 @@ calculate_sum_with_precision:
   inputSchema:
     type: object
     properties:
-      number1:
+      a:
         type: number
         description: "The first number"
-      number2:
+      b:
         type: number
         description: "The second number"
       precision:
@@ -59,7 +59,7 @@ calculate_sum_with_precision:
       unit:
         type: string
         description: "Unit of measurement"
-    required: ["number1", "number2", "precision"]
+    required: ["a", "b", "precision"]
 
 checksum_checker:
   name: "checksum_checker"

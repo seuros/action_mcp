@@ -34,3 +34,7 @@ gem "webmock", group: :test # for testing HTTP requests
 
 # File system watching for development
 gem "listen", group: :development
+
+gem "rubocop-minitest", "~> 0.38.1", group: :development
+
+gem "rubocop-rake", "~> 0.7.1", group: :development

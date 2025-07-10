@@ -19,22 +19,28 @@ class GatewayIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "rejects missing token" do
-    get "/gateway_up"
-    assert_response :unauthorized
-    assert_match "Missing token", response.parsed_body["error"]
+    with_authentication_config([ "jwt" ]) do
+      get "/gateway_up"
+      assert_response :unauthorized
+      assert_match "Missing token", response.parsed_body["error"]
+    end
   end
 
   test "rejects invalid token" do
-    get "/gateway_up", headers: { "Authorization" => "Bearer not.a.jwt" }
-    assert_response :unauthorized
-    assert_match "Invalid token", response.parsed_body["error"]
+    with_authentication_config([ "jwt" ]) do
+      get "/gateway_up", headers: { "Authorization" => "Bearer not.a.jwt" }
+      assert_response :unauthorized
+      assert_match "Invalid token", response.parsed_body["error"]
+    end
   end
 
   test "rejects token with non-existent user" do
-    token = JWT.encode({ user_id: 999 }, ActionMCP::JwtDecoder.secret, ActionMCP::JwtDecoder.algorithm)
+    with_authentication_config([ "jwt" ]) do
+      token = JWT.encode({ user_id: 999 }, ActionMCP::JwtDecoder.secret, ActionMCP::JwtDecoder.algorithm)
 
-    get "/gateway_up", headers: { "Authorization" => "Bearer #{token}" }
-    assert_response :unauthorized
-    assert_match "Unauthorized", response.parsed_body["error"]
+      get "/gateway_up", headers: { "Authorization" => "Bearer #{token}" }
+      assert_response :unauthorized
+      assert_match "Unauthorized", response.parsed_body["error"]
+    end
   end
 end

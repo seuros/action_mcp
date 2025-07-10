@@ -10,7 +10,7 @@ This method automatically determines the appropriate transport for your endpoint
 
 ```ruby
 # Create client with default StreamableHTTP transport
-client = ActionMCP.create_client("http://127.0.0.1:3066/action_mcp")
+client = ActionMCP.create_client("http://127.0.0.1:62770")
 ```
 
 ### create_client method
@@ -31,12 +31,12 @@ Sessions are created and managed by the MCP server. The server provides a sessio
 ```ruby
 # Development with memory sessions (default)
 # Server will create a new session and provide the ID in response header
-client = ActionMCP.create_client("http://localhost:3001/mcp")
+client = ActionMCP.create_client("http://localhost:62770")
 
 # Production with persistent sessions
 # Server will create a new session and provide the ID in response header
 client = ActionMCP.create_client(
-  "http://localhost:3001/mcp",
+  "http://localhost:62770",
   session_store: :active_record
 )
 
@@ -44,7 +44,7 @@ client = ActionMCP.create_client(
 # The client includes the session ID in the Mcp-Session-Id header
 # The server will recognize the session and skip re-initialization
 client = ActionMCP.create_client(
-  "http://localhost:3001/mcp",
+  "http://localhost:62770",
   session_store: :active_record,
   session_id: "abc123def456"  # Previously received from server
 )
@@ -72,7 +72,7 @@ To connect to the server, call the `connect` method:
 
 ```ruby
 # Create client without connecting
-client = ActionMCP.create_client("http://127.0.0.1:3066/action_mcp", connect: false)
+client = ActionMCP.create_client("http://127.0.0.1:62770", connect: false)
 
 # Connect when ready
 client.connect
@@ -99,7 +99,7 @@ The transport system supports automatic session resumption for both reconnection
 ```ruby
 # Initial connection - server creates session
 client = ActionMCP.create_client(
-  "http://localhost:3001/mcp",
+  "http://localhost:62770",
   session_store: :active_record
 )
 client.connect
@@ -107,7 +107,7 @@ session_id = client.session.id  # e.g., "abc123def456"
 
 # Later, create a new client that resumes the same session
 resumed_client = ActionMCP.create_client(
-  "http://localhost:3001/mcp",
+  "http://localhost:62770",
   session_store: :active_record,
   session_id: session_id
 )

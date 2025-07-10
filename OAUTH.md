@@ -4,6 +4,7 @@ ActionMCP provides comprehensive OAuth 2.1 authentication support for secure API
 
 ## Table of Contents
 
+- [Quick Start Guide](#quick-start-guide)
 - [Overview](#overview)
 - [Configuration](#configuration)
 - [Authentication Methods](#authentication-methods)
@@ -15,6 +16,92 @@ ActionMCP provides comprehensive OAuth 2.1 authentication support for secure API
 - [Migration from JWT](#migration-from-jwt)
 - [Advanced Usage](#advanced-usage)
 - [Troubleshooting](#troubleshooting)
+
+## Quick Start Guide
+
+This guide will help you quickly set up OAuth authentication for your ActionMCP server with your editor.
+
+### Prerequisites
+
+The server should be configured for OAuth in development mode:
+- OAuth authentication is enabled: `authentication: ["oauth"]`
+- Dynamic client registration is enabled
+- Public clients are allowed (no client_secret required)
+- PKCE is optional for development
+
+### Step 1: Editor Configuration
+
+Update your MCP configuration file (`.mcp.json` or equivalent):
+
+```json
+{
+  "mcpServers": {
+    "action_mcp": {
+      "type": "http",
+      "url": "http://localhost:62770",
+      "auth": {
+        "type": "oauth",
+        "authorization_url": "http://localhost:62770/oauth/authorize",
+        "token_url": "http://localhost:62770/oauth/token",
+        "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"],
+        "pkce": true
+      }
+    }
+  }
+}
+```
+
+**Note:** Your editor will handle:
+- Dynamic client registration (no need to pre-register a client)
+- Dynamic redirect URI (editors use random ports)
+- PKCE flow
+- Token storage
+
+### Step 2: Start the Server
+
+```bash
+bundle exec rails s -c mcp.ru -p 62770
+```
+
+### Step 3: Connect
+
+1. **Restart your editor** to pick up the new configuration
+2. **Connect to the MCP server** - Your editor will:
+   - Automatically register as a new OAuth client
+   - Open your browser for authorization
+   - Complete the OAuth flow
+
+### Step 4: Development Auto-Approval
+
+In development mode, the server is configured to auto-approve OAuth clients, so you won't see a consent page. The flow will complete automatically.
+
+### Verification
+
+You can verify the OAuth endpoints are working:
+
+```bash
+# Authorization server metadata
+curl http://localhost:62770/.well-known/oauth-authorization-server
+
+# Protected resource metadata
+curl http://localhost:62770/.well-known/oauth-protected-resource
+```
+
+### Common Issues
+
+1. **"OAuth account information not found in config" error:**
+   - Ensure the server has OAuth enabled: `authentication: ["oauth"]`
+   - Check that OAuth configuration is in the correct environment section
+
+2. **Browser doesn't open:**
+   - Check if you're in an SSH session (OAuth requires local browser access)
+   - Try manually opening the authorization URL
+
+3. **401 Unauthorized errors:**
+   - Verify OAuth is enabled in the server configuration
+   - Check the server logs for specific authentication errors
+
+For more detailed configuration options, see the sections below.
 
 ## Overview
 
@@ -37,7 +124,7 @@ Configure authentication in your `config/mcp.yml` file:
 development:
   # No authentication for development
   authentication: ["none"]
-  
+
   profiles:
     primary:
       tools: ["all"]
@@ -45,9 +132,9 @@ development:
       resources: ["all"]
 
 test:
-  # JWT authentication for testing  
+  # JWT authentication for testing
   authentication: ["jwt"]
-  
+
   profiles:
     primary:
       tools: ["all"]
@@ -57,7 +144,7 @@ test:
 production:
   # OAuth preferred, JWT fallback
   authentication: ["oauth", "jwt"]
-  
+
   # OAuth configuration
   oauth:
     provider: "application_oauth_provider"
@@ -68,13 +155,13 @@ production:
     enable_dynamic_registration: true
     enable_token_revocation: true
     pkce_required: true
-    
+
   profiles:
     primary:
       tools: ["all"]
       prompts: ["all"]
       resources: ["all"]
-      
+
     external_clients:
       tools: ["WeatherForecastTool"]
       prompts: []
@@ -110,7 +197,7 @@ authentication: ["none"]
 - Creates a default development user
 - **Never use in production**
 
-### `jwt` - JWT Token Authentication  
+### `jwt` - JWT Token Authentication
 ```yaml
 authentication: ["jwt"]
 ```
@@ -136,7 +223,133 @@ authentication: ["oauth", "jwt"]
 
 ## OAuth Server Setup
 
-### 1. Create OAuth Provider
+### Option 1: Built-in OAuth Provider (Recommended for New Projects)
+
+ActionMCP includes a built-in OAuth provider for quick setup:
+
+1. **Generate OAuth setup**:
+   ```bash
+   bundle exec rails generate action_mcp:oauth_setup
+   bundle exec rails db:migrate
+   ```
+
+2. **Configure in `config/mcp.yml`**:
+   ```yaml
+   development:
+     authentication: ["oauth"]
+     gateway_class: "ApplicationGateway"
+     oauth:
+       issuer: "http://localhost:62770"
+       authorization_endpoint: "http://localhost:62770/oauth/authorize"
+       token_endpoint: "http://localhost:62770/oauth/token"
+       registration_endpoint: "http://localhost:62770/oauth/register"
+       pkce_supported: true
+       scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
+   ```
+
+3. **Start the standalone MCP server**:
+   ```bash
+   # ActionMCP runs as a standalone server via mcp.ru
+   cd test/dummy && bin/rails s -c mcp.ru -p 62770
+
+   # Or with Falcon (recommended for production)
+   cd test/dummy && bundle exec falcon serve --bind http://0.0.0.0:62770 mcp.ru
+   ```
+
+   **Note**: ActionMCP is designed to run as a standalone server process, not mounted within your main Rails application. This prevents blocking issues with persistent SSE connections and provides better scalability.
+
+### Option 2: External OAuth Provider Integration
+
+If you have an existing OAuth 2.1 provider (Ory, Auth0, Keycloak, etc.), you can integrate it with ActionMCP:
+
+1. **Configure your OAuth provider endpoints**:
+   ```yaml
+   production:
+     authentication: ["oauth"]
+     gateway_class: "ExternalOAuthGateway"
+     oauth:
+       issuer: "https://your-oauth-provider.example.com"
+       authorization_endpoint: "https://your-oauth-provider.example.com/oauth2/auth"
+       token_endpoint: "https://your-oauth-provider.example.com/oauth2/token"
+       registration_endpoint: "https://your-oauth-provider.example.com/oauth2/register"
+       introspection_endpoint: "https://your-oauth-provider.example.com/oauth2/introspect"
+       userinfo_endpoint: "https://your-oauth-provider.example.com/userinfo"
+       pkce_supported: true
+       scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
+   ```
+
+   **Examples for common providers:**
+   ```yaml
+   # Ory Hydra/Kratos
+   oauth:
+     issuer: "https://your-ory-hydra.example.com"
+     authorization_endpoint: "https://your-ory-hydra.example.com/oauth2/auth"
+     token_endpoint: "https://your-ory-hydra.example.com/oauth2/token"
+     registration_endpoint: "https://your-ory-hydra.example.com/admin/clients"
+     introspection_endpoint: "https://your-ory-hydra.example.com/oauth2/introspect"
+     userinfo_endpoint: "https://your-ory-kratos.example.com/userinfo"
+
+   # Auth0
+   oauth:
+     issuer: "https://your-domain.auth0.com"
+     authorization_endpoint: "https://your-domain.auth0.com/authorize"
+     token_endpoint: "https://your-domain.auth0.com/oauth/token"
+     userinfo_endpoint: "https://your-domain.auth0.com/userinfo"
+   ```
+
+2. **Create external OAuth gateway**:
+   ```ruby
+   # app/mcp/external_oauth_gateway.rb
+   class ExternalOAuthGateway < ActionMCP::Gateway
+     identified_by :user
+
+     protected
+
+     def authenticate!
+       token_info = request.env["action_mcp.oauth_token_info"]
+       raise ActionMCP::UnauthorizedError unless token_info
+
+       user = resolve_user_from_external_oauth(token_info)
+       { user: user }
+     end
+
+     private
+
+     def resolve_user_from_external_oauth(token_info)
+       # Most OAuth providers use 'sub' field for user ID
+       user_id = token_info[:sub]
+       return nil unless user_id
+
+       # Look up user by external OAuth subject ID
+       user = User.find_by(external_oauth_subject: user_id)
+
+       # If user doesn't exist, create from userinfo endpoint
+       unless user
+         user_info = fetch_external_userinfo(token_info[:access_token])
+         user = User.create!(
+           external_oauth_subject: user_id,
+           email: user_info["email"],
+           name: user_info["name"] || user_info["preferred_username"]
+         )
+       end
+
+       user
+     end
+
+     def fetch_external_userinfo(access_token)
+       userinfo_endpoint = ActionMCP.configuration.oauth&.dig(:userinfo_endpoint)
+       return {} unless userinfo_endpoint
+
+       response = HTTP.auth("Bearer #{access_token}").get(userinfo_endpoint)
+       JSON.parse(response.body)
+     rescue => e
+       # Failed to fetch userinfo: #{e.message}
+       {}
+     end
+   end
+   ```
+
+### Option 3: Custom OAuth Provider
 
 Create a custom OAuth provider class:
 
@@ -147,13 +360,13 @@ class ApplicationOAuthProvider
     # Implement authorization logic
     # Redirect to authorization page or auto-approve
   end
-  
+
   def self.exchange_authorization_code(client, code, verifier, redirect_uri)
     # Exchange authorization code for access token
     # Verify PKCE code_verifier
     # Return token response
   end
-  
+
   def self.verify_access_token(token)
     # Validate access token
     # Return token info with user details
@@ -164,48 +377,241 @@ class ApplicationOAuthProvider
       "exp" => 1.hour.from_now.to_i
     }
   end
-  
+
   def self.revoke_token(client, token)
     # Revoke access or refresh token
   end
 end
 ```
 
-### 2. Update Application Gateway
+## User Resolution Strategies
 
-Ensure your gateway supports OAuth user resolution:
+Your ApplicationGateway needs to handle OAuth user resolution. Here are common strategies:
+
+### Strategy 1: Subject-Based Mapping (Recommended)
 
 ```ruby
-# app/mcp/gateways/application_gateway.rb
+# app/mcp/application_gateway.rb
 class ApplicationGateway < ActionMCP::Gateway
-  protected
-  
-  def resolve_user_from_oauth(token_info)
-    return nil unless token_info.is_a?(Hash)
-    
-    user_id = token_info["sub"] || token_info["user_id"]
-    return nil unless user_id
-    
-    # Find user by OAuth subject or ID
-    user = User.find_by(oauth_subject: user_id) || User.find_by(id: user_id)
-    return nil unless user
+  identified_by :user
 
-    { user: user }
+  protected
+
+  def authenticate!
+    ActionMCP.configuration.authentication_methods.each do |method|
+      case method
+      when "oauth"
+        token_info = request.env["action_mcp.oauth_token_info"]
+        if token_info
+          user = resolve_user_from_oauth(token_info)
+          return { user: user } if user
+        end
+      end
+    end
+    raise ActionMCP::UnauthorizedError, "Unauthorized"
+  end
+
+  private
+
+  def resolve_user_from_oauth(token_info)
+    # Use OAuth 'sub' claim for user identification
+    user_id = token_info[:sub]
+    return nil unless user_id
+
+    # Find existing user by external OAuth subject
+    user = User.find_by(external_oauth_subject: user_id)
+
+    # If user doesn't exist, create from available token info
+    unless user
+      user = User.create!(
+        external_oauth_subject: user_id,
+        email: token_info[:email] || "#{user_id}@oauth.local"
+      )
+    end
+
+    user
   end
 end
 ```
 
-### 3. Database Schema
+### Strategy 2: Email-Based Mapping
+
+```ruby
+def resolve_user_from_oauth(token_info)
+  email = token_info[:email]
+  return nil unless email
+
+  # Find or create user by email
+  User.find_or_create_by(email: email) do |user|
+    user.external_oauth_subject = token_info[:sub]
+  end
+end
+```
+
+### Strategy 3: Custom Claims Mapping
+
+```ruby
+def resolve_user_from_oauth(token_info)
+  # Use custom claims based on your OAuth provider
+  case token_info[:iss] # issuer
+  when "https://your-ory-hydra.example.com"
+    resolve_ory_user(token_info)
+  when "https://your-domain.auth0.com"
+    resolve_auth0_user(token_info)
+  else
+    resolve_default_user(token_info)
+  end
+end
+
+private
+
+def resolve_ory_user(token_info)
+  User.find_or_create_by(external_oauth_subject: token_info[:sub]) do |user|
+    user.email = token_info[:email]
+    user.name = token_info[:name]
+  end
+end
+
+def resolve_auth0_user(token_info)
+  User.find_or_create_by(external_oauth_subject: token_info[:sub]) do |user|
+    user.email = token_info[:email]
+    user.name = token_info[:nickname] || token_info[:name]
+  end
+end
+```
+
+### Database Schema
 
 Add OAuth support to your User model:
 
 ```ruby
-# Add to User migration
-add_column :users, :oauth_subject, :string
-add_index :users, :oauth_subject, unique: true
+# Migration for OAuth integration
+class AddOAuthToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :external_oauth_subject, :string
+    add_index :users, :external_oauth_subject, unique: true
+  end
+end
+```
+
+**For multiple OAuth providers with single column:**
+
+```ruby
+# User model
+class User < ApplicationRecord
+  validates :external_oauth_subject, uniqueness: true, allow_nil: true
+
+  # Optional: Track which OAuth provider was used
+  def oauth_provider
+    case external_oauth_subject
+    when /^google-oauth2/
+      'google'
+    when /^github/
+      'github'
+    else
+      # Detect from email domain or other patterns
+      email&.split('@')&.last
+    end
+  end
+end
+```
+
+**For multiple OAuth providers with separate columns (if needed):**
+
+```ruby
+# Migration for multiple provider support
+class AddMultipleOAuthToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :oauth_provider, :string
+    add_column :users, :oauth_subject, :string
+    add_index :users, [:oauth_provider, :oauth_subject], unique: true
+  end
+end
+
+# User model
+class User < ApplicationRecord
+  validates :oauth_subject, uniqueness: { scope: :oauth_provider }
+
+  def self.find_by_oauth(provider, subject)
+    find_by(oauth_provider: provider, oauth_subject: subject)
+  end
+end
 ```
 
 ## Client Integration
+
+### Editor Configuration
+
+To use OAuth with your editor, create or update your MCP configuration file (`.mcp.json` or equivalent):
+
+**For built-in OAuth provider:**
+
+```json
+{
+  "mcpServers": {
+    "action_mcp": {
+      "type": "http",
+      "url": "http://localhost:62770",
+      "auth": {
+        "type": "oauth",
+        "authorization_url": "http://localhost:62770/oauth/authorize",
+        "token_url": "http://localhost:62770/oauth/token",
+        "registration_url": "http://localhost:62770/oauth/register",
+        "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"]
+      }
+    }
+  }
+}
+```
+
+**For external OAuth providers:**
+
+```json
+{
+  "mcpServers": {
+    "action_mcp": {
+      "type": "http",
+      "url": "http://localhost:62770",
+      "auth": {
+        "type": "oauth",
+        "authorization_url": "https://your-oauth-provider.example.com/oauth2/auth",
+        "token_url": "https://your-oauth-provider.example.com/oauth2/token",
+        "registration_url": "https://your-oauth-provider.example.com/oauth2/register",
+        "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"]
+      }
+    }
+  }
+}
+```
+
+**Quick reference for common providers:**
+
+```json
+// Ory Hydra
+"auth": {
+  "type": "oauth",
+  "authorization_url": "https://your-ory-hydra.example.com/oauth2/auth",
+  "token_url": "https://your-ory-hydra.example.com/oauth2/token",
+  "registration_url": "https://your-ory-hydra.example.com/admin/clients",
+  "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"]
+}
+
+// Auth0
+"auth": {
+  "type": "oauth",
+  "authorization_url": "https://your-domain.auth0.com/authorize",
+  "token_url": "https://your-domain.auth0.com/oauth/token",
+  "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"]
+}
+
+// Keycloak
+"auth": {
+  "type": "oauth",
+  "authorization_url": "https://your-keycloak.example.com/auth/realms/YOUR_REALM/protocol/openid-connect/auth",
+  "token_url": "https://your-keycloak.example.com/auth/realms/YOUR_REALM/protocol/openid-connect/token",
+  "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"]
+}
+```
 
 ### Using Bearer Tokens
 
@@ -215,17 +621,35 @@ Clients authenticate by including a Bearer token in the Authorization header:
 curl -H "Authorization: Bearer <access_token>" \
      -H "Content-Type: application/json" \
      -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 1}' \
-     http://localhost:3000/mcp
+     http://localhost:62770
 ```
 
 ### OAuth Authorization Flow
 
 1. **Client Registration** (if dynamic registration enabled)
 2. **Authorization Request** with PKCE challenge
-3. **User Authorization** 
+3. **User Authorization**
 4. **Authorization Code Exchange** with PKCE verifier
 5. **API Access** with Bearer token
 6. **Token Refresh** (if refresh tokens issued)
+
+### Custom MCP Client Integration
+
+For custom MCP clients, implement the OAuth 2.1 flow:
+
+```javascript
+const client = new MCPClient({
+  url: 'http://localhost:62770',
+  auth: {
+    type: 'oauth',
+    clientId: 'your-client-id',
+    clientSecret: 'your-client-secret', // Optional for public clients
+    authorization_url: 'http://localhost:62770/oauth/authorize',
+    token_url: 'http://localhost:62770/oauth/token',
+    scopes: ['mcp:tools', 'mcp:resources', 'mcp:prompts']
+  }
+});
+```
 
 ## Security Features
 
@@ -362,9 +786,9 @@ Define application-specific OAuth scopes:
 
 ```yaml
 oauth:
-  scopes_supported: 
+  scopes_supported:
     - "mcp:tools:read"
-    - "mcp:tools:execute" 
+    - "mcp:tools:execute"
     - "mcp:resources:read"
     - "mcp:prompts:read"
 ```
@@ -392,9 +816,9 @@ authentication: ["oauth"]  # Global authentication requirement
 profiles:
   admin:
     tools: ["all"]
-    prompts: ["all"] 
+    prompts: ["all"]
     resources: ["all"]
-    
+
   public:
     tools: ["WeatherTool"]
     prompts: []
@@ -412,9 +836,9 @@ class MultiOAuthProvider
     provider = detect_provider(token)
     provider.verify_access_token(token)
   end
-  
+
   private
-  
+
   def self.detect_provider(token)
     # Logic to determine provider based on token
   end
@@ -455,8 +879,8 @@ Check OAuth middleware processing:
 ```ruby
 # Add to application.rb for debugging
 config.middleware.insert_before ActionMCP::OAuth::Middleware, lambda { |env|
-  Rails.logger.debug "Request path: #{env['PATH_INFO']}"
-  Rails.logger.debug "Auth header: #{env['HTTP_AUTHORIZATION']}"
+  # Log request path: #{env['PATH_INFO']}
+  # Log auth header: #{env['HTTP_AUTHORIZATION']}
 }
 ```
 

@@ -17,7 +17,7 @@ class Progress2025DemoTool < ApplicationMCPTool
       progress_token = extract_progress_token
 
       # Log that we're starting the tool with this progress token
-      Rails.logger.debug "Starting Progress2025DemoTool with token: #{progress_token}"
+      # Starting Progress2025DemoTool with token: #{progress_token}
 
       # Create an array to hold our output content
       output_content = []

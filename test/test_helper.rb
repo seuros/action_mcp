@@ -110,8 +110,23 @@ module LogHelpers
   end
 end
 
+module AuthenticationTestHelper
+  # Temporarily override authentication configuration for a test
+  def with_authentication_config(auth_methods)
+    original_auth = Thread.current[:original_auth_methods]
+    Thread.current[:original_auth_methods] = ActionMCP.configuration.authentication_methods
+    ActionMCP.configuration.authentication_methods = auth_methods
+    yield
+  ensure
+    ActionMCP.configuration.authentication_methods = Thread.current[:original_auth_methods]
+    Thread.current[:original_auth_methods] = original_auth
+  end
+end
+
 ActiveSupport::TestCase.include(LogHelpers)
 ActiveSupport::TestCase.include(FixtureHelpers)
 ActiveSupport::TestCase.include(ServerTestHelper)
+ActiveSupport::TestCase.include(AuthenticationTestHelper)
+ActionDispatch::IntegrationTest.include(AuthenticationTestHelper)
 
 Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }

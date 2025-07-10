@@ -14,14 +14,14 @@
   inputSchema:
     type: object
     properties:
-      number1:
+      a:
         type: number
         description: First number
         required: true
-      number2:
+      b:
         type: number
         description: Second number
         required: true
     required:
-      - number1
-      - number2
+      - a
+      - b

@@ -26,6 +26,7 @@ module ActionMCP
                   :active_profile,
                   :profiles,
                   :elicitation_enabled,
+                  :verbose_logging,
                   # --- Authentication Options ---
                   :authentication_methods,
                   :oauth_config,
@@ -56,12 +57,13 @@ module ActionMCP
       @logging_level = :info
       @resources_subscribe = false
       @elicitation_enabled = false
+      @verbose_logging = false
       @active_profile = :primary
       @profiles = default_profiles
 
       # Authentication defaults
       @authentication_methods = Rails.env.production? ? [ "jwt" ] : [ "none" ]
-      @oauth_config = {}
+      @oauth_config = HashWithIndifferentAccess.new
 
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
@@ -73,6 +75,7 @@ module ActionMCP
 
       # Gateway - default to ApplicationGateway if it exists, otherwise ActionMCP::Gateway
       @gateway_class = defined?(::ApplicationGateway) ? ::ApplicationGateway : ActionMCP::Gateway
+      @gateway_class_name = nil
 
       # Session Store
       @session_store_type = Rails.env.production? ? :active_record : :volatile
@@ -86,6 +89,15 @@ module ActionMCP
 
     def version
       @version || (has_rails_version ? Rails.application.version.to_s : "0.0.1")
+    end
+
+    def gateway_class
+      if @gateway_class_name
+        klass = @gateway_class_name.constantize
+        klass
+      else
+        @gateway_class
+      end
     end
 
     # Get active profile (considering thread-local override)
@@ -111,7 +123,7 @@ module ActionMCP
 
         # Extract OAuth configuration if present
         if app_config["oauth"]
-          @oauth_config = app_config["oauth"]
+          @oauth_config = HashWithIndifferentAccess.new(app_config["oauth"])
         end
 
         # Extract other top-level configuration settings
@@ -121,9 +133,10 @@ module ActionMCP
         if app_config["profiles"]
           @profiles = app_config["profiles"]
         end
-      rescue StandardError
+      rescue StandardError => e
         # If the config file doesn't exist in the Rails app, just use the defaults
-        Rails.logger.debug "No MCP config found in Rails app, using defaults from gem"
+        Rails.logger.warn "[Configuration] Failed to load MCP config: #{e.class} - #{e.message}"
+        # No MCP config found in Rails app, using defaults from gem
       end
 
       # Apply the active profile
@@ -292,6 +305,16 @@ module ActionMCP
       # Extract connects_to setting
       if app_config["connects_to"]
         @connects_to = app_config["connects_to"]
+      end
+
+      # Extract verbose logging setting
+      if app_config.key?("verbose_logging")
+        @verbose_logging = app_config["verbose_logging"]
+      end
+
+      # Extract gateway class configuration
+      if app_config["gateway_class"]
+        @gateway_class_name = app_config["gateway_class"]
       end
 
       # Extract session store configuration

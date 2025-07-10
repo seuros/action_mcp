@@ -75,7 +75,7 @@ module ActionMCP
       # @example Output:
       #   # Logs: "Registered Resource Templates: ["db://{table}", "file://{path}"]"
       def log_resource_templates
-        Rails.logger.info("Registered Resource Templates: #{ActionMCP::ResourceTemplatesRegistry.resource_templates.keys}")
+        # Resource templates: #{ActionMCP::ResourceTemplatesRegistry.resource_templates.keys}
       end
     end
   end

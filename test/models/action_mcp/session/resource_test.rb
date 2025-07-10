@@ -4,7 +4,7 @@
 #
 # Table name: action_mcp_session_resources
 #
-#  id               :bigint           not null, primary key
+#  id               :integer          not null, primary key
 #  created_by_tool  :boolean          default(FALSE)
 #  description      :text
 #  last_accessed_at :datetime
@@ -22,7 +22,7 @@
 #
 # Foreign Keys
 #
-#  fk_rails_...  (session_id => action_mcp_sessions.id) ON DELETE => cascade
+#  session_id  (session_id => action_mcp_sessions.id) ON DELETE => cascade
 #
 require "test_helper"
 

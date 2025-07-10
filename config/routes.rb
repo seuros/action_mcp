@@ -12,6 +12,7 @@ ActionMCP::Engine.routes.draw do
   post "/oauth/token", to: "oauth/endpoints#token", as: :oauth_token
   post "/oauth/introspect", to: "oauth/endpoints#introspect", as: :oauth_introspect
   post "/oauth/revoke", to: "oauth/endpoints#revoke", as: :oauth_revoke
+  post "/oauth/register", to: "oauth/registration#create", as: :oauth_register
 
   # MCP 2025-03-26 Spec routes
   get "/", to: "application#show", as: :mcp_get

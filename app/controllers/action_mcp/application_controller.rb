@@ -47,8 +47,12 @@ module ActionMCP
         return render_not_found("Session has been terminated.")
       end
 
+      # Authenticate the request via gateway
+      authenticate_gateway!
+      return if performed?
+
       last_event_id = request.headers["Last-Event-ID"].presence
-      Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}" if last_event_id
+      Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}" if last_event_id && ActionMCP.configuration.verbose_logging
 
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["X-Accel-Buffering"] = "no"
@@ -57,7 +61,7 @@ module ActionMCP
       # Add MCP-Protocol-Version header for established sessions
       response.headers["MCP-Protocol-Version"] = session.protocol_version
 
-      Rails.logger.info "Unified SSE (GET): Starting stream for session: #{session.id}"
+      Rails.logger.info "Unified SSE (GET): Starting stream for session: #{session.id}" if ActionMCP.configuration.verbose_logging
 
       sse = SSE.new(response.stream)
       listener = SSEListener.new(session)
@@ -81,12 +85,12 @@ module ActionMCP
         begin
           missed_events = session.get_sse_events_after(last_event_id.to_i)
           if missed_events.any?
-            Rails.logger.info "Unified SSE (GET): Sending #{missed_events.size} missed events for session: #{session.id}"
+            Rails.logger.info "Unified SSE (GET): Sending #{missed_events.size} missed events for session: #{session.id}" if ActionMCP.configuration.verbose_logging
             missed_events.each do |event|
               sse.write(event.to_sse)
             end
           else
-            Rails.logger.info "Unified SSE (GET): No missed events to send for session: #{session.id}"
+            Rails.logger.info "Unified SSE (GET): No missed events to send for session: #{session.id}" if ActionMCP.configuration.verbose_logging
           end
         rescue StandardError => e
           Rails.logger.error "Unified SSE (GET): Error sending missed events: #{e.message}"
@@ -112,7 +116,7 @@ module ActionMCP
             Rails.logger.warn "Unified SSE (GET): Heartbeat timed out for session: #{session.id}, closing."
             connection_active.make_false
           rescue StandardError => e
-            Rails.logger.debug "Unified SSE (GET): Heartbeat error for session: #{session.id}: #{e.message}"
+            Rails.logger.debug "Unified SSE (GET): Heartbeat error for session: #{session.id}: #{e.message}" if ActionMCP.configuration.verbose_logging
             connection_active.make_false
           end
         else
@@ -123,11 +127,11 @@ module ActionMCP
       heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
       sleep 0.1 while connection_active.true? && !response.stream.closed?
     rescue ActionController::Live::ClientDisconnected, IOError => e
-      Rails.logger.debug "Unified SSE (GET): Client disconnected for session: #{session&.id}: #{e.message}"
+      Rails.logger.debug "Unified SSE (GET): Client disconnected for session: #{session&.id}: #{e.message}" if ActionMCP.configuration.verbose_logging
     rescue StandardError => e
       Rails.logger.error "Unified SSE (GET): Unexpected error for session: #{session&.id}: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
     ensure
-      Rails.logger.debug "Unified SSE (GET): Cleaning up connection for session: #{session&.id}"
+      Rails.logger.debug "Unified SSE (GET): Cleaning up connection for session: #{session&.id}" if ActionMCP.configuration.verbose_logging
       heartbeat_active&.make_false
       heartbeat_task&.cancel
       listener&.stop
@@ -160,7 +164,7 @@ module ActionMCP
       # Validate MCP-Protocol-Version header for non-initialize requests
       return unless validate_protocol_version_header
 
-      unless is_initialize_request
+      unless initialization_related_request?(jsonrpc_params)
         if session_initially_missing
           id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
           return render_bad_request("Mcp-Session-Id header is required for this request.", id)
@@ -178,6 +182,14 @@ module ActionMCP
         response.headers[MCP_SESSION_ID_HEADER] = session.id
       end
 
+      # Authenticate the request via gateway (skipped for initialization-related requests)
+      if initialization_related_request?(jsonrpc_params)
+        # Skipping authentication for initialization request: #{jsonrpc_params.method}
+      else
+        authenticate_gateway!
+        return if performed?
+      end
+
       # Use return mode for the transport handler when we need to capture responses
       transport_handler = Server::TransportHandler.new(session, messaging_mode: :return)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
@@ -185,7 +197,7 @@ module ActionMCP
       result = json_rpc_handler.call(jsonrpc_params)
       process_handler_results(result, session, session_initially_missing, is_initialize_request)
     rescue ActionController::Live::ClientDisconnected, IOError => e
-      Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}"
+      Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}" if ActionMCP.configuration.verbose_logging
       begin
         response.stream&.close
       rescue StandardError
@@ -210,9 +222,13 @@ module ActionMCP
         return head :no_content
       end
 
+      # Authenticate the request via gateway
+      authenticate_gateway!
+      return if performed?
+
       begin
         session.close!
-        Rails.logger.info "Unified DELETE: Terminated session: #{session.id}"
+        Rails.logger.info "Unified DELETE: Terminated session: #{session.id}" if ActionMCP.configuration.verbose_logging
         head :no_content
       rescue StandardError => e
         Rails.logger.error "Unified DELETE: Error terminating session #{session.id}: #{e.class} - #{e.message}"
@@ -222,11 +238,11 @@ module ActionMCP
 
     private
 
-    # Validates the MCP-Protocol-Version header for non-initialize requests
+    # Validates the MCP-Protocol-Version header for non-initialization requests
     # Returns true if valid, renders error and returns false if invalid
     def validate_protocol_version_header
-      # Skip validation for initialize requests
-      return true if check_if_initialize_request(jsonrpc_params)
+      # Skip validation for initialization-related requests
+      return true if initialization_related_request?(jsonrpc_params)
 
       # Check for both case variations of the header (spec uses MCP-Protocol-Version)
       header_version = request.headers["MCP-Protocol-Version"] || request.headers["mcp-protocol-version"]
@@ -314,6 +330,13 @@ module ActionMCP
       payload.method == "initialize"
     end
 
+    # Checks if the request is related to initialization (initialize or notifications/initialized)
+    def initialization_related_request?(payload)
+      return false unless payload.respond_to?(:method) && !jsonrpc_params_batch?
+
+      %w[initialize notifications/initialized].include?(payload.method)
+    end
+
     # Processes the results from the JsonRpcHandler.
     def process_handler_results(result, session, session_initially_missing, is_initialize_request)
       # Handle empty result (notifications)
@@ -373,7 +396,7 @@ module ActionMCP
       rescue StandardError
         nil
       end
-      Rails.logger.debug "Unified SSE (POST): Response stream closed."
+      Rails.logger.debug "Unified SSE (POST): Response stream closed." if ActionMCP.configuration.verbose_logging
     end
 
     # Helper to write a JSON payload as an SSE event with a unique ID.
@@ -405,7 +428,7 @@ module ActionMCP
       begin
         retention_period = session.sse_event_retention_period
         count = session.cleanup_old_sse_events(retention_period)
-        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}" if count.positive?
+        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}" if count.positive? && ActionMCP.configuration.verbose_logging
       rescue StandardError => e
         Rails.logger.error "Error cleaning up old SSE events: #{e.message}"
       end
@@ -477,6 +500,35 @@ module ActionMCP
       rescue JSON::ParserError, StandardError
         nil
       end
+    end
+
+    # Authenticates the request using the configured gateway
+    def authenticate_gateway!
+      # Skip authentication for initialization-related requests in POST method
+      if request.post? && defined?(jsonrpc_params) && jsonrpc_params
+        return if initialization_related_request?(jsonrpc_params)
+      end
+
+      gateway_class = ActionMCP.configuration.gateway_class
+      return unless gateway_class # Skip if no gateway configured
+
+      gateway = gateway_class.new
+      gateway.call(request)
+    rescue ActionMCP::UnauthorizedError => e
+      render_unauthorized(e.message)
+    end
+
+    # Renders an unauthorized response
+    def render_unauthorized(message = "Unauthorized", id = nil)
+      id ||= extract_jsonrpc_id_from_request
+
+      # Add WWW-Authenticate header for OAuth discovery as per spec
+      auth_methods = ActionMCP.configuration.authentication_methods || []
+      if auth_methods.include?("oauth")
+        response.headers["WWW-Authenticate"] = 'Bearer realm="MCP API"'
+      end
+
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :unauthorized
     end
   end
 end

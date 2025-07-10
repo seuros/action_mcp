@@ -25,6 +25,16 @@ module ActionMCP
 
         # Clear cached config
         ActionMCP::OAuth::Provider.instance_variable_set(:@oauth_config, nil)
+
+        # Register a default client for testing
+        ActionMCP::OAuth::Provider.register_client(
+          client_id: "test_client",
+          client_secret: "test_secret", # Add a secret for client_credentials_grant
+          redirect_uris: [ "https://example.com/callback" ],
+          grant_types: [ "authorization_code", "refresh_token", "client_credentials" ],
+          response_types: [ "code" ],
+          token_endpoint_auth_method: "client_secret_basic"
+        )
       end
 
       teardown do
@@ -103,7 +113,8 @@ module ActionMCP
           grant_type: "authorization_code",
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         }
 
         assert_response :success
@@ -124,7 +135,8 @@ module ActionMCP
           grant_type: "authorization_code",
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         }
 
         initial_response = JSON.parse(response.body)
@@ -134,7 +146,8 @@ module ActionMCP
         post oauth_token_path, params: {
           grant_type: "refresh_token",
           refresh_token: refresh_token,
-          client_id: "test_client"
+          client_id: "test_client",
+          client_secret: "test_secret"
         }
 
         assert_response :success
@@ -273,7 +286,8 @@ module ActionMCP
           grant_type: "authorization_code",
           code: code,
           client_id: "test_client",
-          redirect_uri: "https://example.com/callback"
+          redirect_uri: "https://example.com/callback",
+          client_secret: "test_secret"
         }
 
         token_response = JSON.parse(response.body)

@@ -16,7 +16,7 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
 
   test "CalculateSumTool is findable" do
     assert_tool_findable("calculate_sum")
-    result = execute_tool("calculate_sum", number1: 1, number2: 2)
+    result = execute_tool("calculate_sum", a: 1, b: 2)
     assert_tool_output([ { type: "text", text: "3.0" } ], result)
   end
 

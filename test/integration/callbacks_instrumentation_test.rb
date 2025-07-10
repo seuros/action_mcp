@@ -7,7 +7,7 @@ class CallbacksInstrumentationTest < ActionDispatch::IntegrationTest
     # Reset callback tracker before test
     CalculateSumTool.reset_callback_tracker
 
-    tool = CalculateSumTool.new(number1: 1, number2: 2)
+    tool = CalculateSumTool.new(a: 1, b: 2)
     tool.call
 
     # Test using callback tracker

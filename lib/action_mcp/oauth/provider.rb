@@ -79,7 +79,7 @@ module ActionMCP
 
           # Generate refresh token if enabled
           refresh_token = nil
-          if oauth_config["enable_refresh_tokens"]
+          if oauth_config[:enable_refresh_tokens]
             refresh_token = generate_refresh_token(
               client_id: client_id,
               scope: code_data[:scope],
@@ -206,13 +206,29 @@ module ActionMCP
           revoked
         end
 
+        # Register a new OAuth client (Dynamic Client Registration)
+        # @param client_info [Hash] Client registration information
+        # @return [Hash] Registered client information
+        def register_client(client_info)
+          # Store client registration
+          storage.store_client_registration(client_info[:client_id], client_info)
+          client_info
+        end
+
+        # Retrieve registered client information
+        # @param client_id [String] OAuth client identifier
+        # @return [Hash, nil] Client information or nil if not found
+        def get_client(client_id)
+          storage.retrieve_client_registration(client_id)
+        end
+
         # Client Credentials Grant (for server-to-server)
         # @param client_id [String] OAuth client identifier
         # @param client_secret [String] OAuth client secret
         # @param scope [String] Requested scope
         # @return [Hash] Token response
         def client_credentials_grant(client_id:, client_secret:, scope: nil)
-          unless oauth_config["enable_client_credentials"]
+          unless oauth_config[:enable_client_credentials]
             raise UnsupportedGrantTypeError, "Client credentials grant not supported"
           end
 
@@ -244,19 +260,37 @@ module ActionMCP
         private
 
         def oauth_config
-          @oauth_config ||= ActionMCP.configuration.oauth_config || {}
+          @oauth_config ||= HashWithIndifferentAccess.new(ActionMCP.configuration.oauth_config || {})
         end
 
         def validate_client(client_id, client_secret, require_secret: false)
-          # This should be implemented by the application
-          # For now, we'll use a simple validation approach
-          provider_class = oauth_config["provider"]
+          # First check if client is registered via dynamic registration
+          client_info = get_client(client_id)
+          if client_info
+            # Validate client secret for confidential clients
+            if client_info[:client_secret]
+              unless client_secret == client_info[:client_secret]
+                raise InvalidClientError, "Invalid client credentials"
+              end
+            elsif require_secret
+              raise InvalidClientError, "Client authentication required"
+            end
+            return true
+          end
+
+          # Fall back to custom provider validation
+          provider_class = oauth_config[:provider]
           if provider_class && provider_class.respond_to?(:validate_client)
             provider_class.validate_client(client_id, client_secret)
           elsif require_secret && client_secret.nil?
             raise InvalidClientError, "Client authentication required"
+          else
+            # In development, allow unregistered clients if configured
+            if Rails.env.development? && oauth_config[:allow_unregistered_clients] != false
+              return true
+            end
+            raise InvalidClientError, "Unknown client"
           end
-          # Default: allow any client for development
         end
 
         def validate_pkce(code_challenge, method, code_verifier)
@@ -271,7 +305,7 @@ module ActionMCP
               raise InvalidGrantError, "Invalid code verifier"
             end
           when "plain"
-            unless oauth_config["allow_plain_pkce"]
+            unless oauth_config[:allow_plain_pkce]
               raise InvalidGrantError, "Plain PKCE not allowed"
             end
             unless code_challenge == code_verifier
@@ -283,7 +317,7 @@ module ActionMCP
         end
 
         def validate_scope(scope)
-          supported_scopes = oauth_config["scopes_supported"] || [ "mcp:tools", "mcp:resources", "mcp:prompts" ]
+          supported_scopes = oauth_config.fetch(:scopes_supported, [ "mcp:tools", "mcp:resources", "mcp:prompts" ])
           requested_scopes = scope.split(" ")
           unsupported = requested_scopes - supported_scopes
           if unsupported.any?
@@ -292,7 +326,7 @@ module ActionMCP
         end
 
         def default_scope
-          oauth_config["default_scope"] || "mcp:tools mcp:resources mcp:prompts"
+          oauth_config.fetch(:default_scope, "mcp:tools mcp:resources mcp:prompts")
         end
 
         def generate_access_token(client_id:, scope:, user_id:)
@@ -325,17 +359,19 @@ module ActionMCP
         end
 
         def token_expires_in
-          oauth_config["access_token_expires_in"] || 3600 # 1 hour
+          oauth_config.fetch(:access_token_expires_in, 3600) # 1 hour
         end
 
         def refresh_token_expires_in
-          oauth_config["refresh_token_expires_in"] || 7.days.to_i # 1 week
+          oauth_config.fetch(:refresh_token_expires_in, 7.days.to_i) # 1 week
         end
 
         # Storage methods - these delegate to a configurable storage backend
         def storage
           @storage ||= begin
-            storage_class = oauth_config["storage"] || "ActionMCP::OAuth::MemoryStorage"
+            # Default to ActiveRecord storage for production, memory for test
+            default_storage = Rails.env.test? ? "ActionMCP::OAuth::MemoryStorage" : "ActionMCP::OAuth::ActiveRecordStorage"
+            storage_class = oauth_config.fetch(:storage, default_storage)
             storage_class = storage_class.constantize if storage_class.is_a?(String)
             storage_class.new
           end

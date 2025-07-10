@@ -4,7 +4,7 @@
 #
 # Table name: action_mcp_session_subscriptions
 #
-#  id                   :bigint           not null, primary key
+#  id                   :integer          not null, primary key
 #  last_notification_at :datetime
 #  uri                  :string           not null
 #  created_at           :datetime         not null
@@ -17,7 +17,7 @@
 #
 # Foreign Keys
 #
-#  fk_rails_...  (session_id => action_mcp_sessions.id) ON DELETE => cascade
+#  session_id  (session_id => action_mcp_sessions.id) ON DELETE => cascade
 #
 module ActionMCP
   class Session

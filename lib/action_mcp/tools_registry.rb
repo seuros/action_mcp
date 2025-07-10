@@ -22,6 +22,9 @@ module ActionMCP
         tool.call
       rescue RegistryBase::NotFound
         error_response(:invalid_params, message: "Tool not found: #{tool_name}")
+      rescue ArgumentError => e
+        # Handle parameter validation errors
+        error_response(:invalid_params, message: e.message)
       rescue StandardError => e
         # FIXME, we should maybe not return the error message to the user
         error_response(:invalid_params, message: "Tool execution failed: #{e.message}")

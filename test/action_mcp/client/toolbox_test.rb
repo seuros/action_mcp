@@ -67,13 +67,13 @@ module ActionMCP
         tool = @toolbox.find("calculate_sum")
         props = tool.properties
         assert_equal 2, props.size
-        assert props.key?("number1")
-        assert props.key?("number2")
+        assert props.key?("a")
+        assert props.key?("b")
       end
 
       test "tool checks if property is required" do
         tool = @toolbox.find("calculate_sum")
-        assert tool.requires?("number1")
+        assert tool.requires?("a")
         refute tool.requires?("nonexistent")
       end
 

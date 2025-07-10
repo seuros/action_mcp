@@ -5,20 +5,31 @@ module ActionMCP
     include ActionMCP::TestHelper
 
     def setup
-      # Ensure we're using test stores
-      @server_store = Server::SessionStoreFactory.create(:test)
+      # Store original configuration
+      @original_server_session_store_type = ActionMCP.configuration.server_session_store_type
+
+      # Override configuration to use test session stores
+      ActionMCP.configuration.instance_variable_set(:@server_session_store_type, :test)
+
+      # Clear any cached session store so it gets recreated with the new configuration
+      ActionMCP::Server.instance_variable_set(:@session_store, nil)
+      ActionMCP::Server.instance_variable_set(:@session_store_type, nil)
+
+      # Get the server's session store (will be created as TestSessionStore due to config override)
+      @server_store = ActionMCP::Server.session_store
       @client_store = Client::SessionStoreFactory.create(:test)
 
       # Make them available for assertions
       Thread.current[:test_client_session_store] = @client_store
-
-      # Mock the server to use our test store
-      ActionMCP::Server.instance_variable_set(:@session_store, @server_store)
     end
 
     def teardown
       Thread.current[:test_client_session_store] = nil
       ActionMCP::Server.instance_variable_set(:@session_store, nil)
+      ActionMCP::Server.instance_variable_set(:@session_store_type, nil)
+
+      # Restore original configuration
+      ActionMCP.configuration.instance_variable_set(:@server_session_store_type, @original_server_session_store_type)
     end
 
     test "server test store tracks session creation" do

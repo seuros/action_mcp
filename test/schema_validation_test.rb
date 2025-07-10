@@ -74,18 +74,18 @@ class SchemaValidationTest < ActiveSupport::TestCase
       props = schema[:properties] || schema["properties"]
 
       # Properties could be keyed by strings or symbols
-      number1_prop = props["number1"] || props[:number1]
-      number2_prop = props["number2"] || props[:number2]
+      a_prop = props["a"] || props[:a]
+      b_prop = props["b"] || props[:b]
 
-      assert number1_prop, "number1 property should exist"
-      assert number2_prop, "number2 property should exist"
+      assert a_prop, "a property should exist"
+      assert b_prop, "b property should exist"
 
-      assert_equal "number", number1_prop["type"] || number1_prop[:type]
-      assert_equal "number", number2_prop["type"] || number2_prop[:type]
-      assert_equal "The first number", number1_prop["description"] || number1_prop[:description]
-      assert_equal "The second number", number2_prop["description"] || number2_prop[:description]
+      assert_equal "number", a_prop["type"] || a_prop[:type]
+      assert_equal "number", b_prop["type"] || b_prop[:type]
+      assert_equal "The first number", a_prop["description"] || a_prop[:description]
+      assert_equal "The second number", b_prop["description"] || b_prop[:description]
 
-      assert_equal [ "number1", "number2" ], schema[:required] || schema["required"]
+      assert_equal [ "a", "b" ], schema[:required] || schema["required"]
     end
 
     # Test AddTool

@@ -38,9 +38,9 @@ class ProductCertificatesTemplate < ApplicationMCPResTemplate
   def resolve
     product = Product.find_by(id: id)
     return nil unless product
-    
+
     certificates = product.certificates
-    
+
     certificates.map do |cert|
       ActionMCP::Content::Resource.new(
         "store://products/#{id}/certificates/#{cert.id}",
