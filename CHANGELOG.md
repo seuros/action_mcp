@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.70.0...action_mcp/v0.71.0) (2025-07-10)
+
+
+### Features
+
+* implement gateway in the main gem.  ([#121](https://github.com/seuros/action_mcp/issues/121)) ([a03977b](https://github.com/seuros/action_mcp/commit/a03977b778f6d60a923e8873a23a4c5deb73dadf))
+
 ## [0.70.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.60.2...action_mcp/v0.70.0) (2025-07-07)
 
 
