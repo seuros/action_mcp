@@ -1,36 +1,36 @@
 # frozen_string_literal: true
 
 module ActionMCP
-# == Schema Information
-#
-# Table name: action_mcp_oauth_tokens
-#
-#  id                    :integer          not null, primary key
-#  access_token          :string
-#  code_challenge        :string
-#  code_challenge_method :string
-#  expires_at            :datetime
-#  metadata              :json
-#  redirect_uri          :string
-#  revoked               :boolean          default(FALSE)
-#  scope                 :text
-#  token                 :string           not null
-#  token_type            :string           not null
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  client_id             :string           not null
-#  user_id               :string
-#
-# Indexes
-#
-#  index_action_mcp_oauth_tokens_on_client_id                  (client_id)
-#  index_action_mcp_oauth_tokens_on_expires_at                 (expires_at)
-#  index_action_mcp_oauth_tokens_on_revoked                    (revoked)
-#  index_action_mcp_oauth_tokens_on_token                      (token) UNIQUE
-#  index_action_mcp_oauth_tokens_on_token_type                 (token_type)
-#  index_action_mcp_oauth_tokens_on_token_type_and_expires_at  (token_type,expires_at)
-#  index_action_mcp_oauth_tokens_on_user_id                    (user_id)
-#
+  # == Schema Information
+  #
+  # Table name: action_mcp_oauth_tokens
+  #
+  #  id                    :integer          not null, primary key
+  #  access_token          :string
+  #  code_challenge        :string
+  #  code_challenge_method :string
+  #  expires_at            :datetime
+  #  metadata              :json
+  #  redirect_uri          :string
+  #  revoked               :boolean          default(FALSE)
+  #  scope                 :text
+  #  token                 :string           not null
+  #  token_type            :string           not null
+  #  created_at            :datetime         not null
+  #  updated_at            :datetime         not null
+  #  client_id             :string           not null
+  #  user_id               :string
+  #
+  # Indexes
+  #
+  #  index_action_mcp_oauth_tokens_on_client_id                  (client_id)
+  #  index_action_mcp_oauth_tokens_on_expires_at                 (expires_at)
+  #  index_action_mcp_oauth_tokens_on_revoked                    (revoked)
+  #  index_action_mcp_oauth_tokens_on_token                      (token) UNIQUE
+  #  index_action_mcp_oauth_tokens_on_token_type                 (token_type)
+  #  index_action_mcp_oauth_tokens_on_token_type_and_expires_at  (token_type,expires_at)
+  #  index_action_mcp_oauth_tokens_on_user_id                    (user_id)
+  #
   # OAuth 2.0 Token model for storing access tokens, refresh tokens, and authorization codes
   class OAuthToken < ApplicationRecord
     self.table_name = "action_mcp_oauth_tokens"
