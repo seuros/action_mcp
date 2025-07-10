@@ -4,7 +4,7 @@
 #
 # Table name: action_mcp_sse_events
 #
-#  id         :bigint           not null, primary key
+#  id         :integer          not null, primary key
 #  data       :text             not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
@@ -19,7 +19,7 @@
 #
 # Foreign Keys
 #
-#  fk_rails_...  (session_id => action_mcp_sessions.id)
+#  session_id  (session_id => action_mcp_sessions.id)
 #
 module ActionMCP
   class Session

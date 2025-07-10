@@ -2,33 +2,33 @@
 
 module ActionMCP
   # OAuth 2.0 Client model for storing registered clients
-  # == Schema Information
-  #
-  # Table name: action_mcp_oauth_clients
-  #
-  #  id                         :bigint           not null, primary key
-  #  active                     :boolean          default(TRUE)
-  #  client_id_issued_at        :integer
-  #  client_name                :string
-  #  client_secret              :string
-  #  client_secret_expires_at   :integer
-  #  grant_types                :text             default(["authorization_code"]), is an Array
-  #  metadata                   :jsonb
-  #  redirect_uris              :text             default([]), is an Array
-  #  registration_access_token  :string
-  #  response_types             :text             default(["code"]), is an Array
-  #  scope                      :text
-  #  token_endpoint_auth_method :string           default("client_secret_basic")
-  #  created_at                 :datetime         not null
-  #  updated_at                 :datetime         not null
-  #  client_id                  :string           not null
-  #
-  # Indexes
-  #
-  #  index_action_mcp_oauth_clients_on_active               (active)
-  #  index_action_mcp_oauth_clients_on_client_id            (client_id) UNIQUE
-  #  index_action_mcp_oauth_clients_on_client_id_issued_at  (client_id_issued_at)
-  #
+# == Schema Information
+#
+# Table name: action_mcp_oauth_clients
+#
+#  id                         :integer          not null, primary key
+#  active                     :boolean          default(TRUE)
+#  client_id_issued_at        :integer
+#  client_name                :string
+#  client_secret              :string
+#  client_secret_expires_at   :integer
+#  grant_types                :json
+#  metadata                   :json
+#  redirect_uris              :json
+#  registration_access_token  :string
+#  response_types             :json
+#  scope                      :text
+#  token_endpoint_auth_method :string           default("client_secret_basic")
+#  created_at                 :datetime         not null
+#  updated_at                 :datetime         not null
+#  client_id                  :string           not null
+#
+# Indexes
+#
+#  index_action_mcp_oauth_clients_on_active               (active)
+#  index_action_mcp_oauth_clients_on_client_id            (client_id) UNIQUE
+#  index_action_mcp_oauth_clients_on_client_id_issued_at  (client_id_issued_at)
+#
   # Implements RFC 7591 Dynamic Client Registration
   class OAuthClient < ApplicationRecord
     self.table_name = "action_mcp_oauth_clients"
