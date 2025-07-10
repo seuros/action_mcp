@@ -137,7 +137,12 @@ module ActionMCP
         additional_metadata = metadata.except(*known_fields)
         client.metadata = additional_metadata if additional_metadata.present?
 
-        client.save!
+        if client.save
+          Rails.logger.info "OAuth client saved successfully: #{client.client_id}"
+        else
+          Rails.logger.error "OAuth client save failed: #{client.errors.full_messages}"
+          raise "Failed to save OAuth client: #{client.errors.full_messages.join(', ')}"
+        end
         data
       end
 
