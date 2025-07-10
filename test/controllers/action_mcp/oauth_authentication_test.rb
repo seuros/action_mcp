@@ -12,6 +12,7 @@ module ActionMCP
         enable_dynamic_registration: true
       }
       ActionMCP::OAuth::Provider.instance_variable_set(:@oauth_config, nil)
+      ActionMCP::OAuth::Provider.instance_variable_set(:@storage, nil)
 
       # Initialize a session
       post "/",
