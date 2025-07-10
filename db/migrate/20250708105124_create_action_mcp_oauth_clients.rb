@@ -24,7 +24,7 @@ class CreateActionMCPOAuthClients < ActiveRecord::Migration[7.2]
       # Registration metadata
       t.integer :client_id_issued_at
       t.integer :client_secret_expires_at
-      t.string :registration_access_token
+      t.string :registration_access_token # OAuth 2.1 Dynamic Client Registration
 
       # Additional metadata as JSON for database compatibility
       if connection.adapter_name.downcase.include?('postgresql')
