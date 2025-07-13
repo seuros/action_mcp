@@ -95,6 +95,9 @@ test:
   # JWT authentication for testing environment, fallback to none for legacy tests
   authentication: ["jwt", "none"]
 
+  # Configure the gateway class for authentication
+  gateway_class: "ApplicationGateway"
+
   # Test adapter for testing
   adapter: test
 

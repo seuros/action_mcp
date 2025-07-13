@@ -3,8 +3,8 @@
 class MCPGatewayTestController < ApplicationController
   def up
     gateway_class = ActionMCP.configuration.gateway_class
-    gateway = gateway_class.new
-    gateway.call(request)
+    gateway = gateway_class.new(request)
+    gateway.call
 
     render json: {
       user_id: ActionMCP::Current.user&.id,

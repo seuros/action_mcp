@@ -58,7 +58,7 @@ module ActionMCP
       assert_equal 'Bearer realm="MCP API"', response.headers["WWW-Authenticate"]
 
       body = JSON.parse(response.body)
-      assert_equal "No valid authentication found", body["error"]["message"]
+      assert_equal "Missing OAuth info", body["error"]["message"]
     end
 
     test "WWW-Authenticate header not included when OAuth is disabled" do

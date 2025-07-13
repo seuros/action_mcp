@@ -23,11 +23,12 @@ module ActionMCP
 
       delegate :connected?, :ready?, to: :transport
 
-      def initialize(transport:, logger: ActionMCP.logger, **options)
+      def initialize(transport:, logger: ActionMCP.logger, protocol_version: nil, **options)
         @logger = logger
         @transport = transport
         @session = nil  # Session will be created/loaded based on server response
         @session_id = options[:session_id]  # Optional session ID for resumption
+        @protocol_version = protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION
         @server_capabilities = nil
         @connection_error = nil
         @initialized = false
@@ -180,7 +181,7 @@ module ActionMCP
         end
 
         params = {
-          protocolVersion: ActionMCP::DEFAULT_PROTOCOL_VERSION,
+          protocolVersion: @protocol_version,
           capabilities: client_capabilities,
           clientInfo: client_info
         }

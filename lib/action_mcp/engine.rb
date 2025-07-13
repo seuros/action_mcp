@@ -61,9 +61,10 @@ module ActionMCP
       end
     end
 
-    # Configure autoloading for the mcp/tools directory
+    # Configure autoloading for the mcp/tools directory and identifiers
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|
       mcp_path = app.root.join("app/mcp")
+      identifiers_path = app.root.join("app/identifiers")
 
       if mcp_path.exist?
         # First add the parent mcp directory
@@ -73,6 +74,11 @@ module ActionMCP
         mcp_path.glob("*").select { |f| File.directory?(f) }.each do |dir|
           app.autoloaders.main.collapse(dir)
         end
+      end
+
+      # Add identifiers directory for gateway identifiers
+      if identifiers_path.exist?
+        app.autoloaders.main.push_dir(identifiers_path, namespace: Object)
       end
     end
 
