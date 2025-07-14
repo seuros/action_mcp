@@ -512,8 +512,8 @@ module ActionMCP
       gateway_class = ActionMCP.configuration.gateway_class
       return unless gateway_class # Skip if no gateway configured
 
-      gateway = gateway_class.new
-      gateway.call(request)
+      gateway = gateway_class.new(request)
+      gateway.call
     rescue ActionMCP::UnauthorizedError => e
       render_unauthorized(e.message)
     end

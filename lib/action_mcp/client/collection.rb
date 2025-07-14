@@ -143,14 +143,14 @@ module ActionMCP
       def silence_logs
         return yield unless @silence_sql
 
-        original_log_level = Session.logger&.level
+        original_log_level = ActionMCP::Session.logger&.level
         begin
           # Temporarily increase log level to suppress SQL queries
-          Session.logger.level = Logger::WARN if Session.logger
+          ActionMCP::Session.logger.level = Logger::WARN if ActionMCP::Session.logger
           yield
         ensure
           # Restore original log level
-          Session.logger.level = original_log_level if Session.logger
+          ActionMCP::Session.logger.level = original_log_level if ActionMCP::Session.logger && original_log_level
         end
       end
 

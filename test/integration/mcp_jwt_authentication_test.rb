@@ -49,7 +49,7 @@ class MCPJwtAuthenticationTest < ActionDispatch::IntegrationTest
 
       assert_response :unauthorized
       body = JSON.parse(response.body)
-      assert_match "Missing token", response.parsed_body["error"]["message"]
+      assert_match "Missing JWT", response.parsed_body["error"]["message"]
     end
   end
 
@@ -117,7 +117,7 @@ class MCPJwtAuthenticationTest < ActionDispatch::IntegrationTest
 
       assert_response :unauthorized
       body = JSON.parse(response.body)
-      assert_equal "Invalid token", body["error"]["message"]
+      assert_match "Invalid JWT token:", body["error"]["message"]
     end
   end
 
@@ -144,7 +144,7 @@ class MCPJwtAuthenticationTest < ActionDispatch::IntegrationTest
 
       assert_response :unauthorized
       body = JSON.parse(response.body)
-      assert_equal "Unauthorized", body["error"]["message"]
+      assert_equal "Invalid JWT user", body["error"]["message"]
     end
   end
 

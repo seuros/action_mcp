@@ -22,7 +22,7 @@ class GatewayIntegrationTest < ActionDispatch::IntegrationTest
     with_authentication_config([ "jwt" ]) do
       get "/gateway_up"
       assert_response :unauthorized
-      assert_match "Missing token", response.parsed_body["error"]
+      assert_match "Missing JWT", response.parsed_body["error"]
     end
   end
 
@@ -30,7 +30,7 @@ class GatewayIntegrationTest < ActionDispatch::IntegrationTest
     with_authentication_config([ "jwt" ]) do
       get "/gateway_up", headers: { "Authorization" => "Bearer not.a.jwt" }
       assert_response :unauthorized
-      assert_match "Invalid token", response.parsed_body["error"]
+      assert_match "Invalid JWT token", response.parsed_body["error"]
     end
   end
 
@@ -40,7 +40,7 @@ class GatewayIntegrationTest < ActionDispatch::IntegrationTest
 
       get "/gateway_up", headers: { "Authorization" => "Bearer #{token}" }
       assert_response :unauthorized
-      assert_match "Unauthorized", response.parsed_body["error"]
+      assert_match "Invalid JWT user", response.parsed_body["error"]
     end
   end
 end
