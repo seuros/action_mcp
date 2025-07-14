@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.71.0...action_mcp/v0.71.1) (2025-07-14)
+
+
+### Bug Fixes
+
+* correct client  implementation ([#123](https://github.com/seuros/action_mcp/issues/123)) ([6d63df1](https://github.com/seuros/action_mcp/commit/6d63df1d87a14ff2858eff802c9b845d992e6ef7))
+
 ## [0.71.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.70.0...action_mcp/v0.71.0) (2025-07-10)
 
 
