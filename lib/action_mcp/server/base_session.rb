@@ -2,8 +2,8 @@
 
 module ActionMCP
   module Server
-    # Memory-based session object that mimics ActiveRecord Session
-    class MemorySession
+    # Base session object that mimics ActiveRecord Session with common functionality
+    class BaseSession
       attr_accessor :id, :status, :initialized, :role, :messages_count,
                     :sse_event_counter, :protocol_version, :client_info,
                     :client_capabilities, :server_info, :server_capabilities,
@@ -26,7 +26,7 @@ module ActionMCP
         end
       end
 
-      # Mimic ActiveRecord interface
+      # ActiveRecord-like interface
       def new_record?
         @new_record
       end
@@ -133,7 +133,6 @@ module ActionMCP
         event = { event_id: event_id, data: data, created_at: Time.current }
         @sse_events << event
 
-        # Maintain cache limit
         while @sse_events.size > max_events
           @sse_events.shift
         end
@@ -142,8 +141,7 @@ module ActionMCP
       end
 
       def get_sse_events_after(last_event_id, limit = 50)
-        @sse_events.select { |e| e[:event_id] > last_event_id }
-                   .first(limit)
+        @sse_events.select { |e| e[:event_id] > last_event_id }.first(limit)
       end
 
       def cleanup_old_sse_events(max_age = 15.minutes)
@@ -151,14 +149,10 @@ module ActionMCP
         @sse_events.delete_if { |e| e[:created_at] < cutoff_time }
       end
 
-      # Calculates the maximum number of SSE events to store based on configuration
-      # @return [Integer] The maximum number of events
       def max_stored_sse_events
         ActionMCP.configuration.max_stored_sse_events || 100
       end
 
-      # Returns the SSE event retention period from configuration
-      # @return [ActiveSupport::Duration] The retention period (default: 15 minutes)
       def sse_event_retention_period
         ActionMCP.configuration.sse_event_retention_period || 15.minutes
       end
@@ -352,7 +346,6 @@ module ActionMCP
       end
 
       def send_tools_list_changed_notification
-        # Only send if server capabilities allow it
         return unless server_capabilities.dig("tools", "listChanged")
 
         write(JSON_RPC::Notification.new(method: "notifications/tools/list_changed"))
@@ -370,9 +363,7 @@ module ActionMCP
         write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
       end
 
-      public
-
-      # Simple collection classes to mimic ActiveRecord associations
+      # Collection classes
       class MessageCollection < Array
         def create!(attributes)
           self << attributes
@@ -380,7 +371,6 @@ module ActionMCP
         end
 
         def order(field)
-          # Simple ordering implementation
           sort_by { |msg| msg[field] || msg[field.to_s] }
         end
       end
@@ -414,7 +404,6 @@ module ActionMCP
         end
 
         def where(condition, value)
-          # Simple implementation for "event_id > ?" condition
           select { |e| e[:event_id] > value }
         end
 
