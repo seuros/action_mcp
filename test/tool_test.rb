@@ -147,12 +147,12 @@ class ToolExecutionTest < ActiveSupport::TestCase
   test "AddTool returns an error for invalid input" do
     result = execute_tool_with_error("add", x: 5, y: "ten")
     assert result.error?
-    assert_error_code -32602, result
+    assert_error_code(-32_602, result)
   end
 
   test "AddTool returns an error for missing input" do
     result = execute_tool_with_error("add", x: 5)
     assert result.error?
-    assert_error_code -32602, result
+    assert_error_code(-32_602, result)
   end
 end

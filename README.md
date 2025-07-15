@@ -24,7 +24,15 @@ This means an AI (like an LLM) can request information or actions from your appl
 
 ## Protocol Support
 
-ActionMCP supports **MCP 2025-06-18** (current) with backward compatibility for **MCP 2025-03-26**. For a detailed (and entertaining) breakdown of protocol versions, features, and our design decisions, see [The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md).
+ActionMCP supports **MCP 2025-06-18** (current) with backward compatibility for **MCP 2025-03-26**. The protocol implementation is fully compliant with the MCP specification, including:
+
+- **JSON-RPC 2.0** transport layer
+- **Capability negotiation** during initialization
+- **Error handling** with proper error codes (-32601 for method not found, -32002 for consent required)
+- **Session management** with resumable sessions
+- **Change notifications** for dynamic capability updates
+
+For a detailed (and entertaining) breakdown of protocol versions, features, and our design decisions, see [The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md).
 
 *Don't Panic: The guide contains everything you need to know about surviving MCP protocol versions.*
 
@@ -42,25 +50,27 @@ In short, ActionMCP helps you build an MCP server (the component that exposes ca
 
 To start using ActionMCP, add it to your project:
 
-- **Using Bundler (Rails or Ruby projects):** Add the gem to your Gemfile and run bundle install:
-
-  ```bash
-  $ bundle add actionmcp
-  ```
-
-After adding the gem, run the install generator to set up the basic ActionMCP structure:
-
 ```bash
+# Add gem to your Gemfile
+$ bundle add actionmcp
+
+# Install dependencies
 bundle install
-bin/rails action_mcp:install:migrations  # Copy migrations from the engine
-bin/rails generate action_mcp:install    # Creates base classes and configuration
-bin/rails db:migrate                     # Creates necessary database tables
+
+# Copy migrations from the engine
+bin/rails action_mcp:install:migrations
+
+# Generate base classes and configuration
+bin/rails generate action_mcp:install
+
+# Create necessary database tables
+bin/rails db:migrate
 ```
 
 The `action_mcp:install` generator will:
 - Create base application classes (ApplicationGateway, ApplicationMCPTool, etc.)
 - Generate the MCP configuration file (`config/mcp.yml`)
-- Set up the basic directory structure for MCP components
+- Set up the basic directory structure for MCP components (`app/mcp/`)
 
 Database migrations are copied separately using `bin/rails action_mcp:install:migrations`.
 
@@ -127,6 +137,7 @@ Key features:
 - Return multiple response types (text, images, errors)
 - Progressive responses with multiple render calls
 - Automatic input validation based on property definitions
+- **Consent management for sensitive operations**
 
 **Example:**
 
@@ -158,6 +169,47 @@ class CalculateSumTool < ApplicationMCPTool
     # Implementation to create a visualization as base64
   end
 end
+```
+
+#### Consent Management
+
+For tools that perform sensitive operations (file system access, database modifications, external API calls), you can require explicit user consent:
+
+```ruby
+class FileSystemTool < ApplicationMCPTool
+  tool_name "read_file"
+  description "Read contents of a file"
+  
+  # Require explicit consent before execution
+  requires_consent!
+
+  property :file_path, type: "string", description: "Path to file", required: true
+
+  def perform
+    # This code only runs after user grants consent
+    content = File.read(file_path)
+    render(text: "File contents: #{content}")
+  end
+end
+```
+
+**Consent Flow:**
+1. When a consent-required tool is called without consent, it returns a JSON-RPC error with code `-32002`
+2. The client must explicitly grant consent for the specific tool
+3. Once granted, the tool can execute normally for that session
+4. Consent is session-scoped and can be revoked at any time
+
+**Managing Consent:**
+
+```ruby
+# Check if consent is granted
+session.consent_granted_for?("read_file")
+
+# Grant consent for a tool
+session.grant_consent("read_file")
+
+# Revoke consent
+session.revoke_consent("read_file")
 ```
 
 Tools can be executed by instantiating them and calling the `call` method:
@@ -751,17 +803,97 @@ class ToolTest < ActiveSupport::TestCase
 end
 ```
 
+The TestHelper provides several assertion methods:
+- `assert_tool_findable(name)` - Verifies a tool exists and is registered
+- `assert_prompt_findable(name)` - Verifies a prompt exists and is registered
+- `execute_tool(name, **args)` - Executes a tool with arguments
+- `execute_prompt(name, **args)` - Executes a prompt with arguments
+- `assert_tool_output(result, expected)` - Asserts tool output matches expected text
+- `assert_prompt_output(result)` - Extracts and returns prompt output for assertions
+
 ## Inspecting Your MCP Server
 
 You can use the MCP Inspector to test your server implementation:
 
 ```bash
-npx @modelcontextprotocol/inspector
+# Start your MCP server
+bundle exec rails s -c mcp.ru -p 62770
+
+# In another terminal, run the inspector
+npx @modelcontextprotocol/inspector --url http://localhost:62770
 ```
 
-The default path will be http://localhost:3000/action_mcp
+The MCP Inspector provides an interactive interface to:
+- Test tool executions with custom arguments
+- Validate prompt responses
+- Inspect resource templates and their outputs
+- Debug protocol compliance and error handling
 
-Here's a section you can add to explain the profile system in ActionMCP:
+## Development Commands
+
+ActionMCP includes several rake tasks for development and debugging:
+
+```bash
+# List all MCP components
+bundle exec rails action_mcp:list
+
+# List specific component types
+bundle exec rails action_mcp:list_tools
+bundle exec rails action_mcp:list_prompts
+bundle exec rails action_mcp:list_resources
+bundle exec rails action_mcp:list_profiles
+
+# Show configuration and statistics
+bundle exec rails action_mcp:info
+bundle exec rails action_mcp:stats
+
+# Show profile configuration
+bundle exec rails action_mcp:show_profile[profile_name]
+```
+
+## Error Handling and Troubleshooting
+
+ActionMCP provides comprehensive error handling following the JSON-RPC 2.0 specification:
+
+### Error Codes
+
+- **-32601**: Method not found - The requested method doesn't exist
+- **-32002**: Consent required - Tool requires user consent to execute
+- **-32603**: Internal error - Server encountered an unexpected error
+- **-32600**: Invalid request - The request is malformed
+
+### Context-Aware Error Messages
+
+Tools should return clear error messages to the LLM using the `render` method:
+
+```ruby
+class MyTool < ApplicationMCPTool
+  def perform
+    # Check for error conditions and return clear messages
+    if some_error_condition?
+      render(error: ["Clear error message for the LLM"])
+      return
+    end
+    
+    # Normal processing
+    render(text: "Success message")
+  end
+end
+```
+
+### Common Issues
+
+1. **Session not found**: Ensure sessions are properly created and saved in the session store
+2. **Tool not registered**: Verify tools are properly defined and inherit from ApplicationMCPTool
+3. **Consent required**: Grant consent using `session.grant_consent(tool_name)`
+4. **Middleware conflicts**: Use `mcp_vanilla.ru` to avoid web-specific middleware
+
+### Debugging Tips
+
+- Check server logs for detailed error information
+- Use `bundle exec rails action_mcp:info` to verify configuration
+- Test with MCP Inspector to isolate protocol issues
+- Ensure proper session management in production environments
 
 ## Profiles
 
@@ -875,3 +1007,42 @@ Profiles are particularly useful for:
 5. **Progressive enhancement**: Start with a minimal profile and gradually add capabilities
 
 By leveraging profiles, you can maintain a single ActionMCP codebase while providing tailored MCP capabilities for different contexts.
+
+## Client Usage
+
+ActionMCP includes a client for connecting to remote MCP servers. The client handles session management, protocol negotiation, and provides a simple API for interacting with MCP servers.
+
+For comprehensive client documentation, including examples, session management, transport configuration, and API usage, see [CLIENTUSAGE.md](CLIENTUSAGE.md).
+
+## Production Considerations
+
+### Security
+
+- **Never expose sensitive data** through MCP components
+- **Use authentication** via Gateway for production deployments
+- **Implement proper authorization** in your tools and prompts
+- **Validate all inputs** using property definitions and Rails validations
+- **Use consent management** for sensitive operations
+
+### Performance
+
+- **Configure appropriate thread pools** for high-traffic scenarios
+- **Use Redis or SolidMCP** for production pub/sub
+- **Choose ActiveRecord session store** for session persistence
+- **Monitor session cleanup** to prevent memory leaks
+- **Use profiles** to limit exposed capabilities
+
+### Monitoring
+
+- **Enable logging** and configure appropriate log levels
+- **Monitor session statistics** using `action_mcp:stats`
+- **Track tool usage** and performance metrics
+- **Set up alerts** for error rates and response times
+
+### Deployment
+
+- **Use Falcon** for optimal performance with streaming workloads
+- **Deploy on dedicated ports** or Unix sockets
+- **Use reverse proxies** (Nginx, Apache) for SSL termination
+- **Implement health checks** for your MCP endpoints
+- **Use `mcp_vanilla.ru`** to avoid middleware conflicts

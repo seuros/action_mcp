@@ -45,7 +45,7 @@ module ActionMCP
   ].freeze
 
   LATEST_VERSION = SUPPORTED_VERSIONS.first.freeze
-  DEFAULT_PROTOCOL_VERSION = "2025-03-26".freeze  # Default to initial stable version for backwards compatibility
+  DEFAULT_PROTOCOL_VERSION = "2025-03-26" # Default to initial stable version for backwards compatibility
   class << self
     # Returns a Rack-compatible application for serving MCP requests
     # This makes ActionMCP.server work similar to ActionCable.server

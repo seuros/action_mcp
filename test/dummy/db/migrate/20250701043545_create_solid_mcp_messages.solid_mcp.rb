@@ -20,10 +20,10 @@ class CreateSolidMCPMessages < ActiveRecord::Migration[7.0]
       t.datetime :delivered_at
 
       # Composite index for efficient polling
-      t.index [ :session_id, :id ], name: "idx_solid_mcp_messages_on_session_and_id"
+      t.index %i[session_id id], name: "idx_solid_mcp_messages_on_session_and_id"
 
       # Index for cleanup
-      t.index [ :delivered_at, :created_at ], name: "idx_solid_mcp_messages_on_delivered_and_created"
+      t.index %i[delivered_at created_at], name: "idx_solid_mcp_messages_on_delivered_and_created"
     end
   end
 end

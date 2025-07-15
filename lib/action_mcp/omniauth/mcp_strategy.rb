@@ -38,17 +38,15 @@ module ActionMCP
 
       # User info from OAuth token response or userinfo endpoint
       def raw_info
-        @raw_info ||= begin
-          if options.userinfo_url
-            access_token.get(options.userinfo_url).parsed
-          else
-            # Extract user info from token response or use minimal info
-            token_response = access_token.token
-            {
-              "sub" => access_token.params["user_id"] || access_token.token,
-              "scope" => access_token.params["scope"] || options.scope
-            }
-          end
+        @raw_info ||= if options.userinfo_url
+                        access_token.get(options.userinfo_url).parsed
+        else
+                        # Extract user info from token response or use minimal info
+                        access_token.token
+                        {
+                          "sub" => access_token.params["user_id"] || access_token.token,
+                          "scope" => access_token.params["scope"] || options.scope
+                        }
         end
       rescue ::OAuth2::Error => e
         log(:error, "Failed to fetch user info: #{e.message}")
@@ -93,11 +91,11 @@ module ActionMCP
       # Override client to use discovered endpoints if available
       def client
         @client ||= begin
-          if discovery_info.any?
+          if discovery_info.any? && discovery_info["authorization_endpoint"] && discovery_info["token_endpoint"]
             options.client_options.merge!(
               authorize_url: discovery_info["authorization_endpoint"],
               token_url: discovery_info["token_endpoint"]
-            ) if discovery_info["authorization_endpoint"] && discovery_info["token_endpoint"]
+            )
           end
           super
         end
@@ -115,9 +113,9 @@ module ActionMCP
 
         begin
           response = client.request(:post, options.introspection_url || "/oauth/introspect", {
-            body: { token: token },
-            headers: { "Content-Type" => "application/x-www-form-urlencoded" }
-          })
+                                      body: { token: token },
+                                      headers: { "Content-Type" => "application/x-www-form-urlencoded" }
+                                    })
 
           token_info = JSON.parse(response.body)
           return nil unless token_info["active"]
@@ -137,36 +135,24 @@ module ActionMCP
         return unless oauth_config.is_a?(Hash)
 
         # Set client options from MCP config
-        if oauth_config["issuer_url"]
-          options.client_options[:site] = oauth_config["issuer_url"]
-        end
+        options.client_options[:site] = oauth_config["issuer_url"] if oauth_config["issuer_url"]
 
-        if oauth_config["client_id"]
-          options.client_id = oauth_config["client_id"]
-        end
+        options.client_id = oauth_config["client_id"] if oauth_config["client_id"]
 
-        if oauth_config["client_secret"]
-          options.client_secret = oauth_config["client_secret"]
-        end
+        options.client_secret = oauth_config["client_secret"] if oauth_config["client_secret"]
 
-        if oauth_config["scopes_supported"]
-          options.scope = Array(oauth_config["scopes_supported"]).join(" ")
-        end
+        options.scope = Array(oauth_config["scopes_supported"]).join(" ") if oauth_config["scopes_supported"]
 
         # Enable PKCE if required (OAuth 2.1 compliance)
-        if oauth_config["pkce_required"]
-          options.pkce = true
-        end
+        options.pkce = true if oauth_config["pkce_required"]
 
         # Set userinfo endpoint if provided
-        if oauth_config["userinfo_endpoint"]
-          options.userinfo_url = oauth_config["userinfo_endpoint"]
-        end
+        options.userinfo_url = oauth_config["userinfo_endpoint"] if oauth_config["userinfo_endpoint"]
 
         # Set token introspection endpoint
-        if oauth_config["introspection_endpoint"]
-          options.introspection_url = oauth_config["introspection_endpoint"]
-        end
+        return unless oauth_config["introspection_endpoint"]
+
+        options.introspection_url = oauth_config["introspection_endpoint"]
       end
     end
   end

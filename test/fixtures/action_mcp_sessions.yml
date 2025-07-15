@@ -1,155 +1,53 @@
-# == Schema Information
-#
-# Table name: action_mcp_sessions
-#
-#  id                     :string           not null, primary key
-#  authentication_method  :string           default("none")
-#  client_capabilities    :json
-#  client_info            :json
-#  ended_at               :datetime
-#  initialized            :boolean          default(FALSE), not null
-#  messages_count         :integer          default(0), not null
-#  oauth_access_token     :string
-#  oauth_refresh_token    :string
-#  oauth_token_expires_at :datetime
-#  oauth_user_context     :json
-#  prompt_registry        :json
-#  protocol_version       :string
-#  resource_registry      :json
-#  role                   :string           default("server"), not null
-#  server_capabilities    :json
-#  server_info            :json
-#  sse_event_counter      :integer          default(0), not null
-#  status                 :string           default("pre_initialize"), not null
-#  tool_registry          :json
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#
-# Indexes
-#
-#  index_action_mcp_sessions_on_authentication_method   (authentication_method)
-#  index_action_mcp_sessions_on_oauth_access_token      (oauth_access_token) UNIQUE
-#  index_action_mcp_sessions_on_oauth_token_expires_at  (oauth_token_expires_at)
-#
 _fixture:
   model_class: ActionMCP::Session
 
-# A basic initialized server session at step1
-step1_session:
-  id: "step1_session"
-  initialized: true
-  status: "initialized"
-  role: "server"
-  messages_count: 2
-  protocol_version: "2025-03-26"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source","execute_command"]
-  prompt_registry: '[]'
-  resource_registry: '[]'
-  sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A server session at step2 of a workflow
-step2_session:
-  id: "step2_session"
-  initialized: true
-  status: "initialized"
-  role: "server"
-  messages_count: 4
-  protocol_version: "2025-03-26"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source","execute_command"]
-  prompt_registry: '[]'
-  resource_registry: '[]'
-  sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A server session at final step of a workflow
-final_step_session:
-  id: "final_step_session"
-  initialized: true
-  status: "initialized"
-  role: "server"
-  messages_count: 6
-  protocol_version: "2025-03-26"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source","execute_command"]
-  prompt_registry: []
-  resource_registry: []
-  sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A pre-initialized server session (for testing initialization process)
-pre_initialized_session:
-  id: "pre_init_session"
+test_session:
+  id: test_session_id
+  role: server
+  status: pre_initialize
   initialized: false
-  status: "pre_initialize"
-  role: "server"
-  messages_count: 0
-  protocol_version: "2025-03-26"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source"]
-  prompt_registry: []
-  resource_registry: []
-  sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A closed server session
-closed_session:
-  id: "closed_session"
-  initialized: true
-  status: "closed"
-  role: "server"
-  messages_count: 5
-  ended_at: <%= Time.zone.now %>
-  protocol_version: "2025-03-26"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source"]
-  prompt_registry: []
-  resource_registry: []
-  sse_event_counter: 3
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A session with Dr. Identity McBouncer protocol (2025-06-18)
-dr_identity_mcbouncer_session:
-  id: "dr_identity_mcbouncer_session"
-  initialized: true
-  status: "initialized"
-  role: "server"
-  messages_count: 2
-  protocol_version: "2025-06-18"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["weather_forecast","format_source","execute_command"]
+  protocol_version: null
+  tool_registry: '[]'
   prompt_registry: '[]'
   resource_registry: '[]'
-  sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
-
-# A session using all capabilities with '*'
-all_tools_session:
-  id: "all_tools_session"
-  initialized: true
-  status: "initialized"
-  role: "server"
+  consents: '{}'
   messages_count: 0
-  protocol_version: "2025-06-18"
-  server_info: {"name":"Test Server","version":"1.0.0"}
-  server_capabilities: {"tools":{"listChanged":true},"prompts":{"listChanged":true},"resources":{"listChanged":true}}
-  tool_registry: ["*"]
-  prompt_registry: ["*"]
-  resource_registry: ["*"]
   sse_event_counter: 0
-  created_at: <%= Time.zone.now %>
-  updated_at: <%= Time.zone.now %>
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
+  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
+step1_session:
+  id: step1_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-03-26"
+  tool_registry: '["*"]'
+  prompt_registry: '["*"]'
+  resource_registry: '["*"]'
+  consents: '{}'
+  messages_count: 0
+  sse_event_counter: 0
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
+  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
+dr_identity_mcbouncer_session:
+  id: dr_identity_mcbouncer_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-06-18"
+  tool_registry: '["*"]'
+  prompt_registry: '["*"]'
+  resource_registry: '["*"]'
+  consents: '{}'
+  messages_count: 0
+  sse_event_counter: 0
+  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
+  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>

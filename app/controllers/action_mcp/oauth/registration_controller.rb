@@ -23,9 +23,7 @@ module ActionMCP
         client_secret = nil # Public clients by default
 
         # Generate client secret for confidential clients
-        if client_metadata["token_endpoint_auth_method"] != "none"
-          client_secret = generate_client_secret
-        end
+        client_secret = generate_client_secret if client_metadata["token_endpoint_auth_method"] != "none"
 
         # Store client registration
         client_info = {
@@ -72,15 +70,15 @@ module ActionMCP
 
       def check_oauth_enabled
         auth_methods = ActionMCP.configuration.authentication_methods
-        unless auth_methods&.include?("oauth")
-          head :not_found
-        end
+        return if auth_methods&.include?("oauth")
+
+        head :not_found
       end
 
       def check_registration_enabled
-        unless oauth_config[:enable_dynamic_registration]
-          head :not_found
-        end
+        return if oauth_config[:enable_dynamic_registration]
+
+        head :not_found
       end
 
       def oauth_config
@@ -129,23 +127,20 @@ module ActionMCP
         end
 
         # Validate token endpoint auth method
-        if metadata["token_endpoint_auth_method"]
-          unless supported_auth_methods.include?(metadata["token_endpoint_auth_method"])
-            raise ActionMCP::OAuth::InvalidClientMetadataError, "Unsupported token endpoint auth method"
-          end
-        end
+        return unless metadata["token_endpoint_auth_method"]
+        return if supported_auth_methods.include?(metadata["token_endpoint_auth_method"])
+
+        raise ActionMCP::OAuth::InvalidClientMetadataError, "Unsupported token endpoint auth method"
       end
 
       def validate_redirect_uri(uri)
         parsed = URI.parse(uri)
 
         # Must be absolute URI
-        unless parsed.absolute?
-          raise ActionMCP::OAuth::InvalidClientMetadataError, "Redirect URI must be absolute"
-        end
+        raise ActionMCP::OAuth::InvalidClientMetadataError, "Redirect URI must be absolute" unless parsed.absolute?
 
         # For non-localhost, must use HTTPS
-        unless parsed.host == "localhost" || parsed.host == "127.0.0.1" || parsed.scheme == "https"
+        unless [ "localhost", "127.0.0.1" ].include?(parsed.host) || parsed.scheme == "https"
           raise ActionMCP::OAuth::InvalidClientMetadataError, "Redirect URI must use HTTPS"
         end
       rescue URI::InvalidURIError
@@ -162,7 +157,7 @@ module ActionMCP
         SecureRandom.urlsafe_base64(32)
       end
 
-      def generate_registration_access_token(client_id)
+      def generate_registration_access_token(_client_id)
         # Generate a token for managing this registration
         SecureRandom.urlsafe_base64(32)
       end
@@ -183,7 +178,7 @@ module ActionMCP
       end
 
       def supported_auth_methods
-        methods = [ "client_secret_basic", "client_secret_post" ]
+        methods = %w[client_secret_basic client_secret_post]
         methods << "none" if oauth_config.fetch(:allow_public_clients, true)
         methods
       end

@@ -31,6 +31,7 @@ class ApplicationGateway < ActionMCP::Gateway
   # Example method to resolve user from JWT payload
   def resolve_user(payload)
     return nil unless payload.is_a?(Hash)
+
     user_id = payload["user_id"] || payload["sub"]
     return nil unless user_id
 

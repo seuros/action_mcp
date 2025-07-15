@@ -29,9 +29,11 @@ require "test_helper"
 module ActionMCP
   class Session
     class MessageTest < ActiveSupport::TestCase
+      fixtures :action_mcp_sessions
+
       # Setup method to create a fresh session before each test
       setup do
-        @session = ActionMCP::Session.create!
+        @session = action_mcp_sessions(:test_session)
       end
 
       # Test that "ping" requests are identified correctly

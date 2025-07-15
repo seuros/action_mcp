@@ -9,7 +9,7 @@ module ActionMCP
                     :client_capabilities, :server_info, :server_capabilities,
                     :tool_registry, :prompt_registry, :resource_registry,
                     :created_at, :updated_at, :ended_at, :last_event_id,
-                    :session_data
+                    :session_data, :consents
 
       def initialize(attributes = {}, store = nil)
         @store = store
@@ -20,6 +20,9 @@ module ActionMCP
         @sse_counter = Concurrent::AtomicFixnum.new(0)
         @message_counter = Concurrent::AtomicFixnum.new(0)
         @new_record = true
+
+        # Initialize consents as empty hash if not provided
+        @consents = {}
 
         attributes.each do |key, value|
           send("#{key}=", value) if respond_to?("#{key}=")
@@ -37,7 +40,7 @@ module ActionMCP
 
       def save
         self.updated_at = Time.current
-        @store.save_session(self) if @store
+        @store&.save_session(self)
         @new_record = false
         true
       end
@@ -58,7 +61,7 @@ module ActionMCP
       end
 
       def destroy
-        @store.delete_session(id) if @store
+        @store&.delete_session(id)
       end
 
       def reload
@@ -133,9 +136,7 @@ module ActionMCP
         event = { event_id: event_id, data: data, created_at: Time.current }
         @sse_events << event
 
-        while @sse_events.size > max_events
-          @sse_events.shift
-        end
+        @sse_events.shift while @sse_events.size > max_events
 
         event
       end
@@ -190,9 +191,9 @@ module ActionMCP
 
       # Subscription management
       def resource_subscribe(uri)
-        unless @subscriptions.any? { |s| s[:uri] == uri }
-          @subscriptions << { uri: uri, created_at: Time.current }
-        end
+        return if @subscriptions.any? { |s| s[:uri] == uri }
+
+        @subscriptions << { uri: uri, created_at: Time.current }
       end
 
       def resource_unsubscribe(uri)
@@ -304,6 +305,29 @@ module ActionMCP
         end
       end
 
+      # Consent management methods
+      def consent_granted_for?(key)
+        consents_hash = consents.is_a?(String) ? JSON.parse(consents) : consents
+        consents_hash ||= {}
+        consents_hash[key] == true
+      end
+
+      def grant_consent(key)
+        consents_hash = consents.is_a?(String) ? JSON.parse(consents) : consents
+        consents_hash ||= {}
+        consents_hash[key] = true
+        self.consents = consents_hash
+        save!
+      end
+
+      def revoke_consent(key)
+        consents_hash = consents.is_a?(String) ? JSON.parse(consents) : consents
+        consents_hash ||= {}
+        consents_hash.delete(key)
+        self.consents = consents_hash
+        save!
+      end
+
       private
 
       def normalize_name(class_or_name, type)
@@ -403,7 +427,7 @@ module ActionMCP
           size
         end
 
-        def where(condition, value)
+        def where(_condition, value)
           select { |e| e[:event_id] > value }
         end
 

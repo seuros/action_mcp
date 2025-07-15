@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class GatewayIntegrationTest < ActionDispatch::IntegrationTest
@@ -13,7 +15,7 @@ class GatewayIntegrationTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    body = JSON.parse(response.body)
+    body = response.parsed_body
     assert_equal @user.id, body["user_id"]
     assert_equal @user.email, body["user_email"]
   end

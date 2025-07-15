@@ -20,7 +20,7 @@ module ActionMCP
       include  Sampling
       include  Roots
       include  Elicitation
-      include  ResponseCollector  # Must be included last to override write_message
+      include  ResponseCollector # Must be included last to override write_message
 
       # @param [ActionMCP::Session] session
       # @param messaging_mode [:write, :return] The mode for message handling

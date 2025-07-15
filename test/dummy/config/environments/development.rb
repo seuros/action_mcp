@@ -9,7 +9,7 @@ Rails.application.configure do
   $stdout.sync = true
 
   # Configure logger to output to STDOUT
-  config.logger = ActiveSupport::Logger.new(STDOUT)
+  config.logger = ActiveSupport::Logger.new($stdout)
   config.logger.formatter = Logger::Formatter.new
   config.log_level = :debug
 

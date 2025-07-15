@@ -12,44 +12,42 @@ class Progress2025DemoTool < ApplicationMCPTool
   property :delay_ms, type: "integer", description: "Delay between items in milliseconds", default: 10
 
   def perform
-    begin
-      # Extract progressToken from request metadata if available
-      progress_token = extract_progress_token
+    # Extract progressToken from request metadata if available
+    progress_token = extract_progress_token
 
-      # Log that we're starting the tool with this progress token
-      # Starting Progress2025DemoTool with token: #{progress_token}
+    # Log that we're starting the tool with this progress token
+    # Starting Progress2025DemoTool with token: #{progress_token}
 
-      # Create an array to hold our output content
-      output_content = []
+    # Create an array to hold our output content
+    output_content = []
 
-      # Make sure we process at least one item for testing
-      items_to_process = [ 1, total_items.to_i ].max
+    # Make sure we process at least one item for testing
+    items_to_process = [ 1, total_items.to_i ].max
 
-      (1..items_to_process).each do |i|
-        # Simulate work
-        sleep([ delay_ms.to_i, 1 ].max / 1000.0)
+    (1..items_to_process).each do |i|
+      # Simulate work
+      sleep([ delay_ms.to_i, 1 ].max / 1000.0)
 
-        # Only send progress notification if we have a valid progress token
-        if progress_token
-          send_2025_progress_notification(
-            progress_token: progress_token,
-            current: i,
-            total: items_to_process,
-            item_name: "item_#{i}"
-          )
-        end
-
-        # Add to our output content
-        output_content << "Processed item #{i} of #{items_to_process}"
+      # Only send progress notification if we have a valid progress token
+      if progress_token
+        send_2025_progress_notification(
+          progress_token: progress_token,
+          current: i,
+          total: items_to_process,
+          item_name: "item_#{i}"
+        )
       end
 
-      # Render final result with all processed items
-      render text: output_content.join("\n")
-    rescue StandardError => e
-      Rails.logger.error "Error in Progress2025DemoTool: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      raise
+      # Add to our output content
+      output_content << "Processed item #{i} of #{items_to_process}"
     end
+
+    # Render final result with all processed items
+    render text: output_content.join("\n")
+  rescue StandardError => e
+    Rails.logger.error "Error in Progress2025DemoTool: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    raise
   end
 
   private

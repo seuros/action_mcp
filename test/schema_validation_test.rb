@@ -14,7 +14,6 @@ class SchemaValidationTest < ActiveSupport::TestCase
       tool_def = tool_class.to_h
       schema = tool_def[:inputSchema]
 
-
       assert_not_nil schema, "Tool #{tool_class.name} should have inputSchema"
       assert_equal "object", schema[:type] || schema["type"],
                    "Tool #{tool_class.name} schema type should be 'object'"
@@ -33,33 +32,33 @@ class SchemaValidationTest < ActiveSupport::TestCase
           if prop_def["type"]
             valid_types = %w[string number integer boolean array object null]
             assert valid_types.include?(prop_def["type"]),
-                   "Property #{prop_name} in #{tool_class.name} has invalid type: #{prop_def["type"]}"
+                   "Property #{prop_name} in #{tool_class.name} has invalid type: #{prop_def['type']}"
           end
 
           # Check array items
-          if prop_def["type"] == "array" && prop_def["items"]
-            assert prop_def["items"].is_a?(Hash),
-                   "Array property #{prop_name} in #{tool_class.name} should have items as Hash"
+          next unless prop_def["type"] == "array" && prop_def["items"]
 
-            if prop_def["items"]["type"]
-              assert valid_types.include?(prop_def["items"]["type"]),
-                     "Array items type for #{prop_name} in #{tool_class.name} is invalid: #{prop_def["items"]["type"]}"
-            end
+          assert prop_def["items"].is_a?(Hash),
+                 "Array property #{prop_name} in #{tool_class.name} should have items as Hash"
+
+          if prop_def["items"]["type"]
+            assert valid_types.include?(prop_def["items"]["type"]),
+                   "Array items type for #{prop_name} in #{tool_class.name} is invalid: #{prop_def['items']['type']}"
           end
         end
       end
 
       # Check required array
       required = schema[:required] || schema["required"]
-      if required
-        assert required.is_a?(Array),
-               "Tool #{tool_class.name} required should be an Array"
-        required.each do |req|
-          assert req.is_a?(String),
-                 "Required property #{req} in #{tool_class.name} should be a String"
-          assert props&.key?(req) || props&.key?(req.to_sym),
-                 "Required property #{req} in #{tool_class.name} is not defined in properties"
-        end
+      next unless required
+
+      assert required.is_a?(Array),
+             "Tool #{tool_class.name} required should be an Array"
+      required.each do |req|
+        assert req.is_a?(String),
+               "Required property #{req} in #{tool_class.name} should be a String"
+        assert props&.key?(req) || props&.key?(req.to_sym),
+               "Required property #{req} in #{tool_class.name} is not defined in properties"
       end
     end
   end
@@ -85,7 +84,7 @@ class SchemaValidationTest < ActiveSupport::TestCase
       assert_equal "The first number", a_prop["description"] || a_prop[:description]
       assert_equal "The second number", b_prop["description"] || b_prop[:description]
 
-      assert_equal [ "a", "b" ], schema[:required] || schema["required"]
+      assert_equal %w[a b], schema[:required] || schema["required"]
     end
 
     # Test AddTool
@@ -166,14 +165,13 @@ class SchemaValidationTest < ActiveSupport::TestCase
 
       prompt_def = prompt_class.to_h
 
-
       assert_not_nil prompt_def[:name], "Prompt #{prompt_class.name} should have a name"
 
-      if prompt_def[:arguments]
-        prompt_def[:arguments].each do |arg|
-          assert arg[:name].is_a?(String), "Argument name should be a String"
-          assert [ true, false, nil ].include?(arg[:required]), "Argument required should be boolean or nil"
-        end
+      next unless prompt_def[:arguments]
+
+      prompt_def[:arguments].each do |arg|
+        assert arg[:name].is_a?(String), "Argument name should be a String"
+        assert [ true, false, nil ].include?(arg[:required]), "Argument required should be boolean or nil"
       end
     end
   end

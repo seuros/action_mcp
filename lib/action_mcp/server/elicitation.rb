@@ -31,9 +31,7 @@ module ActionMCP
         end
 
         properties = schema[:properties]
-        unless properties.is_a?(Hash)
-          raise ArgumentError, "Elicitation schema must have properties"
-        end
+        raise ArgumentError, "Elicitation schema must have properties" unless properties.is_a?(Hash)
 
         properties.each do |key, prop_schema|
           validate_primitive_schema!(key, prop_schema)
@@ -42,17 +40,13 @@ module ActionMCP
 
       # Validates individual property schemas are primitive types
       def validate_primitive_schema!(key, schema)
-        unless schema.is_a?(Hash)
-          raise ArgumentError, "Property '#{key}' must have a schema definition"
-        end
+        raise ArgumentError, "Property '#{key}' must have a schema definition" unless schema.is_a?(Hash)
 
         type = schema[:type]
         case type
         when "string"
           # Valid string schema, check for enums
-          if schema[:enum] && !schema[:enum].is_a?(Array)
-            raise ArgumentError, "Property '#{key}' enum must be an array"
-          end
+          raise ArgumentError, "Property '#{key}' enum must be an array" if schema[:enum] && !schema[:enum].is_a?(Array)
         when "number", "integer", "boolean"
           # Valid primitive types
         else

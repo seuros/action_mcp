@@ -28,6 +28,7 @@ class ResourceTemplateErrorHandlingTest < ActiveSupport::TestCase
 
     def resolve
       return nil if item_id == "missing"
+
       "Found item: #{item_id}"
     end
   end
@@ -51,7 +52,7 @@ class ResourceTemplateErrorHandlingTest < ActiveSupport::TestCase
     response = template.call
 
     assert response.error?
-    assert_equal -32602, response.to_h[:code]
+    assert_equal(-32_602, response.to_h[:code])
     assert_match(/Required parameters missing/, response.to_h[:message])
   end
 
@@ -60,7 +61,7 @@ class ResourceTemplateErrorHandlingTest < ActiveSupport::TestCase
     response = template.call
 
     assert response.error?
-    assert_equal -32601, response.to_h[:code]
+    assert_equal(-32_601, response.to_h[:code])
     assert_equal "Resource not found", response.to_h[:message]
   end
 
@@ -69,7 +70,7 @@ class ResourceTemplateErrorHandlingTest < ActiveSupport::TestCase
     response = template.call
 
     assert response.error?
-    assert_equal -32603, response.to_h[:code]
+    assert_equal(-32_603, response.to_h[:code])
     assert_match(/Resource resolution failed/, response.to_h[:message])
   end
 

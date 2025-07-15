@@ -175,7 +175,7 @@ namespace :action_mcp do
     # Authentication
     puts "\n\e[36mAuthentication:\e[0m"
     puts "  Methods: #{config.authentication_methods.join(', ')}"
-    if config.oauth_config && config.oauth_config.any?
+    if config.oauth_config&.any?
       puts "  OAuth Provider: #{config.oauth_config['provider']}"
       puts "  OAuth Scopes: #{config.oauth_config['scopes_supported']&.join(', ')}"
     end
@@ -236,7 +236,7 @@ namespace :action_mcp do
       total_sessions = ActionMCP::Session.count
       puts "  Total Sessions: #{total_sessions}"
 
-      if total_sessions > 0
+      if total_sessions.positive?
         # Sessions by status
         sessions_by_status = ActionMCP::Session.group(:status).count
         puts "  Sessions by Status:"
@@ -282,7 +282,7 @@ namespace :action_mcp do
         total_messages = ActionMCP::Session::Message.count
         puts "  Total Messages: #{total_messages}"
 
-        if total_messages > 0
+        if total_messages.positive?
           # Messages by direction
           messages_by_direction = ActionMCP::Session::Message.group(:direction).count
           puts "  Messages by Direction:"
@@ -291,7 +291,9 @@ namespace :action_mcp do
           end
 
           # Messages by type
-          messages_by_type = ActionMCP::Session::Message.group(:message_type).count.sort_by { |_type, count| -count }.first(10)
+          messages_by_type = ActionMCP::Session::Message.group(:message_type).count.sort_by do |_type, count|
+            -count
+          end.first(10)
           puts "  Top Message Types:"
           messages_by_type.each do |type, count|
             puts "    #{type}: #{count}"
@@ -316,7 +318,7 @@ namespace :action_mcp do
         total_events = ActionMCP::Session::SSEEvent.count
         puts "  Total SSE Events: #{total_events}"
 
-        if total_events > 0
+        if total_events.positive?
           # Recent events
           recent_events = ActionMCP::Session::SSEEvent.where("created_at > ?", 1.hour.ago).count
           puts "  SSE Events (Last Hour): #{recent_events}"

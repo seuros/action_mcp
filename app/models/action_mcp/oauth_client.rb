@@ -41,14 +41,17 @@ module ActionMCP
 
     # Scopes
     scope :active, -> { where(active: true) }
-    scope :expired, -> { where("client_secret_expires_at < ?", Time.current.to_i).where.not(client_secret_expires_at: [ nil, 0 ]) }
+    scope :expired, lambda {
+      where("client_secret_expires_at < ?", Time.current.to_i).where.not(client_secret_expires_at: [ nil, 0 ])
+    }
 
     # Callbacks
     before_create :set_issued_at
 
     # Check if client secret is expired
     def secret_expired?
-      return false if client_secret_expires_at.nil? || client_secret_expires_at == 0
+      return false if client_secret_expires_at.nil? || client_secret_expires_at.zero?
+
       Time.current.to_i > client_secret_expires_at
     end
 
@@ -65,6 +68,7 @@ module ActionMCP
     # Validate redirect URI against registered URIs
     def valid_redirect_uri?(uri)
       return false if redirect_uris.blank?
+
       redirect_uris.include?(uri)
     end
 
@@ -133,9 +137,7 @@ module ActionMCP
       end
 
       # Generate client secret for confidential clients
-      if client.confidential_client?
-        client.client_secret = SecureRandom.urlsafe_base64(32)
-      end
+      client.client_secret = SecureRandom.urlsafe_base64(32) if client.confidential_client?
 
       # Store any additional metadata
       known_fields = %w[

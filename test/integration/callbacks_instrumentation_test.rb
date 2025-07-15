@@ -11,17 +11,16 @@ class CallbacksInstrumentationTest < ActionDispatch::IntegrationTest
     tool.call
 
     # Test using callback tracker
-    expected_callbacks = [
-      :before_perform,
-      :around_perform_before,
-      :perform,
-      :after_perform,
-      :around_perform_after
+    expected_callbacks = %i[
+      before_perform
+      around_perform_before
+      perform
+      after_perform
+      around_perform_after
     ]
 
     assert_equal expected_callbacks, CalculateSumTool.callback_tracker
   end
-
 
   test "callbacks and instrumentation are executed in the correct order for GreetingPrompt" do
     prompt = GreetingPrompt.new(name: "Test")

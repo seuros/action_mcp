@@ -30,17 +30,17 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     session = create_initialized_session("2025-06-18")
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test-1",
-        method: "tools/list"
-      }.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "Mcp-Session-Id" => session.id,
-        "MCP-Protocol-Version" => "2025-06-18"
-      }
+         params: {
+           jsonrpc: "2.0",
+           id: "test-1",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "Mcp-Session-Id" => session.id,
+           "MCP-Protocol-Version" => "2025-06-18"
+         }
 
     assert_response :success
     json_response = JSON.parse(response.body)
@@ -52,17 +52,17 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     session = create_initialized_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test-1",
-        method: "tools/list"
-      }.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "Mcp-Session-Id" => session.id,
-        "MCP-Protocol-Version" => "2024-01-01"
-      }
+         params: {
+           jsonrpc: "2.0",
+           id: "test-1",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "Mcp-Session-Id" => session.id,
+           "MCP-Protocol-Version" => "2024-01-01"
+         }
 
     assert_response :bad_request
     json_response = JSON.parse(response.body)
@@ -76,16 +76,16 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     session = create_initialized_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test-1",
-        method: "tools/list"
-      }.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "Mcp-Session-Id" => session.id
-      }
+         params: {
+           jsonrpc: "2.0",
+           id: "test-1",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "Mcp-Session-Id" => session.id
+         }
 
     assert_response :success
     json_response = JSON.parse(response.body)
@@ -97,17 +97,17 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     session = create_initialized_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test-1",
-        method: "tools/list"
-      }.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "Mcp-Session-Id" => session.id,
-        "MCP-Protocol-Version" => "2025-06-18"  # Different from session's negotiated version
-      }
+         params: {
+           jsonrpc: "2.0",
+           id: "test-1",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "Mcp-Session-Id" => session.id,
+           "MCP-Protocol-Version" => "2025-06-18"  # Different from session's negotiated version
+         }
 
     assert_response :bad_request
     json_response = JSON.parse(response.body)
@@ -118,12 +118,12 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
 
   test "skips validation for initialize requests" do
     post "/",
-      params: @valid_initialize_request.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "MCP-Protocol-Version" => "2025-03-26"  # Should be ignored for initialize
-      }
+         params: @valid_initialize_request.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "MCP-Protocol-Version" => "2025-03-26"  # Should be ignored for initialize
+         }
 
     assert_response :success
     json_response = JSON.parse(response.body)
@@ -135,17 +135,17 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     session = create_initialized_session("2025-06-18")
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test-1",
-        method: "tools/list"
-      }.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json",
-        "Mcp-Session-Id" => session.id,
-        "mcp-protocol-version" => "2025-06-18"  # lowercase version
-      }
+         params: {
+           jsonrpc: "2.0",
+           id: "test-1",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json",
+           "Mcp-Session-Id" => session.id,
+           "mcp-protocol-version" => "2025-06-18"  # lowercase version
+         }
 
     assert_response :success
     json_response = JSON.parse(response.body)
@@ -164,20 +164,19 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     end
 
     # Create session in the session store using the helper
-    session = ActionMCP::Server.session_store.create_session(
+    ActionMCP::Server.session_store.create_session(
       fixture_session.id,
       session_payload_from_fixture(fixture_session)
     )
-    session
   end
 
   def initialize_session
     post "/",
-      params: @valid_initialize_request.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "ACCEPT" => "application/json"
-      }
+         params: @valid_initialize_request.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json"
+         }
 
     assert_response :success
 

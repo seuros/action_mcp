@@ -18,9 +18,9 @@ module ActionMCP
         @logger = logger
 
         # If token provided during initialization, store it
-        if token
-          save_token(token)
-        end
+        return unless token
+
+        save_token(token)
       end
 
       # Check if client has valid authentication
@@ -62,6 +62,7 @@ module ActionMCP
         token = current_token
         return nil unless token
         return nil if token_expired?(token)
+
         token
       end
 
@@ -85,7 +86,7 @@ module ActionMCP
 
           # Add 30 second buffer for clock skew
           Time.at(exp) <= Time.now + 30
-        rescue => e
+        rescue StandardError => e
           log_debug("Error checking token expiration: #{e.message}")
           true # Treat invalid tokens as expired
         end
@@ -103,7 +104,7 @@ module ActionMCP
 
         payload_json = Base64.urlsafe_decode64(payload_base64)
         JSON.parse(payload_json)
-      rescue => e
+      rescue StandardError => e
         raise AuthenticationError, "Failed to decode JWT: #{e.message}"
       end
 

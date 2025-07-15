@@ -8,6 +8,7 @@
 #  authentication_method  :string           default("none")
 #  client_capabilities    :json
 #  client_info            :json
+#  consents               :json             not null
 #  ended_at               :datetime
 #  initialized            :boolean          default(FALSE), not null
 #  messages_count         :integer          default(0), not null
@@ -76,6 +77,30 @@ module ActionMCP
 
         # Any remaining capabilities are acceptable
       end
+    end
+    test "consent management" do
+      session = Session.create
+
+      # Initially no consent
+      assert_not session.consent_granted_for?("test_tool")
+
+      # Grant consent
+      session.grant_consent("test_tool")
+      assert session.consent_granted_for?("test_tool")
+
+      # Revoke consent
+      session.revoke_consent("test_tool")
+      assert_not session.consent_granted_for?("test_tool")
+
+      # Grant multiple consents
+      session.grant_consent("tool1")
+      session.grant_consent("tool2")
+      assert session.consent_granted_for?("tool1")
+      assert session.consent_granted_for?("tool2")
+
+      # Revoke non-existent consent (should do nothing)
+      session.revoke_consent("non_existent")
+      assert session.consent_granted_for?("tool1")
     end
   end
 end

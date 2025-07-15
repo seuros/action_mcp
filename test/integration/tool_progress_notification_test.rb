@@ -29,7 +29,6 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
 
     session_id = create_initialized_session
 
-
     # Set up notification tracking
     notifications_received = []
     @test_store.on_notification do |notification|
@@ -64,9 +63,6 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
     assert_equal "tool-1", response_body["id"]
 
     # Check for error
-    if response_body["error"]
-      puts "Error response: #{response_body['error'].inspect}"
-    end
 
     assert_not_nil response_body["result"], "Expected result but got: #{response_body.inspect}"
 
@@ -79,7 +75,6 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
     assert_not_nil text_content
     assert_includes text_content["text"], "Processed item"
 
-
     # Verify progress notifications were sent
     assert_progress_notification_sent("integration-test-123")
     assert_progress_notification_count("integration-test-123", 3)
@@ -87,9 +82,9 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
 
     # Check notification details
     assert_progress_notification_includes("integration-test-123", {
-      progress: 3,
-      total: 3
-    })
+                                            progress: 3,
+                                            total: 3
+                                          })
   end
 
   test "tool works without progressToken" do
@@ -134,7 +129,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
   test "multiple tools can send progress concurrently" do
     session_id = create_initialized_session
 
-    tokens = [ "concurrent-1", "concurrent-2", "concurrent-3" ]
+    tokens = %w[concurrent-1 concurrent-2 concurrent-3]
     threads = []
 
     # Start multiple tool calls concurrently

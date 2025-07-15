@@ -25,10 +25,12 @@ module ActionMCP
             when "nan"
               Float::NAN
             else
-              Float(v) rescue nil
+              begin
+                Float(v)
+              rescue StandardError
+                nil
+              end
             end
-          else
-            nil
           end
         end.compact
       end

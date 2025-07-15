@@ -49,7 +49,7 @@ module ActionMCP
     #
     def render_resource_link(uri:, name: nil, description: nil, mime_type: nil, annotations: nil)
       Content::ResourceLink.new(uri, name: name, description: description,
-                                mime_type: mime_type, annotations: annotations)
+                                     mime_type: mime_type, annotations: annotations)
     end
   end
 end

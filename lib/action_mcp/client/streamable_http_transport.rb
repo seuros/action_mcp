@@ -15,7 +15,8 @@ module ActionMCP
 
       attr_reader :session_id, :last_event_id, :protocol_version
 
-      def initialize(url, session_store:, session_id: nil, oauth_provider: nil, jwt_provider: nil, protocol_version: nil, **options)
+      def initialize(url, session_store:, session_id: nil, oauth_provider: nil, jwt_provider: nil,
+                     protocol_version: nil, **options)
         super(url, session_store: session_store, **options)
         @session_id = session_id
         @oauth_provider = oauth_provider
@@ -66,9 +67,7 @@ module ActionMCP
       end
 
       def send_message(message)
-        unless ready?
-          raise ConnectionError, "Transport not ready"
-        end
+        raise ConnectionError, "Transport not ready" unless ready?
 
         headers = build_post_headers
         json_data = message.is_a?(String) ? message : message.to_json
@@ -104,9 +103,7 @@ module ActionMCP
         headers["Last-Event-ID"] = @last_event_id if @last_event_id
 
         # Add MCP-Protocol-Version header for GET requests when we have a negotiated version
-        if @negotiated_protocol_version
-          headers["MCP-Protocol-Version"] = @negotiated_protocol_version
-        end
+        headers["MCP-Protocol-Version"] = @negotiated_protocol_version if @negotiated_protocol_version
 
         headers.merge!(oauth_headers)
         headers.merge!(jwt_headers)
@@ -123,9 +120,7 @@ module ActionMCP
 
         # Add MCP-Protocol-Version header as per 2025-06-18 spec
         # Only include when we have a negotiated version from previous handshake
-        if @negotiated_protocol_version
-          headers["MCP-Protocol-Version"] = @negotiated_protocol_version
-        end
+        headers["MCP-Protocol-Version"] = @negotiated_protocol_version if @negotiated_protocol_version
 
         headers.merge!(oauth_headers)
         headers.merge!(jwt_headers)
@@ -154,6 +149,7 @@ module ActionMCP
         @http_client.get(@url, nil, headers) do |req|
           req.options.on_data = proc do |chunk, _bytes|
             break if @stop_requested
+
             process_sse_chunk(chunk)
           end
         end
@@ -182,9 +178,9 @@ module ActionMCP
 
         lines.each do |line|
           if line.start_with?("id:")
-            event_id = line[3..-1].strip
+            event_id = line[3..].strip
           elsif line.start_with?("data:")
-            data_lines << line[5..-1].strip
+            data_lines << line[5..].strip
           end
         end
 
@@ -201,11 +197,9 @@ module ActionMCP
         end
       end
 
-      def handle_post_response(response, original_message)
+      def handle_post_response(response, _original_message)
         # Extract session ID from response headers
-        if response.headers["mcp-session-id"]
-          @session_id = response.headers["mcp-session-id"]
-        end
+        @session_id = response.headers["mcp-session-id"] if response.headers["mcp-session-id"]
 
         case response.status
         when 200
@@ -237,19 +231,17 @@ module ActionMCP
       end
 
       def handle_json_response(response)
-        begin
-          message = MultiJson.load(response.body)
+        message = MultiJson.load(response.body)
 
-          # Check if this is an initialize response to capture negotiated protocol version
-          if message.is_a?(Hash) && message["result"] && message["result"]["protocolVersion"]
-            @negotiated_protocol_version = message["result"]["protocolVersion"]
-            log_debug("Negotiated protocol version: #{@negotiated_protocol_version}")
-          end
-
-          handle_message(message)
-        rescue MultiJson::ParseError => e
-          log_error("Failed to parse JSON response: #{e}")
+        # Check if this is an initialize response to capture negotiated protocol version
+        if message.is_a?(Hash) && message["result"] && message["result"]["protocolVersion"]
+          @negotiated_protocol_version = message["result"]["protocolVersion"]
+          log_debug("Negotiated protocol version: #{@negotiated_protocol_version}")
         end
+
+        handle_message(message)
+      rescue MultiJson::ParseError => e
+        log_error("Failed to parse JSON response: #{e}")
       end
 
       def handle_sse_response_stream(response)
@@ -261,9 +253,7 @@ module ActionMCP
 
       def handle_error_response(response)
         error_msg = +"HTTP #{response.status}: #{response.reason_phrase}"
-        if response.body && !response.body.empty?
-          error_msg << " - #{response.body}"
-        end
+        error_msg << " - #{response.body}" if response.body && !response.body.empty?
         raise ConnectionError, error_msg
       end
 
@@ -340,17 +330,17 @@ module ActionMCP
       def handle_authentication_error(response)
         # Check for OAuth challenge in WWW-Authenticate header
         www_auth = response.headers["www-authenticate"]
-        if www_auth&.include?("Bearer")
-          if @oauth_provider
-            log_debug("Received OAuth challenge, clearing OAuth tokens")
-            @oauth_provider.clear_tokens!
-          end
+        return unless www_auth&.include?("Bearer")
 
-          if @jwt_provider
-            log_debug("Received Bearer challenge, clearing JWT tokens")
-            @jwt_provider.clear_tokens!
-          end
+        if @oauth_provider
+          log_debug("Received OAuth challenge, clearing OAuth tokens")
+          @oauth_provider.clear_tokens!
         end
+
+        return unless @jwt_provider
+
+        log_debug("Received Bearer challenge, clearing JWT tokens")
+        @jwt_provider.clear_tokens!
       end
 
       def user_agent

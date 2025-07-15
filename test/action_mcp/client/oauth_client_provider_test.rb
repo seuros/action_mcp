@@ -26,9 +26,9 @@ module ActionMCP
           authorization_endpoint: "#{@server_url}/oauth/authorize",
           token_endpoint: "#{@server_url}/oauth/token",
           issuer: @server_url,
-          scopes_supported: [ "read", "write" ],
+          scopes_supported: %w[read write],
           response_types_supported: [ "code" ],
-          grant_types_supported: [ "authorization_code", "refresh_token" ],
+          grant_types_supported: %w[authorization_code refresh_token],
           code_challenge_methods_supported: [ "S256" ]
         }
       end

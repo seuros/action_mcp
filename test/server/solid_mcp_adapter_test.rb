@@ -49,9 +49,11 @@ module ActionMCP
 
         # Check if message was written to database
         message_count = SolidMCP::Message.where(session_id: "test-session").count
-        assert message_count > 0, "No messages written to database"
+        assert message_count.positive?, "No messages written to database"
 
-        assert wait_for_condition(3) { @received_messages.include?("test-message") }, "Message not received: #{@received_messages.inspect}"
+        assert wait_for_condition(3) {
+          @received_messages.include?("test-message")
+        }, "Message not received: #{@received_messages.inspect}"
       end
 
       def test_broadcast_to_multiple_subscribers
@@ -70,7 +72,9 @@ module ActionMCP
         sleep 0.2 # Give more time for polling
 
         3.times do |i|
-          assert wait_for_condition(2) { received[i].include?("multi-message") }, "Subscriber #{i} did not receive message"
+          assert wait_for_condition(2) {
+            received[i].include?("multi-message")
+          }, "Subscriber #{i} did not receive message"
         end
       end
 

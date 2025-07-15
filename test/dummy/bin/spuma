@@ -7,7 +7,7 @@
 require "bundler/setup"
 
 # Set the port
-port = ARGV[0] || 62770
+port = ARGV[0] || 62_770
 
 puts "🤖 Starting ActionMCP server with Puma on port #{port}..."
 puts "⚠️  Note: Use Ctrl+C to stop (signal handling enabled)"
@@ -15,4 +15,5 @@ puts "🚀 For better streaming performance, consider using bin/sfalcon instead"
 puts ""
 
 # Execute Puma with the MCP Rack application
-exec("bundle", "exec", "puma", "-p", port.to_s, "-C", File.expand_path("../config/puma.rb", __dir__), File.expand_path("../mcp.ru", __dir__))
+exec("bundle", "exec", "puma", "-p", port.to_s, "-C", File.expand_path("../config/puma.rb", __dir__),
+     File.expand_path("../mcp.ru", __dir__))

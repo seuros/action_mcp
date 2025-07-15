@@ -8,6 +8,7 @@
 #  authentication_method  :string           default("none")
 #  client_capabilities    :json
 #  client_info            :json
+#  consents               :json             not null
 #  ended_at               :datetime
 #  initialized            :boolean          default(FALSE), not null
 #  messages_count         :integer          default(0), not null
@@ -40,6 +41,10 @@ module ActionMCP
   # such as client and server capabilities, protocol version, and session status.
   # It also manages the association with messages and subscriptions related to the session.
   class Session < ApplicationRecord
+    after_initialize do
+      self.consents = {} if consents == "{}" || consents.nil?
+    end
+
     include MCPConsoleHelpers
     attribute :id, :string, default: -> { SecureRandom.hex(6) }
     has_many :messages,
@@ -180,9 +185,7 @@ module ActionMCP
       # Maintain cache limit by removing oldest events if needed
       count = sse_events.count
       excess = count - max_events
-      if excess.positive?
-        sse_events.order(event_id: :asc).limit(excess).delete_all
-      end
+      sse_events.order(event_id: :asc).limit(excess).delete_all if excess.positive?
 
       event
     end
@@ -363,7 +366,7 @@ module ActionMCP
     # Required by MCP 2025-03-26 specification for session binding
 
     # Store OAuth token and user context in session
-    def store_oauth_token(access_token:, refresh_token: nil, expires_at:, user_context: {})
+    def store_oauth_token(access_token:, expires_at:, refresh_token: nil, user_context: {})
       update!(
         oauth_access_token: access_token,
         oauth_refresh_token: refresh_token,
@@ -406,7 +409,7 @@ module ActionMCP
     end
 
     # Update OAuth token (for refresh flow)
-    def update_oauth_token(access_token:, refresh_token: nil, expires_at:)
+    def update_oauth_token(access_token:, expires_at:, refresh_token: nil)
       update!(
         oauth_access_token: access_token,
         oauth_refresh_token: refresh_token,
@@ -445,6 +448,38 @@ module ActionMCP
         oauth_user_context: nil,
         authentication_method: "none"
       )
+    end
+
+    # Consent management methods as per MCP specification
+    # These methods manage user consents for tools and resources
+
+    # Checks if consent has been granted for a specific key
+    # @param key [String] The consent key (e.g., tool name or resource URI)
+    # @return [Boolean] true if consent is granted, false otherwise
+    def consent_granted_for?(key)
+      consents_hash = consents.is_a?(String) ? JSON.parse(consents) : consents
+      consents_hash&.key?(key) && consents_hash[key] == true
+    end
+
+    # Grants consent for a specific key
+    # @param key [String] The consent key to grant
+    # @return [Boolean] true if saved successfully
+    def grant_consent(key)
+      self.consents = JSON.parse(consents) if consents.is_a?(String)
+      self.consents ||= {}
+      self.consents[key] = true
+      save!
+    end
+
+    # Revokes consent for a specific key
+    # @param key [String] The consent key to revoke
+    # @return [void]
+    def revoke_consent(key)
+      self.consents = JSON.parse(self.consents) if self.consents.is_a?(String)
+      return unless consents&.key?(key)
+
+      consents.delete(key)
+      save!
     end
 
     private

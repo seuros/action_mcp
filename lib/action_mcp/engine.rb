@@ -77,9 +77,7 @@ module ActionMCP
       end
 
       # Add identifiers directory for gateway identifiers
-      if identifiers_path.exist?
-        app.autoloaders.main.push_dir(identifiers_path, namespace: Object)
-      end
+      app.autoloaders.main.push_dir(identifiers_path, namespace: Object) if identifiers_path.exist?
     end
 
     # Initialize the ActionMCP logger.

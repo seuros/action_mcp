@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
@@ -16,20 +18,20 @@ module ActionMCP
 
       # Initialize a session
       post "/",
-        params: {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "initialize",
-          params: {
-            protocolVersion: "2025-03-26",
-            clientInfo: { name: "test-client", version: "1.0" },
-            capabilities: {}
-          }
-        }.to_json,
-        headers: {
-          "Content-Type" => "application/json",
-          "Accept" => "application/json"
-        }
+           params: {
+             jsonrpc: "2.0",
+             id: 1,
+             method: "initialize",
+             params: {
+               protocolVersion: "2025-03-26",
+               clientInfo: { name: "test-client", version: "1.0" },
+               capabilities: {}
+             }
+           }.to_json,
+           headers: {
+             "Content-Type" => "application/json",
+             "Accept" => "application/json"
+           }
 
       assert_response :success
       @session_id = response.headers["Mcp-Session-Id"]
@@ -43,21 +45,21 @@ module ActionMCP
     test "unauthorized response includes WWW-Authenticate header with OAuth enabled" do
       # Make request without authentication
       post "/",
-        params: {
-          jsonrpc: "2.0",
-          id: 2,
-          method: "tools/list"
-        }.to_json,
-        headers: {
-          "Content-Type" => "application/json",
-          "Accept" => "application/json",
-          "Mcp-Session-Id" => @session_id
-        }
+           params: {
+             jsonrpc: "2.0",
+             id: 2,
+             method: "tools/list"
+           }.to_json,
+           headers: {
+             "Content-Type" => "application/json",
+             "Accept" => "application/json",
+             "Mcp-Session-Id" => @session_id
+           }
 
       assert_response :unauthorized
       assert_equal 'Bearer realm="MCP API"', response.headers["WWW-Authenticate"]
 
-      body = JSON.parse(response.body)
+      body = response.parsed_body
       assert_equal "Missing OAuth info", body["error"]["message"]
     end
 
@@ -66,16 +68,16 @@ module ActionMCP
       ActionMCP.configuration.authentication_methods = [ "jwt" ]
 
       post "/",
-        params: {
-          jsonrpc: "2.0",
-          id: 2,
-          method: "tools/list"
-        }.to_json,
-        headers: {
-          "Content-Type" => "application/json",
-          "Accept" => "application/json",
-          "Mcp-Session-Id" => @session_id
-        }
+           params: {
+             jsonrpc: "2.0",
+             id: 2,
+             method: "tools/list"
+           }.to_json,
+           headers: {
+             "Content-Type" => "application/json",
+             "Accept" => "application/json",
+             "Mcp-Session-Id" => @session_id
+           }
 
       assert_response :unauthorized
       assert_nil response.headers["WWW-Authenticate"]
@@ -103,17 +105,16 @@ module ActionMCP
 
     test "dynamic client registration works" do
       post "/oauth/register",
-        params: {
-          client_name: "Test MCP Client",
-          redirect_uris: [ "http://localhost:3000/callback" ],
-          grant_types: [ "authorization_code" ],
-          response_types: [ "code" ],
-          token_endpoint_auth_method: "none"
-        }.to_json,
-        headers: {
-          "Content-Type" => "application/json"
-        }
-
+           params: {
+             client_name: "Test MCP Client",
+             redirect_uris: [ "http://localhost:3000/callback" ],
+             grant_types: [ "authorization_code" ],
+             response_types: [ "code" ],
+             token_endpoint_auth_method: "none"
+           }.to_json,
+           headers: {
+             "Content-Type" => "application/json"
+           }
 
       assert_response :created
 

@@ -4,6 +4,7 @@ require "test_helper"
 
 class SessionProtocolVersionToolTest < ActiveSupport::TestCase
   include ActionMCP::TestHelper
+  fixtures :action_mcp_sessions
 
   def setup
     @tool = SessionProtocolVersionTool.new
@@ -11,7 +12,8 @@ class SessionProtocolVersionToolTest < ActiveSupport::TestCase
 
   test "returns protocol version for Dr. Identity McBouncer session" do
     # Create a session with 2025-06-18 protocol
-    session = ActionMCP::Session.create!(
+    session = action_mcp_sessions(:dr_identity_mcbouncer_session)
+    session.update!(
       id: "test-session-2025-06-18",
       protocol_version: "2025-06-18",
       initialized: true,
@@ -37,8 +39,9 @@ class SessionProtocolVersionToolTest < ActiveSupport::TestCase
   end
 
   test "returns protocol version for Persistent Negotiator session" do
-    # Create a session with 2025-03-26 protocol
-    session = ActionMCP::Session.create!(
+    # Use fixture session with 2025-03-26 protocol
+    session = action_mcp_sessions(:step1_session)
+    session.update!(
       id: "test-session-2025-03-26",
       protocol_version: "2025-03-26",
       initialized: true,
@@ -75,6 +78,7 @@ class SessionProtocolVersionToolTest < ActiveSupport::TestCase
 
   test "tool has correct metadata" do
     assert_equal "session-protocol-version", SessionProtocolVersionTool.tool_name
-    assert_equal "Returns the MCP protocol version being used in the current session", SessionProtocolVersionTool.description
+    assert_equal "Returns the MCP protocol version being used in the current session",
+                 SessionProtocolVersionTool.description
   end
 end

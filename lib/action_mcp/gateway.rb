@@ -31,21 +31,17 @@ module ActionMCP
     def authenticate!
       active_identifiers = filter_active_identifiers
 
-      if active_identifiers.empty?
-        raise ActionMCP::UnauthorizedError, "No authentication methods available"
-      end
+      raise ActionMCP::UnauthorizedError, "No authentication methods available" if active_identifiers.empty?
 
       # Try identifiers in order, use the first one that succeeds
       last_error = nil
       active_identifiers.each do |klass|
-        begin
-          result = klass.new(@request).resolve
-          return { klass.identifier_name => result }
-        rescue ActionMCP::GatewayIdentifier::Unauthorized => e
-          last_error = e
-          # Try next identifier
-          next
-        end
+        result = klass.new(@request).resolve
+        return { klass.identifier_name => result }
+      rescue ActionMCP::GatewayIdentifier::Unauthorized => e
+        last_error = e
+        # Try next identifier
+        next
       end
 
       # If we get here, all identifiers failed

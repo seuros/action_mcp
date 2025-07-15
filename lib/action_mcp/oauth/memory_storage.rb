@@ -66,9 +66,7 @@ module ActionMCP
 
       def update_refresh_token(token, new_access_token)
         @mutex.synchronize do
-          if @refresh_tokens[token]
-            @refresh_tokens[token][:access_token] = new_access_token
-          end
+          @refresh_tokens[token][:access_token] = new_access_token if @refresh_tokens[token]
         end
       end
 

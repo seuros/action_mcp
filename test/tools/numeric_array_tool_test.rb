@@ -135,7 +135,7 @@ class NumericArrayToolTest < ActiveSupport::TestCase
     # Test various inputs
     assert_equal [ 1.0, 2.0 ], type.cast([ 1, 2 ])
     assert_equal [ 1.5, 2.5 ], type.cast([ 1.5, 2.5 ])
-    assert_equal [ 1.0, 2.0 ], type.cast([ "1", "2" ])
+    assert_equal [ 1.0, 2.0 ], type.cast(%w[1 2])
     assert_equal [], type.cast(nil)
     assert_equal [ 1.0, 3.0 ], type.cast([ 1, "invalid", 3 ])
   end

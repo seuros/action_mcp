@@ -20,11 +20,11 @@ module ActionMCP
 
           # Wrap prompt execution with Rails reloader for development
           result = if Rails.env.development? && defined?(Rails.application.reloader)
-            Rails.application.reloader.wrap do
-              prompt.call
-            end
+                     Rails.application.reloader.wrap do
+                       prompt.call
+                     end
           else
-            prompt.call
+                     prompt.call
           end
 
           if result.is_error

@@ -31,7 +31,7 @@ module ActionMCP
           client_id: "test_client",
           client_secret: "test_secret", # Add a secret for client_credentials_grant
           redirect_uris: [ "https://example.com/callback" ],
-          grant_types: [ "authorization_code", "refresh_token", "client_credentials" ],
+          grant_types: %w[authorization_code refresh_token client_credentials],
           response_types: [ "code" ],
           token_endpoint_auth_method: "client_secret_basic"
         )
@@ -58,7 +58,7 @@ module ActionMCP
         get oauth_authorize_path, params: { client_id: "test_client" }
         assert_response :bad_request
 
-        response_body = JSON.parse(response.body)
+        response_body = response.parsed_body
         assert_equal "invalid_request", response_body["error"]
       end
 
@@ -70,7 +70,7 @@ module ActionMCP
         }
 
         assert_response :bad_request
-        response_body = JSON.parse(response.body)
+        response_body = response.parsed_body
         assert_equal "unsupported_response_type", response_body["error"]
       end
 
@@ -159,16 +159,16 @@ module ActionMCP
       end
 
       test "token endpoint handles client_credentials grant" do
-        auth_header = "Basic " + Base64.encode64("test_client:test_secret").strip
+        auth_header = "Basic #{Base64.encode64('test_client:test_secret').strip}"
 
         post oauth_token_path,
-          params: {
-            grant_type: "client_credentials",
-            scope: "mcp:tools"
-          },
-          headers: {
-            "Authorization" => auth_header
-          }
+             params: {
+               grant_type: "client_credentials",
+               scope: "mcp:tools"
+             },
+             headers: {
+               "Authorization" => auth_header
+             }
 
         assert_response :success
 
@@ -195,11 +195,11 @@ module ActionMCP
       test "introspect endpoint validates active token" do
         access_token = get_access_token
 
-        auth_header = "Basic " + Base64.encode64("test_client:test_secret").strip
+        auth_header = "Basic #{Base64.encode64('test_client:test_secret').strip}"
 
         post oauth_introspect_path,
-          params: { token: access_token },
-          headers: { "Authorization" => auth_header }
+             params: { token: access_token },
+             headers: { "Authorization" => auth_header }
 
         assert_response :success
 
@@ -211,11 +211,11 @@ module ActionMCP
       end
 
       test "introspect endpoint returns inactive for invalid token" do
-        auth_header = "Basic " + Base64.encode64("test_client:test_secret").strip
+        auth_header = "Basic #{Base64.encode64('test_client:test_secret').strip}"
 
         post oauth_introspect_path,
-          params: { token: "invalid_token" },
-          headers: { "Authorization" => auth_header }
+             params: { token: "invalid_token" },
+             headers: { "Authorization" => auth_header }
 
         assert_response :success
 
@@ -227,25 +227,25 @@ module ActionMCP
         access_token = get_access_token
 
         # Verify token is active
-        auth_header = "Basic " + Base64.encode64("test_client:test_secret").strip
+        auth_header = "Basic #{Base64.encode64('test_client:test_secret').strip}"
         post oauth_introspect_path,
-          params: { token: access_token },
-          headers: { "Authorization" => auth_header }
+             params: { token: access_token },
+             headers: { "Authorization" => auth_header }
 
         introspection = JSON.parse(response.body)
         assert introspection["active"]
 
         # Revoke token
         post oauth_revoke_path,
-          params: { token: access_token, token_type_hint: "access_token" },
-          headers: { "Authorization" => auth_header }
+             params: { token: access_token, token_type_hint: "access_token" },
+             headers: { "Authorization" => auth_header }
 
         assert_response :success
 
         # Verify token is now inactive
         post oauth_introspect_path,
-          params: { token: access_token },
-          headers: { "Authorization" => auth_header }
+             params: { token: access_token },
+             headers: { "Authorization" => auth_header }
 
         introspection = JSON.parse(response.body)
         assert_equal false, introspection["active"]

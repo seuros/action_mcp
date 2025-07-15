@@ -18,7 +18,8 @@ module ActionMCP
         # @param code_challenge_method [String] PKCE challenge method (S256, plain)
         # @param user_id [String] User identifier
         # @return [String] Authorization code
-        def generate_authorization_code(client_id:, redirect_uri:, scope:, code_challenge: nil, code_challenge_method: nil, user_id:)
+        def generate_authorization_code(client_id:, redirect_uri:, scope:, user_id:, code_challenge: nil,
+                                        code_challenge_method: nil)
           # Validate scope
           validate_scope(scope) if scope
 
@@ -26,15 +27,15 @@ module ActionMCP
 
           # Store authorization code with metadata
           store_authorization_code(code, {
-            client_id: client_id,
-            redirect_uri: redirect_uri,
-            scope: scope,
-            code_challenge: code_challenge,
-            code_challenge_method: code_challenge_method,
-            user_id: user_id,
-            created_at: Time.current,
-            expires_at: 10.minutes.from_now
-          })
+                                     client_id: client_id,
+                                     redirect_uri: redirect_uri,
+                                     scope: scope,
+                                     code_challenge: code_challenge,
+                                     code_challenge_method: code_challenge_method,
+                                     user_id: user_id,
+                                     created_at: Time.current,
+                                     expires_at: 10.minutes.from_now
+                                   })
 
           code
         end
@@ -46,7 +47,7 @@ module ActionMCP
         # @param redirect_uri [String] Client redirect URI
         # @param code_verifier [String] PKCE code verifier
         # @return [Hash] Token response with access_token, token_type, expires_in, scope
-        def exchange_code_for_token(code:, client_id:, client_secret: nil, redirect_uri:, code_verifier: nil)
+        def exchange_code_for_token(code:, client_id:, redirect_uri:, client_secret: nil, code_verifier: nil)
           # Retrieve and validate authorization code
           code_data = retrieve_authorization_code(code)
           raise InvalidGrantError, "Invalid authorization code" unless code_data
@@ -56,14 +57,10 @@ module ActionMCP
           validate_client(client_id, client_secret)
 
           # Validate redirect URI matches
-          unless code_data[:redirect_uri] == redirect_uri
-            raise InvalidGrantError, "Redirect URI mismatch"
-          end
+          raise InvalidGrantError, "Redirect URI mismatch" unless code_data[:redirect_uri] == redirect_uri
 
           # Validate client ID matches
-          unless code_data[:client_id] == client_id
-            raise InvalidGrantError, "Client ID mismatch"
-          end
+          raise InvalidGrantError, "Client ID mismatch" unless code_data[:client_id] == client_id
 
           # Validate PKCE if challenge was provided during authorization
           if code_data[:code_challenge]
@@ -118,9 +115,7 @@ module ActionMCP
           validate_client(client_id, client_secret)
 
           # Validate client ID matches
-          unless token_data[:client_id] == client_id
-            raise InvalidGrantError, "Client ID mismatch"
-          end
+          raise InvalidGrantError, "Client ID mismatch" unless token_data[:client_id] == client_id
 
           # Validate scope if provided
           if scope
@@ -160,9 +155,7 @@ module ActionMCP
         def introspect_token(access_token)
           token_data = retrieve_access_token(access_token)
 
-          unless token_data
-            return { active: false }
-          end
+          return { active: false } unless token_data
 
           if token_data[:expires_at] < Time.current
             remove_access_token(access_token)
@@ -188,19 +181,15 @@ module ActionMCP
           revoked = false
 
           # Try access token first if hint suggests it or no hint provided
-          if token_type_hint == "access_token" || token_type_hint.nil?
-            if retrieve_access_token(token)
-              revoke_access_token(token)
-              revoked = true
-            end
+          if (token_type_hint == "access_token" || token_type_hint.nil?) && retrieve_access_token(token)
+            revoke_access_token(token)
+            revoked = true
           end
 
           # Try refresh token if not revoked yet
-          if !revoked && (token_type_hint == "refresh_token" || token_type_hint.nil?)
-            if retrieve_refresh_token(token)
-              revoke_refresh_token(token)
-              revoked = true
-            end
+          if !revoked && (token_type_hint == "refresh_token" || token_type_hint.nil?) && retrieve_refresh_token(token)
+            revoke_refresh_token(token)
+            revoked = true
           end
 
           revoked
@@ -269,9 +258,7 @@ module ActionMCP
           if client_info
             # Validate client secret for confidential clients
             if client_info[:client_secret]
-              unless client_secret == client_info[:client_secret]
-                raise InvalidClientError, "Invalid client credentials"
-              end
+              raise InvalidClientError, "Invalid client credentials" unless client_secret == client_info[:client_secret]
             elsif require_secret
               raise InvalidClientError, "Client authentication required"
             end
@@ -280,15 +267,14 @@ module ActionMCP
 
           # Fall back to custom provider validation
           provider_class = oauth_config[:provider]
-          if provider_class && provider_class.respond_to?(:validate_client)
+          if provider_class.respond_to?(:validate_client)
             provider_class.validate_client(client_id, client_secret)
           elsif require_secret && client_secret.nil?
             raise InvalidClientError, "Client authentication required"
           else
             # In development, allow unregistered clients if configured
-            if Rails.env.development? && oauth_config[:allow_unregistered_clients] != false
-              return true
-            end
+            return true if Rails.env.development? && oauth_config[:allow_unregistered_clients] != false
+
             raise InvalidClientError, "Unknown client"
           end
         end
@@ -301,16 +287,10 @@ module ActionMCP
             expected_challenge = Base64.urlsafe_encode64(
               Digest::SHA256.digest(code_verifier), padding: false
             )
-            unless code_challenge == expected_challenge
-              raise InvalidGrantError, "Invalid code verifier"
-            end
+            raise InvalidGrantError, "Invalid code verifier" unless code_challenge == expected_challenge
           when "plain"
-            unless oauth_config[:allow_plain_pkce]
-              raise InvalidGrantError, "Plain PKCE not allowed"
-            end
-            unless code_challenge == code_verifier
-              raise InvalidGrantError, "Invalid code verifier"
-            end
+            raise InvalidGrantError, "Plain PKCE not allowed" unless oauth_config[:allow_plain_pkce]
+            raise InvalidGrantError, "Invalid code verifier" unless code_challenge == code_verifier
           else
             raise InvalidGrantError, "Unsupported code challenge method"
           end
@@ -320,9 +300,9 @@ module ActionMCP
           supported_scopes = oauth_config.fetch(:scopes_supported, [ "mcp:tools", "mcp:resources", "mcp:prompts" ])
           requested_scopes = scope.split(" ")
           unsupported = requested_scopes - supported_scopes
-          if unsupported.any?
-            raise InvalidScopeError, "Unsupported scopes: #{unsupported.join(', ')}"
-          end
+          return unless unsupported.any?
+
+          raise InvalidScopeError, "Unsupported scopes: #{unsupported.join(', ')}"
         end
 
         def default_scope
@@ -333,12 +313,12 @@ module ActionMCP
           token = SecureRandom.urlsafe_base64(32)
 
           store_access_token(token, {
-            client_id: client_id,
-            scope: scope,
-            user_id: user_id,
-            created_at: Time.current,
-            expires_at: token_expires_in.seconds.from_now
-          })
+                               client_id: client_id,
+                               scope: scope,
+                               user_id: user_id,
+                               created_at: Time.current,
+                               expires_at: token_expires_in.seconds.from_now
+                             })
 
           token
         end
@@ -347,13 +327,13 @@ module ActionMCP
           token = SecureRandom.urlsafe_base64(32)
 
           store_refresh_token(token, {
-            client_id: client_id,
-            scope: scope,
-            user_id: user_id,
-            access_token: access_token,
-            created_at: Time.current,
-            expires_at: refresh_token_expires_in.seconds.from_now
-          })
+                                client_id: client_id,
+                                scope: scope,
+                                user_id: user_id,
+                                access_token: access_token,
+                                created_at: Time.current,
+                                expires_at: refresh_token_expires_in.seconds.from_now
+                              })
 
           token
         end

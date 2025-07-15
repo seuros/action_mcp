@@ -23,10 +23,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activerecord', '>= 8.0.1'
   spec.add_dependency 'concurrent-ruby', '>= 1.3.1'
   spec.add_dependency 'jsonrpc-rails', '>= 0.5.3'
+  spec.add_dependency 'jwt', '~> 2.10'
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.0.1'
   spec.add_dependency 'zeitwerk', '~> 2.6'
-  spec.add_dependency 'jwt', '~> 2.10'
   # OAuth 2.1 support via Omniauth
   spec.add_dependency 'omniauth', '~> 2.1'
   spec.add_dependency 'omniauth-oauth2', '~> 1.7'

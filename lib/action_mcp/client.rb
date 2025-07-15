@@ -58,7 +58,8 @@ module ActionMCP
   #     "http://127.0.0.1:3001/action_mcp",
   #     jwt_provider: jwt_provider
   #   )
-  def self.create_client(endpoint, transport: :streamable_http, session_store: nil, session_id: nil, oauth_provider: nil, jwt_provider: nil, protocol_version: nil, logger: Logger.new($stdout), **options)
+  def self.create_client(endpoint, transport: :streamable_http, session_store: nil, session_id: nil,
+                         oauth_provider: nil, jwt_provider: nil, protocol_version: nil, logger: Logger.new($stdout), **options)
     unless endpoint =~ %r{\Ahttps?://}
       raise ArgumentError, "Only HTTP(S) endpoints are supported. STDIO and other transports are not supported."
     end
@@ -67,11 +68,13 @@ module ActionMCP
     store = Client::SessionStoreFactory.create(session_store, **options)
 
     # Create transport
-    transport_instance = create_transport(transport, endpoint, session_store: store, session_id: session_id, oauth_provider: oauth_provider, jwt_provider: jwt_provider, protocol_version: protocol_version, logger: logger, **options)
+    transport_instance = create_transport(transport, endpoint, session_store: store, session_id: session_id,
+                                                               oauth_provider: oauth_provider, jwt_provider: jwt_provider, protocol_version: protocol_version, logger: logger, **options)
 
     logger.info("Creating #{transport} client for endpoint: #{endpoint}")
     # Pass session_id and protocol_version to the client
-    Client::Base.new(transport: transport_instance, logger: logger, session_id: session_id, protocol_version: protocol_version, **options)
+    Client::Base.new(transport: transport_instance, logger: logger, session_id: session_id,
+                     protocol_version: protocol_version, **options)
   end
 
   private_class_method def self.create_transport(type, endpoint, **options)

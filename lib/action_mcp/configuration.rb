@@ -53,7 +53,7 @@ module ActionMCP
 
     def initialize
       @logging_enabled = true
-      @list_changed = false
+      @list_changed = true
       @logging_level = :info
       @resources_subscribe = false
       @elicitation_enabled = false
@@ -67,7 +67,7 @@ module ActionMCP
 
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
-      @protocol_version = "2025-03-26"  # Default to legacy for backwards compatibility
+      @protocol_version = "2025-03-26" # Default to legacy for backwards compatibility
 
       # Resumability defaults
       @sse_event_retention_period = 15.minutes
@@ -93,8 +93,8 @@ module ActionMCP
 
     def gateway_class
       if @gateway_class_name
-        klass = @gateway_class_name.constantize
-        klass
+        @gateway_class_name.constantize
+
       else
         @gateway_class
       end
@@ -117,22 +117,16 @@ module ActionMCP
         raise "Invalid MCP config file" unless app_config.is_a?(Hash)
 
         # Extract authentication configuration if present
-        if app_config["authentication"]
-          @authentication_methods = Array(app_config["authentication"])
-        end
+        @authentication_methods = Array(app_config["authentication"]) if app_config["authentication"]
 
         # Extract OAuth configuration if present
-        if app_config["oauth"]
-          @oauth_config = HashWithIndifferentAccess.new(app_config["oauth"])
-        end
+        @oauth_config = HashWithIndifferentAccess.new(app_config["oauth"]) if app_config["oauth"]
 
         # Extract other top-level configuration settings
         extract_top_level_settings(app_config)
 
         # Extract profiles configuration
-        if app_config["profiles"]
-          @profiles = app_config["profiles"]
-        end
+        @profiles = app_config["profiles"] if app_config["profiles"]
       rescue StandardError => e
         # If the config file doesn't exist in the Rails app, just use the defaults
         Rails.logger.warn "[Configuration] Failed to load MCP config: #{e.class} - #{e.message}"
@@ -192,20 +186,16 @@ module ActionMCP
 
       # Check profile configuration instead of registry contents
       # If profile includes tools (either "all" or specific tools), advertise tools capability
-      if profile && profile[:tools] && profile[:tools].any?
-        capabilities[:tools] = { listChanged: @list_changed }
-      end
+      capabilities[:tools] = { listChanged: @list_changed } if profile && profile[:tools]&.any?
 
       # If profile includes prompts, advertise prompts capability
-      if profile && profile[:prompts] && profile[:prompts].any?
-        capabilities[:prompts] = { listChanged: @list_changed }
-      end
+      capabilities[:prompts] = { listChanged: @list_changed } if profile && profile[:prompts]&.any?
 
       capabilities[:logging] = {} if @logging_enabled
 
       # If profile includes resources, advertise resources capability
-      if profile && profile[:resources] && profile[:resources].any?
-        capabilities[:resources] = { subscribe: @resources_subscribe }
+      if profile && profile[:resources]&.any?
+        capabilities[:resources] = { subscribe: @resources_subscribe, listChanged: @list_changed }
       end
 
       capabilities[:elicitation] = {} if @elicitation_enabled
@@ -240,12 +230,12 @@ module ActionMCP
 
       # Check if any component type includes "all"
       needs_eager_load = profile[:tools]&.include?("all") ||
-                        profile[:prompts]&.include?("all") ||
-                        profile[:resources]&.include?("all")
+                         profile[:prompts]&.include?("all") ||
+                         profile[:resources]&.include?("all")
 
-      if needs_eager_load
-        ensure_mcp_components_loaded
-      end
+      return unless needs_eager_load
+
+      ensure_mcp_components_loaded
     end
 
     private
@@ -285,51 +275,35 @@ module ActionMCP
       end
 
       # Extract thread pool settings
-      if app_config["min_threads"]
-        @min_threads = app_config["min_threads"]
-      end
+      @min_threads = app_config["min_threads"] if app_config["min_threads"]
 
-      if app_config["max_threads"]
-        @max_threads = app_config["max_threads"]
-      end
+      @max_threads = app_config["max_threads"] if app_config["max_threads"]
 
-      if app_config["max_queue"]
-        @max_queue = app_config["max_queue"]
-      end
+      @max_queue = app_config["max_queue"] if app_config["max_queue"]
 
       # Extract polling interval for solid_cable
-      if app_config["polling_interval"]
-        @polling_interval = app_config["polling_interval"]
-      end
+      @polling_interval = app_config["polling_interval"] if app_config["polling_interval"]
 
       # Extract connects_to setting
-      if app_config["connects_to"]
-        @connects_to = app_config["connects_to"]
-      end
+      @connects_to = app_config["connects_to"] if app_config["connects_to"]
 
       # Extract verbose logging setting
-      if app_config.key?("verbose_logging")
-        @verbose_logging = app_config["verbose_logging"]
-      end
+      @verbose_logging = app_config["verbose_logging"] if app_config.key?("verbose_logging")
 
       # Extract gateway class configuration
-      if app_config["gateway_class"]
-        @gateway_class_name = app_config["gateway_class"]
-      end
+      @gateway_class_name = app_config["gateway_class"] if app_config["gateway_class"]
 
       # Extract session store configuration
-      if app_config["session_store_type"]
-        @session_store_type = app_config["session_store_type"].to_sym
-      end
+      @session_store_type = app_config["session_store_type"].to_sym if app_config["session_store_type"]
 
       # Extract client and server session store types
       if app_config["client_session_store_type"]
         @client_session_store_type = app_config["client_session_store_type"].to_sym
       end
 
-      if app_config["server_session_store_type"]
-        @server_session_store_type = app_config["server_session_store_type"].to_sym
-      end
+      return unless app_config["server_session_store_type"]
+
+      @server_session_store_type = app_config["server_session_store_type"].to_sym
     end
 
     def should_include_all?(type)
@@ -377,6 +351,7 @@ module ActionMCP
         Dir.glob(mcp_path.join("**/*.rb")).sort.each do |file|
           # Skip base classes we already loaded
           next if base_files.any? { |base| file == base.to_s }
+
           require_dependency file
         end
       end

@@ -10,7 +10,7 @@ $stdout.sync = true # for falcon
 Signal.trap("INT") do
   puts "\nReceived interrupt signal. Shutting down gracefully..."
   exit(0)
-end  # Puma ghost us when it connect into a sse streaming connection, so we need to handle the INT signal to avoid ghost processes.
+end
 
 Signal.trap("TERM") do
   puts "\nReceived termination signal. Shutting down gracefully..."

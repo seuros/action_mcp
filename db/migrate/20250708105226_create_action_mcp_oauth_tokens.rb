@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateActionMCPOAuthTokens < ActiveRecord::Migration[7.2]
   def change
     create_table :action_mcp_oauth_tokens do |t|
@@ -32,6 +34,6 @@ class CreateActionMCPOAuthTokens < ActiveRecord::Migration[7.2]
     add_index :action_mcp_oauth_tokens, :user_id
     add_index :action_mcp_oauth_tokens, :expires_at
     add_index :action_mcp_oauth_tokens, :revoked
-    add_index :action_mcp_oauth_tokens, [ :token_type, :expires_at ]
+    add_index :action_mcp_oauth_tokens, %i[token_type expires_at]
   end
 end
