@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.72.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.71.1...action_mcp/v0.72.0) (2025-07-15)
+
+
+### Features
+
+* add consent helper to prevent destructive operations ([#128](https://github.com/seuros/action_mcp/issues/128)) ([4b82e1b](https://github.com/seuros/action_mcp/commit/4b82e1b946fbf01a498407571eb19bdce92bb036))
+
+
+### Bug Fixes
+
+* refactor Centralized messaging and notifications ([#125](https://github.com/seuros/action_mcp/issues/125)) ([f794683](https://github.com/seuros/action_mcp/commit/f794683514f77fb25939e04a2bd4cb5a44a76bfe))
+* rename memory_session to remove confusion that it an abstrated session ([#127](https://github.com/seuros/action_mcp/issues/127)) ([5ac71ab](https://github.com/seuros/action_mcp/commit/5ac71abe7fcf87a2a14cd5d2c94a4c649d1ffbef))
+
 ## [0.71.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.71.0...action_mcp/v0.71.1) (2025-07-14)
 
 
