@@ -10,7 +10,7 @@ module ActionMCP
 
         # Send initial progress notification if token is provided
         if progress_token
-          session.send_progress_notification(
+          send_progress_notification(
             progressToken: progress_token,
             progress: 0,
             message: "Starting tools list retrieval"
@@ -26,7 +26,7 @@ module ActionMCP
 
         # Send completion progress notification if token is provided
         if progress_token
-          session.send_progress_notification(
+          send_progress_notification(
             progressToken: progress_token,
             progress: 100,
             message: "Tools list retrieval complete"

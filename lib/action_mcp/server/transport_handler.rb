@@ -12,13 +12,11 @@ module ActionMCP
       delegate :read, :write, to: :session
       include Logging
 
-      include  BaseMessaging  # Provides basic write_message
-      include  Messaging
+      include  MessagingService
       include  Capabilities
       include  Tools
       include  Prompts
       include  Resources
-      include  Notifications
       include  Sampling
       include  Roots
       include  Elicitation
