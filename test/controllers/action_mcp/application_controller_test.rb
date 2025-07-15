@@ -23,11 +23,10 @@ module ActionMCP
       fixture_session = action_mcp_sessions(:step1_session)
 
       # Create session in the session store using the helper
-      session = Server.session_store.create_session(
+      Server.session_store.create_session(
         fixture_session.id,
         session_payload_from_fixture(fixture_session)
       )
-      session
     end
   end
 
@@ -315,12 +314,11 @@ module ActionMCP
       assert_response :ok
       error_response = response.parsed_body
       assert_not_nil error_response["error"]
-      assert_equal -32602, error_response["error"]["code"]
+      assert_equal(-32_602, error_response["error"]["code"])
       assert_match(/Unsupported protocol version/, error_response["error"]["message"])
       # The ID should match the request ID if present
       assert_equal "bad-init", error_response["id"]
     end
-
 
     test "ping" do
       session = create_initialized_session

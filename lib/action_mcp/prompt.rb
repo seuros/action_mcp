@@ -28,6 +28,7 @@ module ActionMCP
     # @return [String] The default prompt name.
     def self.default_prompt_name
       return "" if name.nil?
+
       name.demodulize.underscore.sub(/_prompt$/, "")
     end
 
@@ -55,6 +56,7 @@ module ActionMCP
       def meta(data = nil)
         if data
           raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+
           self._meta = _meta.merge(data)
         else
           _meta

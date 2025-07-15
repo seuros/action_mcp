@@ -31,7 +31,7 @@ module ActionMCP
         rpc_method = request.method
         params = request.params
 
-        result = with_error_handling(id) do
+        with_error_handling(id) do
           common_result = handle_common_methods(rpc_method, id, params)
           if common_result
             common_result
@@ -41,8 +41,6 @@ module ActionMCP
             transport.messaging_mode == :return ? transport.get_last_response : nil
           end
         end
-
-        result
       end
 
       def route_to_handler(rpc_method, id, params)
@@ -80,7 +78,6 @@ module ActionMCP
         response
       end
 
-
       def process_completion_complete(id, params)
         # Extract context if provided
         context = params["context"] if params.is_a?(Hash)
@@ -105,7 +102,7 @@ module ActionMCP
         }
       end
 
-      def build_completion_result(params = {}, context = nil)
+      def build_completion_result(_params = {}, _context = nil)
         # In a real implementation, this would use the params and context
         # to generate appropriate completion suggestions
         # For now, we just return an empty result

@@ -92,7 +92,7 @@ module ActionMCP
         return render_introspection_error unless token
 
         # Authenticate client for introspection
-        client_id, client_secret = extract_client_credentials
+        client_id, = extract_client_credentials
         return render_introspection_error unless client_id
 
         begin
@@ -112,7 +112,7 @@ module ActionMCP
         return head :bad_request unless token
 
         # Authenticate client
-        client_id, client_secret = extract_client_credentials
+        client_id, = extract_client_credentials
         return head :unauthorized unless client_id
 
         begin
@@ -127,9 +127,9 @@ module ActionMCP
 
       def check_oauth_enabled
         auth_methods = ActionMCP.configuration.authentication_methods
-        unless auth_methods&.include?("oauth")
-          head :not_found
-        end
+        return if auth_methods&.include?("oauth")
+
+        head :not_found
       end
 
       def oauth_config
@@ -144,9 +144,7 @@ module ActionMCP
         code_verifier = params[:code_verifier]
 
         # Extract client credentials from Authorization header if not in params
-        if client_id.blank?
-          client_id, client_secret = extract_client_credentials
-        end
+        client_id, client_secret = extract_client_credentials if client_id.blank?
 
         return render_token_error("invalid_request", "Missing required parameters") if code.blank? || client_id.blank?
 
@@ -170,7 +168,10 @@ module ActionMCP
         client_id ||= params[:client_id]
         client_secret ||= params[:client_secret]
 
-        return render_token_error("invalid_request", "Missing required parameters") if refresh_token.blank? || client_id.blank?
+        if refresh_token.blank? || client_id.blank?
+          return render_token_error("invalid_request",
+                                    "Missing required parameters")
+        end
 
         token_response = ActionMCP::OAuth::Provider.refresh_access_token(
           refresh_token: refresh_token,
@@ -251,7 +252,7 @@ module ActionMCP
         render json: { active: false }, status: :bad_request
       end
 
-      def render_consent_page(client_id, redirect_uri, scope, state, code_challenge, code_challenge_method)
+      def render_consent_page(_client_id, _redirect_uri, _scope, _state, _code_challenge, _code_challenge_method)
         # In production, this would render a proper consent page
         # For now, just auto-deny unknown clients
         render json: {

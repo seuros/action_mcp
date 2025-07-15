@@ -27,7 +27,9 @@ module ActionMCP
       def abstract!
         @abstract = true
         # Unregister from the appropriate registry if already registered
-        ActionMCP::ResourceTemplatesRegistry.unregister(self) if ActionMCP::ResourceTemplatesRegistry.items.values.include?(self)
+        return unless ActionMCP::ResourceTemplatesRegistry.items.values.include?(self)
+
+        ActionMCP::ResourceTemplatesRegistry.unregister(self)
       end
 
       def inherited(subclass)
@@ -92,6 +94,7 @@ module ActionMCP
       def meta(data = nil)
         if data
           raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+
           @_meta ||= {}
           @_meta = @_meta.merge(data)
         else
@@ -110,13 +113,14 @@ module ActionMCP
         }.compact
 
         # Add _meta if present
-        result[:_meta] = @_meta if @_meta && @_meta.any?
+        result[:_meta] = @_meta if @_meta&.any?
 
         result
       end
 
       def capability_name
         return "" if name.nil?
+
         @capability_name ||= name.demodulize.underscore.sub(/_template$/, "")
       end
 

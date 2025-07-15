@@ -14,7 +14,7 @@ class FloatArrayTypeTest < ActiveSupport::TestCase
   test "casts integer array to float array" do
     result = @type.cast([ 1, 2, 3 ])
     assert_equal [ 1.0, 2.0, 3.0 ], result
-    assert result.all? { |n| n.is_a?(Float) }
+    assert(result.all? { |n| n.is_a?(Float) })
   end
 
   test "preserves float array" do
@@ -107,7 +107,7 @@ class FloatArrayTypeTest < ActiveSupport::TestCase
 
     # NaN requires special comparison
     assert_equal Float::INFINITY, result[0]
-    assert_equal -Float::INFINITY, result[1]
+    assert_equal(-Float::INFINITY, result[1])
     assert result[2].nan?
   end
 end

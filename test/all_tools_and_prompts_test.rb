@@ -42,7 +42,7 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
 
     # Test custom tool_name (MCP protocol) via session
     session = ActionMCP::Session.new(protocol_version: "2025-06-18")
-    session.tool_registry = [ "git_hub_create_issue" ]  # Register by registry key
+    session.tool_registry = [ "git_hub_create_issue" ] # Register by registry key
     registered_tools = session.registered_tools
 
     # Find tool by its MCP protocol name

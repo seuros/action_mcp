@@ -15,13 +15,13 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
 
     # First, list tools to ensure it's available
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/list"
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/list"
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -42,19 +42,19 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
 
     # Call the tool with various inputs
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 2,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: [ 1, 2.5, 3, 4.75, 5 ]
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 2,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: [ 1, 2.5, 3, 4.75, 5 ]
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -68,19 +68,19 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: [ "1", "2.5", "3.14" ]
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: [ "1", "2.5", "3.14" ]
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -93,17 +93,17 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {}
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {}
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -168,25 +168,23 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     }
   end
 
-  public
-
   test "handles mixed valid and invalid values" do
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: [ 1, "2", "invalid", 3.5, nil, "4.5", {}, [] ]
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: [ 1, "2", "invalid", 3.5, nil, "4.5", {}, [] ]
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -200,19 +198,19 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: []
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: []
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -225,19 +223,19 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: [ 1e10, 2e10, 3e10 ]
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: [ 1e10, 2e10, 3e10 ]
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -250,19 +248,19 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "numeric_array",
-          arguments: {
-            numbers: [ -5, -2.5, 0, 2.5, 5 ]
-          }
-        }
-      },
-      headers: mcp_headers,
-      as: :json
+         params: {
+           jsonrpc: "2.0",
+           id: 1,
+           method: "tools/call",
+           params: {
+             name: "numeric_array",
+             arguments: {
+               numbers: [ -5, -2.5, 0, 2.5, 5 ]
+             }
+           }
+         },
+         headers: mcp_headers,
+         as: :json
 
     assert_response :success
     response_data = JSON.parse(response.body)

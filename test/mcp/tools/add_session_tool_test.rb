@@ -3,10 +3,15 @@
 require "test_helper"
 
 class AddSessionToolTest < ActiveSupport::TestCase
+  fixtures :action_mcp_sessions
+
   setup do
-    @session = ActionMCP::Session.create!
+    @session = action_mcp_sessions(:test_session)
     # Override default wildcard registry for testing
-    @session.update!(tool_registry: [])
+    @session.update!(
+      tool_registry: [],
+      server_capabilities: ActionMCP.configuration.capabilities
+    )
     # Register the meta-tool itself
     @session.register_tool("add_session")
   end

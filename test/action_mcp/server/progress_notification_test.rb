@@ -34,10 +34,10 @@ class ProgressNotificationTest < ActiveSupport::TestCase
 
     assert_progress_notification_sent("task-123")
     assert_progress_notification_includes("task-123", {
-      progress: 50,
-      total: 100,
-      message: "Processing item 50 of 100"
-    })
+                                            progress: 50,
+                                            total: 100,
+                                            message: "Processing item 50 of 100"
+                                          })
   end
 
   test "sends progress notification with only required fields" do
@@ -92,13 +92,13 @@ class ProgressNotificationTest < ActiveSupport::TestCase
 
   test "supports integer progress tokens" do
     @transport.send_progress_notification(
-      progressToken: 12345,
+      progressToken: 12_345,
       progress: 50
     )
 
-    notifications = @test_store.notifications_for_token(12345)
+    notifications = @test_store.notifications_for_token(12_345)
     assert_equal 1, notifications.length
-    assert_equal 12345, notifications.first.params[:progressToken]
+    assert_equal 12_345, notifications.first.params[:progressToken]
   end
 
   test "notification callbacks are triggered" do

@@ -19,7 +19,7 @@ module ActionMCP
     end
 
     # Convert to hash format expected by MCP protocol
-    def to_h(options = nil)
+    def to_h(_options = nil)
       if @is_error
         JSON_RPC::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
       else

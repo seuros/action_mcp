@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
@@ -34,7 +36,7 @@ module ActionMCP
 
     test "server test store tracks session creation" do
       # Create a session
-      session = @server_store.create_session("test-123", status: "initialized")
+      @server_store.create_session("test-123", status: "initialized")
 
       # Use TestHelper assertions
       assert_session_created "test-123"
@@ -60,17 +62,17 @@ module ActionMCP
     test "client test store tracks session operations" do
       # Save a session
       @client_store.save_session("client-123", {
-        id: "client-123",
-        protocol_version: "2025-03-26"
-      })
+                                   id: "client-123",
+                                   protocol_version: "2025-03-26"
+                                 })
 
       # Load it
       @client_store.load_session("client-123")
 
       # Update it
       @client_store.update_session("client-123", {
-        last_event_id: 42
-      })
+                                     last_event_id: 42
+                                   })
 
       # Delete it
       @client_store.delete_session("client-123")
@@ -120,9 +122,9 @@ module ActionMCP
     test "test store operation details are tracked" do
       # Create session with specific attributes
       @server_store.create_session("detail-test", {
-        status: "active",
-        role: "client"
-      })
+                                     status: "active",
+                                     role: "client"
+                                   })
 
       # Check the operation details
       operation = @server_store.operations.first
@@ -137,7 +139,7 @@ module ActionMCP
       old_session = @server_store.create_session("old")
       old_session.updated_at = 2.days.ago
 
-      new_session = @server_store.create_session("new")
+      @server_store.create_session("new")
 
       # Cleanup old sessions
       count = @server_store.cleanup_expired_sessions(older_than: 1.day.ago)

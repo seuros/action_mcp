@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
@@ -51,7 +53,7 @@ module ActionMCP
       end
 
       test "volatile store deletes session" do
-        session = @volatile_store.create_session("test-id")
+        @volatile_store.create_session("test-id")
         assert @volatile_store.session_exists?("test-id")
 
         @volatile_store.delete_session("test-id")
@@ -80,7 +82,7 @@ module ActionMCP
         old_session.updated_at = 2.days.ago
 
         # Create new session
-        new_session = @volatile_store.create_session("new")
+        @volatile_store.create_session("new")
 
         # Ensure sessions exist before cleanup
         assert @volatile_store.session_exists?("old")

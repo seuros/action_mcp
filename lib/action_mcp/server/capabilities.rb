@@ -18,6 +18,7 @@ module ActionMCP
         unless client_protocol_version.is_a?(String) && client_protocol_version.present?
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
         end
+
         unless ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
           error_message = "Unsupported protocol version. Client requested '#{client_protocol_version}' but server supports #{ActionMCP::SUPPORTED_VERSIONS.join(', ')}"
           error_data = {
@@ -37,7 +38,7 @@ module ActionMCP
         # Handle session resumption if sessionId provided
         if session_id
           existing_session = ActionMCP::Session.find_by(id: session_id)
-          if existing_session && existing_session.initialized?
+          if existing_session&.initialized?
             # Resume existing session - update transport reference
             transport.instance_variable_set(:@session, existing_session)
 

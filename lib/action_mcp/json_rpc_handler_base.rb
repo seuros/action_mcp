@@ -64,8 +64,6 @@ module ActionMCP
       when %r{^notifications/}
         process_notifications(rpc_method, params)
         true
-      else
-        nil
       end
     end
 

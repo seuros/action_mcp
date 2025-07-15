@@ -35,7 +35,7 @@ class ToolGeneratorTest < Rails::Generators::TestCase
   end
 
   test "generator uses description option" do
-    run_generator_with_args %w[DescTest --description=A\ test\ tool]
+    run_generator_with_args [ "DescTest", "--description=A test tool" ]
     assert_file generated_tool_path("desc_test"), /description "A test tool"/
   end
 
@@ -57,7 +57,8 @@ class ToolGeneratorTest < Rails::Generators::TestCase
       "foo:string:Foo description:true",
       "bar:integer:Bar description:false"
     ]
-    assert_file generated_tool_path("prop_test"), /property :foo, type: "string", description: "Foo description", required: true/
+    assert_file generated_tool_path("prop_test"),
+                /property :foo, type: "string", description: "Foo description", required: true/
     assert_file generated_tool_path("prop_test"), /property :bar, type: "integer", description: "Bar description"/
     assert_file generated_tool_path("prop_test"), /property :bar(?!.*required: true)/m
   end

@@ -79,10 +79,10 @@ module ActionMCP
                  "total must be numeric when present"
         end
 
-        if params.key?(:message)
-          assert params[:message].is_a?(String),
-                 "message must be string when present"
-        end
+        return unless params.key?(:message)
+
+        assert params[:message].is_a?(String),
+               "message must be string when present"
       end
 
       # Get the current session store (with helpful error if not using test store)

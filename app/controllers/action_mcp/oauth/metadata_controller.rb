@@ -25,13 +25,9 @@ module ActionMCP
         }
 
         # Add optional fields based on configuration
-        if oauth_config[:enable_dynamic_registration]
-          metadata[:registration_endpoint] = registration_endpoint
-        end
+        metadata[:registration_endpoint] = registration_endpoint if oauth_config[:enable_dynamic_registration]
 
-        if oauth_config[:jwks_uri]
-          metadata[:jwks_uri] = oauth_config[:jwks_uri]
-        end
+        metadata[:jwks_uri] = oauth_config[:jwks_uri] if oauth_config[:jwks_uri]
 
         render json: metadata
       end
@@ -54,9 +50,9 @@ module ActionMCP
 
       def check_oauth_enabled
         auth_methods = ActionMCP.configuration.authentication_methods
-        unless auth_methods&.include?("oauth")
-          head :not_found
-        end
+        return if auth_methods&.include?("oauth")
+
+        head :not_found
       end
 
       def oauth_config
@@ -99,7 +95,7 @@ module ActionMCP
       end
 
       def token_endpoint_auth_methods_supported
-        methods = [ "client_secret_basic", "client_secret_post" ]
+        methods = %w[client_secret_basic client_secret_post]
         methods << "none" if oauth_config[:allow_public_clients]
         methods
       end

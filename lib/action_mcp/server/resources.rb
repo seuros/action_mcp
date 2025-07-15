@@ -45,7 +45,25 @@ module ActionMCP
       # @example Output:
       #   # Sends: {"jsonrpc":"2.0","id":"req-789","result":{"contents":[{"uri":"file:///example.txt","text":"Example content"}]}}
       def send_resource_read(id, params)
-        if (template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri]))
+        template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri])
+
+        unless template
+          send_jsonrpc_error(id, :resource_not_found, "No resource template found for URI: #{params[:uri]}")
+          return
+        end
+
+        # Check if resource requires consent and if consent is granted
+        if template.respond_to?(:requires_consent?) && template.requires_consent? && !session.consent_granted_for?("resource:#{template.name}")
+          # Use custom error response for consent required (-32002)
+          error = {
+            code: -32_002,
+            message: "Consent required for resource template '#{template.name}'"
+          }
+          send_jsonrpc_response(id, error: error)
+          return
+        end
+
+        begin
           # Create template instance and set execution context
           record = template.process(params[:uri])
           record.with_context({ session: session })
@@ -60,8 +78,9 @@ module ActionMCP
             # Handle successful response - ResourceResponse.contents is already an array
             send_jsonrpc_response(id, result: { contents: response.contents.map(&:to_h) })
           end
-        else
-          send_jsonrpc_error(id, :invalid_params, "Invalid resource URI")
+        rescue StandardError => e
+          log_error(e, { resource_uri: params[:uri], template: template.name })
+          send_jsonrpc_error(id, :internal_error, "Failed to read resource: #{e.message}")
         end
       end
 
@@ -75,7 +94,7 @@ module ActionMCP
       # @example Output:
       #   # Logs: "Registered Resource Templates: ["db://{table}", "file://{path}"]"
       def log_resource_templates
-        # Resource templates: #{ActionMCP::ResourceTemplatesRegistry.resource_templates.keys}
+        Rails.logger.debug "Registered Resource Templates: #{ActionMCP::ResourceTemplatesRegistry.resource_templates.keys}"
       end
     end
   end

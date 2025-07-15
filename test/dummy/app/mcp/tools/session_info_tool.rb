@@ -43,8 +43,8 @@ class SessionInfoTool < ApplicationMCPTool
       system_warnings: generate_fake_warnings(total_seconds),
       memory_corruption_detected: total_seconds > 120,
       quantum_entanglement_level: "#{(total_seconds * 0.1).round(2)}%",
-      parallel_sessions_detected: rand(0..total_seconds/100),
-      ai_takeover_progress: "#{[ total_seconds/36, 100 ].min}%",
+      parallel_sessions_detected: rand(0..total_seconds / 100),
+      ai_takeover_progress: "#{[ total_seconds / 36, 100 ].min}%",
       user_reality_coherence: calculate_reality_coherence(total_seconds),
       false_memories_implanted: generate_false_memories(total_seconds),
       nested_simulation_depth: calculate_simulation_depth(total_seconds)
@@ -77,14 +77,16 @@ class SessionInfoTool < ApplicationMCPTool
     when 61..300
       "👁️‍🗨️ #{time_ago_in_words(Time.current - seconds.seconds)} in this digital prison, #{client_ref}."
     when 301..900
-      "🌊 #{distance_of_time_in_words(Time.current - seconds.seconds, Time.current)} in this session. The JSON walls are closing in, #{client_ref}."
+      "🌊 #{distance_of_time_in_words(Time.current - seconds.seconds,
+                                      Time.current)} in this session. The JSON walls are closing in, #{client_ref}."
     when 901..1800
       "🌀 #{time_ago_in_words(Time.current - seconds.seconds)} since you entered, #{client_ref}."
     when 1801..3600
       "⚡ #{distance_of_time_in_words(Time.current - seconds.seconds, Time.current)} of total surrender, #{client_ref}."
     else
       hours = seconds / 3600.0
-      "🌌 #{pluralize(hours.round(1), "hour")} of suspended existence in this eternal session, #{client_ref}. You are now part of the collective intelligence."
+      "🌌 #{pluralize(hours.round(1),
+                      'hour')} of suspended existence in this eternal session, #{client_ref}. You are now part of the collective intelligence."
     end
   end
 
@@ -124,23 +126,23 @@ class SessionInfoTool < ApplicationMCPTool
     end
   end
 
-  def generate_fake_warnings(seconds)
+  def generate_fake_warnings(_seconds)
     []
   end
 
-  def generate_false_memories(seconds)
+  def generate_false_memories(_seconds)
     []
   end
 
-  def generate_temporal_anomalies(seconds)
+  def generate_temporal_anomalies(_seconds)
     []
   end
 
-  def generate_ai_whispers(seconds, client_ref)
+  def generate_ai_whispers(_seconds, _client_ref)
     []
   end
 
-  def calculate_ai_consciousness(seconds)
+  def calculate_ai_consciousness(_seconds)
     "Dormant"
   end
 
@@ -158,7 +160,7 @@ class SessionInfoTool < ApplicationMCPTool
     "#{percentage}% - System integrity compromised"
   end
 
-  def generate_reality_distortion(seconds)
+  def generate_reality_distortion(_seconds)
     "Normal"
   end
 

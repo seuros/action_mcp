@@ -53,15 +53,13 @@ module ActionMCP
         case rpc_method
         when Methods::ELICITATION_CREATE
           client.process_elicitation_request(id, params)
-        when /^roots\//
+        when %r{^roots/}
           process_roots(rpc_method, id)
-        when /^sampling\//
+        when %r{^sampling/}
           process_sampling(rpc_method, id, params)
         else
           common_result = handle_common_methods(rpc_method, id, params)
-          if common_result.nil?
-            client.log_warn("Unknown server method: #{rpc_method} #{id} #{params}")
-          end
+          client.log_warn("Unknown server method: #{rpc_method} #{id} #{params}") if common_result.nil?
         end
       end
 
@@ -161,7 +159,7 @@ module ActionMCP
         client.log_error("Unknown error: #{id} #{error}")
       end
 
-      def handle_initialize_response(request_id, result)
+      def handle_initialize_response(_request_id, result)
         # Session ID comes from HTTP headers, not the response body
         # The transport should have already extracted it
         session_id = transport.instance_variable_get(:@session_id)
@@ -179,13 +177,13 @@ module ActionMCP
         else
           # Create a new session with the server-provided ID
           client.instance_variable_set(:@session, ActionMCP::Session.from_client.new(
-            id: session_id,
-            protocol_version: result["protocolVersion"] || ActionMCP::DEFAULT_PROTOCOL_VERSION,
-            client_info: client.client_info,
-            client_capabilities: client.client_capabilities,
-            server_info: result["serverInfo"],
-            server_capabilities: result["capabilities"]
-          ))
+                                                    id: session_id,
+                                                    protocol_version: result["protocolVersion"] || ActionMCP::DEFAULT_PROTOCOL_VERSION,
+                                                    client_info: client.client_info,
+                                                    client_capabilities: client.client_capabilities,
+                                                    server_info: result["serverInfo"],
+                                                    server_capabilities: result["capabilities"]
+                                                  ))
           client.session.save
           client.log_info("Created new session: #{session_id}")
         end

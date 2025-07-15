@@ -133,9 +133,9 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
     return unless column_exists?(:action_mcp_session_messages, :direction)
 
     # SQLite3 doesn't support changing column comments
-    if connection.adapter_name.downcase != 'sqlite'
-      change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
-    end
+    return unless connection.adapter_name.downcase != 'sqlite'
+
+    change_column_comment :action_mcp_session_messages, :direction, 'The message recipient'
   end
 
   private

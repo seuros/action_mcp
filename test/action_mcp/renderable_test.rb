@@ -33,7 +33,8 @@ module ActionMCP
     end
 
     def test_render_resource
-      result = @renderer.render(resource: "file://paste/path.bin", mime_type: "application/octet-stream", text: "Resource text", blob: "binarydata")
+      result = @renderer.render(resource: "file://paste/path.bin", mime_type: "application/octet-stream",
+                                text: "Resource text", blob: "binarydata")
       assert_instance_of Content::Resource, result
       assert_equal "file://paste/path.bin", result.uri
       assert_equal "application/octet-stream", result.mime_type

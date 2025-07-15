@@ -8,15 +8,15 @@ module ActionMCP
       # @param id [String, Integer] The request ID
       # @param params [Hash] The elicitation parameters
       def process_elicitation_request(id, params)
-        message = params["message"]
-        requested_schema = params["requestedSchema"]
+        params["message"]
+        params["requestedSchema"]
 
         # In a real implementation, this would prompt the user
         # For now, we'll just return a decline response
         # Actual implementations should override this method
         send_jsonrpc_response(id, result: {
-          action: "decline"
-        })
+                                action: "decline"
+                              })
       end
 
       # Send elicitation response

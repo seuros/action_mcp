@@ -3,7 +3,7 @@
 module ActionMCP
   module Server
     class SessionStoreFactory
-      def self.create(type = nil, **options)
+      def self.create(type = nil, **_options)
         type ||= default_type
 
         case type.to_sym

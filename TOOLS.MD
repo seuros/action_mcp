@@ -190,6 +190,47 @@ class CreateUserTool < ApplicationMCPTool
 end
 ```
 
+## Consent Management for Sensitive Tools
+
+Some tools perform sensitive operations and require explicit user consent:
+
+```ruby
+class DeleteUserTool < ApplicationMCPTool
+  tool_name "delete_user"
+  description "Delete a user account"
+  
+  # Require explicit consent before execution
+  requires_consent!
+  
+  property :user_id, type: "string", description: "User ID to delete", required: true
+  
+  def perform
+    # This code only runs after user grants consent
+    user = User.find(user_id)
+    user.destroy!
+    render(text: "User #{user.name} has been deleted")
+  end
+end
+```
+
+**When to use consent:**
+- File system operations
+- Database modifications
+- External API calls that change data
+- Any destructive operations
+
+**Consent Flow:**
+1. Tool called without consent → Returns error -32002
+2. Client grants consent for specific tool
+3. Tool executes normally for that session
+
+```ruby
+# Managing consent programmatically
+session.consent_granted_for?("delete_user")  # Check consent
+session.grant_consent("delete_user")         # Grant consent
+session.revoke_consent("delete_user")        # Revoke consent
+```
+
 ## Testing Your Tool
 
 ### 1. Check if your tool is registered:
@@ -199,20 +240,38 @@ bundle exec rails action_mcp:list_tools
 
 ### 2. Test with MCP Inspector:
 ```bash
-npx @modelcontextprotocol/inspector --url http://localhost:3000/action_mcp
+# Start your MCP server
+bundle exec rails s -c mcp.ru -p 62770
+
+# In another terminal, run the inspector
+npx @modelcontextprotocol/inspector --url http://localhost:62770
 ```
 
 ### 3. Write a test:
 ```ruby
 # test/mcp/tools/your_tool_test.rb
 require "test_helper"
+require "action_mcp/test_helper"
 
 class YourToolTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+  
   test "does the thing" do
-    tool = YourTool.new(input: "test")
-    result = tool.call
+    assert_tool_findable("your_tool")
+    result = execute_tool("your_tool", input: "test")
+    assert_tool_output(result, "Expected output")
+  end
+  
+  test "consent required tool" do
+    # Tool should require consent first
+    assert_raises ActionMCP::ConsentRequiredError do
+      execute_tool("delete_user", user_id: "123")
+    end
     
-    assert_equal "Expected output", result.first[:text]
+    # Grant consent and try again
+    session.grant_consent("delete_user")
+    result = execute_tool("delete_user", user_id: "123")
+    assert_tool_output(result, "User deleted")
   end
 end
 ```
@@ -227,27 +286,137 @@ end
 ✅ Using `render` to return results?  
 ✅ Tool shows up in `rails action_mcp:list_tools`?  
 
+## Error Handling and Clear Messages
+
+Tools should return clear error messages to the LLM using the `render` method:
+
+```ruby
+class FileReaderTool < ApplicationMCPTool
+  def perform
+    unless File.exist?(file_path)
+      render(error: ["File not found: #{file_path}"])
+      return
+    end
+    
+    begin
+      content = File.read(file_path)
+      render(text: "File contents: #{content}")
+    rescue => e
+      render(error: ["Could not read file: #{e.message}"])
+    end
+  end
+end
+```
+
+**Error Types:**
+- **Validation errors** - Automatic from property validation
+- **Consent errors** - Code -32002 when consent required
+- **Tool errors** - Use `render(error: ["Clear message for LLM"])`
+- **Success responses** - Use `render(text: "Success message")`
+
 ## Common Issues
 
 **Tool not showing up in list?**
 - Make sure it inherits from `ApplicationMCPTool`
 - Check the file is in `app/mcp/tools/`
 - Restart your server
+- Verify with `bundle exec rails action_mcp:list_tools`
 
 **Getting "undefined method" errors?**
 - Property names become method names: `property :user_id` → use `user_id` in perform
 - Check spelling matches exactly
+- Properties are automatically validated and accessible
 
 **Validation errors?**
 - Required properties must be provided
 - Check your validates rules
 - Error will show which validation failed
+- Use Rails validations for complex rules
+
+**Consent errors?**
+- Tool returns error -32002 when consent required
+- Grant consent using `session.grant_consent(tool_name)`
+- Consent is session-scoped and persists until revoked
+
+**Session not found?**
+- Ensure session exists in session store
+- Check session ID is properly passed in headers
+- Use fixtures in tests for consistent sessions
+
+## Advanced Features
+
+### Multiple Output Types
+```ruby
+def perform
+  # Text output
+  render(text: "Processing started...")
+  
+  # Image output
+  chart_data = generate_chart
+  render(image: chart_data, mime_type: "image/png")
+  
+  # Audio output
+  audio_data = text_to_speech("Processing complete")
+  render(audio: audio_data, mime_type: "audio/mpeg")
+  
+  # File resource
+  render(resource: "file://output.json", 
+         mime_type: "application/json",
+         text: results.to_json)
+end
+```
+
+### Authentication Context
+```ruby
+def perform
+  # Access authenticated user
+  if current_user
+    render(text: "Hello, #{current_user.name}!")
+  else
+    render(text: "Hello, anonymous user!")
+  end
+  
+  # Access other gateway identifiers
+  if current_organization
+    render(text: "Organization: #{current_organization.name}")
+  end
+end
+```
+
+### Profile-Based Tool Exposure
+```ruby
+# Only available in specific profiles
+# Configure in config/mcp.yml:
+# admin_profile:
+#   tools:
+#     - admin_tool
+#     - delete_user
+```
+
+## Performance Tips
+
+1. **Use database indexes** for property lookups
+2. **Cache expensive operations** within the perform method
+3. **Limit output size** for large datasets
+4. **Use background jobs** for long-running operations
+5. **Stream progress** with multiple render calls
+
+## Security Best Practices
+
+1. **Validate all inputs** using Rails validations
+2. **Use consent for sensitive operations**
+3. **Never expose secrets** in tool outputs
+4. **Implement proper authorization** in perform method
+5. **Sanitize user inputs** before database queries
+6. **Use parameterized queries** to prevent SQL injection
 
 ## Remember
 
 1. **Always use the generator** - It sets up everything correctly
 2. **Properties become methods** - `property :name` means you can use `name` in perform
 3. **Multiple renders are fine** - Show progress with multiple render calls
-4. **Errors are caught** - The rescue block is already there for you
+4. **Consent protects users** - Use for any destructive operations
+5. **Test thoroughly** - Use TestHelper for comprehensive testing
+6. **Context matters** - Error messages adapt to HTTP vs direct calls
 
-That's it! You now know how to create MCP tools. Start with the generator and modify from there.
+That's it! You now know how to create powerful, secure MCP tools. Start with the generator and build from there.

@@ -26,8 +26,8 @@ module ActionMCP
       def initialize(transport:, logger: ActionMCP.logger, protocol_version: nil, **options)
         @logger = logger
         @transport = transport
-        @session = nil  # Session will be created/loaded based on server response
-        @session_id = options[:session_id]  # Optional session ID for resumption
+        @session = nil # Session will be created/loaded based on server response
+        @session_id = options[:session_id] # Optional session ID for resumption
         @protocol_version = protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION
         @server_capabilities = nil
         @connection_error = nil
@@ -91,7 +91,7 @@ module ActionMCP
 
         begin
           # Only write to session if it exists (after initialization)
-          session.write(payload) if session
+          session&.write(payload)
           data = payload.to_json unless payload.is_a?(String)
           @transport.send_message(data)
           true
@@ -109,11 +109,11 @@ module ActionMCP
         end
 
         # Only update session if it exists
-        if @session
-          @session.server_capabilities = server.capabilities
-          @session.server_info = server.server_info
-          @session.save
-        end
+        return unless @session
+
+        @session.server_capabilities = server.capabilities
+        @session.server_info = server.server_info
+        @session.save
       end
 
       def initialized?
@@ -176,9 +176,7 @@ module ActionMCP
         log_debug("Sending client capabilities")
 
         # If we have a session_id, we're trying to resume
-        if @session_id
-          log_debug("Attempting to resume session: #{@session_id}")
-        end
+        log_debug("Attempting to resume session: #{@session_id}") if @session_id
 
         params = {
           protocolVersion: @protocol_version,

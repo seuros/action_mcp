@@ -40,51 +40,70 @@ module ActionMCP
         # Find tool in session's registry
         tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
 
-        if tool_class
-          begin
-            # Create tool and set execution context with request info
-            tool = tool_class.new(arguments)
-            tool.with_context({
-              session: session,
-              request: {
-                params: {
-                  name: tool_name,
-                  arguments: arguments,
-                  _meta: _meta
-                }
-              }
-            })
+        unless tool_class
+          Rails.logger.error "Tool not found: #{tool_name}. Registered tools: #{session.registered_tools.map(&:tool_name).join(', ')}"
+          send_jsonrpc_error(request_id, :method_not_found,
+                             "Tool '#{tool_name}' not found or not registered for this session")
+          return
+        end
 
-            # Wrap tool execution with Rails reloader for development
-            result = if Rails.env.development?
-              # Preserve Current attributes across reloader boundary
-              current_user = ActionMCP::Current.user
-              current_gateway = ActionMCP::Current.gateway
+        # Check if tool requires consent and if consent is granted
+        if tool_class.respond_to?(:requires_consent?) && tool_class.requires_consent? && !session.consent_granted_for?(tool_name)
+          # Use custom error response for consent required (-32002)
+          error = {
+            code: -32_002,
+            message: "Consent required for tool '#{tool_name}'"
+          }
+          send_jsonrpc_response(request_id, error: error)
+          return
+        end
 
-              Rails.application.reloader.wrap do
-                # Restore Current attributes inside reloader
-                ActionMCP::Current.user = current_user
-                ActionMCP::Current.gateway = current_gateway
-                tool.call
-              end
-            else
-              tool.call
-            end
+        begin
+          # Create tool and set execution context with request info
+          tool = tool_class.new(arguments)
+          tool.with_context({
+                              session: session,
+                              request: {
+                                params: {
+                                  name: tool_name,
+                                  arguments: arguments,
+                                  _meta: _meta
+                                }
+                              }
+                            })
 
-            if result.is_error
-              # Convert ToolResponse error to proper JSON-RPC error format
-              # Pass the error hash directly - the Response class will handle it
-              error_hash = result.to_h
-              send_jsonrpc_response(request_id, error: error_hash)
-            else
-              send_jsonrpc_response(request_id, result: result)
-            end
-          rescue ArgumentError => e
-            # Handle parameter validation errors
-            send_jsonrpc_error(request_id, :invalid_params, e.message)
+          # Wrap tool execution with Rails reloader for development
+          result = if Rails.env.development?
+                     # Preserve Current attributes across reloader boundary
+                     current_user = ActionMCP::Current.user
+                     current_gateway = ActionMCP::Current.gateway
+
+                     Rails.application.reloader.wrap do
+                       # Restore Current attributes inside reloader
+                       ActionMCP::Current.user = current_user
+                       ActionMCP::Current.gateway = current_gateway
+                       tool.call
+                     end
+          else
+                     tool.call
           end
-        else
-          send_jsonrpc_error(request_id, :method_not_found, "Tool '#{tool_name}' not available in this session")
+
+          if result.is_error
+            # Convert ToolResponse error to proper JSON-RPC error format
+            # Pass the error hash directly - the Response class will handle it
+            error_hash = result.to_h
+            send_jsonrpc_response(request_id, error: error_hash)
+          else
+            send_jsonrpc_response(request_id, result: result)
+          end
+        rescue ArgumentError => e
+          # Handle parameter validation errors
+          send_jsonrpc_error(request_id, :invalid_params, e.message)
+        rescue StandardError => e
+          # Log the actual error for debugging
+          Rails.logger.error "Tool execution error: #{e.class} - #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          send_jsonrpc_error(request_id, :internal_error, "An unexpected error occurred.")
         end
       end
 

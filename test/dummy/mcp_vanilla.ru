@@ -63,33 +63,27 @@ module Warden
       )
     end
 
-    def user(scope = nil)
+    def user(_scope = nil)
       nil
     end
 
-    def authenticate(options = {})
+    def authenticate(_options = {})
       nil
     end
 
-    def authenticate!(options = {})
+    def authenticate!(_options = {})
       nil
     end
 
-    def authenticated?(scope = nil)
+    def authenticated?(_scope = nil)
       false
     end
 
-    def session(scope = nil)
+    def session(_scope = nil)
       {}
     end
 
-    def env
-      @env
-    end
-
-    def session_serializer
-      @session_serializer
-    end
+    attr_reader :env, :session_serializer
 
     def config
       OpenStruct.new(
@@ -111,7 +105,7 @@ class WarddenInjector
     env["warden"] = Warden::Proxy.new(env)
     begin
       @app.call(env)
-    rescue => e
+    rescue StandardError => e
       puts "Error: #{e.class} - #{e.message}"
       puts e.backtrace.first(10)
       raise

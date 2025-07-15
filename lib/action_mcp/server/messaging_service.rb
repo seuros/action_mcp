@@ -3,7 +3,7 @@
 module ActionMCP
   module Server
     module MessagingService
-      include BaseMessaging  # For write_message
+      include BaseMessaging # For write_message
 
       attr_accessor :messaging_mode
 
@@ -63,30 +63,27 @@ module ActionMCP
       def send_message(type, **args)
         message = case type
         when :request
-          JSON_RPC::Request.new(
-            id: args[:id],
-            method: args[:method],
-            params: args[:params]
-          )
+                    JSON_RPC::Request.new(
+                      id: args[:id],
+                      method: args[:method],
+                      params: args[:params]
+                    )
         when :response
-          response_args = { id: args[:id] }
-          response_args[:result] = args[:result] if args.key?(:result)
-          response_args[:error] = args[:error] if args.key?(:error)
-          JSON_RPC::Response.new(**response_args)
+                    response_args = { id: args[:id] }
+                    response_args[:result] = args[:result] if args.key?(:result)
+                    response_args[:error] = args[:error] if args.key?(:error)
+                    JSON_RPC::Response.new(**response_args)
         when :notification
-          JSON_RPC::Notification.new(
-            method: args[:method],
-            params: args[:params]
-          )
+                    JSON_RPC::Notification.new(
+                      method: args[:method],
+                      params: args[:params]
+                    )
         end
 
-        if messaging_mode == :return
-          write_message(message)
-          message
-        else
-          write_message(message)
-          nil
-        end
+        write_message(message)
+        return unless messaging_mode == :return
+
+        message
       end
     end
   end

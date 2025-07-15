@@ -49,7 +49,7 @@ shared:
       resources:
         - all
       options:
-        list_changed: false
+        list_changed: true
         logging_enabled: true
         resources_subscribe: false
 

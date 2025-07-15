@@ -23,6 +23,7 @@ module ActionMCP
     class_attribute :_annotations, instance_accessor: false, default: {}
     class_attribute :_output_schema, instance_accessor: false, default: nil
     class_attribute :_meta, instance_accessor: false, default: {}
+    class_attribute :_requires_consent, instance_accessor: false, default: false
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -44,6 +45,7 @@ module ActionMCP
     # @return [String] The default tool name.
     def self.default_tool_name
       return "" if name.nil?
+
       name.demodulize.underscore.sub(/_tool$/, "")
     end
 
@@ -128,19 +130,30 @@ module ActionMCP
       def output_schema(schema = nil)
         if schema
           raise NotImplementedError, "Output schema DSL not yet implemented. Coming soon with structured content DSL!"
-        else
-          _output_schema
         end
+
+        _output_schema
       end
 
       # Sets or retrieves the _meta field
       def meta(data = nil)
         if data
           raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+
           self._meta = _meta.merge(data)
         else
           _meta
         end
+      end
+
+      # Marks this tool as requiring consent before execution
+      def requires_consent!
+        self._requires_consent = true
+      end
+
+      # Returns whether this tool requires consent
+      def requires_consent?
+        _requires_consent
       end
     end
 
@@ -203,21 +216,19 @@ module ActionMCP
 
       # Map the type - for number arrays, use our custom type instance
       mapped_type = if type == "number"
-        Types::FloatArrayType.new
+                      Types::FloatArrayType.new
       else
-        map_json_type_to_active_model_type("array_#{type}")
+                      map_json_type_to_active_model_type("array_#{type}")
       end
 
       attribute prop_name, mapped_type, default: default
 
       # For arrays, we need to check if the attribute is nil, not if it's empty
-      if required
-        validates prop_name, presence: true, unless: -> { self.send(prop_name).is_a?(Array) }
-        validate do
-          if self.send(prop_name).nil?
-            errors.add(prop_name, "can't be blank")
-          end
-        end
+      return unless required
+
+      validates prop_name, presence: true, unless: -> { send(prop_name).is_a?(Array) }
+      validate do
+        errors.add(prop_name, "can't be blank") if send(prop_name).nil?
       end
     end
 
@@ -277,7 +288,13 @@ module ActionMCP
             perform
           end
         rescue StandardError => e
-          @response.mark_as_error!(:internal_error, message: e.message)
+          # Show generic error message for HTTP requests, detailed for direct calls
+          error_message = if execution_context[:request].present?
+                            "An unexpected error occurred."
+          else
+                            e.message
+          end
+          @response.mark_as_error!(:internal_error, message: error_message)
         end
       else
         @response.mark_as_error!(:invalid_params,
@@ -345,12 +362,10 @@ module ActionMCP
       return unless @response
 
       # Validate against output schema if defined
-      if self.class._output_schema
-        # TODO: Add JSON Schema validation here
-        # For now, just ensure it's a hash/object
-        unless content.is_a?(Hash)
-          raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
-        end
+      # TODO: Add JSON Schema validation here
+      # For now, just ensure it's a hash/object
+      if self.class._output_schema && !content.is_a?(Hash)
+        raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
       end
 
       @response.set_structured_content(content)
@@ -408,30 +423,26 @@ module ActionMCP
     def validate_number_parameter(key, value)
       return if value.is_a?(Numeric)
 
-      if value.is_a?(String)
-        # Check if string can be converted to a valid number
-        begin
-          Float(value)
-        rescue ArgumentError, TypeError
-          raise ArgumentError, "Parameter '#{key}' must be a valid number, got: #{value.inspect}"
-        end
-      else
-        raise ArgumentError, "Parameter '#{key}' must be a number, got: #{value.class}"
+      raise ArgumentError, "Parameter '#{key}' must be a number, got: #{value.class}" unless value.is_a?(String)
+
+      # Check if string can be converted to a valid number
+      begin
+        Float(value)
+      rescue ArgumentError, TypeError
+        raise ArgumentError, "Parameter '#{key}' must be a valid number, got: #{value.inspect}"
       end
     end
 
     def validate_integer_parameter(key, value)
       return if value.is_a?(Integer)
 
-      if value.is_a?(String)
-        # Check if string can be converted to a valid integer
-        begin
-          Integer(value)
-        rescue ArgumentError, TypeError
-          raise ArgumentError, "Parameter '#{key}' must be a valid integer, got: #{value.inspect}"
-        end
-      else
-        raise ArgumentError, "Parameter '#{key}' must be an integer, got: #{value.class}"
+      raise ArgumentError, "Parameter '#{key}' must be an integer, got: #{value.class}" unless value.is_a?(String)
+
+      # Check if string can be converted to a valid integer
+      begin
+        Integer(value)
+      rescue ArgumentError, TypeError
+        raise ArgumentError, "Parameter '#{key}' must be a valid integer, got: #{value.inspect}"
       end
     end
 
@@ -447,7 +458,7 @@ module ActionMCP
       raise ArgumentError, "Parameter '#{key}' must be a boolean, got: #{value.class}"
     end
 
-    def validate_array_parameter(key, value, property_schema)
+    def validate_array_parameter(key, value, _property_schema)
       return if value.is_a?(Array)
 
       raise ArgumentError, "Parameter '#{key}' must be an array, got: #{value.class}"

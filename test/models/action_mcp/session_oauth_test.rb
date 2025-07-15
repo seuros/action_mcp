@@ -4,8 +4,10 @@ require "test_helper"
 
 module ActionMCP
   class SessionOAuthTest < ActiveSupport::TestCase
+    fixtures :action_mcp_sessions
+
     def setup
-      @session = ActionMCP::Session.create!(id: "test_session")
+      @session = action_mcp_sessions(:test_session)
     end
 
     test "can store OAuth token and user context" do
@@ -239,7 +241,7 @@ module ActionMCP
     test "database agnostic JSON storage works" do
       user_context = {
         user_id: "user123",
-        permissions: [ "read", "write" ],
+        permissions: %w[read write],
         metadata: { role: "admin", department: "engineering" }
       }
 
@@ -254,7 +256,7 @@ module ActionMCP
 
       # Verify complex JSON structure is preserved
       assert_equal "user123", stored_context["user_id"]
-      assert_equal [ "read", "write" ], stored_context["permissions"]
+      assert_equal %w[read write], stored_context["permissions"]
       assert_equal "admin", stored_context.dig("metadata", "role")
       assert_equal "engineering", stored_context.dig("metadata", "department")
     end

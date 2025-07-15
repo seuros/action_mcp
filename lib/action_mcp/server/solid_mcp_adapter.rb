@@ -38,13 +38,13 @@ module ActionMCP
           ensure_pubsub.subscribe(session_id) do |message|
             # Message from SolidMCP includes event_type, data, and id
             # Deliver to all callbacks for this session
-            @subscriptions.each do |sub_id, subscription|
-              if subscription[:session_id] == session_id && subscription[:message_callback]
-                begin
-                  subscription[:message_callback].call(message[:data])
-                rescue StandardError => e
-                  log_error("Error in message callback: #{e.message}")
-                end
+            @subscriptions.each_value do |subscription|
+              next unless subscription[:session_id] == session_id && subscription[:message_callback]
+
+              begin
+                subscription[:message_callback].call(message[:data])
+              rescue StandardError => e
+                log_error("Error in message callback: #{e.message}")
               end
             end
           end
@@ -80,7 +80,7 @@ module ActionMCP
         end
 
         # Only unsubscribe from SolidMCP if no more callbacks for this session
-        if @session_callbacks[session_id]&.empty?
+        if @session_callbacks[session_id] && @session_callbacks[session_id].empty?
           ensure_pubsub.unsubscribe(session_id)
           @session_callbacks.delete(session_id)
         end
@@ -125,7 +125,7 @@ module ActionMCP
       private
 
       def ensure_pubsub
-        @pubsub ||= SolidMCP::PubSub.new(@options)
+        @ensure_pubsub ||= SolidMCP::PubSub.new(@options)
       end
 
       def extract_session_id(channel)
@@ -140,7 +140,6 @@ module ActionMCP
       rescue JSON::ParserError
         "message"
       end
-
 
       def log_subscription_event(channel, action, subscription_id = nil)
         return unless defined?(Rails) && Rails.respond_to?(:logger)

@@ -18,7 +18,7 @@ module ActionMCP
           code_challenge_method: data[:code_challenge_method],
           expires_at: data[:expires_at],
           metadata: data.except(:client_id, :user_id, :redirect_uri, :scope,
-                               :code_challenge, :code_challenge_method, :expires_at)
+                                :code_challenge, :code_challenge_method, :expires_at)
         )
       end
 

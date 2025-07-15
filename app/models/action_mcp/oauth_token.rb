@@ -90,7 +90,8 @@ module ActionMCP
     end
 
     # Create authorization code
-    def self.create_authorization_code(client_id:, user_id:, redirect_uri:, scope:, code_challenge: nil, code_challenge_method: nil)
+    def self.create_authorization_code(client_id:, user_id:, redirect_uri:, scope:, code_challenge: nil,
+                                       code_challenge_method: nil)
       create!(
         token: SecureRandom.urlsafe_base64(32),
         token_type: AUTHORIZATION_CODE,

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateActionMCPOAuthClients < ActiveRecord::Migration[7.2]
   def change
     create_table :action_mcp_oauth_clients do |t|
@@ -8,16 +10,16 @@ class CreateActionMCPOAuthClients < ActiveRecord::Migration[7.2]
       # Store arrays as JSON for database compatibility
       if connection.adapter_name.downcase.include?('postgresql')
         t.text :redirect_uris, array: true, default: []
-        t.text :grant_types, array: true, default: [ "authorization_code" ]
-        t.text :response_types, array: true, default: [ "code" ]
+        t.text :grant_types, array: true, default: [ 'authorization_code' ]
+        t.text :response_types, array: true, default: [ 'code' ]
       else
         # For SQLite and other databases, use JSON
         t.json :redirect_uris, default: []
-        t.json :grant_types, default: [ "authorization_code" ]
-        t.json :response_types, default: [ "code" ]
+        t.json :grant_types, default: [ 'authorization_code' ]
+        t.json :response_types, default: [ 'code' ]
       end
 
-      t.string :token_endpoint_auth_method, default: "client_secret_basic"
+      t.string :token_endpoint_auth_method, default: 'client_secret_basic'
       t.text :scope
       t.boolean :active, default: true
 

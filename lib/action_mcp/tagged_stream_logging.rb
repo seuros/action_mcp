@@ -35,9 +35,9 @@ module ActionMCP
     private
 
     # Helper method to handle tagged logging across different logger types
-    def log_with_tags(*tags)
+    def log_with_tags(*tags, &block)
       if ActionMCP.logger.respond_to?(:tagged)
-        ActionMCP.logger.tagged(*tags) { yield }
+        ActionMCP.logger.tagged(*tags, &block)
       else
         # For loggers that don't support tagging (like BroadcastLogger),
         # prepend tags to the message

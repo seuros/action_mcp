@@ -3,9 +3,11 @@
 require "test_helper"
 
 class MCPSchemaValidationTest < ActiveSupport::TestCase
+  fixtures :action_mcp_sessions
+
   setup do
     # Ensure format_source tool is registered
-    session = ActionMCP::Session.create!(initialized: true)
+    session = action_mcp_sessions(:step1_session)
     session.register_tool("format_source")
   end
 

@@ -18,17 +18,13 @@ module ActionMCP
         return @app.call(env) unless should_process_oauth?(request)
 
         # Skip OAuth processing for metadata endpoints
-        if request.path.start_with?("/.well-known/") || request.path.start_with?("/oauth/")
-          return @app.call(env)
-        end
+        return @app.call(env) if request.path.start_with?("/.well-known/") || request.path.start_with?("/oauth/")
 
         # Skip OAuth processing for initialization-related requests
-        if initialization_related_request?(request)
-          return @app.call(env)
-        end
+        return @app.call(env) if initialization_related_request?(request)
 
         # Validate Bearer token for API requests
-        if bearer_token = extract_bearer_token(request)
+        if (bearer_token = extract_bearer_token(request))
           validate_oauth_token(request, bearer_token)
         end
 
@@ -39,7 +35,7 @@ module ActionMCP
 
       private
 
-      def should_process_oauth?(request)
+      def should_process_oauth?(_request)
         # Check if OAuth is enabled in configuration
         auth_methods = ActionMCP.configuration.authentication_methods
         return false unless auth_methods&.include?("oauth")
@@ -55,7 +51,7 @@ module ActionMCP
 
         # Check if this is an MCP endpoint (ends with / or is the root)
         path = request.path
-        return false unless path == "/" || path.match?(/\/action_mcp\/?$/)
+        return false unless path == "/" || path.match?(%r{/action_mcp/?$})
 
         # Read and parse the request body
         body = request.body.read
@@ -70,7 +66,6 @@ module ActionMCP
         false
       end
 
-
       def extract_bearer_token(request)
         auth_header = request.headers["Authorization"] || request.headers["authorization"]
         return nil unless auth_header&.start_with?("Bearer ")
@@ -82,23 +77,23 @@ module ActionMCP
         # Use the OAuth provider for token introspection
         token_info = ActionMCP::OAuth::Provider.introspect_token(token)
 
-        if token_info && token_info[:active]
-          # Store OAuth token info in request environment for Gateway
-          request.env["action_mcp.oauth_token_info"] = token_info
-          request.env["action_mcp.oauth_token"] = token
-        else
+        unless token_info && token_info[:active]
           raise ActionMCP::OAuth::InvalidTokenError, "Invalid or expired OAuth token"
         end
+
+        # Store OAuth token info in request environment for Gateway
+        request.env["action_mcp.oauth_token_info"] = token_info
+        request.env["action_mcp.oauth_token"] = token
       end
 
       def oauth_error_response(error)
         status = case error
         when ActionMCP::OAuth::InvalidTokenError
-                  401
+                   401
         when ActionMCP::OAuth::InsufficientScopeError
-                  403
+                   403
         else
-                  400
+                   400
         end
 
         headers = {

@@ -4,6 +4,7 @@ require "test_helper"
 
 class SessionInfoToolTest < ActiveSupport::TestCase
   include ActionMCP::TestHelper
+  fixtures :action_mcp_sessions
 
   def setup
     @tool = SessionInfoTool.new
@@ -11,7 +12,8 @@ class SessionInfoToolTest < ActiveSupport::TestCase
 
   test "returns dramatic message for new session" do
     # Create a session that was just created
-    session = ActionMCP::Session.create!(
+    session = action_mcp_sessions(:test_session)
+    session.update!(
       id: "test-session-new",
       protocol_version: "2025-06-18",
       initialized: true,
@@ -38,8 +40,9 @@ class SessionInfoToolTest < ActiveSupport::TestCase
   end
 
   test "returns increasingly dramatic message for older session" do
-    # Create a session that's 6 minutes old (360 seconds - in the "existential dread" range)
-    session = ActionMCP::Session.create!(
+    # Use fixture session that's 6 minutes old (360 seconds - in the "existential dread" range)
+    session = action_mcp_sessions(:test_session)
+    session.update!(
       id: "test-session-old",
       protocol_version: "2025-03-26",
       initialized: true,
@@ -62,8 +65,9 @@ class SessionInfoToolTest < ActiveSupport::TestCase
   end
 
   test "returns apocalyptic message for ancient session" do
-    # Create a session that's 2 hours old
-    session = ActionMCP::Session.create!(
+    # Use fixture session that's 2 hours old
+    session = action_mcp_sessions(:test_session)
+    session.update!(
       id: "test-session-ancient",
       protocol_version: "2025-03-26",
       initialized: true,
@@ -95,7 +99,8 @@ class SessionInfoToolTest < ActiveSupport::TestCase
   end
 
   test "includes proper client information structure" do
-    session = ActionMCP::Session.create!(
+    session = action_mcp_sessions(:dr_identity_mcbouncer_session)
+    session.update!(
       id: "test-session-client-info",
       protocol_version: "2025-06-18",
       initialized: true,
@@ -126,6 +131,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
 
   test "tool has correct metadata" do
     assert_equal "session-info", SessionInfoTool.tool_name
-    assert_equal "Shows helpful information about your current session including client details and duration", SessionInfoTool.description
+    assert_equal "Shows helpful information about your current session including client details and duration",
+                 SessionInfoTool.description
   end
 end

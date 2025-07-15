@@ -43,9 +43,7 @@ module ActionMCP
 
       def load_session(session_id)
         session = @sessions[session_id]
-        if session
-          session.instance_variable_set(:@new_record, false)
-        end
+        session&.instance_variable_set(:@new_record, false)
         session
       end
 

@@ -114,6 +114,7 @@ module ActionMCP
       def server_session_store
         store = ActionMCP::Server.session_store
         raise "Server session store is not a TestSessionStore" unless store.is_a?(ActionMCP::Server::TestSessionStore)
+
         store
       end
 
@@ -121,8 +122,11 @@ module ActionMCP
         # This would need to be set by the test or could use a thread-local variable
         # For now, we'll assume it's available as an instance variable
         store = @client_session_store || Thread.current[:test_client_session_store]
-        raise "Client session store not set. Set @client_session_store or Thread.current[:test_client_session_store]" unless store
+        unless store
+          raise "Client session store not set. Set @client_session_store or Thread.current[:test_client_session_store]"
+        end
         raise "Client session store is not a TestSessionStore" unless store.is_a?(ActionMCP::Client::TestSessionStore)
+
         store
       end
     end

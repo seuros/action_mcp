@@ -173,16 +173,18 @@ module ActionMCP
         well_known_url.path = "/.well-known/oauth-authorization-server"
 
         response = @http_client.get(well_known_url)
-        unless response.success?
-          raise AuthenticationError, "Failed to fetch server metadata: #{response.status}"
-        end
+        raise AuthenticationError, "Failed to fetch server metadata: #{response.status}" unless response.success?
 
         JSON.parse(response.body, symbolize_names: true)
       end
 
       def handle_token_response(response)
         unless response.success?
-          error_body = JSON.parse(response.body) rescue {}
+          error_body = begin
+            JSON.parse(response.body)
+          rescue StandardError
+            {}
+          end
           error_msg = error_body["error_description"] || error_body["error"] || "Token request failed"
           raise AuthenticationError, "#{error_msg} (#{response.status})"
         end
@@ -190,9 +192,7 @@ module ActionMCP
         token_data = JSON.parse(response.body, symbolize_names: true)
 
         # Calculate token expiration
-        if token_data[:expires_in]
-          token_data[:expires_at] = Time.now.to_i + token_data[:expires_in].to_i
-        end
+        token_data[:expires_at] = Time.now.to_i + token_data[:expires_in].to_i if token_data[:expires_in]
 
         save_tokens(token_data)
         log_debug("OAuth tokens obtained successfully")
@@ -219,7 +219,7 @@ module ActionMCP
           client_name: "ActionMCP Client",
           client_uri: "https://github.com/anthropics/action_mcp",
           redirect_uris: [ @redirect_url.to_s ],
-          grant_types: [ "authorization_code", "refresh_token" ],
+          grant_types: %w[authorization_code refresh_token],
           response_types: [ "code" ],
           token_endpoint_auth_method: "none", # Public client
           code_challenge_methods_supported: [ "S256" ]

@@ -12,7 +12,7 @@ module ActionMCP
           "enable_refresh_tokens" => true,
           "scopes_supported" => [ "mcp:tools", "mcp:resources" ],
           "access_token_expires_in" => 3600,
-          "refresh_token_expires_in" => 86400
+          "refresh_token_expires_in" => 86_400
         }
 
         # Clear storage before each test
@@ -26,7 +26,7 @@ module ActionMCP
           client_id: "test_client",
           client_secret: "test_secret", # Add a secret for client_credentials_grant
           redirect_uris: [ "https://example.com/callback" ],
-          grant_types: [ "authorization_code", "refresh_token", "client_credentials" ],
+          grant_types: %w[authorization_code refresh_token client_credentials],
           response_types: [ "code" ],
           token_endpoint_auth_method: "client_secret_basic"
         )
@@ -238,7 +238,7 @@ module ActionMCP
           "enable_client_credentials" => false,
           "scopes_supported" => [ "mcp:tools", "mcp:resources" ],
           "access_token_expires_in" => 3600,
-          "refresh_token_expires_in" => 86400
+          "refresh_token_expires_in" => 86_400
         }
 
         # Clear cached config after changing it

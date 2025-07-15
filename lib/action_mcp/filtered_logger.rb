@@ -16,7 +16,7 @@ module ActionMCP
 
     def add(severity, message = nil, progname = nil, &block)
       # Filter out repetitive OAuth metadata requests
-      if message && message.is_a?(String)
+      if message.is_a?(String)
         return if FILTERED_PATHS.any? { |path| message.include?(path) && message.include?("200 OK") }
 
         # Filter out repetitive MCP notifications

@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 module ActionMCP
   module Client
     class SessionStoreTest < ActiveSupport::TestCase
+      fixtures :action_mcp_sessions
+
       def setup
         @volatile_store = VolatileSessionStore.new
         @ar_store = ActiveRecordSessionStore.new
@@ -55,10 +59,10 @@ module ActionMCP
 
       test "memory store updates specific session attributes" do
         @volatile_store.save_session("test-123", {
-          id: "test-123",
-          protocol_version: "2025-03-26",
-          last_event_id: 10
-        })
+                                       id: "test-123",
+                                       protocol_version: "2025-03-26",
+                                       last_event_id: 10
+                                     })
 
         updated = @volatile_store.update_session("test-123", { last_event_id: 20 })
 
@@ -94,9 +98,9 @@ module ActionMCP
             session_ids << session_id
             100.times do |j|
               @volatile_store.save_session(session_id, {
-                id: session_id,
-                counter: j
-              })
+                                             id: session_id,
+                                             counter: j
+                                           })
             end
           end
         end
@@ -140,9 +144,9 @@ module ActionMCP
 
       test "ActiveRecord store deletes session from database" do
         @ar_store.save_session("ar-delete-test", {
-          id: "ar-delete-test",
-          protocol_version: "2025-03-26"
-        })
+                                 id: "ar-delete-test",
+                                 protocol_version: "2025-03-26"
+                               })
         assert @ar_store.session_exists?("ar-delete-test")
 
         @ar_store.delete_session("ar-delete-test")
@@ -152,16 +156,16 @@ module ActionMCP
 
       test "ActiveRecord store updates existing session" do
         @ar_store.save_session("ar-update-test", {
-          id: "ar-update-test",
-          protocol_version: "2025-03-26",
-          client_info: { name: "TestClient", version: "1.0" }
-        })
+                                 id: "ar-update-test",
+                                 protocol_version: "2025-03-26",
+                                 client_info: { name: "TestClient", version: "1.0" }
+                               })
 
         @ar_store.save_session("ar-update-test", {
-          id: "ar-update-test",
-          protocol_version: "2025-03-26",
-          client_info: { name: "TestClient", version: "2.0" }
-        })
+                                 id: "ar-update-test",
+                                 protocol_version: "2025-03-26",
+                                 client_info: { name: "TestClient", version: "2.0" }
+                               })
 
         loaded = @ar_store.load_session("ar-update-test")
         assert_equal "2.0", loaded[:client_info]["version"]
@@ -169,14 +173,14 @@ module ActionMCP
 
       test "ActiveRecord store updates specific attributes" do
         @ar_store.save_session("ar-partial-update", {
-          id: "ar-partial-update",
-          protocol_version: "2025-03-26",
-          client_info: { name: "TestClient", version: "1.0" }
-        })
+                                 id: "ar-partial-update",
+                                 protocol_version: "2025-03-26",
+                                 client_info: { name: "TestClient", version: "1.0" }
+                               })
 
         updated = @ar_store.update_session("ar-partial-update", {
-          client_info: { name: "TestClient", version: "2.0" }
-        })
+                                             client_info: { name: "TestClient", version: "2.0" }
+                                           })
 
         assert_equal "ar-partial-update", updated[:id]
         assert_equal "2025-03-26", updated[:protocol_version]
@@ -186,7 +190,8 @@ module ActionMCP
 
       test "ActiveRecord store cleans up expired sessions" do
         # Create old session directly in DB
-        old_session = ActionMCP::Session.create!(
+        old_session = action_mcp_sessions(:test_session)
+        old_session.update!(
           id: "ar-old-session",
           protocol_version: "2025-03-26",
           updated_at: 2.days.ago
@@ -194,9 +199,9 @@ module ActionMCP
 
         # Create new session
         @ar_store.save_session("ar-new-session", {
-          id: "ar-new-session",
-          protocol_version: "2025-03-26"
-        })
+                                 id: "ar-new-session",
+                                 protocol_version: "2025-03-26"
+                               })
 
         count = @ar_store.cleanup_expired_sessions(older_than: 1.day.ago)
         assert_equal 1, count
