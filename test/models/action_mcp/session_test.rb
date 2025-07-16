@@ -38,6 +38,10 @@ require "test_helper"
 
 module ActionMCP
   class SessionTest < ActiveSupport::TestCase
+    setup do
+      # Ensure configuration is properly loaded before creating sessions
+      ActionMCP.configuration.name = "ActionMCP Dummy"
+    end
     test "server capability payload" do
       session = Session.create
 

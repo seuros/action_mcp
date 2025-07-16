@@ -113,13 +113,12 @@ end
 module AuthenticationTestHelper
   # Temporarily override authentication configuration for a test
   def with_authentication_config(auth_methods)
-    original_auth = Thread.current[:original_auth_methods]
-    Thread.current[:original_auth_methods] = ActionMCP.configuration.authentication_methods
+    # Don't use Thread.current as it can leak between tests
+    original_auth_methods = ActionMCP.configuration.authentication_methods.dup
     ActionMCP.configuration.authentication_methods = auth_methods
     yield
   ensure
-    ActionMCP.configuration.authentication_methods = Thread.current[:original_auth_methods]
-    Thread.current[:original_auth_methods] = original_auth
+    ActionMCP.configuration.authentication_methods = original_auth_methods
   end
 end
 
@@ -128,5 +127,13 @@ ActiveSupport::TestCase.include(FixtureHelpers)
 ActiveSupport::TestCase.include(ServerTestHelper)
 ActiveSupport::TestCase.include(AuthenticationTestHelper)
 ActionDispatch::IntegrationTest.include(AuthenticationTestHelper)
+
+# Ensure configuration is reset after each test
+class ActionDispatch::IntegrationTest
+  teardown do
+    # Reset configuration to defaults loaded from mcp.yml
+    ActionMCP.configuration.load_profiles
+  end
+end
 
 Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }

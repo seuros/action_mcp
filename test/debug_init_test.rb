@@ -4,6 +4,10 @@ require "test_helper"
 
 class DebugInitTest < ActionDispatch::IntegrationTest
   setup do
+    # Ensure configuration is properly loaded before creating sessions
+    ActionMCP.configuration.name = "ActionMCP Dummy"
+    ActionMCP.configuration.load_profiles
+
     # Create session through the session store (since this is testing initialization)
     session_store = ActionMCP::Server.session_store
     @session = session_store.create_session(nil, {
