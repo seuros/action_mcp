@@ -110,6 +110,9 @@ module ActionMCP
       # First load defaults from the gem
       @profiles = default_profiles
 
+      # Preserve any settings that were already set via Rails config
+      preserved_name = @name
+
       # Try to load from config/mcp.yml in the Rails app using Rails.config_for
       begin
         app_config = Rails.application.config_for(:mcp)
@@ -117,16 +120,33 @@ module ActionMCP
         raise "Invalid MCP config file" unless app_config.is_a?(Hash)
 
         # Extract authentication configuration if present
-        @authentication_methods = Array(app_config["authentication"]) if app_config["authentication"]
+        # Handle both symbol and string keys
+        @authentication_methods = Array(app_config[:authentication] || app_config["authentication"]) if app_config[:authentication] || app_config["authentication"]
 
         # Extract OAuth configuration if present
-        @oauth_config = HashWithIndifferentAccess.new(app_config["oauth"]) if app_config["oauth"]
+        # Handle both symbol and string keys
+        oauth_config = app_config[:oauth] || app_config["oauth"]
+        @oauth_config = HashWithIndifferentAccess.new(oauth_config) if oauth_config
 
         # Extract other top-level configuration settings
         extract_top_level_settings(app_config)
 
-        # Extract profiles configuration
-        @profiles = app_config["profiles"] if app_config["profiles"]
+        # Extract profiles configuration - merge with defaults instead of replacing
+        # Rails.config_for returns OrderedOptions which uses symbol keys
+        if app_config[:profiles] || app_config["profiles"]
+          # Get profiles with either symbol or string key
+          app_profiles = app_config[:profiles] || app_config["profiles"]
+
+          # Convert to regular hash and deep symbolize keys
+          if app_profiles.is_a?(ActiveSupport::OrderedOptions)
+            app_profiles = app_profiles.to_h.deep_symbolize_keys
+          elsif app_profiles.respond_to?(:deep_symbolize_keys)
+            app_profiles = app_profiles.deep_symbolize_keys
+          end
+
+          Rails.logger.debug "[Configuration] Merging profiles: #{app_profiles.inspect}"
+          @profiles = @profiles.deep_merge(app_profiles)
+        end
       rescue StandardError => e
         # If the config file doesn't exist in the Rails app, just use the defaults
         Rails.logger.warn "[Configuration] Failed to load MCP config: #{e.class} - #{e.message}"
@@ -134,7 +154,12 @@ module ActionMCP
       end
 
       # Apply the active profile
+      Rails.logger.info "[ActionMCP] Loaded profiles: #{@profiles.keys.join(', ')}"
+      Rails.logger.info "[ActionMCP] Using profile: #{@active_profile}"
       use_profile(@active_profile)
+
+      # Restore preserved settings
+      @name = preserved_name if preserved_name
 
       self
     end
@@ -183,6 +208,9 @@ module ActionMCP
     def capabilities
       capabilities = {}
       profile = @profiles[active_profile]
+
+      Rails.logger.debug "[ActionMCP] Generating capabilities for profile: #{active_profile}"
+      Rails.logger.debug "[ActionMCP] Profile config: #{profile.inspect}"
 
       # Check profile configuration instead of registry contents
       # If profile includes tools (either "all" or specific tools), advertise tools capability
@@ -268,42 +296,48 @@ module ActionMCP
     end
 
     def extract_top_level_settings(app_config)
+      # Create a wrapper that handles both symbol and string keys
+      config = HashWithIndifferentAccess.new(app_config)
+
       # Extract adapter configuration
-      if app_config["adapter"]
+      if config["adapter"]
         # This will be handled by the pub/sub system, we just store it for now
-        @adapter = app_config["adapter"]
+        @adapter = config["adapter"]
       end
 
       # Extract thread pool settings
-      @min_threads = app_config["min_threads"] if app_config["min_threads"]
+      @min_threads = config["min_threads"] if config["min_threads"]
 
-      @max_threads = app_config["max_threads"] if app_config["max_threads"]
+      @max_threads = config["max_threads"] if config["max_threads"]
 
-      @max_queue = app_config["max_queue"] if app_config["max_queue"]
+      @max_queue = config["max_queue"] if config["max_queue"]
 
       # Extract polling interval for solid_cable
-      @polling_interval = app_config["polling_interval"] if app_config["polling_interval"]
+      @polling_interval = config["polling_interval"] if config["polling_interval"]
 
       # Extract connects_to setting
-      @connects_to = app_config["connects_to"] if app_config["connects_to"]
+      @connects_to = config["connects_to"] if config["connects_to"]
 
       # Extract verbose logging setting
-      @verbose_logging = app_config["verbose_logging"] if app_config.key?("verbose_logging")
+      @verbose_logging = config["verbose_logging"] if app_config.key?("verbose_logging")
 
       # Extract gateway class configuration
-      @gateway_class_name = app_config["gateway_class"] if app_config["gateway_class"]
+      @gateway_class_name = config["gateway_class"] if config["gateway_class"]
+
+      # Extract active profile setting
+      @active_profile = config["profile"].to_sym if config["profile"]
 
       # Extract session store configuration
-      @session_store_type = app_config["session_store_type"].to_sym if app_config["session_store_type"]
+      @session_store_type = config["session_store_type"].to_sym if config["session_store_type"]
 
       # Extract client and server session store types
-      if app_config["client_session_store_type"]
-        @client_session_store_type = app_config["client_session_store_type"].to_sym
+      if config["client_session_store_type"]
+        @client_session_store_type = config["client_session_store_type"].to_sym
       end
 
-      return unless app_config["server_session_store_type"]
+      return unless config["server_session_store_type"]
 
-      @server_session_store_type = app_config["server_session_store_type"].to_sym
+      @server_session_store_type = config["server_session_store_type"].to_sym
     end
 
     def should_include_all?(type)

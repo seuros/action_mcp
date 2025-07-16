@@ -6,7 +6,7 @@ class DebugErrorCodeTest < ActionDispatch::IntegrationTest
   fixtures :action_mcp_sessions
 
   setup do
-    @session = action_mcp_sessions(:test_session)
+    @session = action_mcp_sessions(:step1_session)  # Use initialized session
 
     # Ensure session is in the session store
     store = ActionMCP::Server.session_store

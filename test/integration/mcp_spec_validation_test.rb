@@ -4,6 +4,9 @@ require "test_helper"
 
 class McpSpecValidationTest < ActionDispatch::IntegrationTest
   setup do
+    # Ensure configuration is properly loaded before creating sessions
+    ActionMCP.configuration.name = "ActionMCP Dummy"
+
     # Create session through the session store
     session_store = ActionMCP::Server.session_store
     @session = session_store.create_session(nil, {

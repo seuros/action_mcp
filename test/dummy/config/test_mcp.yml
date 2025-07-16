@@ -1,0 +1,6 @@
+---
+test:
+  profiles:
+    custom:
+      tools:
+      - MyTool

@@ -147,7 +147,9 @@ module ActionMCP
 
       def cleanup_old_sse_events(max_age = 15.minutes)
         cutoff_time = Time.current - max_age
+        original_size = @sse_events.size
         @sse_events.delete_if { |e| e[:created_at] < cutoff_time }
+        original_size - @sse_events.size
       end
 
       def max_stored_sse_events
