@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.72.0...action_mcp/v0.72.1) (2025-07-16)
+
+
+### Bug Fixes
+
+* configuration loading and profile merging ([#129](https://github.com/seuros/action_mcp/issues/129)) ([9b22aea](https://github.com/seuros/action_mcp/commit/9b22aea9381017ed3663c2900f4bf43bf5e76000))
+
 ## [0.72.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.71.1...action_mcp/v0.72.0) (2025-07-15)
 
 
