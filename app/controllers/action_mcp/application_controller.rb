@@ -28,7 +28,9 @@ module ActionMCP
     end
 
     # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
-    # @route GET /
+    # <rails-lens:routes:begin>
+    # ROUTE: /, name: mcp_get, via: GET
+    # <rails-lens:routes:end>
     def show
       unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
         return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
@@ -158,7 +160,9 @@ module ActionMCP
     end
 
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
-    # @route POST /mcp
+    # <rails-lens:routes:begin>
+    # ROUTE: /, name: mcp_post, via: POST
+    # <rails-lens:routes:end>
     def create
       unless post_accept_headers_valid?
         id = extract_jsonrpc_id_from_request
@@ -227,7 +231,9 @@ module ActionMCP
     end
 
     # Handles DELETE requests for session termination (2025-03-26 spec).
-    # @route DELETE /
+    # <rails-lens:routes:begin>
+    # ROUTE: /, name: mcp_delete, via: DELETE
+    # <rails-lens:routes:end>
     def destroy
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for DELETE requests.") unless session_id_from_header
@@ -521,21 +527,23 @@ module ActionMCP
       gateway_class = ActionMCP.configuration.gateway_class
       return unless gateway_class # Skip if no gateway configured
 
-      gateway = gateway_class.new(request)
-      gateway.call
-    rescue ActionMCP::UnauthorizedError => e
-      render_unauthorized(e.message)
+      begin
+        gateway = gateway_class.new(request)
+        gateway.call
+      rescue ActionMCP::UnauthorizedError => e
+        render_unauthorized(e.message)
+      rescue StandardError => e
+        Rails.logger.error "Gateway authentication error: #{e.class} - #{e.message}"
+        render_unauthorized("Authentication system error")
+      end
     end
 
     # Renders an unauthorized response
     def render_unauthorized(message = "Unauthorized", id = nil)
       id ||= extract_jsonrpc_id_from_request
 
-      # Add WWW-Authenticate header for OAuth discovery as per spec
-      auth_methods = ActionMCP.configuration.authentication_methods || []
-      response.headers["WWW-Authenticate"] = 'Bearer realm="MCP API"' if auth_methods.include?("oauth")
-
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :unauthorized
+      # Return JSON-RPC error with 200 status as per MCP specification
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
     end
   end
 end

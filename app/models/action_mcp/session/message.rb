@@ -1,29 +1,40 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# <rails-lens:schema:begin>
+# table = "action_mcp_session_messages"
+# database_dialect = "SQLite"
 #
-# Table name: action_mcp_session_messages
+# columns = [
+#   { name = "id", type = "integer", primary_key = true, nullable = false },
+#   { name = "session_id", type = "string", nullable = false },
+#   { name = "direction", type = "string", nullable = false, default = "client" },
+#   { name = "message_type", type = "string", nullable = false },
+#   { name = "jsonrpc_id", type = "string", nullable = true },
+#   { name = "message_json", type = "json", nullable = true },
+#   { name = "is_ping", type = "boolean", nullable = false, default = "0" },
+#   { name = "request_acknowledged", type = "boolean", nullable = false, default = "0" },
+#   { name = "request_cancelled", type = "boolean", nullable = false, default = "0" },
+#   { name = "created_at", type = "datetime", nullable = false },
+#   { name = "updated_at", type = "datetime", nullable = false }
+# ]
 #
-#  id                   :integer          not null, primary key
-#  direction            :string           default("client"), not null
-#  is_ping              :boolean          default(FALSE), not null
-#  message_json         :json
-#  message_type         :string           not null
-#  request_acknowledged :boolean          default(FALSE), not null
-#  request_cancelled    :boolean          default(FALSE), not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  jsonrpc_id           :string
-#  session_id           :string           not null
+# indexes = [
+#   { name = "index_action_mcp_session_messages_on_session_id", columns = ["session_id"] }
+# ]
 #
-# Indexes
+# foreign_keys = [
+#   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id", on_delete = "cascade", on_update = "cascade" }
+# ]
 #
-#  index_action_mcp_session_messages_on_session_id  (session_id)
-#
-# Foreign Keys
-#
-#  session_id  (session_id => action_mcp_sessions.id) ON DELETE => cascade ON UPDATE => cascade
-#
+# == Notes
+# - Column 'message_json' should probably have NOT NULL constraint
+# - String column 'session_id' has no length limit - consider adding one
+# - String column 'direction' has no length limit - consider adding one
+# - String column 'message_type' has no length limit - consider adding one
+# - String column 'jsonrpc_id' has no length limit - consider adding one
+# - Column 'message_type' is commonly used in queries - consider adding an index
+# - Column 'is_ping' uses non-conventional prefix - consider removing 'is_' or 'has_'
+# <rails-lens:schema:end>
 module ActionMCP
   class Session
     #

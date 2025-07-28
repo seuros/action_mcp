@@ -13,9 +13,6 @@ require "action_mcp/log_subscriber"
 require "action_mcp/engine"
 require "zeitwerk"
 
-# OAuth 2.1 support via Omniauth
-require "omniauth"
-require "omniauth-oauth2"
 
 lib = File.dirname(__FILE__)
 
@@ -29,8 +26,6 @@ Zeitwerk::Loader.for_gem.tap do |loader|
 
   loader.inflector.inflect("action_mcp" => "ActionMCP")
   loader.inflector.inflect("sse_listener" => "SSEListener")
-  loader.inflector.inflect("oauth" => "OAuth")
-  loader.inflector.inflect("mcp_strategy" => "MCPStrategy")
 end.setup
 
 module ActionMCP
@@ -40,7 +35,7 @@ module ActionMCP
 
   # Protocol version constants
   SUPPORTED_VERSIONS = [
-    "2025-06-18", # Dr. Identity McBouncer - OAuth 2.1, elicitation, structured output, resource links
+    "2025-06-18", # Dr. Identity McBouncer - elicitation, structured output, resource links
     "2025-03-26"  # The Persistent Negotiator - StreamableHTTP, resumability, audio support
   ].freeze
 

@@ -1,26 +1,32 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# <rails-lens:schema:begin>
+# table = "action_mcp_sse_events"
+# database_dialect = "SQLite"
 #
-# Table name: action_mcp_sse_events
+# columns = [
+#   { name = "id", type = "integer", primary_key = true, nullable = false },
+#   { name = "session_id", type = "string", nullable = false },
+#   { name = "event_id", type = "integer", nullable = false },
+#   { name = "data", type = "text", nullable = false },
+#   { name = "created_at", type = "datetime", nullable = false },
+#   { name = "updated_at", type = "datetime", nullable = false }
+# ]
 #
-#  id         :integer          not null, primary key
-#  data       :text             not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  event_id   :integer          not null
-#  session_id :string           not null
+# indexes = [
+#   { name = "index_action_mcp_sse_events_on_created_at", columns = ["created_at"] },
+#   { name = "index_action_mcp_sse_events_on_session_id_and_event_id", columns = ["session_id", "event_id"], unique = true },
+#   { name = "index_action_mcp_sse_events_on_session_id", columns = ["session_id"] }
+# ]
 #
-# Indexes
+# foreign_keys = [
+#   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id" }
+# ]
 #
-#  index_action_mcp_sse_events_on_created_at               (created_at)
-#  index_action_mcp_sse_events_on_session_id               (session_id)
-#  index_action_mcp_sse_events_on_session_id_and_event_id  (session_id,event_id) UNIQUE
-#
-# Foreign Keys
-#
-#  session_id  (session_id => action_mcp_sessions.id)
-#
+# == Notes
+# - Association 'session' should specify inverse_of
+# - String column 'session_id' has no length limit - consider adding one
+# <rails-lens:schema:end>
 module ActionMCP
   class Session
     # Represents a Server-Sent Event (SSE) in an MCP session

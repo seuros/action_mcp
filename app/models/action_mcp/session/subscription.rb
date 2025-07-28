@@ -1,24 +1,31 @@
 # frozen_string_literal: true
 
-# == Schema Information
+# <rails-lens:schema:begin>
+# table = "action_mcp_session_subscriptions"
+# database_dialect = "SQLite"
 #
-# Table name: action_mcp_session_subscriptions
+# columns = [
+#   { name = "id", type = "integer", primary_key = true, nullable = false },
+#   { name = "session_id", type = "string", nullable = false },
+#   { name = "uri", type = "string", nullable = false },
+#   { name = "last_notification_at", type = "datetime", nullable = true },
+#   { name = "created_at", type = "datetime", nullable = false },
+#   { name = "updated_at", type = "datetime", nullable = false }
+# ]
 #
-#  id                   :integer          not null, primary key
-#  last_notification_at :datetime
-#  uri                  :string           not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  session_id           :string           not null
+# indexes = [
+#   { name = "index_action_mcp_session_subscriptions_on_session_id", columns = ["session_id"] }
+# ]
 #
-# Indexes
+# foreign_keys = [
+#   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id", on_delete = "cascade" }
+# ]
 #
-#  index_action_mcp_session_subscriptions_on_session_id  (session_id)
-#
-# Foreign Keys
-#
-#  session_id  (session_id => action_mcp_sessions.id) ON DELETE => cascade
-#
+# == Notes
+# - Consider adding counter cache for 'session'
+# - String column 'session_id' has no length limit - consider adding one
+# - String column 'uri' has no length limit - consider adding one
+# <rails-lens:schema:end>
 module ActionMCP
   class Session
     #

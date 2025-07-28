@@ -118,8 +118,10 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "authentication methods default based on environment" do
-    # In test environment
-    assert_equal [ "none" ], @config.authentication_methods
+    # Load profiles to get config from mcp.yml
+    @config.load_profiles
+    # In test environment with dummy app Gateway
+    assert_equal [ "jwt", "none" ], @config.authentication_methods
   end
 
   test "gateway class defaults to ApplicationGateway if available" do

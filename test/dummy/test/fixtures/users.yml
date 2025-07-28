@@ -1,17 +1,20 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+jwt_test_user:
+  id: 1
+  email: test@example.com
+  name: Test User
+  password_digest: <%= BCrypt::Password.create('password123') %>
+  active: true
+  api_key: test_api_key_12345
 
-# == Schema Information
-#
-# Table name: users
-#
-#  id         :integer          not null, primary key
-#  email      :string
-#  name       :string
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#
 one:
   email: bill@gates.com
+  name: Bill Gates
+  password_digest: <%= BCrypt::Password.create('password') %>
+  active: true
 
 two:
   email: john@doe.com
+  name: John Doe
+  password_digest: <%= BCrypt::Password.create('password') %>
+  active: true

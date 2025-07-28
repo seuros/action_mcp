@@ -16,14 +16,6 @@ shared:
   # Server-specific session store type (falls back to session_store_type if not specified)
   # server_session_store_type: active_record
 
-  # OAuth configuration (if using OAuth authentication)
-  # oauth:
-  #   provider: "demo_oauth_provider"
-  #   scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
-  #   enable_dynamic_registration: true
-  #   enable_token_revocation: true
-  #   pkce_required: true
-  #   issuer_url: https://yourapp.com
 
   # MCP capability profiles
   profiles:
@@ -67,8 +59,8 @@ development:
 
 # Test environment
 test:
-  # JWT authentication for testing environment
-  authentication: ["jwt"]
+  # No authentication for testing environment
+  authentication: ["none"]
 
   # Test adapter for testing
   adapter: test
@@ -78,17 +70,8 @@ test:
 
 # Production environment
 production:
-  # Multiple authentication methods - try OAuth first, fallback to JWT
-  authentication: ["oauth", "jwt"]
-
-  # OAuth configuration for production
-  oauth:
-    provider: "application_oauth_provider"  # Your custom provider class
-    scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
-    enable_dynamic_registration: true
-    enable_token_revocation: true
-    pkce_required: true
-    issuer_url: https://yourapp.com
+  # Configure authentication methods for production (customize as needed)
+  authentication: ["none"]
 
   # Additional production profiles for external clients
   profiles:

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class MCPGatewayTestController < ApplicationController
+  # <rails-lens:routes:begin>
+  # ROUTE: /gateway_up, name: gateway_up, via: GET
+  # <rails-lens:routes:end>
   def up
     gateway_class = ActionMCP.configuration.gateway_class
     gateway = gateway_class.new(request)

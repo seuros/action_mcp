@@ -9,6 +9,7 @@ require_relative "../test/dummy/config/environment"
 require "rails/test_help"
 
 require "action_mcp/test_helper"
+require_relative "support/gateway_test_helper"
 
 ## Configure ActiveRecord Fixtures
 ActiveRecord::Migration.maintain_test_schema!
@@ -126,7 +127,9 @@ ActiveSupport::TestCase.include(LogHelpers)
 ActiveSupport::TestCase.include(FixtureHelpers)
 ActiveSupport::TestCase.include(ServerTestHelper)
 ActiveSupport::TestCase.include(AuthenticationTestHelper)
+ActiveSupport::TestCase.include(GatewayTestHelper)
 ActionDispatch::IntegrationTest.include(AuthenticationTestHelper)
+ActionDispatch::IntegrationTest.include(GatewayTestHelper)
 
 # Ensure configuration is reset after each test
 class ActionDispatch::IntegrationTest

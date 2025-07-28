@@ -63,11 +63,11 @@ module ActionMCP
     end
 
     test "Gateway filters identifiers based on authentication_methods config" do
-      with_authentication_config([ "jwt" ]) do
+      with_authentication_config([ "api_key" ]) do
         request = MockRequest.new
         gateway = TestGateway.new(request)
 
-        # TestIdentifier authenticates "test", but config only allows "jwt"
+        # TestIdentifier authenticates "test", but config only allows "api_key"
         # So no identifiers should be active, causing authentication failure
         assert_raises ActionMCP::UnauthorizedError do
           gateway.call

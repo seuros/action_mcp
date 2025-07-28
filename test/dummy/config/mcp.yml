@@ -4,21 +4,7 @@
 
 shared:
   # Authentication configuration - array of methods to try in order
-  authentication: ["jwt", "none"]  # Try JWT first, fallback to no auth for dev
-
-  # OAuth configuration
-  oauth:
-    # Enable dynamic client registration for easy testing
-    enable_dynamic_registration: true
-    enable_refresh_tokens: true
-    enable_token_revocation: true
-    pkce_required: false  # Optional for development
-    pkce_supported: true  # Support PKCE but don't require it
-    allow_public_clients: true
-    scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
-    issuer_url: "http://localhost:62770"
-    access_token_expires_in: 3600  # 1 hour
-    refresh_token_expires_in: 604800  # 1 week
+  authentication: ["jwt", "none"]  # Try JWT first, fallback to none for dev
 
   # Session store configuration
   # Global session store type used by both client and server (default: volatile in dev/test, active_record in production)
@@ -30,14 +16,6 @@ shared:
   # Server-specific session store type (falls back to session_store_type if not specified)
   # server_session_store_type: active_record
 
-  # OAuth configuration (if using OAuth authentication)
-  # oauth:
-  #   provider: "demo_oauth_provider"
-  #   scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
-  #   enable_dynamic_registration: true
-  #   enable_token_revocation: true
-  #   pkce_required: true
-  #   issuer_url: https://yourapp.com
 
   # MCP capability profiles
   profiles:
@@ -65,8 +43,8 @@ shared:
 
 # Development environment
 development:
-  # Enable all authentication methods for development
-  authentication: ["oauth", "jwt", "none"]
+  # JWT first, fallback to none for development
+  authentication: ["jwt", "none"]
 
   # Configure the gateway class for authentication
   gateway_class: "ApplicationGateway"
@@ -83,7 +61,6 @@ development:
   # Session store - use active_record for Falcon multi-process compatibility
   session_store_type: active_record
 
-  # OAuth configuration inherited from shared section
 
   # Thread pool configuration (optional)
   # min_threads: 5     # Minimum number of threads in the pool
@@ -92,7 +69,7 @@ development:
 
 # Test environment
 test:
-  # JWT authentication for testing environment, fallback to none for legacy tests
+  # JWT first, fallback to none for testing environment
   authentication: ["jwt", "none"]
 
   # Configure the gateway class for authentication
@@ -106,17 +83,8 @@ test:
 
 # Production environment
 production:
-  # Multiple authentication methods - try OAuth first, fallback to JWT
-  authentication: ["oauth", "jwt"]
-
-  # OAuth configuration for production
-  oauth:
-    provider: "application_oauth_provider"  # Your custom provider class
-    scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"]
-    enable_dynamic_registration: true
-    enable_token_revocation: true
-    pkce_required: true
-    issuer_url: https://yourapp.com
+  # Authentication methods for production (customize as needed)
+  authentication: ["none"]
 
   # Additional production profiles for external clients
   profiles:
