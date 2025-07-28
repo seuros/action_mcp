@@ -118,6 +118,8 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "authentication methods default based on environment" do
+    # Load profiles to get config from mcp.yml
+    @config.load_profiles
     # In test environment
     assert_equal [ "none" ], @config.authentication_methods
   end

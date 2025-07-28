@@ -106,10 +106,10 @@ class SchemaValidationTest < ActiveSupport::TestCase
       schema = UserInfoTool.to_h[:inputSchema]
 
       props = schema[:properties] || schema["properties"]
-      email_prop = props["include_email"] || props[:include_email]
+      sensitive_prop = props["include_sensitive"] || props[:include_sensitive]
 
-      assert email_prop, "include_email property should exist"
-      assert_equal "boolean", email_prop["type"] || email_prop[:type]
+      assert sensitive_prop, "include_sensitive property should exist"
+      assert_equal "boolean", sensitive_prop["type"] || sensitive_prop[:type]
     end
   end
 

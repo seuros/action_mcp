@@ -15,12 +15,9 @@ module ActionMCP
 
       attr_reader :session_id, :last_event_id, :protocol_version
 
-      def initialize(url, session_store:, session_id: nil, oauth_provider: nil, jwt_provider: nil,
-                     protocol_version: nil, **options)
+      def initialize(url, session_store:, session_id: nil, protocol_version: nil, **options)
         super(url, session_store: session_store, **options)
         @session_id = session_id
-        @oauth_provider = oauth_provider
-        @jwt_provider = jwt_provider
         @protocol_version = protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION
         @negotiated_protocol_version = nil
         @last_event_id = nil
@@ -105,8 +102,6 @@ module ActionMCP
         # Add MCP-Protocol-Version header for GET requests when we have a negotiated version
         headers["MCP-Protocol-Version"] = @negotiated_protocol_version if @negotiated_protocol_version
 
-        headers.merge!(oauth_headers)
-        headers.merge!(jwt_headers)
         log_debug("Final GET headers: #{headers}")
         headers
       end
@@ -122,8 +117,6 @@ module ActionMCP
         # Only include when we have a negotiated version from previous handshake
         headers["MCP-Protocol-Version"] = @negotiated_protocol_version if @negotiated_protocol_version
 
-        headers.merge!(oauth_headers)
-        headers.merge!(jwt_headers)
         log_debug("Final POST headers: #{headers}")
         headers
       end
@@ -208,7 +201,6 @@ module ActionMCP
           # Accepted - message received, no immediate response
           log_debug("Message accepted (202)")
         when 401
-          handle_authentication_error(response)
           raise AuthenticationError, "Authentication required"
         when 405
           # Method not allowed - server doesn't support this operation
@@ -305,43 +297,6 @@ module ActionMCP
         log_debug("Saved session state")
       end
 
-      def oauth_headers
-        return {} unless @oauth_provider&.authenticated?
-
-        headers = @oauth_provider.authorization_headers
-        log_debug("OAuth headers: #{headers}") unless headers.empty?
-        headers
-      rescue StandardError => e
-        log_error("Failed to get OAuth headers: #{e.message}")
-        {}
-      end
-
-      def jwt_headers
-        return {} unless @jwt_provider&.authenticated?
-
-        headers = @jwt_provider.authorization_headers
-        log_debug("JWT headers: #{headers}") unless headers.empty?
-        headers
-      rescue StandardError => e
-        log_error("Failed to get JWT headers: #{e.message}")
-        {}
-      end
-
-      def handle_authentication_error(response)
-        # Check for OAuth challenge in WWW-Authenticate header
-        www_auth = response.headers["www-authenticate"]
-        return unless www_auth&.include?("Bearer")
-
-        if @oauth_provider
-          log_debug("Received OAuth challenge, clearing OAuth tokens")
-          @oauth_provider.clear_tokens!
-        end
-
-        return unless @jwt_provider
-
-        log_debug("Received Bearer challenge, clearing JWT tokens")
-        @jwt_provider.clear_tokens!
-      end
 
       def user_agent
         "ActionMCP-StreamableHTTP/#{ActionMCP.gem_version}"

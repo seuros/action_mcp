@@ -3,11 +3,7 @@
 module ActionMCP
   # Custom logger that filters out repetitive MCP requests
   class FilteredLogger < ActiveSupport::Logger
-    FILTERED_PATHS = [
-      "/oauth/authorize",
-      "/.well-known/oauth-protected-resource",
-      "/.well-known/oauth-authorization-server"
-    ].freeze
+    FILTERED_PATHS = [].freeze
 
     FILTERED_METHODS = [
       "notifications/initialized",
@@ -15,7 +11,7 @@ module ActionMCP
     ].freeze
 
     def add(severity, message = nil, progname = nil, &block)
-      # Filter out repetitive OAuth metadata requests
+      # Filter out specific paths
       if message.is_a?(String)
         return if FILTERED_PATHS.any? { |path| message.include?(path) && message.include?("200 OK") }
 

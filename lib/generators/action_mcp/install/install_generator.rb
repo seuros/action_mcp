@@ -44,7 +44,7 @@ module ActionMCP
         say ""
         say "Configuration:"
         say "  The mcp.yml file contains authentication, profiles, and adapter settings."
-        say "  You can customize authentication methods, OAuth settings, and PubSub adapters."
+        say "  You can customize authentication methods and PubSub adapters."
         say ""
         say "Available adapters:"
         say "  - simple      : In-memory adapter for development"

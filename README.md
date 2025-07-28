@@ -576,7 +576,7 @@ This will create:
 
 ActionMCP provides a Gateway system similar to ActionCable's Connection for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
 
-ActionMCP supports multiple authentication methods including OAuth 2.1, JWT tokens, and no authentication for development. For detailed OAuth 2.1 configuration and usage, see the [OAuth Authentication Guide](OAUTH.md).
+ActionMCP uses a Gateway pattern with pluggable identifiers for authentication. You can implement custom authentication strategies using session-based auth, API keys, bearer tokens, or integrate with existing authentication systems like Warden, Devise, or external OAuth providers.
 
 ### Creating an ApplicationGateway
 

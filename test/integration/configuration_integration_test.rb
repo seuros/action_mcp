@@ -177,7 +177,7 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
   test "loads authentication methods from environment-specific config" do
     config_content = {
       "shared" => {
-        "authentication" => [ "jwt" ],
+        "authentication" => [ "api_key" ],
         "profiles" => {
           "primary" => {
             "tools" => [ "all" ],
@@ -187,7 +187,7 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
         }
       },
       "test" => {
-        "authentication" => [ "oauth", "jwt" ]
+        "authentication" => [ "api_key", "session" ]
       }
     }
 
@@ -198,42 +198,9 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     config = ActionMCP.configuration
     config.load_profiles
 
-    assert_equal [ "oauth", "jwt" ], config.authentication_methods
+    assert_equal [ "api_key", "session" ], config.authentication_methods
   end
 
-  test "loads OAuth configuration from YAML" do
-    config_content = {
-      "shared" => {
-        "authentication" => [ "oauth" ],
-        "oauth" => {
-          "provider" => "test_oauth_provider",
-          "scopes_supported" => [ "mcp:tools", "mcp:resources" ],
-          "enable_dynamic_registration" => true,
-          "issuer_url" => "https://example.com"
-        },
-        "profiles" => {
-          "primary" => {
-            "tools" => [ "all" ],
-            "prompts" => [ "all" ],
-            "resources" => [ "all" ]
-          }
-        }
-      },
-      "test" => {}
-    }
-
-    File.write(@original_config_path, YAML.dump(config_content))
-
-    # Force configuration reload
-    ActionMCP.instance_variable_set(:@configuration, nil)
-    config = ActionMCP.configuration
-    config.load_profiles
-
-    assert_equal "test_oauth_provider", config.oauth_config["provider"]
-    assert_equal [ "mcp:tools", "mcp:resources" ], config.oauth_config["scopes_supported"]
-    assert_equal true, config.oauth_config["enable_dynamic_registration"]
-    assert_equal "https://example.com", config.oauth_config["issuer_url"]
-  end
 
   test "environment-specific settings override shared settings" do
     config_content = {

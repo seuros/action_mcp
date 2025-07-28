@@ -4,39 +4,40 @@ require "test_helper"
 
 class GatewayToolsIntegrationTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(email: "test@example.com")
-    @token = JWT.encode({ user_id: @user.id }, ActionMCP::JwtDecoder.secret, ActionMCP::JwtDecoder.algorithm)
+    @user = User.create!(
+      name: "Test User",
+      email: "test@example.com",
+      password: "password123",
+      password_confirmation: "password123"
+    )
   end
 
   test "tool can access current user when authenticated" do
-    # First authenticate via gateway
-    get "/gateway_up", headers: { "Authorization" => "Bearer #{@token}" }
-    assert_response :success
+    # Test that the tool can access the current user when directly set
+    ActionMCP::Current.set(user: @user) do
+      tool = UserInfoTool.new(include_sensitive: true, include_auth_details: false)
+      response = tool.call
 
-    # Now test that the tool can access the current user
-    tool = UserInfoTool.new(include_email: true)
-
-    # Simulate the gateway being called in the request context
-    ActionMCP::Current.user = @user
-
-    response = tool.call
-
-    assert response.contents.any?
-    content = response.contents.first
-    assert_includes content.text, @user.id.to_s
-    assert_includes content.text, @user.email
+      response_hash = response.to_h
+      assert response_hash[:content], "Response should have content: #{response_hash.inspect}"
+      assert response_hash[:content].any?, "Content should not be empty"
+      content_text = response_hash[:content].first[:text]
+      assert_includes content_text, @user.id.to_s
+      assert_includes content_text, @user.email
+      assert_includes content_text, @user.name
+    end
   end
 
   test "tool returns no user when not authenticated" do
-    tool = UserInfoTool.new
-
     # Ensure no current user is set
-    ActionMCP::Current.user = nil
+    ActionMCP::Current.set(user: nil) do
+      tool = UserInfoTool.new
+      response = tool.call
 
-    response = tool.call
-
-    assert response.contents.any?
-    content = response.contents.first
-    assert_equal "No authenticated user", content.text
+      response_hash = response.to_h
+      assert response_hash[:content].any?
+      content_text = response_hash[:content].first[:text]
+      assert_includes content_text, "No authenticated user found"
+    end
   end
 end

@@ -22,7 +22,11 @@ gem "solid_cache"
 gem "solid_mcp", "~> 0.2.3" # Database-backed adapter optimized for MCP
 gem "solid_queue"
 
-gem "annotaterb"
+# Authentication for dummy app
+gem "bcrypt", "~> 3.1.7"
+gem "jwt"
+gem "warden"
+
 
 # Database adapters for testing
 gem "pg"

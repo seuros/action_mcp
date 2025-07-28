@@ -1,0 +1,35 @@
+# frozen_string_literal: true
+
+# <%= class_name %> - Gateway identifier for <%= auth_method %> authentication
+#
+# This identifier handles authentication using the "<%= auth_method %>" method
+# and provides access to the authenticated <%= identity %> object.
+#
+# Configuration:
+#   # config/mcp.yml
+#   authentication_methods: ["<%= auth_method %>"]
+#
+# Usage in ApplicationGateway:
+#   identified_by <%= class_name %>
+class <%= class_name %> < ActionMCP::GatewayIdentifier
+  identifier :<%= identity %>
+  authenticates :<%= auth_method %>
+
+  def resolve
+<%= resolve_implementation %>
+  end
+
+  private
+
+  # Add any custom helper methods here
+  # 
+  # Example helper methods:
+  # 
+  # def extract_credentials_from_request
+  #   # Custom extraction logic
+  # end
+  # 
+  # def validate_credentials(credentials)
+  #   # Custom validation logic
+  # end
+end

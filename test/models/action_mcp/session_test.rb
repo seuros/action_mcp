@@ -1,39 +1,4 @@
 # frozen_string_literal: true
-
-# == Schema Information
-#
-# Table name: action_mcp_sessions
-#
-#  id                     :string           not null, primary key
-#  authentication_method  :string           default("none")
-#  client_capabilities    :json
-#  client_info            :json
-#  consents               :json             not null
-#  ended_at               :datetime
-#  initialized            :boolean          default(FALSE), not null
-#  messages_count         :integer          default(0), not null
-#  oauth_access_token     :string
-#  oauth_refresh_token    :string
-#  oauth_token_expires_at :datetime
-#  oauth_user_context     :json
-#  prompt_registry        :json
-#  protocol_version       :string
-#  resource_registry      :json
-#  role                   :string           default("server"), not null
-#  server_capabilities    :json
-#  server_info            :json
-#  sse_event_counter      :integer          default(0), not null
-#  status                 :string           default("pre_initialize"), not null
-#  tool_registry          :json
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#
-# Indexes
-#
-#  index_action_mcp_sessions_on_authentication_method   (authentication_method)
-#  index_action_mcp_sessions_on_oauth_access_token      (oauth_access_token) UNIQUE
-#  index_action_mcp_sessions_on_oauth_token_expires_at  (oauth_token_expires_at)
-#
 require "test_helper"
 
 module ActionMCP

@@ -12,7 +12,6 @@ module ActionMCP
     ActiveSupport::Inflector.inflections(:en) do |inflect|
       inflect.acronym "SSE"
       inflect.acronym "MCP"
-      inflect.acronym "OAuth"
     end
 
     # Provide a configuration namespace for ActionMCP
@@ -54,12 +53,6 @@ module ActionMCP
       ActionMCP.configuration.load_profiles
     end
 
-    # Add OAuth middleware if OAuth is configured
-    initializer "action_mcp.oauth_middleware", after: "action_mcp.load_profiles" do
-      if ActionMCP.configuration.authentication_methods&.include?("oauth")
-        config.middleware.use ActionMCP::OAuth::Middleware
-      end
-    end
 
     # Configure autoloading for the mcp/tools directory and identifiers
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|

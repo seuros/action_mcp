@@ -29,7 +29,6 @@ module ActionMCP
                   :verbose_logging,
                   # --- Authentication Options ---
                   :authentication_methods,
-                  :oauth_config,
                   # --- Transport Options ---
                   :sse_heartbeat_interval,
                   :post_response_preference, # :json or :sse
@@ -61,9 +60,8 @@ module ActionMCP
       @active_profile = :primary
       @profiles = default_profiles
 
-      # Authentication defaults
-      @authentication_methods = Rails.env.production? ? [ "jwt" ] : [ "none" ]
-      @oauth_config = HashWithIndifferentAccess.new
+      # Authentication defaults - empty means all configured identifiers will be tried
+      @authentication_methods = []
 
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
@@ -122,11 +120,6 @@ module ActionMCP
         # Extract authentication configuration if present
         # Handle both symbol and string keys
         @authentication_methods = Array(app_config[:authentication] || app_config["authentication"]) if app_config[:authentication] || app_config["authentication"]
-
-        # Extract OAuth configuration if present
-        # Handle both symbol and string keys
-        oauth_config = app_config[:oauth] || app_config["oauth"]
-        @oauth_config = HashWithIndifferentAccess.new(oauth_config) if oauth_config
 
         # Extract other top-level configuration settings
         extract_top_level_settings(app_config)
