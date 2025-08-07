@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# app/models/concerns/mcp_message_inspect.rb
-module MCPMessageInspect
-  extend ActiveSupport::Concern
+module ActionMCP
+  module MCPMessageInspect
+    extend ActiveSupport::Concern
 
   def inspect(show_data: false)
     if show_data
@@ -69,5 +69,6 @@ module MCPMessageInspect
     }
 
     "#{colors[color]}#{text}\e[0m"
+  end
   end
 end
