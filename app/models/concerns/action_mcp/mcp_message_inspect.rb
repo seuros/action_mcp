@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# app/models/concerns/mcp_message_inspect.rb
 module ActionMCP
   module MCPMessageInspect
     extend ActiveSupport::Concern
