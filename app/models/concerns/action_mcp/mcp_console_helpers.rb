@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # app/models/concerns/mcp_console_helpers.rb
-module MCPConsoleHelpers
-  extend ActiveSupport::Concern
+module ActionMCP
+  module MCPConsoleHelpers
+    extend ActiveSupport::Concern
 
   class_methods do
     def pretty_messages(session_or_messages, limit: 10)
@@ -64,5 +65,6 @@ module MCPConsoleHelpers
 
   def message_flow(limit: 50)
     self.class.message_flow(self, limit: limit)
+  end
   end
 end

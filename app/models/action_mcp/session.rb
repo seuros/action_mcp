@@ -55,7 +55,7 @@ module ActionMCP
       self.consents = {} if consents == "{}" || consents.nil?
     end
 
-    include MCPConsoleHelpers
+    include ActionMCP::MCPConsoleHelpers
     attribute :id, :string, default: -> { SecureRandom.hex(6) }
     has_many :messages,
              class_name: "ActionMCP::Session::Message",
