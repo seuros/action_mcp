@@ -17,4 +17,5 @@ coverage/
 .env
 *.log
 *.log.*
+CLAUDE.local.md
 

@@ -24,9 +24,9 @@ class ProductsTemplate < ApplicationMCPResTemplate
     start_time = Time.current
     logger.tagged("ProductsTemplate") { logger.info("Starting resolution for product: #{template.product_id}") }
 
-    resource = block.call
+    response = block.call
 
-    if resource
+    if response.success?
       logger.tagged("ProductsTemplate") do
         logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s")
       end
@@ -34,7 +34,7 @@ class ProductsTemplate < ApplicationMCPResTemplate
       logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
     end
 
-    resource
+    response
   end
 
   def resolve
