@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "action_mcp/types/float_array_type"
+require "action_mcp/types/object_type"
 
 module ActionMCP
   # Base class for defining tools.
@@ -381,6 +382,7 @@ module ActionMCP
       when "array_number" then :float_array
       when "array_integer" then :integer_array
       when "array_string" then :string_array
+      when "object" then Types::ObjectType.new
       else :string
       end
     end
@@ -414,6 +416,8 @@ module ActionMCP
           validate_string_parameter(key_str, value)
         when "boolean"
           validate_boolean_parameter(key_str, value)
+        when "object"
+          validate_object_parameter(key_str, value)
         when "array"
           validate_array_parameter(key_str, value, property_schema)
         end
@@ -456,6 +460,12 @@ module ActionMCP
       return if value.is_a?(TrueClass) || value.is_a?(FalseClass)
 
       raise ArgumentError, "Parameter '#{key}' must be a boolean, got: #{value.class}"
+    end
+
+    def validate_object_parameter(key, value)
+      return if value.is_a?(Hash)
+
+      raise ArgumentError, "Parameter '#{key}' must be an object/hash, got: #{value.class}"
     end
 
     def validate_array_parameter(key, value, _property_schema)
