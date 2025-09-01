@@ -45,10 +45,11 @@ module ActionMCP
       # @example Output:
       #   # Sends: {"jsonrpc":"2.0","id":"req-789","result":{"contents":[{"uri":"file:///example.txt","text":"Example content"}]}}
       def send_resource_read(id, params)
-        template = ResourceTemplatesRegistry.find_template_for_uri(params[:uri])
+        uri = params["uri"]
+        template = ResourceTemplatesRegistry.find_template_for_uri(uri)
 
         unless template
-          send_jsonrpc_error(id, :resource_not_found, "No resource template found for URI: #{params[:uri]}")
+          send_jsonrpc_error(id, :method_not_found, "No resource template found for URI: '#{uri}'")
           return
         end
 
@@ -65,21 +66,21 @@ module ActionMCP
 
         begin
           # Create template instance and set execution context
-          record = template.process(params[:uri])
+          record = template.process(uri)
           record.with_context({ session: session })
 
           response = record.call
 
           if response.error?
-            # Convert ResourceResponse errors to JSON-RPC errors
-            error_info = response.to_h
-            send_jsonrpc_error(id, error_info[:code], error_info[:message], error_info[:data])
+            # response.to_h works properly when error? is true:
+            send_jsonrpc_response(id, error: response.to_h)
           else
             # Handle successful response - ResourceResponse.contents is already an array
             send_jsonrpc_response(id, result: { contents: response.contents.map(&:to_h) })
           end
         rescue StandardError => e
-          log_error(e, { resource_uri: params[:uri], template: template.name })
+          # Should rather `ErrorHandling` module be included here? Then we could use `log_error(e)` directly.
+          Rails.logger.error "[MCP Error] #{e.class}: #{e.message}"
           send_jsonrpc_error(id, :internal_error, "Failed to read resource: #{e.message}")
         end
       end

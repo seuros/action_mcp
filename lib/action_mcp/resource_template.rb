@@ -274,6 +274,7 @@ module ActionMCP
           else
             @response.add_content(result)
           end
+          @response
         end
       rescue StandardError => e
         @response.mark_as_resolution_failed!("template://#{self.class.name}", e.message)
