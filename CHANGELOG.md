@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.80.0...action_mcp/v0.80.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* ResourceTemplate resolving fixes ([#133](https://github.com/seuros/action_mcp/issues/133)) ([b9fc876](https://github.com/seuros/action_mcp/commit/b9fc876e19f80a647064b197f7b0368036a7747d))
+
 ## [0.80.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.72.0...action_mcp/v0.80.0) (2025-07-28)
 
 
