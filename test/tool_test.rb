@@ -109,6 +109,21 @@ class ToolTest < ActiveSupport::TestCase
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
   end
 
+  test "UpdateConfigTool to_h returns correct hash representation with object property" do
+    expected = {
+      name: "update_config",
+      description: "Update application configuration",
+      inputSchema: {
+        type: "object",
+        properties: {
+          "config" => { type: "object", description: "Configuration object with nested settings" }
+        },
+        required: [ "config" ]
+      }
+    }
+    assert_equal expected, UpdateConfigTool.to_h
+  end
+
   test "ExecuteCommandTool to_h returns correct hash representation with simple collection" do
     expected = {
       name: "execute_command",
