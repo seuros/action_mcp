@@ -35,7 +35,7 @@ class WeatherForecastTool < ApplicationMCPTool
     # Final summary
     render(text: "Weather data complete for #{location}. Forecast generated at #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}")
   rescue StandardError => e
-    render(error: [ "Weather forecast failed: #{e.message}" ])
+    report_error("Weather forecast failed: #{e.message}")
   end
 
   private

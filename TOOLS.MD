@@ -53,7 +53,7 @@ class CalculateSumTool < ApplicationMCPTool
     # render(resource: "file://path", mime_type: "application/json", text: "{}")
     # render(resource: "file://path", mime_type: "application/octet-stream", blob: "<base64_data>")
   rescue => e
-    render(error: ["Error: #{e.message}"])
+    report_error("Error: #{e.message}")
   end
 end
 ```
@@ -106,7 +106,7 @@ def perform
   weather_data = fetch_weather_for(city)
   render(text: "Weather in #{city}: #{weather_data[:temp]}°C, #{weather_data[:description]}")
 rescue => e
-  render(error: ["Could not fetch weather: #{e.message}"])
+  report_error("Could not fetch weather: #{e.message}")
 end
 
 private
@@ -165,7 +165,7 @@ def perform
   # You can also render:
   render(image: base64_image_data, mime_type: "image/png")
   render(audio: base64_audio_data, mime_type: "audio/mpeg")
-  render(error: ["Something went wrong"])
+  report_error("Something went wrong")
 end
 ```
 
@@ -294,7 +294,7 @@ Tools should return clear error messages to the LLM using the `render` method:
 class FileReaderTool < ApplicationMCPTool
   def perform
     unless File.exist?(file_path)
-      render(error: ["File not found: #{file_path}"])
+      report_error("File not found: #{file_path}")
       return
     end
     
@@ -302,7 +302,7 @@ class FileReaderTool < ApplicationMCPTool
       content = File.read(file_path)
       render(text: "File contents: #{content}")
     rescue => e
-      render(error: ["Could not read file: #{e.message}"])
+      report_error("Could not read file: #{e.message}")
     end
   end
 end
@@ -311,7 +311,7 @@ end
 **Error Types:**
 - **Validation errors** - Automatic from property validation
 - **Consent errors** - Code -32002 when consent required
-- **Tool errors** - Use `render(error: ["Clear message for LLM"])`
+- **Tool errors** - Use `report_error("Clear message for LLM")`
 - **Success responses** - Use `render(text: "Success message")`
 
 ## Common Issues

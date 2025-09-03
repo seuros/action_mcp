@@ -154,9 +154,9 @@ class CalculateSumTool < ApplicationMCPTool
     render(text: "Calculating #{a} + #{b}...")
     render(text: "The sum is #{sum}")
 
-    # You can render errors if needed
+    # You can report errors if needed
     if sum > 1000
-      render(error: ["Warning: Sum exceeds recommended limit"])
+      report_error("Warning: Sum exceeds recommended limit")
     end
 
     # Or even images
@@ -871,7 +871,7 @@ class MyTool < ApplicationMCPTool
   def perform
     # Check for error conditions and return clear messages
     if some_error_condition?
-      render(error: ["Clear error message for the LLM"])
+      report_error("Clear error message for the LLM")
       return
     end
     
