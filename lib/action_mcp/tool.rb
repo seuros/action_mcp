@@ -24,6 +24,7 @@ module ActionMCP
     class_attribute :_output_schema, instance_accessor: false, default: nil
     class_attribute :_meta, instance_accessor: false, default: {}
     class_attribute :_requires_consent, instance_accessor: false, default: false
+    class_attribute :_output_schema_builder, instance_accessor: false, default: nil
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -126,10 +127,27 @@ module ActionMCP
         _annotations["openWorldHint"] == true
       end
 
-      # Sets the output schema for structured content
-      def output_schema(schema = nil)
+
+      # Schema DSL for output structure
+      # @param block [Proc] Block containing output schema definition
+      # @return [Hash] The generated JSON Schema
+      def output_schema(&block)
+        return _output_schema unless block_given?
+
+        builder = OutputSchemaBuilder.new
+        builder.instance_eval(&block)
+
+        # Store both the builder and the generated schema
+        self._output_schema_builder = builder
+        self._output_schema = builder.to_json_schema
+
+        _output_schema
+      end
+
+      # Legacy output_schema method for backward compatibility
+      def output_schema_legacy(schema = nil)
         if schema
-          raise NotImplementedError, "Output schema DSL not yet implemented. Coming soon with structured content DSL!"
+          raise NotImplementedError, "Legacy output schema not yet implemented. Use output_schema DSL instead!"
         end
 
         _output_schema
@@ -327,11 +345,18 @@ module ActionMCP
       end.join(', ')}, #{response_info}#{errors_info}>"
     end
 
-    # Override render to collect Content objects
-    def render(**args)
-      content = super(**args) # Call Renderable's render method
-      @response.add(content)  # Add to the response
-      content # Return the content for potential use in perform
+    # Override render to collect Content objects and support structured content
+    def render(structured: nil, **args)
+      if structured
+        # Render structured content
+        set_structured_content(structured)
+        structured
+      else
+        # Normal content rendering
+        content = super(**args) # Call Renderable's render method
+        @response.add(content)  # Add to the response
+        content # Return the content for potential use in perform
+      end
     end
 
     # Override render_resource_link to collect ResourceLink objects
@@ -362,13 +387,51 @@ module ActionMCP
       return unless @response
 
       # Validate against output schema if defined
-      # TODO: Add JSON Schema validation here
-      # For now, just ensure it's a hash/object
-      if self.class._output_schema && !content.is_a?(Hash)
-        raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
+      if self.class._output_schema
+        validate_structured_content(content)
       end
 
       @response.set_structured_content(content)
+    end
+
+    private
+
+    # Validate structured content against output schema
+    def validate_structured_content(content)
+      # Ensure content is a hash/object
+      unless content.is_a?(Hash)
+        raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
+      end
+
+      # Skip validation in test environment to avoid loading json_schemer unnecessarily
+      return if Rails.env.test?
+
+      begin
+        require "json_schemer"
+
+        schema = self.class._output_schema
+        schemer = JSONSchemer.schema(schema)
+
+        unless schemer.valid?(content)
+          errors = schemer.validate(content).map do |error|
+            "#{error['data_pointer']}: #{error['details'] || error['type']}"
+          end
+
+          Rails.logger.warn "[ActionMCP] Output validation failed for #{self.class.name}: #{errors.join(', ')}"
+
+          # In development, be strict about validation
+          if Rails.env.development?
+            raise ArgumentError, "Structured content validation failed: #{errors.join(', ')}"
+          end
+
+          # In production, log but don't break - be forgiving
+        end
+      rescue LoadError
+        Rails.logger.warn "[ActionMCP] json_schemer not available for output validation"
+      rescue StandardError => e
+        Rails.logger.warn "[ActionMCP] Output validation error: #{e.message}"
+        # Don't break the tool execution
+      end
     end
 
     # Maps a JSON Schema type to an ActiveModel attribute type.
