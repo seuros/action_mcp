@@ -386,53 +386,11 @@ module ActionMCP
     def set_structured_content(content)
       return unless @response
 
-      # Validate against output schema if defined
-      if self.class._output_schema
-        validate_structured_content(content)
-      end
-
       @response.set_structured_content(content)
     end
 
     private
 
-    # Validate structured content against output schema
-    def validate_structured_content(content)
-      # Ensure content is a hash/object
-      unless content.is_a?(Hash)
-        raise ArgumentError, "Structured content must be a hash/object when output_schema is defined"
-      end
-
-      # Skip validation in test environment to avoid loading json_schemer unnecessarily
-      return if Rails.env.test?
-
-      begin
-        require "json_schemer"
-
-        schema = self.class._output_schema
-        schemer = JSONSchemer.schema(schema)
-
-        unless schemer.valid?(content)
-          errors = schemer.validate(content).map do |error|
-            "#{error['data_pointer']}: #{error['details'] || error['type']}"
-          end
-
-          Rails.logger.warn "[ActionMCP] Output validation failed for #{self.class.name}: #{errors.join(', ')}"
-
-          # In development, be strict about validation
-          if Rails.env.development?
-            raise ArgumentError, "Structured content validation failed: #{errors.join(', ')}"
-          end
-
-          # In production, log but don't break - be forgiving
-        end
-      rescue LoadError
-        Rails.logger.warn "[ActionMCP] json_schemer not available for output validation"
-      rescue StandardError => e
-        Rails.logger.warn "[ActionMCP] Output validation error: #{e.message}"
-        # Don't break the tool execution
-      end
-    end
 
     # Maps a JSON Schema type to an ActiveModel attribute type.
     #
