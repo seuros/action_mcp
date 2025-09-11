@@ -34,7 +34,7 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
     assert error_content.any? { |c| c["type"] == "text" }, "Should have text content"
 
     error_text = error_content.find { |c| c["type"] == "text" }["text"]
-    assert error_text = "Validation failed: 'staging' is not supported", "Error must be indicative of validation failure, got: '#{error_text.inspect}'"
+    assert error_text == "Validation failed: 'staging' is not supported", "Error must be indicative of validation failure, got: '#{error_text.inspect}'"
   end
 
   test "tool succeeds when validation passes" do
