@@ -71,7 +71,6 @@ module ActionMCP
     # Base class for transport implementations
     class TransportBase
       include Transport
-      include Logging
 
       attr_reader :url, :options, :session_store
 

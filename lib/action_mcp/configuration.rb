@@ -51,9 +51,9 @@ module ActionMCP
                   :connects_to
 
     def initialize
-      @logging_enabled = true
+      @logging_enabled = false
       @list_changed = true
-      @logging_level = :info
+      @logging_level = :warning
       @resources_subscribe = false
       @elicitation_enabled = false
       @verbose_logging = false
@@ -269,8 +269,8 @@ module ActionMCP
           resources: [ "all" ],
           options: {
             list_changed: false,
-            logging_enabled: true,
-            logging_level: :info,
+            logging_enabled: false,
+            logging_level: :warning,
             resources_subscribe: false
           }
         },

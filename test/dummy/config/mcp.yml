@@ -28,7 +28,8 @@ shared:
         - all
       options:
         list_changed: true
-        logging_enabled: true
+        logging_enabled: false
+        logging_level: warning
         resources_subscribe: false
 
     minimal:

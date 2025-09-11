@@ -6,6 +6,7 @@ module ActionMCP
       include Handlers::ResourceHandler
       include Handlers::ToolHandler
       include Handlers::PromptHandler
+      include Handlers::LoggingHandler
       include ErrorHandling
       include ErrorAware
 
@@ -55,6 +56,8 @@ module ActionMCP
           process_tools(rpc_method, id, params)
         when Methods::COMPLETION_COMPLETE
           process_completion_complete(id, params)
+        when Methods::LOGGING_SET_LEVEL
+          handle_logging_set_level(id, params)
         else
           raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Method not found: #{rpc_method}")
         end

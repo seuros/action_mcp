@@ -13,7 +13,6 @@ module ActionMCP
       include Resources
       include Roots
       include Elicitation
-      include Logging
 
       attr_reader :logger, :transport,
                   :connection_error, :server,

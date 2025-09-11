@@ -31,7 +31,6 @@ end.setup
 module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/client"
-  include Logging
 
   # Protocol version constants
   SUPPORTED_VERSIONS = [

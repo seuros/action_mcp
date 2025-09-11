@@ -10,7 +10,6 @@ module ActionMCP
 
       delegate :initialize!, :initialized?, to: :session
       delegate :read, :write, to: :session
-      include Logging
 
       include  MessagingService
       include  Capabilities
