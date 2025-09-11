@@ -53,7 +53,7 @@ class CalculateSumTool < ApplicationMCPTool
     # render(resource: "file://path", mime_type: "application/json", text: "{}")
     # render(resource: "file://path", mime_type: "application/octet-stream", blob: "<base64_data>")
   rescue => e
-    render(error: ["Error: #{e.message}"])
+    report_error("Error: #{e.message}")
   end
 end
 ```
@@ -106,7 +106,7 @@ def perform
   weather_data = fetch_weather_for(city)
   render(text: "Weather in #{city}: #{weather_data[:temp]}°C, #{weather_data[:description]}")
 rescue => e
-  render(error: ["Could not fetch weather: #{e.message}"])
+  report_error("Could not fetch weather: #{e.message}")
 end
 
 private
@@ -146,7 +146,240 @@ end
 - `"number"` - Numeric input (integer or float)
 - `"boolean"` - true/false
 - `"array"` - List of items
-- `"object"` - Complex nested data
+- `"object"` - ⚠️ **Limited support** - See Input Schema Limitations below
+
+## ⚠️ Input Schema Limitations
+
+**Important:** The MCP specification currently only supports **flat, single-level** input schemas. While JSON Schema technically allows nested objects, the MCP spec intentionally keeps input parameters at one level.
+
+### Why Flat Schemas?
+
+1. **LLM Performance** - Language models work better with flat parameter lists
+2. **Spec Compliance** - Prevents drift from official MCP specification  
+3. **SDK Compatibility** - Strict validation in newer SDKs will reject nested structures
+
+### Complex Data Workaround
+
+For complex configuration or nested data, use the **JSON string pattern**:
+
+```ruby
+class ConfigUpdateTool < ApplicationMCPTool
+  tool_name "config_update"
+  description "Update multiple configuration properties"
+  
+  # Use JSON string instead of nested object
+  property :config_json, type: "string", description: "JSON string of configuration object"
+  
+  def perform
+    # Parse the JSON string to get your complex object
+    config = JSON.parse(config_json)
+    
+    # Now you can work with nested data
+    config.each do |key, value|
+      update_config(key, value)
+    end
+    
+    render(text: "Updated #{config.keys.length} configuration properties")
+  end
+end
+```
+
+**Example tool call:**
+```json
+{
+  "config_json": "{\"database_host\": \"localhost\", \"cache_ttl\": 3600, \"debug_mode\": true}"
+}
+```
+
+### Spec Compliance Notes
+
+- **Use `"number"` not `"float"`** - `"float"` is not valid JSON Schema
+- **Test with MCP Inspector** - Frontier models may "fix" invalid schemas, but strict SDKs will reject them
+- **Avoid `type: "object"`** for input properties unless you're implementing experimental features
+
+## Additional Properties (Dynamic Inputs)
+
+Tools can accept extra parameters beyond those explicitly defined using `additional_properties`:
+
+```ruby
+class FlexibleApiTool < ApplicationMCPTool
+  tool_name "flexible_api"
+  description "API caller that accepts dynamic parameters"
+  
+  # Define core properties
+  property :endpoint, type: "string", description: "API endpoint", required: true
+  property :method, type: "string", description: "HTTP method", default: "GET"
+  
+  # Allow any additional properties
+  additional_properties true
+  
+  def perform
+    # Access defined properties normally
+    url = endpoint
+    http_method = method
+    
+    # Access additional properties through special method
+    extra_params = additional_params
+    
+    render(text: "Calling #{url} with method #{http_method}")
+    extra_params.each do |key, value|
+      render(text: "Extra param #{key}: #{value}")
+    end
+  end
+end
+```
+
+**Additional Properties Options:**
+
+```ruby
+# Allow any additional properties of any type
+additional_properties true
+
+# Explicitly disallow additional properties 
+additional_properties false
+
+# Allow additional properties but restrict to strings
+additional_properties({"type" => "string"})
+
+# Allow additional properties with more complex schemas
+additional_properties({
+  "type" => "object",
+  "properties" => {
+    "timeout" => {"type" => "number"}
+  }
+})
+```
+
+**Use Cases for Additional Properties:**
+
+1. **API Proxy Tools** - Forward arbitrary parameters to external APIs
+2. **Configuration Tools** - Accept flexible configuration options
+3. **Open World Tools** - Handle unpredictable input structures
+4. **Dynamic Data Processing** - Work with varying data schemas
+
+**Example Usage:**
+
+```json
+// Tool call with additional properties
+{
+  "endpoint": "/api/users",
+  "method": "POST",
+  "auth_token": "secret123",    // Additional property
+  "timeout": 5000,             // Additional property  
+  "debug": true                // Additional property
+}
+```
+
+## Output Schema (Structured Responses)
+
+Tools can define structured output schemas to provide predictable, validated responses that LLMs can reliably parse and use:
+
+```ruby
+class WeatherTool < ApplicationMCPTool
+  tool_name "weather"
+  description "Get weather with structured output"
+  
+  property :location, type: "string", required: true
+  
+  # Define the structure of your tool's output
+  output_schema do
+    boolean :success, required: true
+    string :message
+    
+    object :current do
+      number :temperature, required: true
+      string :condition, required: true
+      number :humidity, minimum: 0, maximum: 100
+    end
+    
+    array :forecast do
+      object do
+        string :date, format: "date", required: true
+        number :high, required: true
+        number :low, required: true
+      end
+    end
+  end
+  
+  def perform
+    # Return structured data that matches your schema
+    render structured: {
+      success: true,
+      message: "Weather retrieved for #{location}",
+      current: { temperature: 22.5, condition: "Sunny", humidity: 65 },
+      forecast: [
+        { date: "2025-01-01", high: 25, low: 18 }
+      ]
+    }
+  end
+end
+```
+
+### Output Schema DSL Methods
+
+- `string :name` - Text property
+- `number :price` - Numeric property  
+- `boolean :active` - True/false property
+- `object :data do...end` - Nested object with properties
+- `array :items do...end` - Array with item schema
+- `additional_properties true` - Allow extra properties
+
+### Schema Constraints
+
+- `required: true` - Property must be present
+- `minimum: 0, maximum: 100` - Numeric bounds
+- `format: "date"` - String format (date, date-time, uri, email)
+- `enum: ["option1", "option2"]` - Allowed values
+- `default: "value"` - Default value
+
+### Real Examples
+
+**Complex nested schema:** See `test/dummy/app/mcp/tools/weather_tool.rb`
+- Shows nested objects, arrays, timestamps
+- Demonstrates optional vs required fields
+- Includes metadata and forecast arrays
+
+**Configuration schema:** See `test/dummy/app/mcp/tools/config_update_tool.rb`  
+- Shows flat and nested object patterns
+- Array of simple string warnings
+- Success/message response pattern
+
+### When to Use Output Schemas
+
+✅ **Use output schemas when:**
+- LLMs need to parse your data programmatically  
+- Building multi-step workflows with tool chaining
+- Providing structured data (JSON, database records)
+- Creating consistent API-like responses
+
+❌ **Skip output schemas for:**
+- Simple text responses or status messages
+- Creative content generation
+- Progress updates during execution
+- Human-readable summaries
+
+**Key benefit:** LLMs can reliably extract specific data from your tool's response instead of parsing free-form text.
+
+### Input vs Output Schema Differences
+
+**Important distinction:**
+
+| Feature | Input Schema | Output Schema |
+|---------|--------------|---------------|
+| **Nesting Level** | Flat only (single level) | Unlimited nesting depth |
+| **Object Types** | Discouraged/Limited | Fully supported |
+| **Spec Status** | Strictly defined | More flexible |
+| **Why Different?** | LLMs handle flat params better | LLMs need structured data parsing |
+
+**Input schemas** must be flat because:
+- LLMs process simple parameter lists more reliably
+- Prevents infinite nesting complexity (HomeAssistant configs going 10 levels deep)
+- Maintains MCP specification compliance
+
+**Output schemas** can be deeply nested because:
+- LLMs need to parse complex returned data structures
+- Response parsing is different from parameter understanding
+- Tools often return rich, structured data (APIs, databases, etc.)
 
 ## Render Options
 
@@ -165,7 +398,9 @@ def perform
   # You can also render:
   render(image: base64_image_data, mime_type: "image/png")
   render(audio: base64_audio_data, mime_type: "audio/mpeg")
-  render(error: ["Something went wrong"])
+  
+  # For errors, use the helper method:
+  report_error("Something went wrong")
 end
 ```
 
@@ -247,6 +482,13 @@ bundle exec rails s -c mcp.ru -p 62770
 npx @modelcontextprotocol/inspector --url http://localhost:62770
 ```
 
+**⚠️ Important Testing Notes:**
+
+- **Always test with MCP Inspector** for true spec compliance validation
+- **Don't rely solely on Claude Code testing** - Frontier models will "fix" broken schemas and missing fields, giving false confidence
+- **SDK strictness is increasing** - What works today with "vibed" clients may break tomorrow with strict validation
+- **Historical example:** `"float"` and `"array_float"` types worked until the JavaScript SDK was patched to enforce proper JSON Schema types
+
 ### 3. Write a test:
 ```ruby
 # test/mcp/tools/your_tool_test.rb
@@ -294,7 +536,7 @@ Tools should return clear error messages to the LLM using the `render` method:
 class FileReaderTool < ApplicationMCPTool
   def perform
     unless File.exist?(file_path)
-      render(error: ["File not found: #{file_path}"])
+      report_error("File not found: #{file_path}")
       return
     end
     
@@ -302,7 +544,7 @@ class FileReaderTool < ApplicationMCPTool
       content = File.read(file_path)
       render(text: "File contents: #{content}")
     rescue => e
-      render(error: ["Could not read file: #{e.message}"])
+      report_error("Could not read file: #{e.message}")
     end
   end
 end
@@ -311,7 +553,7 @@ end
 **Error Types:**
 - **Validation errors** - Automatic from property validation
 - **Consent errors** - Code -32002 when consent required
-- **Tool errors** - Use `render(error: ["Clear message for LLM"])`
+- **Tool errors** - Use `report_error("Clear message for LLM")`
 - **Success responses** - Use `render(text: "Success message")`
 
 ## Common Issues

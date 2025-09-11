@@ -25,6 +25,7 @@ module ActionMCP
     class_attribute :_meta, instance_accessor: false, default: {}
     class_attribute :_requires_consent, instance_accessor: false, default: false
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
+    class_attribute :_additional_properties, instance_accessor: false, default: nil
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -173,6 +174,22 @@ module ActionMCP
       def requires_consent?
         _requires_consent
       end
+
+      # Sets or retrieves the additionalProperties setting for the input schema
+      # @param enabled [Boolean, Hash] true to allow any additional properties,
+      #   false to disallow them, or a Hash for typed additional properties
+      def additional_properties(enabled = nil)
+        if enabled.nil?
+          _additional_properties
+        else
+          self._additional_properties = enabled
+        end
+      end
+
+      # Returns whether this tool accepts additional properties
+      def accepts_additional_properties?
+        !_additional_properties.nil? && _additional_properties != false
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -263,6 +280,15 @@ module ActionMCP
       }
       schema[:required] = _required_properties if _required_properties.any?
 
+      # Add additionalProperties if configured
+      if _additional_properties == true
+        schema[:additionalProperties] = {}
+      elsif _additional_properties == false
+        schema[:additionalProperties] = false
+      elsif _additional_properties.is_a?(Hash)
+        schema[:additionalProperties] = _additional_properties
+      end
+
       result = {
         name: tool_name,
         description: description.presence,
@@ -288,9 +314,23 @@ module ActionMCP
 
     # Override initialize to validate parameters before ActiveModel conversion
     def initialize(attributes = {})
+      # Separate additional properties from defined attributes if enabled
+      if self.class.accepts_additional_properties?
+        defined_keys = self.class._schema_properties.keys.map(&:to_s)
+        @_additional_params = attributes.except(*defined_keys)
+        attributes = attributes.slice(*defined_keys)
+      else
+        @_additional_params = {}
+      end
+
       # Validate parameters before ActiveModel processes them
       validate_parameter_types(attributes)
       super
+    end
+
+    # Returns additional parameters that were passed but not defined in the schema
+    def additional_params
+      @_additional_params || {}
     end
 
     # Public entry point for executing the tool

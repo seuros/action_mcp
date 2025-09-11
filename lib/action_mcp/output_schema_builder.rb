@@ -126,8 +126,9 @@ module ActionMCP
     # @param name [Symbol] Object property name
     # @param required [Boolean] Whether the object is required
     # @param description [String] Property description
+    # @param additional_properties [Boolean, Hash] Whether to allow additional properties
     # @param block [Proc] Block defining object properties
-    def object(name, required: false, description: nil, &block)
+    def object(name, required: false, description: nil, additional_properties: nil, &block)
       raise ArgumentError, "Object definition requires a block" unless block_given?
 
       # Create nested builder for object properties
@@ -141,10 +142,30 @@ module ActionMCP
       schema["description"] = description if description
       schema["required"] = object_builder.required if object_builder.required.any?
 
+      # Add additionalProperties if specified
+      if additional_properties == true
+        schema["additionalProperties"] = {}
+      elsif additional_properties == false
+        schema["additionalProperties"] = false
+      elsif additional_properties.is_a?(Hash)
+        schema["additionalProperties"] = additional_properties
+      end
+
       @properties[name.to_s] = schema
       @required << name.to_s if required
 
       name.to_s
+    end
+
+    # Set additionalProperties for the root schema
+    # @param enabled [Boolean, Hash] true to allow any additional properties,
+    #   false to disallow them, or a Hash for typed additional properties
+    def additional_properties(enabled = nil)
+      if enabled.nil?
+        @additional_properties
+      else
+        @additional_properties = enabled
+      end
     end
 
     # Generate the final JSON Schema
@@ -155,6 +176,16 @@ module ActionMCP
       }
 
       schema["required"] = @required.uniq if @required.any?
+
+      # Add additionalProperties if configured
+      if @additional_properties == true
+        schema["additionalProperties"] = {}
+      elsif @additional_properties == false
+        schema["additionalProperties"] = false
+      elsif @additional_properties.is_a?(Hash)
+        schema["additionalProperties"] = @additional_properties
+      end
+
       schema
     end
   end
