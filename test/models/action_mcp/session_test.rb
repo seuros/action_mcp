@@ -24,7 +24,7 @@ module ActionMCP
       assert capabilities.key?("tools")
       assert capabilities.key?("prompts")
       assert capabilities.key?("resources")
-      assert capabilities.key?("logging")
+      # Note: logging capability is not present when disabled by default
     end
 
     test "with custom profile " do

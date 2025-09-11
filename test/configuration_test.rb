@@ -8,9 +8,9 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "default configuration values" do
-    assert_equal true, @config.logging_enabled
+    assert_equal false, @config.logging_enabled
     assert_equal true, @config.list_changed
-    assert_equal :info, @config.logging_level
+    assert_equal :warning, @config.logging_level
     assert_equal false, @config.resources_subscribe
     assert_equal :primary, @config.active_profile
   end

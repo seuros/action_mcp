@@ -105,7 +105,6 @@ module ActionMCP
       assert_not_nil capabilities["tools"], "Server should expose tools capability"
       assert_not_nil capabilities["prompts"], "Server should expose prompts capability"
       assert_not_nil capabilities["resources"]
-      assert_not_nil capabilities["logging"]
 
       # Verify protocol version matches
       assert_equal "2025-03-26", init_response["result"]["protocolVersion"]

@@ -8,7 +8,6 @@ module ActionMCP
     include ActiveModel::Model
     include ActiveModel::Validations
     include ResourceCallbacks
-    include Logging
     include UriAmbiguityChecker
     include CurrentHelpers
 

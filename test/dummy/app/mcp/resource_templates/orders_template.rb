@@ -14,28 +14,19 @@ class OrdersTemplate < ApplicationMCPResTemplate
 
   # You can mutate the template object before resolving
   before_resolve do |template|
-    logger.tagged("OrdersTemplate") do
-      logger.info("Starting to resolve order: #{template.order_id} for customer: #{template.customer_id}")
-    end
+    # Log or prepare template if needed
   end
 
   after_resolve do |template|
-    logger.tagged("OrdersTemplate") { logger.info("Finished resolving order resource for order: #{template.order_id}") }
+    # Cleanup or logging if needed
   end
 
   around_resolve do |template, block|
     start_time = Time.current
-    logger.tagged("OrdersTemplate") { logger.info("Starting resolution for order: #{template.order_id}") }
 
     resource = block.call
 
-    if resource
-      logger.tagged("OrdersTemplate") do
-        logger.info("Order #{template.order_id} resolved successfully in #{Time.current - start_time}s")
-      end
-    else
-      logger.tagged("OrdersTemplate") { logger.info("Order #{template.order_id} not found") }
-    end
+    # Could add timing or success/failure logging here if needed
 
     resource
   end

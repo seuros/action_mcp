@@ -8,7 +8,6 @@ module ActionMCP
     include ActiveModel::Attributes
     include Callbacks
     include Instrumentation::Instrumentation
-    include Logging
     include Renderable
 
     class_attribute :_capability_name, instance_accessor: false

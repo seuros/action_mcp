@@ -25,6 +25,9 @@ module ActionMCP
       TOOLS_LIST = "tools/list"
       TOOLS_CALL = "tools/call"
 
+      # Logging methods
+      LOGGING_SET_LEVEL = "logging/setLevel"
+
       # Notification methods
       NOTIFICATIONS_INITIALIZED = "notifications/initialized"
       NOTIFICATIONS_CANCELLED = "notifications/cancelled"
