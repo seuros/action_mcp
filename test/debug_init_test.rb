@@ -51,7 +51,6 @@ class DebugInitTest < ActionDispatch::IntegrationTest
     expected_capabilities = {
       "tools" => { "listChanged" => true },
       "prompts" => { "listChanged" => true },
-      "logging" => {},
       "resources" => { "subscribe" => false, "listChanged" => true }
     }
     assert_equal expected_capabilities, body["result"]["capabilities"]

@@ -10,6 +10,19 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     ActionMCP::Logging.reset!
     @sent_responses = []
     @sent_errors = []
+
+    # Mock transport
+    @transport = Object.new
+    def @transport.send_jsonrpc_response(id, result:)
+      @sent_responses << { id: id, result: result }
+    end
+    def @transport.send_jsonrpc_error(id, code, message)
+      @sent_errors << { id: id, code: code, message: message }
+    end
+
+    # Make instance variables accessible
+    @transport.instance_variable_set(:@sent_responses, @sent_responses)
+    @transport.instance_variable_set(:@sent_errors, @sent_errors)
   end
 
   teardown do
@@ -55,7 +68,7 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     assert_equal 1, @sent_errors.length
     error = @sent_errors.first
     assert_equal "test-id", error[:id]
-    assert_equal(-32601, error[:code])
+    assert_equal(:method_not_found, error[:code])
     assert_equal "Logging not enabled", error[:message]
   end
 
@@ -67,7 +80,7 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     assert_equal 1, @sent_errors.length
     error = @sent_errors.first
     assert_equal "test-id", error[:id]
-    assert_equal(-32602, error[:code])
+    assert_equal(:invalid_params, error[:code])
     assert_equal "Missing required parameter: level", error[:message]
   end
 
@@ -79,7 +92,7 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     assert_equal 1, @sent_errors.length
     error = @sent_errors.first
     assert_equal "test-id", error[:id]
-    assert_equal(-32602, error[:code])
+    assert_equal(:invalid_params, error[:code])
     assert_match(/Invalid log level/, error[:message])
   end
 
@@ -102,13 +115,18 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     assert_equal 1, @sent_errors.length
     error = @sent_errors.first
     assert_equal "test-id", error[:id]
-    assert_equal(-32603, error[:code])
+    assert_equal(:internal_error, error[:code])
     assert_match(/Internal error/, error[:message])
   end
 
   private
 
-  # Mock the JSON-RPC response methods
+  # Provide access to the mock transport
+  def transport
+    @transport
+  end
+
+  # Mock the JSON-RPC response methods (kept for backward compatibility)
   def send_jsonrpc_response(id, result:)
     @sent_responses << { id: id, result: result }
   end

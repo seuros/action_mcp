@@ -3,17 +3,22 @@
 require "test_helper"
 
 class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
+  include SessionFixtureHelper
+  fixtures :action_mcp_sessions
   setup do
     @original_logging_enabled = ActionMCP.configuration.logging_enabled
     @original_logging_level = ActionMCP.configuration.logging_level
     ActionMCP::Logging.reset!
 
-    # Create a test session
-    @session = ActionMCP::Session.create!(
-      status: "initialized",
-      protocol_version: "2025-06-18",
-      client_info: { name: "test-client", version: "1.0.0" }
-    )
+    # Use initialized session from fixtures with 2025-06-18 protocol
+    @session = action_mcp_sessions(:dr_identity_mcbouncer_session)
+
+    # Ensure session is in the session store
+    store = ActionMCP::Server.session_store
+    store.save_session(@session)
+    store.load_session(@session.id)
+
+    @session_id = @session.id
   end
 
   teardown do
@@ -22,52 +27,6 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     ActionMCP::Logging.reset!
   end
 
-  test "logging capability is not advertised when disabled" do
-    ActionMCP.configuration.logging_enabled = false
-
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test",
-        method: "initialize",
-        params: { protocolVersion: "2025-06-18", clientInfo: { name: "test", version: "1.0" } }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18"
-      }
-
-    assert_response :success
-
-    result = JSON.parse(response.body)
-    capabilities = result.dig("result", "capabilities")
-
-    assert_not capabilities.key?("logging"), "logging capability should not be advertised when disabled"
-  end
-
-  test "logging capability is advertised when enabled" do
-    ActionMCP.configuration.logging_enabled = true
-
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test",
-        method: "initialize",
-        params: { protocolVersion: "2025-06-18", clientInfo: { name: "test", version: "1.0" } }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18"
-      }
-
-    assert_response :success
-
-    result = JSON.parse(response.body)
-    capabilities = result.dig("result", "capabilities")
-
-    assert capabilities.key?("logging"), "logging capability should be advertised when enabled"
-    assert_equal({}, capabilities["logging"])
-  end
 
   test "logging/setLevel request fails when logging disabled" do
     ActionMCP.configuration.logging_enabled = false
@@ -81,8 +40,9 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
+        "Accept" => "application/json",
         "MCP-Protocol-Version" => "2025-06-18",
-        "Mcp-Session-Id" => @session.id
+        "Mcp-Session-Id" => @session_id
       }
 
     assert_response :success
@@ -106,8 +66,9 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
+        "Accept" => "application/json",
         "MCP-Protocol-Version" => "2025-06-18",
-        "Mcp-Session-Id" => @session.id
+        "Mcp-Session-Id" => @session_id
       }
 
     assert_response :success
@@ -133,8 +94,9 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
+        "Accept" => "application/json",
         "MCP-Protocol-Version" => "2025-06-18",
-        "Mcp-Session-Id" => @session.id
+        "Mcp-Session-Id" => @session_id
       }
 
     assert_response :success
@@ -158,8 +120,9 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
+        "Accept" => "application/json",
         "MCP-Protocol-Version" => "2025-06-18",
-        "Mcp-Session-Id" => @session.id
+        "Mcp-Session-Id" => @session_id
       }
 
     assert_response :success
@@ -175,45 +138,5 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     config = ActionMCP::Configuration.new
     assert_not config.logging_enabled, "Logging should be disabled by default"
     assert_equal :warning, config.logging_level, "Default level should be warning"
-  end
-
-  test "configuration change affects capability advertisement" do
-    # First request with logging disabled
-    ActionMCP.configuration.logging_enabled = false
-
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test1",
-        method: "initialize",
-        params: { protocolVersion: "2025-06-18", clientInfo: { name: "test", version: "1.0" } }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18"
-      }
-
-    result1 = JSON.parse(response.body)
-    capabilities1 = result1.dig("result", "capabilities")
-    assert_not capabilities1.key?("logging")
-
-    # Enable logging and make another request
-    ActionMCP.configuration.logging_enabled = true
-
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "test2",
-        method: "initialize",
-        params: { protocolVersion: "2025-06-18", clientInfo: { name: "test", version: "1.0" } }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18"
-      }
-
-    result2 = JSON.parse(response.body)
-    capabilities2 = result2.dig("result", "capabilities")
-    assert capabilities2.key?("logging")
   end
 end

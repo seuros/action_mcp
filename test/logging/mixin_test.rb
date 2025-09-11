@@ -146,7 +146,7 @@ class ActionMCP::Logging::MixinTest < ActiveSupport::TestCase
     ActionMCP::Logging.state.enable!
     ActionMCP::Logging.level = :debug
 
-    session = mock_session_with_messaging
+    session = mock_session_with_messaging(1)
     @tool.execution_context = { session: session }
 
     @tool.mcp_warn("warning message")
@@ -178,27 +178,23 @@ class ActionMCP::Logging::MixinTest < ActiveSupport::TestCase
     session
   end
 
-  def mock_session_with_messaging
+  def mock_session_with_messaging(call_count = 3)
     session = Minitest::Mock.new
     messaging_service = Minitest::Mock.new
 
     # Expect send_notification calls and capture them
-    messaging_service.expect(:send_notification, nil) do |method, params|
-      @sent_notifications << { method: method, params: params }
-      true
-    end
-    messaging_service.expect(:send_notification, nil) do |method, params|
-      @sent_notifications << { method: method, params: params }
-      true
-    end
-    messaging_service.expect(:send_notification, nil) do |method, params|
-      @sent_notifications << { method: method, params: params }
-      true
+    call_count.times do
+      messaging_service.expect(:send_notification, nil) do |method, params|
+        @sent_notifications << { method: method, params: params }
+        true
+      end
     end
 
-    session.expect(:messaging_service, messaging_service)
-    session.expect(:messaging_service, messaging_service)
-    session.expect(:messaging_service, messaging_service)
+    # Expect messaging_service calls
+    call_count.times do
+      session.expect(:messaging_service, messaging_service)
+    end
+
     session
   end
 end

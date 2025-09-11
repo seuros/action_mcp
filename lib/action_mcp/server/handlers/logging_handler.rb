@@ -12,14 +12,14 @@ module ActionMCP
         def handle_logging_set_level(id, params)
           # Check if logging is enabled
           unless ActionMCP.configuration.logging_enabled
-            send_jsonrpc_error(id, -32601, "Logging not enabled")
+            transport.send_jsonrpc_error(id, :method_not_found, "Logging not enabled")
             return
           end
 
           # Extract and validate level parameter
           level = params[:level] || params["level"]
           unless level
-            send_jsonrpc_error(id, -32602, "Missing required parameter: level")
+            transport.send_jsonrpc_error(id, :invalid_params, "Missing required parameter: level")
             return
           end
 
@@ -28,13 +28,13 @@ module ActionMCP
             ActionMCP::Logging.set_level(level)
 
             # Send successful response (empty object per MCP spec)
-            send_jsonrpc_response(id, result: {})
+            transport.send_jsonrpc_response(id, result: {})
           rescue ArgumentError => e
             # Invalid level
-            send_jsonrpc_error(id, -32602, "Invalid log level: #{e.message}")
+            transport.send_jsonrpc_error(id, :invalid_params, "Invalid log level: #{e.message}")
           rescue StandardError => e
             # Internal error
-            send_jsonrpc_error(id, -32603, "Internal error: #{e.message}")
+            transport.send_jsonrpc_error(id, :internal_error, "Internal error: #{e.message}")
           end
         end
       end
