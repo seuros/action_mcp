@@ -143,13 +143,7 @@ module ActionMCP
       schema["required"] = object_builder.required if object_builder.required.any?
 
       # Add additionalProperties if specified
-      if additional_properties == true
-        schema["additionalProperties"] = {}
-      elsif additional_properties == false
-        schema["additionalProperties"] = false
-      elsif additional_properties.is_a?(Hash)
-        schema["additionalProperties"] = additional_properties
-      end
+      add_additional_properties_to_schema(schema, additional_properties)
 
       @properties[name.to_s] = schema
       @required << name.to_s if required
@@ -178,12 +172,23 @@ module ActionMCP
       schema["required"] = @required.uniq if @required.any?
 
       # Add additionalProperties if configured
-      if @additional_properties == true
+      add_additional_properties_to_schema(schema, @additional_properties)
+
+      schema
+    end
+
+    private
+
+    # Helper method to add additionalProperties to a schema hash
+    def add_additional_properties_to_schema(schema, additional_properties_value)
+      return schema if additional_properties_value.nil?
+
+      if additional_properties_value == true
         schema["additionalProperties"] = {}
-      elsif @additional_properties == false
+      elsif additional_properties_value == false
         schema["additionalProperties"] = false
-      elsif @additional_properties.is_a?(Hash)
-        schema["additionalProperties"] = @additional_properties
+      elsif additional_properties_value.is_a?(Hash)
+        schema["additionalProperties"] = additional_properties_value
       end
 
       schema

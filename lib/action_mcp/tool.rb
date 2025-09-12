@@ -26,6 +26,7 @@ module ActionMCP
     class_attribute :_requires_consent, instance_accessor: false, default: false
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
     class_attribute :_additional_properties, instance_accessor: false, default: nil
+    class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -190,6 +191,42 @@ module ActionMCP
       def accepts_additional_properties?
         !_additional_properties.nil? && _additional_properties != false
       end
+
+      # Returns cached string keys for schema properties to avoid repeated conversions
+      def schema_property_keys
+        return _cached_schema_property_keys if _cached_schema_property_keys
+
+        self._cached_schema_property_keys = _schema_properties.keys.map(&:to_s)
+        _cached_schema_property_keys
+      end
+
+      # Clear cached keys when properties change
+      def property(prop_name, **opts)
+        self._cached_schema_property_keys = nil
+        super
+      end
+
+      def collection(prop_name, **opts)
+        self._cached_schema_property_keys = nil
+        super
+      end
+
+      private
+
+      # Helper method to add additionalProperties to a schema hash
+      def add_additional_properties_to_schema(schema, additional_properties_value)
+        return schema if additional_properties_value.nil?
+
+        if additional_properties_value == true
+          schema[:additionalProperties] = {}
+        elsif additional_properties_value == false
+          schema[:additionalProperties] = false
+        elsif additional_properties_value.is_a?(Hash)
+          schema[:additionalProperties] = additional_properties_value
+        end
+
+        schema
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -281,13 +318,7 @@ module ActionMCP
       schema[:required] = _required_properties if _required_properties.any?
 
       # Add additionalProperties if configured
-      if _additional_properties == true
-        schema[:additionalProperties] = {}
-      elsif _additional_properties == false
-        schema[:additionalProperties] = false
-      elsif _additional_properties.is_a?(Hash)
-        schema[:additionalProperties] = _additional_properties
-      end
+      add_additional_properties_to_schema(schema, _additional_properties)
 
       result = {
         name: tool_name,
@@ -316,7 +347,7 @@ module ActionMCP
     def initialize(attributes = {})
       # Separate additional properties from defined attributes if enabled
       if self.class.accepts_additional_properties?
-        defined_keys = self.class._schema_properties.keys.map(&:to_s)
+        defined_keys = self.class.schema_property_keys
         @_additional_params = attributes.except(*defined_keys)
         attributes = attributes.slice(*defined_keys)
       else
