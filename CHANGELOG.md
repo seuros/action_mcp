@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.80.1...action_mcp/v0.81.0) (2025-09-06)
+
+
+### Features
+
+* Add comprehensive Schema DSL 4 Tools ([#136](https://github.com/seuros/action_mcp/issues/136)) ([a7e78da](https://github.com/seuros/action_mcp/commit/a7e78dad51d9b1f5b4905691e9716e5f76ced221))
+
 ## [0.80.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.80.0...action_mcp/v0.80.1) (2025-09-01)
 
 

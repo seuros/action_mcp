@@ -13,9 +13,7 @@ class ToolsTest < ActiveSupport::TestCase
   test "CalculateSumWithPrecisionTool should return sum with given precision" do
     tool = CalculateSumWithPrecisionTool.new(a: 1.234, b: 2.345, precision: 3)
 
-    result = CalculateSumWithPrecisionTool.logger.silence do
-      tool.call
-    end
+    result = tool.call
 
     assert result.first.is_a?(ActionMCP::Content::Text)
     assert_equal "3.579", result.first.text

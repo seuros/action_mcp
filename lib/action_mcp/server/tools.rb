@@ -89,12 +89,11 @@ module ActionMCP
           end
 
           if result.is_error
-            # Convert ToolResponse error to proper JSON-RPC error format
-            # Pass the error hash directly - the Response class will handle it
-            error_hash = result.to_h
-            send_jsonrpc_response(request_id, error: error_hash)
+            # Protocol error
+            send_jsonrpc_response(request_id, error: result.to_h)
           else
-            send_jsonrpc_response(request_id, result: result)
+            # Success OR tool execution error - both are valid JSON-RPC responses
+            send_jsonrpc_response(request_id, result: result.to_h)
           end
         rescue ArgumentError => e
           # Handle parameter validation errors

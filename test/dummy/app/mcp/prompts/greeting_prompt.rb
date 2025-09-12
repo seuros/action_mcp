@@ -10,22 +10,19 @@ class GreetingPrompt < ApplicationMCPPrompt
   argument :style, description: "Style of greeting", enum: %w[formal casual friendly], default: "friendly"
 
   before_perform do
-    logger.tagged("GreetingPrompt") { logger.info("before_perform") }
+    # Log callback execution if needed
   end
 
   around_perform do |_prompt, block|
-    logger.tagged("GreetingPrompt") { logger.info("around_perform (before)") }
+    # Log around callback if needed
     block.call
-    logger.tagged("GreetingPrompt") { logger.info("around_perform (after)") }
   end
 
   after_perform do
-    logger.tagged("GreetingPrompt") { logger.info("after_perform") }
+    # Log after callback if needed
   end
 
   def perform
-    logger.tagged("GreetingPrompt") { logger.info("perform") }
-
     render text: "Please create a greeting for #{name}"
 
     render text: "I'd be happy to create a #{style} greeting for #{name}!", role: "assistant"

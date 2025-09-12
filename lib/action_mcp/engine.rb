@@ -53,6 +53,11 @@ module ActionMCP
       ActionMCP.configuration.load_profiles
     end
 
+    # Initialize MCP logging system
+    initializer "action_mcp.initialize_logging" do
+      ActionMCP::Logging.initialize_from_config!
+    end
+
 
     # Configure autoloading for the mcp/tools directory and identifiers
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|

@@ -11,28 +11,19 @@ class ProductsTemplate < ApplicationMCPResTemplate
 
   # You can mutate the template object before resolving
   before_resolve do |template|
-    logger.tagged("ProductsTemplate") { logger.info("Starting to resolve product: #{template.product_id}") }
+    # Log or prepare template if needed
   end
 
   after_resolve do |template|
-    logger.tagged("ProductsTemplate") do
-      logger.info("Finished resolving product resource for product: #{template.product_id}")
-    end
+    # Cleanup or logging if needed
   end
 
   around_resolve do |template, block|
     start_time = Time.current
-    logger.tagged("ProductsTemplate") { logger.info("Starting resolution for product: #{template.product_id}") }
 
     response = block.call
 
-    if response.success?
-      logger.tagged("ProductsTemplate") do
-        logger.info("Product #{template.product_id} resolved successfully in #{Time.current - start_time}s")
-      end
-    else
-      logger.tagged("ProductsTemplate") { logger.info("Product #{template.product_id} not found") }
-    end
+    # Could add timing or success/failure logging here if needed
 
     response
   end

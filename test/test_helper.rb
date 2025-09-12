@@ -99,17 +99,6 @@ module ServerTestHelper
   end
 end
 
-# frozen_string_literal: true
-module LogHelpers
-  def with_silenced_logger(target)
-    original = target.logger
-    log_io   = StringIO.new
-    target.logger = ActiveSupport::TaggedLogging.new(Logger.new(log_io))
-    yield log_io
-  ensure
-    target.logger = original
-  end
-end
 
 module AuthenticationTestHelper
   # Temporarily override authentication configuration for a test
@@ -123,7 +112,6 @@ module AuthenticationTestHelper
   end
 end
 
-ActiveSupport::TestCase.include(LogHelpers)
 ActiveSupport::TestCase.include(FixtureHelpers)
 ActiveSupport::TestCase.include(ServerTestHelper)
 ActiveSupport::TestCase.include(AuthenticationTestHelper)

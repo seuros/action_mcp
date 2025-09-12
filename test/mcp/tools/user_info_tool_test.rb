@@ -14,9 +14,7 @@ class UserInfoToolTest < ActiveSupport::TestCase
 
   test "user info basic functionality shows help when no user authenticated" do
     tool = UserInfoTool.new
-    response = UserInfoTool.logger.silence do
-      tool.call
-    end
+    response = tool.call
 
     # In test environment, no user is authenticated, so it should show help
     assert_match(/No authenticated user found/, response.to_h[:content][0][:text])
@@ -27,9 +25,7 @@ class UserInfoToolTest < ActiveSupport::TestCase
 
   test "user info with sensitive info flag shows help when no user authenticated" do
     tool = UserInfoTool.new(include_sensitive: true)
-    response = UserInfoTool.logger.silence do
-      tool.call
-    end
+    response = tool.call
 
     # Should show help when no user is authenticated
     assert_match(/No authenticated user found/, response.to_h[:content][0][:text])
@@ -37,9 +33,7 @@ class UserInfoToolTest < ActiveSupport::TestCase
 
   test "user info with auth details flag shows help when no user authenticated" do
     tool = UserInfoTool.new(include_auth_details: true)
-    response = UserInfoTool.logger.silence do
-      tool.call
-    end
+    response = tool.call
 
     # Should show help when no user is authenticated
     assert_match(/No authenticated user found/, response.to_h[:content][0][:text])
