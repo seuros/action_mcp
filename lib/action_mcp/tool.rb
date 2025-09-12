@@ -202,15 +202,12 @@ module ActionMCP
         _cached_schema_property_keys
       end
 
-      # Clear cached keys when properties change
-      def property(prop_name, **opts)
-        invalidate_schema_cache
-        super
-      end
-
-      def collection(prop_name, **opts)
-        invalidate_schema_cache
-        super
+      # Clear cached keys when properties change - use metaprogramming to avoid duplication
+      [ :property, :collection ].each do |method_name|
+        define_method(method_name) do |prop_name, **opts|
+          invalidate_schema_cache
+          super(prop_name, **opts)
+        end
       end
 
       private
