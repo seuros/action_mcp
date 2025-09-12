@@ -3,7 +3,7 @@
 module ActionMCP
   # Manages the collection of content objects for tool results
   class ToolResponse < BaseResponse
-    attr_reader :contents, :structured_content
+    attr_reader :contents, :structured_content, :tool_execution_error
 
     delegate :empty?, :size, :each, :find, :map, to: :contents
 
@@ -11,6 +11,7 @@ module ActionMCP
       super
       @contents = []
       @structured_content = nil
+      @tool_execution_error = false  # Track if this is a tool execution error
     end
 
     # Add content to the response
@@ -24,6 +25,26 @@ module ActionMCP
       @structured_content = content
     end
 
+    # Report a tool execution error (as opposed to protocol error)
+    # This follows MCP spec for tool execution errors
+    def report_tool_error(message)
+      @tool_execution_error = true
+      add(Content::Text.new(message))
+    end
+
+    def to_h(_options = nil)
+      if @tool_execution_error
+        result = {
+          isError: true,
+          content: @contents.map(&:to_h)
+        }
+        result[:structuredContent] = @structured_content if @structured_content
+        result
+      else
+        super
+      end
+    end
+
     # Implementation of build_success_hash for ToolResponse
     def build_success_hash
       result = {
@@ -35,12 +56,14 @@ module ActionMCP
 
     # Implementation of compare_with_same_class for ToolResponse
     def compare_with_same_class(other)
-      contents == other.contents && is_error == other.is_error && structured_content == other.structured_content
+      contents == other.contents && is_error == other.is_error &&
+        structured_content == other.structured_content &&
+        tool_execution_error == other.tool_execution_error
     end
 
     # Implementation of hash_components for ToolResponse
     def hash_components
-      [ contents, is_error, structured_content ]
+      [ contents, is_error, structured_content, tool_execution_error ]
     end
 
     # Pretty print for better debugging

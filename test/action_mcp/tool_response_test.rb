@@ -62,6 +62,21 @@ module ActionMCP
       assert_equal expected, @response.to_h
     end
 
+    test "to_h with tool execution error" do
+      @response.report_tool_error("Validation failed: invalid input")
+
+      expected = {
+        isError: true,
+        content: [
+          { type: "text", text: "Validation failed: invalid input" }
+        ]
+      }
+
+      assert_equal expected, @response.to_h
+      # Tool execution errors are not protocol errors, so is_error should be false
+      assert_not @response.is_error
+    end
+
     test "as_json is alias of to_h" do
       @response.add(@text_content)
 
