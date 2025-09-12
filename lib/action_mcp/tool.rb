@@ -368,9 +368,9 @@ module ActionMCP
         rescue StandardError => e
           # Show generic error message for HTTP requests, detailed for direct calls
           error_message = if execution_context[:request].present?
-                            "An unexpected error occurred."
+                             "An unexpected error occurred."
           else
-                            e.message
+            e.message
           end
           @response.mark_as_error!(:internal_error, message: error_message)
         end
@@ -437,9 +437,9 @@ module ActionMCP
     private
 
     # Helper method for tools to manually report errors
+    # Uses the MCP-compliant tool execution error format
     def report_error(message)
-      @response.mark_as_error!
-      render text: message
+      @response.report_tool_error(message)
     end
 
     # Helper method to set structured content

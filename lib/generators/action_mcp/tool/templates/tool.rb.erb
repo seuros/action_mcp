@@ -52,6 +52,6 @@ class <%= class_name %> < ApplicationMCPTool
     # render(resource: "file://path", mime_type: "application/json", text: "{}")
     # render(resource: "file://path", mime_type: "application/octet-stream", blob: "<base64_data>")
   rescue => e
-    render(error: ["Error: #{e.message}"])
+    report_error("Error: #{e.message}")
   end
 end
