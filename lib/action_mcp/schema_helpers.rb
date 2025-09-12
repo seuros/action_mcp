@@ -19,10 +19,10 @@ module ActionMCP
       return schema unless indifferent_schema[:type]
 
       additional_props = case additional_properties_value
-                        when true then {}
-                        when false then false
-                        when Hash then additional_properties_value
-                        end
+      when true then {}
+      when false then false
+      when Hash then additional_properties_value
+      end
 
       # Add to original schema using its key style (symbol or string)
       if schema.key?(:type) || schema.key?("type")
