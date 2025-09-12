@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
+require_relative "schema_helpers"
+
 module ActionMCP
   # DSL builder for creating output JSON Schema from Ruby-like syntax
   # Unlike SchemaBuilder, this preserves nested structure for validation
   class OutputSchemaBuilder
+    include SchemaHelpers
+
     attr_reader :properties, :required
 
     def initialize
@@ -173,23 +177,6 @@ module ActionMCP
 
       # Add additionalProperties if configured
       add_additional_properties_to_schema(schema, @additional_properties)
-
-      schema
-    end
-
-    private
-
-    # Helper method to add additionalProperties to a schema hash
-    def add_additional_properties_to_schema(schema, additional_properties_value)
-      return schema if additional_properties_value.nil?
-
-      if additional_properties_value == true
-        schema["additionalProperties"] = {}
-      elsif additional_properties_value == false
-        schema["additionalProperties"] = false
-      elsif additional_properties_value.is_a?(Hash)
-        schema["additionalProperties"] = additional_properties_value
-      end
 
       schema
     end

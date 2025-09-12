@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "action_mcp/types/float_array_type"
+require "action_mcp/schema_helpers"
 
 module ActionMCP
   # Base class for defining tools.
@@ -10,6 +11,7 @@ module ActionMCP
   class Tool < Capability
     include ActionMCP::Callbacks
     include ActionMCP::CurrentHelpers
+    extend ActionMCP::SchemaHelpers
 
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
@@ -202,30 +204,20 @@ module ActionMCP
 
       # Clear cached keys when properties change
       def property(prop_name, **opts)
-        self._cached_schema_property_keys = nil
+        invalidate_schema_cache
         super
       end
 
       def collection(prop_name, **opts)
-        self._cached_schema_property_keys = nil
+        invalidate_schema_cache
         super
       end
 
       private
 
-      # Helper method to add additionalProperties to a schema hash
-      def add_additional_properties_to_schema(schema, additional_properties_value)
-        return schema if additional_properties_value.nil?
-
-        if additional_properties_value == true
-          schema[:additionalProperties] = {}
-        elsif additional_properties_value == false
-          schema[:additionalProperties] = false
-        elsif additional_properties_value.is_a?(Hash)
-          schema[:additionalProperties] = additional_properties_value
-        end
-
-        schema
+      # Invalidate cached schema property keys
+      def invalidate_schema_cache
+        self._cached_schema_property_keys = nil
       end
     end
 
