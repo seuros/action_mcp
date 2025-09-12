@@ -337,8 +337,12 @@ module ActionMCP
       # Separate additional properties from defined attributes if enabled
       if self.class.accepts_additional_properties?
         defined_keys = self.class.schema_property_keys
-        @_additional_params = attributes.except(*defined_keys)
-        attributes = attributes.slice(*defined_keys)
+        # Use partition for single-pass separation - more efficient than except/slice
+        defined_attrs, additional_attrs = attributes.partition { |k, _|
+          defined_keys.include?(k.to_s)
+        }.map(&:to_h)
+        @_additional_params = additional_attrs
+        attributes = defined_attrs
       else
         @_additional_params = {}
       end
