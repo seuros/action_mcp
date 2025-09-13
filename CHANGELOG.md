@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.82.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.81.0...action_mcp/v0.82.0) (2025-09-13)
+
+
+### Features
+
+* add additional_props feature ([#142](https://github.com/seuros/action_mcp/issues/142)) ([14eafc1](https://github.com/seuros/action_mcp/commit/14eafc1fbc35486a3e1f0c04423b676c3f5bc185))
+* implement mcp logging from spec ([#140](https://github.com/seuros/action_mcp/issues/140)) ([7f63929](https://github.com/seuros/action_mcp/commit/7f6392924bfcdbdbe334f2650a29caba08fed98d))
+
+
+### Bug Fixes
+
+* Fixing error reporting in Tools ([#139](https://github.com/seuros/action_mcp/issues/139)) ([746e28a](https://github.com/seuros/action_mcp/commit/746e28a1750a656a0ebbff2e7fa63c68255721c6))
+
 ## [0.81.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.80.1...action_mcp/v0.81.0) (2025-09-06)
 
 
