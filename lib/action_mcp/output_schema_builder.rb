@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
+require_relative "schema_helpers"
+
 module ActionMCP
   # DSL builder for creating output JSON Schema from Ruby-like syntax
   # Unlike SchemaBuilder, this preserves nested structure for validation
   class OutputSchemaBuilder
+    include SchemaHelpers
+
     attr_reader :properties, :required
 
     def initialize
@@ -126,8 +130,9 @@ module ActionMCP
     # @param name [Symbol] Object property name
     # @param required [Boolean] Whether the object is required
     # @param description [String] Property description
+    # @param additional_properties [Boolean, Hash] Whether to allow additional properties
     # @param block [Proc] Block defining object properties
-    def object(name, required: false, description: nil, &block)
+    def object(name, required: false, description: nil, additional_properties: nil, &block)
       raise ArgumentError, "Object definition requires a block" unless block_given?
 
       # Create nested builder for object properties
@@ -141,10 +146,24 @@ module ActionMCP
       schema["description"] = description if description
       schema["required"] = object_builder.required if object_builder.required.any?
 
+      # Add additionalProperties if specified
+      add_additional_properties_to_schema(schema, additional_properties)
+
       @properties[name.to_s] = schema
       @required << name.to_s if required
 
       name.to_s
+    end
+
+    # Set additionalProperties for the root schema
+    # @param enabled [Boolean, Hash] true to allow any additional properties,
+    #   false to disallow them, or a Hash for typed additional properties
+    def additional_properties(enabled = nil)
+      if enabled.nil?
+        @additional_properties
+      else
+        @additional_properties = enabled
+      end
     end
 
     # Generate the final JSON Schema
@@ -155,6 +174,10 @@ module ActionMCP
       }
 
       schema["required"] = @required.uniq if @required.any?
+
+      # Add additionalProperties if configured
+      add_additional_properties_to_schema(schema, @additional_properties)
+
       schema
     end
   end

@@ -32,8 +32,19 @@ class <%= class_name %> < ApplicationMCPTool
     <% end %>
     <% end %>
 
+  # Uncomment to allow additional properties beyond those defined above:
+  # additional_properties true           # Allow any additional properties
+  # additional_properties false          # Explicitly disallow additional properties 
+  # additional_properties({"type" => "string"})  # Allow additional properties but restrict to strings
+
   def perform
     render(text: "Processing <%= properties.map { |p| p[:name] }.join(', ') %>")
+    
+    # If additional_properties is enabled, you can access extra parameters:
+    # extra_params = additional_params
+    # extra_params.each do |key, value|
+    #   render(text: "Additional #{key}: #{value}")
+    # end
 
     # Optional outputs:
     # render(audio: "<base64_data>", mime_type: "audio/mpeg")

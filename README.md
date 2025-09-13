@@ -279,6 +279,65 @@ end
 
 Resource templates are automatically registered and used when LLMs request resources matching their patterns.
 
+## 📚 Documentation
+
+ActionMCP provides comprehensive documentation across multiple specialized guides. Each guide focuses on specific aspects to keep information organized and prevent context overload:
+
+### Getting Started & Setup
+- **[Installation & Configuration](README.md#installation)** - Initial setup, database migrations, and basic configuration
+- **[Authentication with Gateway](README.md#authentication-with-gateway)** - User authentication and authorization patterns
+
+### Component Development  
+- **[📋 TOOLS.MD](TOOLS.MD)** - Complete guide to developing MCP tools
+  - Generator usage and best practices
+  - Property definitions, validation, and consent management
+  - Output schemas for structured responses
+  - Error handling, testing, and security considerations
+  - Advanced features like additional properties and authentication context
+
+- **[📝 PROMPTS.MD](PROMPTS.MD)** - Prompt template development guide
+  - Creating reusable prompt templates
+  - Multi-step conversations and mixed content types
+  - Argument validation and prompt chaining
+
+- **[🔗 RESOURCE_TEMPLATES.md](RESOURCE_TEMPLATES.md)** - Resource template implementation
+  - URI template patterns and parameter extraction
+  - Dynamic resource resolution and collections
+  - Callbacks and validation patterns
+
+### Client & Integration
+- **[🔌 CLIENTUSAGE.MD](CLIENTUSAGE.MD)** - Complete client implementation guide
+  - Session management and resumability
+  - Transport configuration and connection handling
+  - Tool, prompt, and resource collections
+  - Production deployment patterns
+
+### Protocol & Technical Details
+- **[🚀 The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md)** - Protocol versions and migration
+  - Comprehensive comparison of MCP protocol versions (2024-11-05, 2025-03-26, 2025-06-18)
+  - Design decisions and architectural rationale
+  - Migration paths and compatibility considerations
+  - Feature evolution and technical specifications (*Don't Panic!*)
+
+### Advanced Configuration
+- **[Session Storage](README.md#session-storage)** - Volatile vs ActiveRecord vs custom session stores
+- **[Thread Pool Management](README.md#thread-pool-management)** - Performance tuning and graceful shutdown
+- **[Profiles System](README.md#profiles)** - Multi-tenant capability filtering
+- **[Production Deployment](README.md#production-deployment-of-mcps0)** - Falcon, Unix sockets, and reverse proxy setup
+
+### Development & Testing
+- **[Generators](README.md#generators)** - Rails generators for scaffolding components
+- **[Testing with TestHelper](README.md#testing-with-testhelper)** - Comprehensive testing strategies
+- **[Development Commands](README.md#development-commands)** - Rake tasks for debugging and inspection
+- **[MCP Inspector Integration](README.md#inspecting-your-mcp-server)** - Interactive testing and validation
+
+### Troubleshooting & Production
+- **[Error Handling](README.md#error-handling-and-troubleshooting)** - JSON-RPC error codes and debugging
+- **[Production Considerations](README.md#production-considerations)** - Security, performance, and monitoring
+- **[Middleware Conflicts](README.md#dealing-with-middleware-conflicts)** - Using `mcp_vanilla.ru` for production
+
+> **💡 Pro Tip**: Start with the component-specific guides (TOOLS.MD, PROMPTS.MD, RESOURCE_TEMPLATES.md) for hands-on development, then reference the Hitchhiker's Guide for protocol details and CLIENTUSAGE.MD for integration patterns.
+
 ## Configuration
 
 ActionMCP is configured via `config.action_mcp` in your Rails application.

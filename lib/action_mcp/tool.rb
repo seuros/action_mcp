@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "action_mcp/types/float_array_type"
+require "action_mcp/schema_helpers"
 
 module ActionMCP
   # Base class for defining tools.
@@ -10,6 +11,7 @@ module ActionMCP
   class Tool < Capability
     include ActionMCP::Callbacks
     include ActionMCP::CurrentHelpers
+    extend ActionMCP::SchemaHelpers
 
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
@@ -25,6 +27,8 @@ module ActionMCP
     class_attribute :_meta, instance_accessor: false, default: {}
     class_attribute :_requires_consent, instance_accessor: false, default: false
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
+    class_attribute :_additional_properties, instance_accessor: false, default: nil
+    class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -173,6 +177,45 @@ module ActionMCP
       def requires_consent?
         _requires_consent
       end
+
+      # Sets or retrieves the additionalProperties setting for the input schema
+      # @param enabled [Boolean, Hash] true to allow any additional properties,
+      #   false to disallow them, or a Hash for typed additional properties
+      def additional_properties(enabled = nil)
+        if enabled.nil?
+          _additional_properties
+        else
+          self._additional_properties = enabled
+        end
+      end
+
+      # Returns whether this tool accepts additional properties
+      def accepts_additional_properties?
+        !_additional_properties.nil? && _additional_properties != false
+      end
+
+      # Returns cached string keys for schema properties to avoid repeated conversions
+      def schema_property_keys
+        return _cached_schema_property_keys if _cached_schema_property_keys
+
+        self._cached_schema_property_keys = _schema_properties.keys.map(&:to_s)
+        _cached_schema_property_keys
+      end
+
+      # Clear cached keys when properties change - use metaprogramming to avoid duplication
+      [ :property, :collection ].each do |method_name|
+        define_method(method_name) do |prop_name, **opts|
+          invalidate_schema_cache
+          super(prop_name, **opts)
+        end
+      end
+
+      private
+
+      # Invalidate cached schema property keys
+      def invalidate_schema_cache
+        self._cached_schema_property_keys = nil
+      end
     end
 
     # --------------------------------------------------------------------------
@@ -263,6 +306,9 @@ module ActionMCP
       }
       schema[:required] = _required_properties if _required_properties.any?
 
+      # Add additionalProperties if configured
+      add_additional_properties_to_schema(schema, _additional_properties)
+
       result = {
         name: tool_name,
         description: description.presence,
@@ -288,9 +334,27 @@ module ActionMCP
 
     # Override initialize to validate parameters before ActiveModel conversion
     def initialize(attributes = {})
+      # Separate additional properties from defined attributes if enabled
+      if self.class.accepts_additional_properties?
+        defined_keys = self.class.schema_property_keys
+        # Use partition for single-pass separation - more efficient than except/slice
+        defined_attrs, additional_attrs = attributes.partition { |k, _|
+          defined_keys.include?(k.to_s)
+        }.map(&:to_h)
+        @_additional_params = additional_attrs
+        attributes = defined_attrs
+      else
+        @_additional_params = {}
+      end
+
       # Validate parameters before ActiveModel processes them
       validate_parameter_types(attributes)
       super
+    end
+
+    # Returns additional parameters that were passed but not defined in the schema
+    def additional_params
+      @_additional_params || {}
     end
 
     # Public entry point for executing the tool
