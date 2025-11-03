@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.82.0...action_mcp/v0.83.0) (2025-11-03)
+
+
+### Features
+
+* **security:** add gateway validation and improve error handling ([#148](https://github.com/seuros/action_mcp/issues/148)) ([94ab36a](https://github.com/seuros/action_mcp/commit/94ab36adcb9fd94c54b8b2808123acebf5f2a86c))
+
 ## [0.82.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.81.0...action_mcp/v0.82.0) (2025-09-13)
 
 
