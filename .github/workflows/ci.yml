@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -21,11 +21,18 @@ jobs:
         run: bin/rubocop -f github
 
   test-postgresql:
-    name: Tests (PostgreSQL)
+    name: Tests (PostgreSQL, Rails ${{ matrix.rails-version }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rails-version: ['~> 8.0.4', '~> 8.1.1']
+
     env:
       RAILS_ENV: test
       DATABASE_URL: postgresql://ubuntu:password@localhost/actionmcp_test
+      RAILS_VERSION: ${{ matrix.rails-version }}
 
     services:
       db:
@@ -39,12 +46,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ruby-3.4.3
+          ruby-version: ruby-3.4.7
           bundler-cache: true
 
       - name: Create and migrate test database
@@ -59,20 +66,27 @@ jobs:
         run: bin/rails test
 
   test-sqlite3:
-    name: Tests (SQLite3)
+    name: Tests (SQLite3, Rails ${{ matrix.rails-version }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rails-version: ['~> 8.0.4', '~> 8.1.1']
+
     env:
       RAILS_ENV: test
       DATABASE_URL: sqlite3:tmp/test.sqlite3
+      RAILS_VERSION: ${{ matrix.rails-version }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ruby-3.4.3
+          ruby-version: ruby-3.4.7
           bundler-cache: true
 
       - name: Create and migrate test database
