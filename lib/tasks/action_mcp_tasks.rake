@@ -49,6 +49,28 @@ namespace :action_mcp do
     puts "\n"
   end
 
+  # bin/rails action_mcp:list_profiles
+  desc "List all available profiles"
+  task list_profiles: :environment do
+    # Ensure Rails eager loads all classes
+    Rails.application.eager_load!
+
+    puts "\e[35mACTION MCP PROFILES\e[0m"  # Purple
+    puts "\e[35m-------------------\e[0m"   # Purple
+
+    profiles = ActionMCP.configuration.profiles
+
+    if profiles.any?
+      profiles.each_key do |profile_name|
+        puts "\e[35m#{profile_name}\e[0m"
+      end
+    else
+      puts "  No profiles configured"
+    end
+
+    puts "\n"
+  end
+
   # bin/rails action_mcp:show_profile[profile_name]
   desc "Show configuration for a specific profile"
   task :show_profile, [ :profile_name ] => :environment do |_t, args|
