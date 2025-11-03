@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "ostruct"
 
 class ActionMCP::GatewayIdentifiersTest < ActiveSupport::TestCase
+  MockUser = Data.define(:id, :email)
+  MockWarden = Data.define(:user)
   setup do
     @request = ActionDispatch::Request.new({})
   end
@@ -17,7 +18,7 @@ class ActionMCP::GatewayIdentifiersTest < ActiveSupport::TestCase
   end
 
   test "WardenIdentifier requires authenticated user" do
-    warden = OpenStruct.new(user: nil)
+    warden = MockWarden.new(user: nil)
     @request.env["warden"] = warden
 
     identifier = ActionMCP::GatewayIdentifiers::WardenIdentifier.new(@request)
@@ -28,8 +29,8 @@ class ActionMCP::GatewayIdentifiersTest < ActiveSupport::TestCase
   end
 
   test "WardenIdentifier returns user when authenticated" do
-    user = OpenStruct.new(id: 1, email: "test@example.com")
-    warden = OpenStruct.new(user: user)
+    user = MockUser.new(id: 1, email: "test@example.com")
+    warden = MockWarden.new(user: user)
     @request.env["warden"] = warden
 
     identifier = ActionMCP::GatewayIdentifiers::WardenIdentifier.new(@request)
@@ -46,7 +47,7 @@ class ActionMCP::GatewayIdentifiersTest < ActiveSupport::TestCase
   end
 
   test "DeviseIdentifier returns user when present" do
-    user = OpenStruct.new(id: 1, email: "test@example.com")
+    user = MockUser.new(id: 1, email: "test@example.com")
     @request.env["devise.user"] = user
 
     identifier = ActionMCP::GatewayIdentifiers::DeviseIdentifier.new(@request)

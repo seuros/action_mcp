@@ -50,11 +50,14 @@ Rails.application.eager_load!
 
 # Stub out Warden to prevent Devise errors
 module Warden
+  SessionSerializer = Data.define(:serialize, :deserialize, :store, :fetch, :delete)
+  WardenConfig = Data.define(:default_scope, :scope_defaults, :failure_app)
+
   class Proxy
     def initialize(env)
       @env = env
       @users = {}
-      @session_serializer = OpenStruct.new(
+      @session_serializer = SessionSerializer.new(
         serialize: ->(record) { record },
         deserialize: ->(data) { data },
         store: ->(user, scope) { @users[scope] = user },
@@ -86,7 +89,7 @@ module Warden
     attr_reader :env, :session_serializer
 
     def config
-      OpenStruct.new(
+      WardenConfig.new(
         default_scope: :user,
         scope_defaults: {},
         failure_app: ->(_) { [ 401, {}, [ "Unauthorized" ] ] }

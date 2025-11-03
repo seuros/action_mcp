@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
-require "ostruct"
-
 module GatewayTestHelper
+  TestUser = Data.define(:id, :email, :name)
   # Creates a test Gateway identifier for testing authentication scenarios
   class TestGatewayIdentifier < ActionMCP::GatewayIdentifier
     identifier :user
@@ -12,7 +11,7 @@ module GatewayTestHelper
       user_id = @request.env["test.user_id"]
       raise Unauthorized, "No test user set" unless user_id
 
-      OpenStruct.new(
+      TestUser.new(
         id: user_id,
         email: "test-#{user_id}@example.com",
         name: "Test User #{user_id}"
@@ -63,7 +62,7 @@ module GatewayTestHelper
 
   # Creates a test user mock for testing
   def create_test_user(id: "test_user", email: nil, name: nil)
-    OpenStruct.new(
+    TestUser.new(
       id: id,
       email: email || "#{id}@example.com",
       name: name || "Test User #{id}"
