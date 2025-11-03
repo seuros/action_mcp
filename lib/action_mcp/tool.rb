@@ -240,9 +240,9 @@ module ActionMCP
       prop_definition.merge!(opts) if opts.any?
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => prop_definition)
-      self._required_properties = _required_properties.dup.tap do |req|
-        req << prop_name.to_s if required
-      end
+      new_required = _required_properties.dup
+      new_required << prop_name.to_s if required
+      self._required_properties = new_required
 
       # Map the JSON Schema type to an ActiveModel attribute type.
       attribute prop_name, map_json_type_to_active_model_type(type), default: default
@@ -271,9 +271,9 @@ module ActionMCP
       collection_definition[:description] = description if description && !description.empty?
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => collection_definition)
-      self._required_properties = _required_properties.dup.tap do |req|
-        req << prop_name.to_s if required
-      end
+      new_required = _required_properties.dup
+      new_required << prop_name.to_s if required
+      self._required_properties = new_required
 
       # Map the type - for number arrays, use our custom type instance
       mapped_type = if type == "number"

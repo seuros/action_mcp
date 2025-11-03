@@ -26,8 +26,13 @@ module ActionMCP
         # Handle parameter validation errors
         error_response(:invalid_params, message: e.message)
       rescue StandardError => e
-        # FIXME, we should maybe not return the error message to the user
-        error_response(:invalid_params, message: "Tool execution failed: #{e.message}")
+        # Hide error details in production to prevent information disclosure
+        message = if Rails.env.production?
+          "Tool execution failed"
+        else
+          "Tool execution failed: #{e.message}"
+        end
+        error_response(:invalid_params, message: message)
       end
 
       def item_klass

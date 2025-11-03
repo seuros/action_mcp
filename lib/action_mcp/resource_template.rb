@@ -48,6 +48,11 @@ module ActionMCP
         @required_parameters ||= []
       end
 
+      # Cache compiled regex patterns for URI matching to avoid recompilation
+      def uri_regex_cache
+        @uri_regex_cache ||= {}
+      end
+
       def parameter(name, description:, required: false, **options)
         @parameters ||= {}
         @parameters[name] = { description: description, required: required, **options }
@@ -139,48 +144,55 @@ module ActionMCP
 
       # Extract parameters from a URI using the template pattern
       def extract_params_from_uri(uri_string)
-        # Convert template parameters to named capture groups
-        regex_parts = []
-        current_pos = 0
-        param_names = []
+        # Check cache for compiled regex and param names
+        cache_entry = uri_regex_cache[@uri_template]
 
-        # Find all template parameters like {param_name}
-        @uri_template.scan(/\{([^}]+)\}/) do |param_name|
-          param_names << param_name[0]
+        unless cache_entry
+          # Convert template parameters to named capture groups
+          regex_parts = []
+          current_pos = 0
+          param_names = []
 
-          # Get the position of this parameter in the template
-          param_start = @uri_template.index("{#{param_name[0]}}", current_pos)
+          # Find all template parameters like {param_name}
+          @uri_template.scan(/\{([^}]+)\}/) do |param_name|
+            param_names << param_name[0]
 
-          # Add the text before the parameter (escaped)
-          if param_start > current_pos
-            prefix = Regexp.escape(@uri_template[current_pos...param_start])
-            regex_parts << prefix
+            # Get the position of this parameter in the template
+            param_start = @uri_template.index("{#{param_name[0]}}", current_pos)
+
+            # Add the text before the parameter (escaped)
+            if param_start > current_pos
+              prefix = Regexp.escape(@uri_template[current_pos...param_start])
+              regex_parts << prefix
+            end
+
+            # Add the named capture group
+            regex_parts << "(?<#{param_name[0]}>[^/]+)"
+
+            # Update current position
+            current_pos = param_start + param_name[0].length + 2 # +2 for { and }
           end
 
-          # Add the named capture group
-          regex_parts << "(?<#{param_name[0]}>[^/]+)"
+          # Add any remaining text after the last parameter
+          if current_pos < @uri_template.length
+            suffix = Regexp.escape(@uri_template[current_pos..])
+            regex_parts << suffix
+          end
 
-          # Update current position
-          current_pos = param_start + param_name[0].length + 2 # +2 for { and }
+          # Build the final regex and cache it
+          regex_pattern = regex_parts.join
+          regex = Regexp.new("^#{regex_pattern}$")
+          cache_entry = { regex: regex, param_names: param_names }
+          uri_regex_cache[@uri_template] = cache_entry
         end
 
-        # Add any remaining text after the last parameter
-        if current_pos < @uri_template.length
-          suffix = Regexp.escape(@uri_template[current_pos..])
-          regex_parts << suffix
-        end
-
-        # Build the final regex
-        regex_pattern = regex_parts.join
-        regex = Regexp.new("^#{regex_pattern}$")
-
-        # Try to match the URI
-        match_data = regex.match(uri_string)
+        # Try to match the URI using cached regex
+        match_data = cache_entry[:regex].match(uri_string)
         return nil unless match_data
 
         # Extract named captures as parameters
         params = {}
-        param_names.each do |name|
+        cache_entry[:param_names].each do |name|
           params[name.to_sym] = match_data[name] if match_data[name]
         end
 
