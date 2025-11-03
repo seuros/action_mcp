@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.0...action_mcp/v0.83.1) (2025-11-03)
+
+
+### Bug Fixes
+
+* add missing list_profiles task ([d3d4102](https://github.com/seuros/action_mcp/commit/d3d41028423ec88eb1edff54aedf4ac5cf17b1a4))
+
 ## [0.83.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.82.0...action_mcp/v0.83.0) (2025-11-03)
 
 
