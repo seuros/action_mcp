@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.83.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.1...action_mcp/v0.83.2) (2025-11-07)
+
+
+### Bug Fixes
+
+* Resolve tool registry namespace collision ([#152](https://github.com/seuros/action_mcp/issues/152)) ([#153](https://github.com/seuros/action_mcp/issues/153)) ([6defe70](https://github.com/seuros/action_mcp/commit/6defe70ac6688b04a7969951f3593e2ff382e81f))
+* Resolve VSCode HTTP handshake timeout issue ([#151](https://github.com/seuros/action_mcp/issues/151)) ([#155](https://github.com/seuros/action_mcp/issues/155)) ([2777c62](https://github.com/seuros/action_mcp/commit/2777c62af3816a02f8fe911a145d39fdde51215f))
+
 ## [0.83.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.0...action_mcp/v0.83.1) (2025-11-03)
 
 
