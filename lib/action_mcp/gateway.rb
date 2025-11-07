@@ -28,6 +28,7 @@ module ActionMCP
     def call
       identities = authenticate!
       assign_identities(identities)
+      apply_profile_from_authentication(identities)
       self
     end
 
@@ -92,6 +93,26 @@ module ActionMCP
       end
       ActionMCP::Current.gateway = self if
         ActionMCP::Current.respond_to?(:gateway=)
+    end
+
+    # Hook called after authentication to allow profile switching based on authenticated identities
+    # Override in subclass to implement custom profile switching logic
+    #
+    # Example:
+    #
+    #   class MyGateway < ActionMCP::Gateway
+    #     def apply_profile_from_authentication(identities)
+    #       if user&.admin?
+    #         use_profile(:admin)
+    #       else
+    #         use_profile(:minimal)
+    #       end
+    #     end
+    #   end
+    #
+    # @param identities [Hash] The authenticated identities from authenticate!
+    def apply_profile_from_authentication(identities)
+      # Default: do nothing. Override in subclass if you want profile switching.
     end
   end
 end
