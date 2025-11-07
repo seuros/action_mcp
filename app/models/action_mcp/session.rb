@@ -147,6 +147,14 @@ module ActionMCP
       }
     end
 
+    def server_capabilities
+      parsed_json_attribute(super)
+    end
+
+    def server_capabilities=(value)
+      super(parsed_json_attribute(value))
+    end
+
     def initialize!
       # update the session initialized to true
       return false if initialized?
@@ -488,6 +496,14 @@ module ActionMCP
       return unless server_capabilities.dig("resources", "listChanged")
 
       write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
+    end
+
+    def parsed_json_attribute(value)
+      return value unless value.is_a?(String)
+
+      JSON.parse(value)
+    rescue JSON::ParserError
+      value
     end
   end
 end

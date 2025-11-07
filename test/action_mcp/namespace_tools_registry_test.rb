@@ -5,8 +5,23 @@ require "test_helper"
 module ActionMCP
   class NamespaceToolsRegistryTest < ActiveSupport::TestCase
     setup do
+      @original_tools = ToolsRegistry.items.dup
       # Clear the registry before each test
       ToolsRegistry.clear!
+    end
+
+    teardown do
+      ToolsRegistry.clear!
+      ActionMCP::Tool.descendants.each do |tool_class|
+        next if tool_class.abstract?
+
+        ToolsRegistry.register(tool_class)
+      end
+
+      # Restore any tools that might live outside the descendant list (defensive)
+      @original_tools.each do |name, klass|
+        ToolsRegistry.items[name] ||= klass
+      end
     end
 
     test "registers multiple tools with same class name but different namespaces" do
