@@ -64,21 +64,25 @@ module ActionMCP
       assert_equal initial_count + 1, final_count
     end
 
-    test "tools with same class name in different modules must use explicit tool_name" do
-      # When multiple modules have tools with the same class name,
-      # they MUST use explicit tool_name to avoid collisions.
-      # The default_tool_name will be the same for both, so explicit tool_name is required.
+    test "tools with explicit tool_name override default_tool_name" do
       spaceship = Spaceship::WeatherTool.new({})
       station = Station::WeatherTool.new({})
 
-      # Both have the same default name (demodulized), which is why explicit tool_name is needed
-      assert_equal "weather", spaceship.class.default_tool_name
-      assert_equal "weather", station.class.default_tool_name
+      # Both have names including their namespace to avoid collision
+      assert_equal "spaceship__weather", spaceship.class.default_tool_name
+      assert_equal "station__weather", station.class.default_tool_name
 
       # But their explicit tool_names are different to avoid collision
       assert_equal "spaceship_weather", spaceship.class.tool_name
       assert_equal "station_weather", station.class.tool_name
       assert_not_equal spaceship.class.tool_name, station.class.tool_name
+    end
+
+    test "tools without an explicit tool_name use their default_tool_name" do
+      mars = Mars::WeatherTool.new({})
+
+      assert_equal "mars__weather",      mars.class.tool_name
+      assert_equal mars.class.tool_name, mars.class.default_tool_name
     end
   end
 end
