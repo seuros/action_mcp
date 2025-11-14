@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.2...action_mcp/v0.83.3) (2025-11-14)
+
+
+### Bug Fixes
+
+* tool and prompt name collision in registry when using namespaces ([#156](https://github.com/seuros/action_mcp/issues/156)) ([7d851f6](https://github.com/seuros/action_mcp/commit/7d851f678e5da5ee04a718f8524f71e1510fb281))
+
 ## [0.83.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.1...action_mcp/v0.83.2) (2025-11-07)
 
 
