@@ -11,8 +11,8 @@ module ActionMCP
 
     test "size excludes abstract prompts" do
       # Only the concrete prompt should be counted.
-      assert_equal 4, ActionMCP.prompts.size, ActionMCP.prompts.inspect
-      assert_equal 4, PromptsRegistry.size
+      assert_equal 7, ActionMCP.prompts.size, ActionMCP.prompts.inspect
+      assert_equal 7, PromptsRegistry.size
     end
 
     test "non_abstract list excludes abstract prompts" do
