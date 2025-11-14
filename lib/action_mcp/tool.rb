@@ -51,7 +51,7 @@ module ActionMCP
     def self.default_tool_name
       return "" if name.nil?
 
-      name.demodulize.underscore.sub(/_tool$/, "")
+      name.underscore.gsub("/", "__").sub(/_tool$/, "")
     end
 
     class << self

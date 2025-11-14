@@ -29,7 +29,7 @@ module ActionMCP
     def self.default_prompt_name
       return "" if name.nil?
 
-      name.demodulize.underscore.sub(/_prompt$/, "")
+      name.underscore.gsub("/", "__").sub(/_prompt$/, "")
     end
 
     class << self
