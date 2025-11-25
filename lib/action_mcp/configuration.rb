@@ -140,7 +140,7 @@ module ActionMCP
             app_profiles = app_profiles.deep_symbolize_keys
           end
 
-          Rails.logger.debug "[Configuration] Merging profiles: #{app_profiles.inspect}"
+          Rails.logger.debug "[Configuration] Merging profiles: #{app_profiles.inspect}" if @verbose_logging
           @profiles = @profiles.deep_merge(app_profiles)
         end
       rescue StandardError => e
@@ -150,8 +150,8 @@ module ActionMCP
       end
 
       # Apply the active profile
-      Rails.logger.info "[ActionMCP] Loaded profiles: #{@profiles.keys.join(', ')}"
-      Rails.logger.info "[ActionMCP] Using profile: #{@active_profile}"
+      Rails.logger.info "[ActionMCP] Loaded profiles: #{@profiles.keys.join(', ')}" if @verbose_logging
+      Rails.logger.info "[ActionMCP] Using profile: #{@active_profile}" if @verbose_logging
       use_profile(@active_profile)
 
       # Restore preserved settings
