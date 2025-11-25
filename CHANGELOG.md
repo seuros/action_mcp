@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.3...action_mcp/v0.83.4) (2025-11-25)
+
+
+### Bug Fixes
+
+* suppress ActionMCP profile logs by default ([8979460](https://github.com/seuros/action_mcp/commit/89794608d24977a2c6f62bed85a5dacf48519546))
+
 ## [0.83.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.2...action_mcp/v0.83.3) (2025-11-14)
 
 
