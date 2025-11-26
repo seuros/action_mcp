@@ -75,6 +75,31 @@ module ActionMCP
         send_jsonrpc_response(request_id, result: { task: task.to_task_data })
       end
 
+      # Resume a task from input_required state
+      # @param request_id [String, Integer] JSON-RPC request ID
+      # @param task_id [String] Task ID to resume
+      # @param input [Object] Input data for the task
+      def send_tasks_resume(request_id, task_id, input)
+        task = find_task(task_id)
+        return unless task
+
+        unless task.input_required?
+          send_jsonrpc_error(request_id, :invalid_params,
+                             "Task is not awaiting input. Current status: #{task.status}")
+          return
+        end
+
+        # Store input in continuation state
+        continuation = task.continuation_state || {}
+        continuation[:input] = input
+        task.update!(continuation_state: continuation)
+
+        # Resume task and re-enqueue job
+        task.resume_from_continuation!
+
+        send_jsonrpc_response(request_id, result: { task: task.to_task_data })
+      end
+
       # Send task status notification
       # @param task [ActionMCP::Session::Task] Task to notify about
       def send_task_status_notification(task)

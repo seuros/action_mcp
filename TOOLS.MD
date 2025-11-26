@@ -125,15 +125,15 @@ Every tool follows this pattern:
 class YourToolNameTool < ApplicationMCPTool
   tool_name "your_tool_name"        # Required: unique identifier
   description "What this tool does"  # Required: explain the purpose
-  
+
   # Define inputs (properties become method names!)
   property :user_id, type: "string", description: "The user's ID", required: true
   property :limit, type: "number", description: "Max results", required: false
-  
+
   def perform
     # Your logic here
     # Access properties as methods: user_id, limit
-    
+
     # Return results using render
     render(text: "Your result here")
   end
@@ -155,7 +155,7 @@ end
 ### Why Flat Schemas?
 
 1. **LLM Performance** - Language models work better with flat parameter lists
-2. **Spec Compliance** - Prevents drift from official MCP specification  
+2. **Spec Compliance** - Prevents drift from official MCP specification
 3. **SDK Compatibility** - Strict validation in newer SDKs will reject nested structures
 
 ### Complex Data Workaround
@@ -166,19 +166,19 @@ For complex configuration or nested data, use the **JSON string pattern**:
 class ConfigUpdateTool < ApplicationMCPTool
   tool_name "config_update"
   description "Update multiple configuration properties"
-  
+
   # Use JSON string instead of nested object
   property :config_json, type: "string", description: "JSON string of configuration object"
-  
+
   def perform
     # Parse the JSON string to get your complex object
     config = JSON.parse(config_json)
-    
+
     # Now you can work with nested data
     config.each do |key, value|
       update_config(key, value)
     end
-    
+
     render(text: "Updated #{config.keys.length} configuration properties")
   end
 end
@@ -205,22 +205,22 @@ Tools can accept extra parameters beyond those explicitly defined using `additio
 class FlexibleApiTool < ApplicationMCPTool
   tool_name "flexible_api"
   description "API caller that accepts dynamic parameters"
-  
+
   # Define core properties
   property :endpoint, type: "string", description: "API endpoint", required: true
   property :method, type: "string", description: "HTTP method", default: "GET"
-  
+
   # Allow any additional properties
   additional_properties true
-  
+
   def perform
     # Access defined properties normally
     url = endpoint
     http_method = method
-    
+
     # Access additional properties through special method
     extra_params = additional_params
-    
+
     render(text: "Calling #{url} with method #{http_method}")
     extra_params.each do |key, value|
       render(text: "Extra param #{key}: #{value}")
@@ -235,7 +235,7 @@ end
 # Allow any additional properties of any type
 additional_properties true
 
-# Explicitly disallow additional properties 
+# Explicitly disallow additional properties
 additional_properties false
 
 # Allow additional properties but restrict to strings
@@ -265,7 +265,7 @@ additional_properties({
   "endpoint": "/api/users",
   "method": "POST",
   "auth_token": "secret123",    // Additional property
-  "timeout": 5000,             // Additional property  
+  "timeout": 5000,             // Additional property
   "debug": true                // Additional property
 }
 ```
@@ -278,20 +278,20 @@ Tools can define structured output schemas to provide predictable, validated res
 class WeatherTool < ApplicationMCPTool
   tool_name "weather"
   description "Get weather with structured output"
-  
+
   property :location, type: "string", required: true
-  
+
   # Define the structure of your tool's output
   output_schema do
     boolean :success, required: true
     string :message
-    
+
     object :current do
       number :temperature, required: true
       string :condition, required: true
       number :humidity, minimum: 0, maximum: 100
     end
-    
+
     array :forecast do
       object do
         string :date, format: "date", required: true
@@ -300,7 +300,7 @@ class WeatherTool < ApplicationMCPTool
       end
     end
   end
-  
+
   def perform
     # Return structured data that matches your schema
     render structured: {
@@ -318,7 +318,7 @@ end
 ### Output Schema DSL Methods
 
 - `string :name` - Text property
-- `number :price` - Numeric property  
+- `number :price` - Numeric property
 - `boolean :active` - True/false property
 - `object :data do...end` - Nested object with properties
 - `array :items do...end` - Array with item schema
@@ -339,7 +339,7 @@ end
 - Demonstrates optional vs required fields
 - Includes metadata and forecast arrays
 
-**Configuration schema:** See `test/dummy/app/mcp/tools/config_update_tool.rb`  
+**Configuration schema:** See `test/dummy/app/mcp/tools/config_update_tool.rb`
 - Shows flat and nested object patterns
 - Array of simple string warnings
 - Success/message response pattern
@@ -347,7 +347,7 @@ end
 ### When to Use Output Schemas
 
 ✅ **Use output schemas when:**
-- LLMs need to parse your data programmatically  
+- LLMs need to parse your data programmatically
 - Building multi-step workflows with tool chaining
 - Providing structured data (JSON, database records)
 - Creating consistent API-like responses
@@ -388,17 +388,17 @@ You can call `render` multiple times to show progress:
 ```ruby
 def perform
   render(text: "Starting process...")
-  
+
   # Do some work
   result = process_data
-  
+
   render(text: "Processing complete!")
   render(text: "Result: #{result}")
-  
+
   # You can also render:
   render(image: base64_image_data, mime_type: "image/png")
   render(audio: base64_audio_data, mime_type: "audio/mpeg")
-  
+
   # For errors, use the helper method:
   report_error("Something went wrong")
 end
@@ -412,11 +412,11 @@ Use standard Rails validations:
 class CreateUserTool < ApplicationMCPTool
   property :email, type: "string", description: "User email", required: true
   property :age, type: "number", description: "User age", required: true
-  
+
   # Rails validations work!
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :age, numericality: { greater_than: 0, less_than: 150 }
-  
+
   def perform
     # Validation runs automatically before perform
     User.create!(email: email, age: age)
@@ -433,12 +433,12 @@ Some tools perform sensitive operations and require explicit user consent:
 class DeleteUserTool < ApplicationMCPTool
   tool_name "delete_user"
   description "Delete a user account"
-  
+
   # Require explicit consent before execution
   requires_consent!
-  
+
   property :user_id, type: "string", description: "User ID to delete", required: true
-  
+
   def perform
     # This code only runs after user grants consent
     user = User.find(user_id)
@@ -497,19 +497,19 @@ require "action_mcp/test_helper"
 
 class YourToolTest < ActiveSupport::TestCase
   include ActionMCP::TestHelper
-  
+
   test "does the thing" do
     assert_tool_findable("your_tool")
     result = execute_tool("your_tool", input: "test")
     assert_tool_output(result, "Expected output")
   end
-  
+
   test "consent required tool" do
     # Tool should require consent first
     assert_raises ActionMCP::ConsentRequiredError do
       execute_tool("delete_user", user_id: "123")
     end
-    
+
     # Grant consent and try again
     session.grant_consent("delete_user")
     result = execute_tool("delete_user", user_id: "123")
@@ -520,13 +520,13 @@ end
 
 ## Quick Checklist
 
-✅ Used the generator? `bin/rails generate action_mcp:tool ToolName`  
-✅ Tool inherits from `ApplicationMCPTool`?  
-✅ Has unique `tool_name`?  
-✅ Has clear `description`?  
-✅ Properties match what you use in `perform`?  
-✅ Using `render` to return results?  
-✅ Tool shows up in `rails action_mcp:list_tools`?  
+✅ Used the generator? `bin/rails generate action_mcp:tool ToolName`
+✅ Tool inherits from `ApplicationMCPTool`?
+✅ Has unique `tool_name`?
+✅ Has clear `description`?
+✅ Properties match what you use in `perform`?
+✅ Using `render` to return results?
+✅ Tool shows up in `rails action_mcp:list_tools`?
 
 ## Error Handling and Clear Messages
 
@@ -539,7 +539,7 @@ class FileReaderTool < ApplicationMCPTool
       report_error("File not found: #{file_path}")
       return
     end
-    
+
     begin
       content = File.read(file_path)
       render(text: "File contents: #{content}")
@@ -592,17 +592,17 @@ end
 def perform
   # Text output
   render(text: "Processing started...")
-  
+
   # Image output
   chart_data = generate_chart
   render(image: chart_data, mime_type: "image/png")
-  
+
   # Audio output
   audio_data = text_to_speech("Processing complete")
   render(audio: audio_data, mime_type: "audio/mpeg")
-  
+
   # File resource
-  render(resource: "file://output.json", 
+  render(resource: "file://output.json",
          mime_type: "application/json",
          text: results.to_json)
 end
@@ -617,7 +617,7 @@ def perform
   else
     render(text: "Hello, anonymous user!")
   end
-  
+
   # Access other gateway identifiers
   if current_organization
     render(text: "Organization: #{current_organization.name}")
@@ -642,6 +642,247 @@ end
 3. **Limit output size** for large datasets
 4. **Use background jobs** for long-running operations
 5. **Stream progress** with multiple render calls
+
+## Resumable Tools (Long-Running Operations)
+
+Tools can now be resumable, supporting long-running operations with progress tracking, human-in-the-loop interaction, and automatic resilience via Rails 8.1's `ActiveJob::Continuable` feature.
+
+### When to Use Resumable Tools
+
+✅ **Use resumable tools for:**
+- Tools that take more than a few seconds to complete
+- Multi-step processes requiring user input
+- Operations that might be interrupted (deployments, network issues)
+- Tools needing progress updates during execution
+- Complex workflows with multiple checkpoints
+
+❌ **Don't use for:**
+- Quick operations (< 1 second)
+- Simple read-only tools
+- Operations that must complete atomically
+
+### Enabling Resumable Steps
+
+Define resumable steps in your tool using the DSL:
+
+```ruby
+class LongRunningToolTool < ApplicationMCPTool
+  tool_name "long_running_tool"
+  description "Tool with progress tracking and resumption"
+
+  property :file_path, type: "string", required: true
+  property :timeout, type: "number", default: 300
+
+  # Define checkpoints where the tool can be resumed
+  resumable_steps do
+    step :validate_input, "Validating inputs"
+    step :prepare_environment, "Setting up environment"
+    step :process_data, "Processing data"
+    step :save_results, "Saving results"
+  end
+
+  def perform
+    # Work on the first step
+    render(text: "Starting operation...")
+
+    # Validate inputs
+    validate_file_exists(file_path)
+
+    # Report progress
+    report_progress!(percent: 10, message: "Validated inputs")
+
+    # Process the file
+    result = process_file(file_path)
+
+    # Update progress mid-operation
+    report_progress!(percent: 50, message: "File processing complete")
+
+    # If human input is needed, request it
+    if result[:needs_confirmation]
+      request_input!(
+        prompt: "Do you want to save these changes?",
+        context: { changes: result[:changes].length }
+      )
+
+      # After input is provided via tasks/resume, execution resumes here
+      save_changes(result)
+    end
+
+    # Final update
+    report_progress!(percent: 100, message: "Operation complete")
+    render(text: "Successfully processed #{result[:items_processed]} items")
+  end
+
+  private
+
+  def validate_file_exists(path)
+    unless File.exist?(path)
+      report_error("File not found: #{path}")
+    end
+  end
+
+  def process_file(path)
+    # Your processing logic here
+    { items_processed: 100, needs_confirmation: true, changes: [] }
+  end
+
+  def save_changes(result)
+    # Process the user input from continuation_state
+    # This executes after tasks/resume is called with the input
+  end
+end
+```
+
+### Progress Reporting
+
+Update progress while the tool is executing:
+
+```ruby
+def perform
+  total_items = data.length
+
+  data.each_with_index do |item, index|
+    process(item)
+
+    # Report progress
+    percent = ((index + 1) / total_items.to_f * 100).round
+    report_progress!(
+      percent: percent,
+      message: "Processing #{index + 1} of #{total_items}"
+    )
+  end
+
+  render(text: "Processed all #{total_items} items")
+end
+```
+
+### Human-in-the-Loop Workflows
+
+Request user input to continue execution:
+
+```ruby
+def perform
+  # Perform initial analysis
+  analysis = analyze_data(input)
+
+  # If we need user confirmation
+  if analysis[:requires_decision]
+    request_input!(
+      prompt: analysis[:question],
+      context: {
+        recommendations: analysis[:recommendations],
+        risk_level: analysis[:risk_level]
+      }
+    )
+
+    # Execution stops here until tasks/resume is called
+    # with user's input in the 'input' parameter
+  end
+
+  # This code runs after tasks/resume provides input
+  user_input = continuation_state[:input]
+  process_decision(user_input)
+
+  render(text: "Decision processed: #{user_input}")
+end
+```
+
+### Client-Side Resume Flow
+
+To resume a task that's awaiting input:
+
+```bash
+# Get the task status
+curl -X POST http://localhost:62770/ \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tasks/get",
+    "params": {"taskId": "task-123"}
+  }'
+
+# When status is "input_required", resume with input
+curl -X POST http://localhost:62770/ \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tasks/resume",
+    "params": {
+      "taskId": "task-123",
+      "input": {"decision": "proceed"}
+    }
+  }'
+```
+
+### Automatic Resilience
+
+Resumable tools automatically handle failures with:
+
+1. **Retry Logic** - Failed jobs retry with exponential backoff (up to 3 attempts)
+2. **Step Persistence** - Last completed step is saved in the database
+3. **Continuation State** - Tool state can be serialized and restored
+4. **Task Status Updates** - Real-time progress via WebSocket notifications
+
+The job automatically moves to a terminal state (`completed` or `failed`) even if the job crashes or is interrupted:
+
+```ruby
+# In your resumable tool
+def perform
+  @task = step(:load_task, task_id)
+  return if @task.nil? || @task.terminal?
+
+  @session = step(:validate_session, @task)
+  return unless @session
+
+  @tool = step(:prepare_tool, @session, tool_name, arguments)
+  return unless @tool
+
+  step(:execute_tool) do
+    # Your tool code runs here with automatic resilience
+    # If this step fails, it's retried or marked as failed
+  end
+end
+```
+
+### Testing Resumable Tools
+
+```ruby
+class YourResumableToolTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "tool can be resumed with input" do
+    # Create a task for the resumable tool
+    session = ActionMCP::Session.create!
+    task = session.tasks.create!(
+      id: "test-123",
+      request_name: "your_tool",
+      request_params: { input: "test" },
+      status: "input_required"
+    )
+
+    # Simulate resuming with user input
+    task.update(continuation_state: { input: { decision: "yes" } })
+    task.resume_from_continuation!
+
+    # Assert the resumed task completes
+    assert task.reload.completed?
+  end
+end
+```
+
+### Best Practices
+
+1. **Call `report_progress!` regularly** to keep clients informed
+2. **Use meaningful step names** for debugging and monitoring
+3. **Always handle `input_required` state** gracefully
+4. **Store partial results** in continuation_state for recovery
+5. **Validate input** when resuming from continuation
+6. **Set reasonable timeouts** to avoid hanging jobs
+7. **Log important transitions** between steps
 
 ## Security Best Practices
 

@@ -29,7 +29,8 @@ module ActionMCP
             JsonRpcHandlerBase::Methods::TASKS_GET => :handle_tasks_get,
             JsonRpcHandlerBase::Methods::TASKS_RESULT => :handle_tasks_result,
             JsonRpcHandlerBase::Methods::TASKS_LIST => :handle_tasks_list,
-            JsonRpcHandlerBase::Methods::TASKS_CANCEL => :handle_tasks_cancel
+            JsonRpcHandlerBase::Methods::TASKS_CANCEL => :handle_tasks_cancel,
+            JsonRpcHandlerBase::Methods::TASKS_RESUME => :handle_tasks_resume
           }
         end
 
@@ -60,6 +61,15 @@ module ActionMCP
           return unless task
 
           transport.send_tasks_cancel(id, task_id)
+        end
+
+        def handle_tasks_resume(id, params)
+          task_id = validate_required_param(params, "taskId", "Task ID is required")
+          input = params["input"]
+          task = find_task_or_error(id, task_id)
+          return unless task
+
+          transport.send_tasks_resume(id, task_id, input)
         end
 
         def find_task_or_error(id, task_id)

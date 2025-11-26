@@ -175,7 +175,7 @@ module ActionMCP
         task = @session.tasks.create!(
           request_method: "tools/call",
           request_name: "test_tool",
-          result_payload: { content: [{ type: "text", text: "Result" }] }
+          result_payload: { content: [ { type: "text", text: "Result" } ] }
         )
         task.complete!
 
@@ -200,7 +200,7 @@ module ActionMCP
       end
 
       test "stores result_payload as JSON" do
-        payload = { content: [{ type: "text", text: "Hello" }] }
+        payload = { content: [ { type: "text", text: "Hello" } ] }
         task = @session.tasks.create!(
           request_method: "tools/call",
           request_name: "test_tool",

@@ -187,7 +187,7 @@ module ActionMCP
         params[:sessionId] = @session_id if @session_id
 
         # Use a unique request ID (not session ID since we don't have one yet)
-        request_id = SecureRandom.uuid
+        request_id = SecureRandom.uuid_v7
         send_jsonrpc_request("initialize", params: params, id: request_id)
       end
 

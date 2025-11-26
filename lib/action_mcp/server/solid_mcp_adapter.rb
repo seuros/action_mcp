@@ -21,7 +21,7 @@ module ActionMCP
       # @param success_callback [Proc] Callback for successful subscription
       # @return [String] Subscription ID
       def subscribe(channel, message_callback, success_callback = nil)
-        subscription_id = SecureRandom.uuid
+        subscription_id = SecureRandom.uuid_v7
         session_id = extract_session_id(channel)
 
         @subscriptions[subscription_id] = {

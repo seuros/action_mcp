@@ -15,7 +15,7 @@ module ActionMCP
     class Task < ApplicationRecord
       self.table_name = "action_mcp_session_tasks"
 
-      attribute :id, :string, default: -> { SecureRandom.uuid }
+      attribute :id, :string, default: -> { SecureRandom.uuid_v7 }
 
       belongs_to :session, class_name: "ActionMCP::Session", inverse_of: :tasks
 
@@ -106,6 +106,15 @@ module ActionMCP
           lastUpdatedAt: last_updated_at.iso8601(3)
         }
         data[:statusMessage] = status_message if status_message.present?
+
+        # Add progress if available (ActiveJob::Continuable support)
+        if progress_percent.present? || progress_message.present?
+          data[:progress] = {}.tap do |progress|
+            progress[:percent] = progress_percent if progress_percent.present?
+            progress[:message] = progress_message if progress_message.present?
+          end
+        end
+
         data
       end
 
@@ -127,6 +136,62 @@ module ActionMCP
         handler.send_task_status_notification(self)
       rescue StandardError => e
         Rails.logger.warn "Failed to broadcast task status change: #{e.message}"
+      end
+
+      # Continuation State Management (for ActiveJob::Continuable support)
+
+      # Record step execution state for job resumption
+      # @param step_name [Symbol] Name of the step
+      # @param cursor [Integer, String] Optional cursor for resuming iteration
+      # @param data [Hash] Additional step data to persist
+      def record_step!(step_name, cursor: nil, data: {})
+        update!(
+          continuation_state: {
+            step: step_name,
+            cursor: cursor,
+            data: data,
+            timestamp: Time.current.iso8601
+          },
+          last_step_at: Time.current
+        )
+      end
+
+      # Store partial result fragment (for streaming/incremental results)
+      # @param result_fragment [Hash] Partial result to append
+      def store_partial_result!(result_fragment)
+        payload = result_payload || {}
+        payload[:partial] ||= []
+        payload[:partial] << result_fragment
+        update!(result_payload: payload)
+      end
+
+      # Update progress indicators for long-running tasks
+      # @param percent [Integer] Progress percentage (0-100)
+      # @param message [String] Optional progress message
+      def update_progress!(percent:, message: nil)
+        update!(
+          progress_percent: percent.clamp(0, 100),
+          progress_message: message,
+          last_step_at: Time.current
+        )
+      end
+
+      # Transition to input_required state and store pending input prompt
+      # @param prompt [String] The prompt/question for the user
+      # @param context [Hash] Additional context about the input request
+      def await_input!(prompt:, context: {})
+        record_step!(:awaiting_input, data: { prompt: prompt, context: context })
+        require_input!
+      end
+
+      # Resume task from input_required state and re-enqueue job
+      # @return [void]
+      def resume_from_continuation!
+        return unless input_required?
+
+        resume!
+        # Re-enqueue the job to continue execution
+        ActionMCP::ToolExecutionJob.perform_later(id, request_name, request_params, {})
       end
 
       private
