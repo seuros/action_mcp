@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.90.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.4...action_mcp/v0.90.0) (2025-11-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* implement MCP 2025-11-25 Tasks with spec-compliant error handling ([#162](https://github.com/seuros/action_mcp/issues/162))
+
+### Features
+
+* implement MCP 2025-11-25 Tasks with spec-compliant error handling ([#162](https://github.com/seuros/action_mcp/issues/162)) ([311eed4](https://github.com/seuros/action_mcp/commit/311eed47e7290f521e1abf60ff2d84946e4d7b7c))
+
+
+### Bug Fixes
+
+* SQLite test locking with DatabaseCleaner and maxitest timeout ([#161](https://github.com/seuros/action_mcp/issues/161)) ([1c15e85](https://github.com/seuros/action_mcp/commit/1c15e852b2256c8e6e13b2f5363adc2d26f36b8e))
+* tool/prompt re-registration when explicit name is set ([#159](https://github.com/seuros/action_mcp/issues/159)) ([fc4302f](https://github.com/seuros/action_mcp/commit/fc4302f3049711e7614b304892c173c3d5ed35fd)), closes [#152](https://github.com/seuros/action_mcp/issues/152)
+
 ## [0.83.4](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.3...action_mcp/v0.83.4) (2025-11-25)
 
 
