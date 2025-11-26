@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.0.4'
   spec.add_dependency 'zeitwerk', '~> 2.6'
+  spec.add_dependency 'state_machines-activerecord', '>= 0.100.0'
 
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }

@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
-require "simplecov"
-SimpleCov.start
 # Configure Rails Environment
 ENV["RAILS_ENV"] = "test"
+
+require_relative "../test/dummy/config/environment"
+require "rails/test_help"
+
+require "simplecov"
+SimpleCov.start
 
 require "minitest/reporters"
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
@@ -12,14 +16,13 @@ require "maxitest/autorun"
 require "maxitest/timeout"
 Maxitest.timeout = 5 # Kill any test hanging more than 5 seconds
 
-require_relative "../test/dummy/config/environment"
-require "rails/test_help"
-
 require "action_mcp/test_helper"
 require_relative "support/gateway_test_helper"
 
 ## Configure ActiveRecord Fixtures
-ActiveRecord::Migration.maintain_test_schema!
+# Note: maintain_test_schema! can cause issues with engine migrations
+# since the engine db/migrate has different timestamps than installed migrations
+# ActiveRecord::Migration.maintain_test_schema!
 ActiveSupport::TestCase.fixture_paths = [ File.expand_path("fixtures", __dir__) ]
 
 # Configure database cleaning strategy for SQLite (no transactions, use deletion)

@@ -22,7 +22,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-03-26",
+        protocolVersion: "2025-06-18",
         clientInfo: { name: "Test Client", version: "1.0" },
         capabilities: {
           roots: { listChanged: true },
@@ -40,7 +40,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     assert body["result"]
 
     # Verify MCP protocol version matches request
-    assert_equal "2025-03-26", body["result"]["protocolVersion"]
+    assert_equal "2025-06-18", body["result"]["protocolVersion"]
 
     # Verify server info contains expected values
     assert_equal "ActionMCP Dummy", body["result"]["serverInfo"]["name"]

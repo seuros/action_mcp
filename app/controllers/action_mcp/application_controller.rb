@@ -271,9 +271,9 @@ module ActionMCP
       header_version = request.headers["MCP-Protocol-Version"] || request.headers["mcp-protocol-version"]
       session = mcp_session
 
-      # If header is missing, assume 2025-03-26 for backward compatibility as per spec
+      # If header is missing, assume 2025-06-18 for backward compatibility as per spec
       if header_version.nil?
-        ActionMCP.logger.debug "MCP-Protocol-Version header missing, assuming 2025-03-26 for backward compatibility"
+        ActionMCP.logger.debug "MCP-Protocol-Version header missing, assuming 2025-06-18 for backward compatibility"
         return true
       end
 

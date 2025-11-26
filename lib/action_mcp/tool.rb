@@ -29,6 +29,7 @@ module ActionMCP
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
     class_attribute :_additional_properties, instance_accessor: false, default: nil
     class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
+    class_attribute :_task_support, instance_accessor: false, default: :forbidden
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -194,6 +195,44 @@ module ActionMCP
         _requires_consent
       end
 
+      # --------------------------------------------------------------------------
+      # Task Support DSL (MCP 2025-11-25)
+      # --------------------------------------------------------------------------
+      # Sets or retrieves the task support mode for this tool
+      # @param mode [Symbol, nil] :required, :optional, or :forbidden (default)
+      # @return [Symbol] The current task support mode
+      def task_support(mode = nil)
+        if mode
+          unless %i[required optional forbidden].include?(mode)
+            raise ArgumentError, "task_support must be :required, :optional, or :forbidden"
+          end
+
+          self._task_support = mode
+        else
+          _task_support
+        end
+      end
+
+      # Convenience methods for task support
+      def task_required!
+        self._task_support = :required
+      end
+
+      def task_optional!
+        self._task_support = :optional
+      end
+
+      def task_forbidden!
+        self._task_support = :forbidden
+      end
+
+      # Returns the execution metadata including task support
+      def execution_metadata
+        {
+          taskSupport: _task_support.to_s
+        }
+      end
+
       # Sets or retrieves the additionalProperties setting for the input schema
       # @param enabled [Boolean, Hash] true to allow any additional properties,
       #   false to disallow them, or a Hash for typed additional properties
@@ -337,6 +376,12 @@ module ActionMCP
       # Add annotations if protocol supports them
       annotations = annotations_for_protocol(protocol_version)
       result[:annotations] = annotations if annotations.any?
+
+      # Add execution metadata (MCP 2025-11-25)
+      # Only include if not default (forbidden) to minimize payload
+      if _task_support && _task_support != :forbidden
+        result[:execution] = execution_metadata
+      end
 
       # Add _meta if present
       result[:_meta] = _meta if _meta.any?

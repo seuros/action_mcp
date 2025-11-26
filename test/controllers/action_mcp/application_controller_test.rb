@@ -70,7 +70,7 @@ module ActionMCP
         id: "init-1",
         method: "initialize",
         params: {
-          protocolVersion: "2025-03-26",
+          protocolVersion: "2025-06-18",
           clientInfo: {
             name: "Test Client",
             version: "1.0.0"
@@ -107,7 +107,7 @@ module ActionMCP
       assert_not_nil capabilities["resources"]
 
       # Verify protocol version matches
-      assert_equal "2025-03-26", init_response["result"]["protocolVersion"]
+      assert_equal "2025-06-18", init_response["result"]["protocolVersion"]
 
       # ====================================================================
       # STEP 2: Send initialized notification (required by protocol)
@@ -249,7 +249,7 @@ module ActionMCP
       session = Server.session_store.load_session(session_id)
       assert_not_nil session
       assert_equal "initialized", session.status
-      assert_equal "2025-03-26", session.protocol_version
+      assert_equal "2025-06-18", session.protocol_version
       assert session.initialized?
 
       # Skip message history verification for volatile session store

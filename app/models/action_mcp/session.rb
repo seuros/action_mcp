@@ -79,6 +79,12 @@ module ActionMCP
              dependent: :delete_all,
              inverse_of: :session
 
+    has_many :tasks,
+             class_name: "ActionMCP::Session::Task",
+             foreign_key: "session_id",
+             dependent: :delete_all,
+             inverse_of: :session
+
     scope :pre_initialize, -> { where(status: "pre_initialize") }
     scope :closed, -> { where(status: "closed") }
     scope :without_messages, -> { includes(:messages).where(action_mcp_session_messages: { id: nil }) }

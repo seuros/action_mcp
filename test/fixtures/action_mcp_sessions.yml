@@ -7,14 +7,24 @@ test_session:
   status: pre_initialize
   initialized: false
   protocol_version: null
-  tool_registry: '[]'
-  prompt_registry: '[]'
-  resource_registry: '[]'
-  consents: '{}'
+  tool_registry: []
+  prompt_registry: []
+  resource_registry: []
+  consents: {}
   messages_count: 0
   sse_event_counter: 0
-  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
-  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
   created_at: <%= Time.now.utc.iso8601 %>
   updated_at: <%= Time.now.utc.iso8601 %>
 
@@ -23,15 +33,28 @@ step1_session:
   role: server
   status: initialized
   initialized: true
-  protocol_version: "2025-03-26"
-  tool_registry: '["*"]'
-  prompt_registry: '["*"]'
-  resource_registry: '["*"]'
-  consents: '{}'
+  protocol_version: "2025-06-18"
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
   messages_count: 0
   sse_event_counter: 0
-  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
-  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
   created_at: <%= Time.now.utc.iso8601 %>
   updated_at: <%= Time.now.utc.iso8601 %>
 
@@ -41,13 +64,57 @@ dr_identity_mcbouncer_session:
   status: initialized
   initialized: true
   protocol_version: "2025-06-18"
-  tool_registry: '["*"]'
-  prompt_registry: '["*"]'
-  resource_registry: '["*"]'
-  consents: '{}'
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
   messages_count: 0
   sse_event_counter: 0
-  server_capabilities: '{"tools":{"listChanged":true},"prompts":{"listChanged":true},"logging":{},"resources":{"subscribe":false,"listChanged":true}}'
-  server_info: '{"name":"ActionMCP Dummy","version":"9.9.9"}'
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
+task_master_session:
+  id: task_master_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-11-25"
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
+  messages_count: 0
+  sse_event_counter: 0
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+    tasks: {}
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
   created_at: <%= Time.now.utc.iso8601 %>
   updated_at: <%= Time.now.utc.iso8601 %>

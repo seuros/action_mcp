@@ -16,7 +16,7 @@ module ActionMCP
       test "memory store saves and loads session data" do
         session_data = {
           id: "test-123",
-          protocol_version: "2025-03-26",
+          protocol_version: "2025-06-18",
           client_info: { name: "TestClient", version: "1.0" },
           server_info: { name: "TestServer", version: "2.0" },
           last_event_id: 42
@@ -60,14 +60,14 @@ module ActionMCP
       test "memory store updates specific session attributes" do
         @volatile_store.save_session("test-123", {
                                        id: "test-123",
-                                       protocol_version: "2025-03-26",
+                                       protocol_version: "2025-06-18",
                                        last_event_id: 10
                                      })
 
         updated = @volatile_store.update_session("test-123", { last_event_id: 20 })
 
         assert_equal "test-123", updated[:id]
-        assert_equal "2025-03-26", updated[:protocol_version]
+        assert_equal "2025-06-18", updated[:protocol_version]
         assert_equal 20, updated[:last_event_id]
       end
 
@@ -119,7 +119,7 @@ module ActionMCP
       test "ActiveRecord store saves and loads session via database" do
         session_data = {
           id: "ar-test-123",
-          protocol_version: "2025-03-26",
+          protocol_version: "2025-06-18",
           client_info: { name: "TestClient", version: "1.0" },
           server_info: { name: "TestServer", version: "2.0" },
           client_capabilities: { tools: {}, prompts: {} },
@@ -145,7 +145,7 @@ module ActionMCP
       test "ActiveRecord store deletes session from database" do
         @ar_store.save_session("ar-delete-test", {
                                  id: "ar-delete-test",
-                                 protocol_version: "2025-03-26"
+                                 protocol_version: "2025-06-18"
                                })
         assert @ar_store.session_exists?("ar-delete-test")
 
@@ -157,13 +157,13 @@ module ActionMCP
       test "ActiveRecord store updates existing session" do
         @ar_store.save_session("ar-update-test", {
                                  id: "ar-update-test",
-                                 protocol_version: "2025-03-26",
+                                 protocol_version: "2025-06-18",
                                  client_info: { name: "TestClient", version: "1.0" }
                                })
 
         @ar_store.save_session("ar-update-test", {
                                  id: "ar-update-test",
-                                 protocol_version: "2025-03-26",
+                                 protocol_version: "2025-06-18",
                                  client_info: { name: "TestClient", version: "2.0" }
                                })
 
@@ -174,7 +174,7 @@ module ActionMCP
       test "ActiveRecord store updates specific attributes" do
         @ar_store.save_session("ar-partial-update", {
                                  id: "ar-partial-update",
-                                 protocol_version: "2025-03-26",
+                                 protocol_version: "2025-06-18",
                                  client_info: { name: "TestClient", version: "1.0" }
                                })
 
@@ -183,7 +183,7 @@ module ActionMCP
                                            })
 
         assert_equal "ar-partial-update", updated[:id]
-        assert_equal "2025-03-26", updated[:protocol_version]
+        assert_equal "2025-06-18", updated[:protocol_version]
         assert_equal "TestClient", updated[:client_info]["name"]
         assert_equal "2.0", updated[:client_info]["version"]
       end
@@ -193,14 +193,14 @@ module ActionMCP
         old_session = action_mcp_sessions(:test_session)
         old_session.update!(
           id: "ar-old-session",
-          protocol_version: "2025-03-26",
+          protocol_version: "2025-06-18",
           updated_at: 2.days.ago
         )
 
         # Create new session
         @ar_store.save_session("ar-new-session", {
                                  id: "ar-new-session",
-                                 protocol_version: "2025-03-26"
+                                 protocol_version: "2025-06-18"
                                })
 
         count = @ar_store.cleanup_expired_sessions(older_than: 1.day.ago)

@@ -7,6 +7,7 @@ module ActionMCP
       include Handlers::ToolHandler
       include Handlers::PromptHandler
       include Handlers::LoggingHandler
+      include Handlers::TaskHandler
       include ErrorHandling
       include ErrorAware
 
@@ -54,6 +55,8 @@ module ActionMCP
           process_resources(rpc_method, id, params)
         when %r{^tools/}
           process_tools(rpc_method, id, params)
+        when %r{^tasks/}
+          process_tasks(rpc_method, id, params)
         when Methods::COMPLETION_COMPLETE
           process_completion_complete(id, params)
         when Methods::LOGGING_SET_LEVEL

@@ -44,7 +44,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:test_session)
     session.update!(
       id: "test-session-old",
-      protocol_version: "2025-03-26",
+      protocol_version: "2025-06-18",
       initialized: true,
       status: "initialized",
       created_at: 6.minutes.ago
@@ -69,7 +69,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:test_session)
     session.update!(
       id: "test-session-ancient",
-      protocol_version: "2025-03-26",
+      protocol_version: "2025-06-18",
       initialized: true,
       status: "initialized",
       created_at: 2.hours.ago

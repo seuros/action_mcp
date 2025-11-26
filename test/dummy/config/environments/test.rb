@@ -33,6 +33,10 @@ Rails.application.configure do
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 
+  # Disable migration error check since engine migrations have different timestamps
+  # than installed migrations (engine uses install:migrations to copy with new timestamps)
+  config.active_record.migration_error = false
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 

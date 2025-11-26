@@ -6,7 +6,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   include ActionMCP::TestHelper
 
   setup do
-    @protocol_version = "2025-03-26"
+    @protocol_version = "2025-06-18"
     @session_id = nil
   end
 

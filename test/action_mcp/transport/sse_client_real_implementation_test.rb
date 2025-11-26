@@ -68,7 +68,7 @@ class StreamableClientRealImplementationTest < ActiveSupport::TestCase
 
     initialize_request["id"]
 
-    assert_equal "2025-03-26", initialize_request["params"]["protocolVersion"]
+    assert_equal "2025-06-18", initialize_request["params"]["protocolVersion"]
     assert_not_nil initialize_request["params"]["capabilities"]
   end
 end

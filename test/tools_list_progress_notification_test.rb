@@ -14,7 +14,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-03-26",
+        protocolVersion: "2025-06-18",
         clientInfo: {
           name: "Test Client",
           version: "1.0.0"

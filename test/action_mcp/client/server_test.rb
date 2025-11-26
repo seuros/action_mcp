@@ -7,7 +7,7 @@ module ActionMCP
     class ServerTest < ActiveSupport::TestCase
       test "server with full capabilities and dynamic flags enabled" do
         data = {
-          "protocolVersion" => "2025-03-26",
+          "protocolVersion" => "2025-06-18",
           "serverInfo" => { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
           "capabilities" => {
             "tools" => { "listChanged" => true },
@@ -31,7 +31,7 @@ module ActionMCP
 
       test "server with full capabilities and non-dynamic flags" do
         data = {
-          "protocolVersion" => "2025-03-26",
+          "protocolVersion" => "2025-06-18",
           "serverInfo" => { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
           "capabilities" => {
             "tools" => { "listChanged" => false },
@@ -55,7 +55,7 @@ module ActionMCP
 
       test "server with empty capabilities hash" do
         data = {
-          "protocolVersion" => "2025-03-26",
+          "protocolVersion" => "2025-06-18",
           "serverInfo" => { "name" => "ActionMCP Dummy", "version" => "9.9.9" },
           "capabilities" => {}
         }
@@ -74,7 +74,7 @@ module ActionMCP
 
       test "server with no capabilities key provided" do
         data = {
-          "protocolVersion" => "2025-03-26",
+          "protocolVersion" => "2025-06-18",
           "serverInfo" => { "name" => "ActionMCP Dummy", "version" => "9.9.9" }
           # No 'capabilities' key is present
         }

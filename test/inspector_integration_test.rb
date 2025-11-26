@@ -11,7 +11,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   setup do
-    @protocol_version = "2025-03-26"
+    @protocol_version = "2025-06-18"
     @request_id_counter = 0
   end
 

@@ -11,10 +11,10 @@ class SessionProtocolVersionTool < ApplicationMCPTool
 
     # Determine the protocol codename based on version
     codename = case protocol_version
+    when "2025-11-25"
+                 "The Task Master"
     when "2025-06-18"
                  "Dr. Identity McBouncer"
-    when "2025-03-26"
-                 "The Persistent Negotiator"
     when "2024-11-05"
                  "The Original Voyager"
     else
