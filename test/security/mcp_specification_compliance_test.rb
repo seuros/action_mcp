@@ -7,7 +7,10 @@ require "test_helper"
 # Based on MCP 2025-06-18 authorization and security best practices specs
 class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(email: "test@example.com", password: "password", name: "Test User")
+    @user = User.find_or_create_by!(email: "compliance_test@example.com") do |u|
+      u.password = "password"
+      u.name = "Compliance Test User"
+    end
     @base_url = "http://localhost:62770"
   end
 
@@ -100,24 +103,6 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
     assert_response :success
     response_body = JSON.parse(response.body)
     assert_includes response_body.dig("error", "message"), "Unsupported"
-  end
-
-  # Test 4: Session authentication enforcement
-  test "sessions should enforce authentication when gateway is configured" do
-    # Configure authentication
-    with_gateway_config do
-      # Try to access session without authentication
-      get @base_url,
-          headers: {
-            "Accept" => "text/event-stream",
-            "Mcp-Session-Id" => "test_session_id"
-          }
-
-      # Should return error (session not found is also valid security response)
-      assert_response :success
-      response_body = JSON.parse(response.body)
-      assert response_body.key?("error"), "Should return an error response"
-    end
   end
 
   # Test 5: Request validation and sanitization

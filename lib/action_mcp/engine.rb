@@ -61,6 +61,14 @@ module ActionMCP
 
     # Configure autoloading for the mcp/tools directory and identifiers
     initializer "action_mcp.autoloading", before: :set_autoload_paths do |app|
+      # Ensure ActionMCP base constants exist before Zeitwerk indexes app/mcp
+      # This prevents NameError when dependent gems have app/mcp
+      # directories with classes inheriting from ActionMCP::Tool, etc.
+      require "action_mcp/tool"
+      require "action_mcp/prompt"
+      require "action_mcp/resource_template"
+      require "action_mcp/gateway"
+
       mcp_path = app.root.join("app/mcp")
       identifiers_path = app.root.join("app/identifiers")
 
