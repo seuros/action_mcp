@@ -62,7 +62,7 @@ end
 
 # Function to generate a unique request ID
 def generate_request_id
-  SecureRandom.uuid
+  SecureRandom.uuid_v7
 end
 
 # Function to parse command shortcuts and return a Request object

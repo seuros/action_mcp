@@ -34,6 +34,16 @@ module ActionMCP
 
       # Elicitation methods
       ELICITATION_CREATE = "elicitation/create"
+
+      # Task methods (MCP 2025-11-25)
+      TASKS_GET = "tasks/get"
+      TASKS_RESULT = "tasks/result"
+      TASKS_LIST = "tasks/list"
+      TASKS_CANCEL = "tasks/cancel"
+      TASKS_RESUME = "tasks/resume"
+
+      # Task notifications
+      NOTIFICATIONS_TASKS_STATUS = "notifications/tasks/status"
     end
 
     delegate :initialize!, :initialized?, to: :transport

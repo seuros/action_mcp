@@ -11,7 +11,7 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
            id: 1,
            method: "initialize",
            params: {
-             protocolVersion: "2025-03-26",
+             protocolVersion: "2025-06-18",
              clientInfo: { name: "test-client", version: "1.0" },
              capabilities: {}
            }

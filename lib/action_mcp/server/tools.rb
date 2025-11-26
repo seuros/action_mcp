@@ -58,6 +58,20 @@ module ActionMCP
           return
         end
 
+        # Check for task-augmented execution (MCP 2025-11-25)
+        task_params = _meta["task"] || _meta[:task]
+        if task_params && tasks_enabled?
+          handle_task_augmented_tool_call(request_id, tool_name, arguments, _meta, task_params)
+          return
+        end
+
+        # Standard synchronous execution
+        execute_tool_synchronously(request_id, tool_class, tool_name, arguments, _meta)
+      end
+
+      private
+
+      def execute_tool_synchronously(request_id, tool_class, tool_name, arguments, _meta)
         begin
           # Create tool and set execution context with request info
           tool = tool_class.new(arguments)
@@ -106,7 +120,39 @@ module ActionMCP
         end
       end
 
-      private
+      # Handle task-augmented tool calls per MCP 2025-11-25 specification
+      # Creates a Task record and executes the tool asynchronously
+      def handle_task_augmented_tool_call(request_id, tool_name, arguments, _meta, task_params)
+        # Extract task configuration
+        ttl = task_params["ttl"] || task_params[:ttl] || 60_000
+        poll_interval = task_params["pollInterval"] || task_params[:pollInterval] || 5_000
+
+        # Create task record
+        task = session.tasks.create!(
+          request_method: "tools/call",
+          request_name: tool_name,
+          request_params: {
+            name: tool_name,
+            arguments: arguments,
+            _meta: _meta
+          },
+          ttl: ttl,
+          poll_interval: poll_interval
+        )
+
+        # Return CreateTaskResult immediately
+        send_jsonrpc_response(request_id, result: { task: task.to_task_data })
+
+        # Execute tool asynchronously via ActiveJob
+        ToolExecutionJob.perform_later(task.id, tool_name, arguments, _meta)
+      rescue StandardError => e
+        Rails.logger.error "Failed to create task: #{e.class} - #{e.message}"
+        send_jsonrpc_error(request_id, :internal_error, "Failed to create task")
+      end
+
+      def tasks_enabled?
+        ActionMCP.configuration.tasks_enabled
+      end
 
       def format_registry_items(registry, protocol_version = nil)
         registry.map { |item| item.klass.to_h(protocol_version: protocol_version) }

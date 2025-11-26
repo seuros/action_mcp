@@ -18,6 +18,8 @@ module ActionMCP
             @handler.process_resources(rpc_method, id, params)
           when %r{^tools/}
             @handler.process_tools(rpc_method, id, params)
+          when %r{^tasks/}
+            @handler.process_tasks(rpc_method, id, params)
           when "completion/complete"
             @handler.process_completion_complete(id, params)
           else

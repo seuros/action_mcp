@@ -165,7 +165,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "protocol version defaults" do
-    assert_equal "2025-03-26", @config.protocol_version
+    assert_equal "2025-06-18", @config.protocol_version
   end
 
   test "SSE configuration defaults" do

@@ -94,7 +94,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
   end
 
   test "rejects version mismatch between header and negotiated version" do
-    session = create_initialized_session
+    session = create_initialized_session("2025-06-18")  # Session negotiated 2025-06-18
 
     post "/",
          params: {
@@ -106,7 +106,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
            "Mcp-Session-Id" => session.id,
-           "MCP-Protocol-Version" => "2025-06-18"  # Different from session's negotiated version
+           "MCP-Protocol-Version" => "2025-11-25"  # Different from session's negotiated version (2025-06-18)
          }
 
     assert_response :bad_request
@@ -122,7 +122,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          headers: {
            "CONTENT_TYPE" => "application/json",
            "ACCEPT" => "application/json",
-           "MCP-Protocol-Version" => "2025-03-26"  # Should be ignored for initialize
+           "MCP-Protocol-Version" => "2025-06-18"  # Should be ignored for initialize
          }
 
     assert_response :success
@@ -155,7 +155,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_initialized_session(protocol_version = "2025-03-26")
+  def create_initialized_session(protocol_version = "2025-06-18")
     # Get fixture data based on protocol version
     fixture_session = if protocol_version == "2025-06-18"
                         action_mcp_sessions(:dr_identity_mcbouncer_session)

@@ -9,7 +9,7 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
 
   setup do
     # Initialize the test data
-    @protocol_version = "2025-03-26"
+    @protocol_version = "2025-06-18"
     @session_id = nil
   end
 

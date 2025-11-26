@@ -15,7 +15,7 @@ module ActionMCP
       payload = session.server_capabilities_payload
 
       # Verify basic structure
-      assert_equal "2025-03-26", payload[:protocolVersion]
+      assert_equal "2025-06-18", payload[:protocolVersion]
       assert_equal "ActionMCP Dummy", payload[:serverInfo]["name"]
       assert_equal "9.9.9", payload[:serverInfo]["version"]
 
@@ -35,7 +35,7 @@ module ActionMCP
         payload = session.server_capabilities_payload
 
         # Verify basic structure
-        assert_equal "2025-03-26", payload[:protocolVersion]
+        assert_equal "2025-06-18", payload[:protocolVersion]
         assert_equal "ActionMCP Dummy", payload[:serverInfo]["name"]
         assert_equal "9.9.9", payload[:serverInfo]["version"]
 

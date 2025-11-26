@@ -19,6 +19,7 @@ module ActionMCP
       include  Sampling
       include  Roots
       include  Elicitation
+      include  Tasks
       include  ResponseCollector # Must be included last to override write_message
 
       # @param [ActionMCP::Session] session

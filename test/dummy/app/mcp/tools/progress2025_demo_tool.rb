@@ -4,7 +4,7 @@
 class Progress2025DemoTool < ApplicationMCPTool
   tool_name "progress_2025_demo"
   title "Progress Demo Tool"
-  description "Demo tool showing 2025-03-26 progress notifications"
+  description "Demo tool showing 2025-06-18 progress notifications"
   read_only
   idempotent
 

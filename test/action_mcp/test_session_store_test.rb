@@ -63,7 +63,7 @@ module ActionMCP
       # Save a session
       @client_store.save_session("client-123", {
                                    id: "client-123",
-                                   protocol_version: "2025-03-26"
+                                   protocol_version: "2025-06-18"
                                  })
 
       # Load it
@@ -90,7 +90,7 @@ module ActionMCP
     test "client test store tracks session data" do
       session_data = {
         id: "data-test",
-        protocol_version: "2025-03-26",
+        protocol_version: "2025-06-18",
         client_info: { name: "TestClient" }
       }
 
@@ -98,7 +98,7 @@ module ActionMCP
 
       assert_client_session_data_includes "data-test", {
         id: "data-test",
-        protocol_version: "2025-03-26"
+        protocol_version: "2025-06-18"
       }
     end
 

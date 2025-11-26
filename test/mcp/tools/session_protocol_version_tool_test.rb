@@ -34,16 +34,16 @@ class SessionProtocolVersionToolTest < ActiveSupport::TestCase
     assert_equal "2025-06-18", response_data["protocol_version"]
     assert_equal "Dr. Identity McBouncer", response_data["codename"]
     assert_equal session.id, response_data["session_id"]
+    assert_includes response_data["supported_versions"], "2025-11-25"
     assert_includes response_data["supported_versions"], "2025-06-18"
-    assert_includes response_data["supported_versions"], "2025-03-26"
   end
 
-  test "returns protocol version for Persistent Negotiator session" do
-    # Use fixture session with 2025-03-26 protocol
+  test "returns protocol version for Task Master session" do
+    # Use fixture session with 2025-11-25 protocol (The Task Master)
     session = action_mcp_sessions(:step1_session)
     session.update!(
-      id: "test-session-2025-03-26",
-      protocol_version: "2025-03-26",
+      id: "test-session-2025-11-25",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized"
     )
@@ -56,8 +56,8 @@ class SessionProtocolVersionToolTest < ActiveSupport::TestCase
     content = result.contents.first
     response_data = JSON.parse(content.text)
 
-    assert_equal "2025-03-26", response_data["protocol_version"]
-    assert_equal "The Persistent Negotiator", response_data["codename"]
+    assert_equal "2025-11-25", response_data["protocol_version"]
+    assert_equal "The Task Master", response_data["codename"]
     assert_equal session.id, response_data["session_id"]
   end
 

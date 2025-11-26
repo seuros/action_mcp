@@ -48,7 +48,11 @@ module ActionMCP
                   :max_threads,
                   :max_queue,
                   :polling_interval,
-                  :connects_to
+                  :connects_to,
+                  # --- Tasks Options (MCP 2025-11-25) ---
+                  :tasks_enabled,
+                  :tasks_list_enabled,
+                  :tasks_cancel_enabled
 
     def initialize
       @logging_enabled = false
@@ -65,7 +69,12 @@ module ActionMCP
 
       @sse_heartbeat_interval = 30
       @post_response_preference = :json
-      @protocol_version = "2025-03-26" # Default to legacy for backwards compatibility
+      @protocol_version = "2025-06-18"  # Default to stable version for backwards compatibility
+
+      # Tasks defaults (MCP 2025-11-25)
+      @tasks_enabled = false
+      @tasks_list_enabled = true
+      @tasks_cancel_enabled = true
 
       # Resumability defaults
       @sse_event_retention_period = 15.minutes
@@ -223,6 +232,18 @@ module ActionMCP
       end
 
       capabilities[:elicitation] = {} if @elicitation_enabled
+
+      # Tasks capability (MCP 2025-11-25)
+      if @tasks_enabled
+        tasks_cap = {
+          requests: {
+            tools: { call: {} }
+          }
+        }
+        tasks_cap[:list] = {} if @tasks_list_enabled
+        tasks_cap[:cancel] = {} if @tasks_cancel_enabled
+        capabilities[:tasks] = tasks_cap
+      end
 
       capabilities
     end
