@@ -18,10 +18,26 @@ module ActionMCP
     def self.prompt_name(name = nil)
       if name
         self._capability_name = name
+        re_register_if_needed
+        name
       else
         _capability_name || default_prompt_name
       end
     end
+
+    # Re-registers the prompt if it was already registered under a different name
+    # @return [void]
+    def self.re_register_if_needed
+      return if abstract?
+      return unless _registered_name # Not yet registered
+
+      new_name = capability_name
+      return if _registered_name == new_name # No change
+
+      ActionMCP::PromptsRegistry.re_register(self, _registered_name)
+    end
+
+    private_class_method :re_register_if_needed
 
     # Returns the default prompt name based on the class name.
     #

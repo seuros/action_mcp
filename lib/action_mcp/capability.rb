@@ -11,6 +11,7 @@ module ActionMCP
     include Renderable
 
     class_attribute :_capability_name, instance_accessor: false
+    class_attribute :_registered_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
 
     attr_reader :execution_context

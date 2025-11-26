@@ -21,7 +21,29 @@ module ActionMCP
       def register(klass)
         return if klass.abstract?
 
-        items[klass.capability_name] = klass
+        name = klass.capability_name
+        items[name] = klass
+        klass._registered_name = name if klass.respond_to?(:_registered_name=)
+      end
+
+      # Re-register an item under its current capability_name
+      # Removes old entry if name changed
+      #
+      # @param klass [Class] The class to re-register
+      # @param old_name [String] The previous registered name
+      # @return [void]
+      def re_register(klass, old_name)
+        return if klass.abstract?
+
+        new_name = klass.capability_name
+
+        # Remove old entry if it exists and points to this class
+        if old_name && items[old_name] == klass
+          items.delete(old_name)
+        end
+
+        items[new_name] = klass
+        klass._registered_name = new_name if klass.respond_to?(:_registered_name=)
       end
 
       # Unregister an item
