@@ -1,9 +1,26 @@
+default: &default
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+sqlite_defaults: &sqlite_defaults
+  <<: *default
+  adapter: sqlite3
+  timeout: 1000
+  pragmas:
+    journal_mode: wal
+    synchronous: normal
+
 development:
   primary:
-    url: <%= ENV.fetch("DATABASE_URL", "sqlite3:db/development.sqlite3") %>
-    database: action_mcp_dev
+    <<: *sqlite_defaults
+    database: db/development.sqlite3
+<% if ENV["DATABASE_URL"] %>
+    url: <%= ENV["DATABASE_URL"] %>
+<% end %>
 
 test:
   primary:
-    url: <%= ENV.fetch("DATABASE_URL", "sqlite3:db/test.sqlite3") %>
-    database: action_mcp_test
+    <<: *sqlite_defaults
+    database: db/test.sqlite3
+<% if ENV["DATABASE_URL"] %>
+    url: <%= ENV["DATABASE_URL"] %>
+<% end %>

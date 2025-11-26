@@ -5,6 +5,13 @@ SimpleCov.start
 # Configure Rails Environment
 ENV["RAILS_ENV"] = "test"
 
+require "minitest/reporters"
+Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
+
+require "maxitest/autorun"
+require "maxitest/timeout"
+Maxitest.timeout = 5 # Kill any test hanging more than 5 seconds
+
 require_relative "../test/dummy/config/environment"
 require "rails/test_help"
 
@@ -14,6 +21,21 @@ require_relative "support/gateway_test_helper"
 ## Configure ActiveRecord Fixtures
 ActiveRecord::Migration.maintain_test_schema!
 ActiveSupport::TestCase.fixture_paths = [ File.expand_path("fixtures", __dir__) ]
+
+# Configure database cleaning strategy for SQLite (no transactions, use deletion)
+if ApplicationRecord.connection.adapter_name == "SQLite"
+  require "database_cleaner-active_record"
+
+  ActiveSupport::TestCase.use_transactional_tests = false
+  ActiveSupport::TestCase.parallelize(workers: 1)
+
+  DatabaseCleaner[:active_record].strategy = :deletion
+
+  class ActiveSupport::TestCase
+    setup { DatabaseCleaner[:active_record].start }
+    teardown { DatabaseCleaner[:active_record].clean }
+  end
+end
 
 class MockOrder
   def self.find_by(id:)
