@@ -36,6 +36,7 @@ Rails.application.configure do
   # Disable migration error check since engine migrations have different timestamps
   # than installed migrations (engine uses install:migrations to copy with new timestamps)
   config.active_record.migration_error = false
+  config.active_record.maintain_test_schema = false
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
