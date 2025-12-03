@@ -7,12 +7,6 @@ module ActionMCP
     include SessionFixtureHelper
     fixtures :action_mcp_sessions
 
-    attr_reader :original_preference
-
-    teardown do
-      ActionMCP.configuration.post_response_preference = original_preference
-    end
-
     def app
       ActionMCP::Engine
     end
@@ -31,12 +25,6 @@ module ActionMCP
   end
 
   class ApplicationControllerJSONTest < ApplicationControllerTestBase
-    setup do
-      @original_preference = ActionMCP.configuration.post_response_preference
-
-      ActionMCP.configuration.post_response_preference = :json
-    end
-
     test "JSON response works correctly" do
       session = create_initialized_session
       session_id = session.id

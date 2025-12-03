@@ -167,11 +167,4 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "protocol version defaults" do
     assert_equal "2025-06-18", @config.protocol_version
   end
-
-  test "SSE configuration defaults" do
-    assert_equal 30, @config.sse_heartbeat_interval
-    assert_equal :json, @config.post_response_preference
-    assert_equal 15.minutes, @config.sse_event_retention_period
-    assert_equal 100, @config.max_stored_sse_events
-  end
 end

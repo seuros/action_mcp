@@ -9,7 +9,6 @@ module ActionMCP
 
     include Engine.routes.url_helpers
     include JSONRPC_Rails::ControllerHelpers
-    include ActionController::Live
     include ActionController::Instrumentation
 
     # Provides the ActionMCP::Session for the current request.
@@ -27,136 +26,15 @@ module ActionMCP
       @session_key ||= "action_mcp-sessions-#{mcp_session.id}"
     end
 
-    # Handles GET requests for establishing server-initiated SSE streams (2025-03-26 spec).
+    # Handles GET requests - returns 405 Method Not Allowed as per MCP spec.
+    # SSE streaming is not supported. Clients should use Tasks for async operations.
     # <rails-lens:routes:begin>
     # ROUTE: /, name: mcp_get, via: GET
     # <rails-lens:routes:end>
     def show
-      unless request.accepts.any? { |type| type.to_s == "text/event-stream" }
-        return render_not_acceptable("Client must accept 'text/event-stream' for GET requests.")
-      end
-
-      session_id_from_header = extract_session_id
-      return render_bad_request("Mcp-Session-Id header is required for GET requests.") unless session_id_from_header
-
-      session = mcp_session
-      if session.nil? || session.new_record?
-        return render_not_found("Session not found.")
-      elsif !session.initialized?
-        return render_bad_request("Session is not fully initialized.")
-      elsif session.status == "closed"
-        return render_not_found("Session has been terminated.")
-      end
-
-      # Authenticate the request via gateway
-      authenticate_gateway!
-      return if performed?
-
-      last_event_id = request.headers["Last-Event-ID"].presence
-      if last_event_id && ActionMCP.configuration.verbose_logging
-        Rails.logger.info "Unified SSE (GET): Resuming from Last-Event-ID: #{last_event_id}"
-      end
-
-      response.headers["Content-Type"] = "text/event-stream"
-      response.headers["X-Accel-Buffering"] = "no"
-      response.headers["Cache-Control"] = "no-cache"
-      response.headers["Connection"] = "keep-alive"
-      # Add MCP-Protocol-Version header for established sessions
-      response.headers["MCP-Protocol-Version"] = session.protocol_version
-
-      if ActionMCP.configuration.verbose_logging
-        Rails.logger.info "Unified SSE (GET): Starting stream for session: #{session.id}"
-      end
-
-      sse = SSE.new(response.stream)
-      listener = SSEListener.new(session)
-      connection_active = Concurrent::AtomicBoolean.new
-      connection_active.make_true
-      heartbeat_active = Concurrent::AtomicBoolean.new
-      heartbeat_active.make_true
-      heartbeat_task = nil
-
-      listener_started = listener.start do |message|
-        write_sse_event(sse, session, message)
-      end
-
-      unless listener_started
-        Rails.logger.error "Unified SSE (GET): Listener failed to activate for session: #{session.id}"
-        connection_active.make_false
-        return
-      end
-
-      if last_event_id.present? && last_event_id.to_i.positive?
-        begin
-          missed_events = session.get_sse_events_after(last_event_id.to_i)
-          if missed_events.any?
-            if ActionMCP.configuration.verbose_logging
-              Rails.logger.info "Unified SSE (GET): Sending #{missed_events.size} missed events for session: #{session.id}"
-            end
-            missed_events.each do |event|
-              sse.write(event.to_sse)
-            end
-          elsif ActionMCP.configuration.verbose_logging
-            if ActionMCP.configuration.verbose_logging
-              Rails.logger.info "Unified SSE (GET): No missed events to send for session: #{session.id}"
-            end
-          end
-        rescue StandardError => e
-          Rails.logger.error "Unified SSE (GET): Error sending missed events: #{e.message}"
-        end
-      end
-
-      heartbeat_interval = ActionMCP.configuration.sse_heartbeat_interval || 15.seconds
-      heartbeat_sender = lambda do
-        if connection_active.true? && !response.stream.closed?
-          begin
-            # Send a proper JSON-RPC notification for heartbeat
-            ping_notification = {
-              jsonrpc: "2.0",
-              method: "notifications/ping",
-              params: {}
-            }
-            future = Concurrent::Promises.future { write_sse_event(sse, session, ping_notification) }
-            future.value!(5)
-            if heartbeat_active.true?
-              heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
-            end
-          rescue Concurrent::TimeoutError
-            Rails.logger.warn "Unified SSE (GET): Heartbeat timed out for session: #{session.id}, closing."
-            connection_active.make_false
-          rescue StandardError => e
-            if ActionMCP.configuration.verbose_logging
-              Rails.logger.debug "Unified SSE (GET): Heartbeat error for session: #{session.id}: #{e.message}"
-            end
-            connection_active.make_false
-          end
-        else
-          heartbeat_active.make_false
-        end
-      end
-
-      heartbeat_task = Concurrent::ScheduledTask.execute(heartbeat_interval, &heartbeat_sender)
-      sleep 0.1 while connection_active.true? && !response.stream.closed?
-    rescue ActionController::Live::ClientDisconnected, IOError => e
-      if ActionMCP.configuration.verbose_logging
-        Rails.logger.debug "Unified SSE (GET): Client disconnected for session: #{session&.id}: #{e.message}"
-      end
-    rescue StandardError => e
-      Rails.logger.error "Unified SSE (GET): Unexpected error for session: #{session&.id}: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
-    ensure
-      if ActionMCP.configuration.verbose_logging
-        Rails.logger.debug "Unified SSE (GET): Cleaning up connection for session: #{session&.id}"
-      end
-      heartbeat_active&.make_false
-      heartbeat_task&.cancel
-      listener&.stop
-      cleanup_old_sse_events(session) if session
-      sse&.close
-      begin
-        response.stream&.close
-      rescue StandardError
-        nil
-      end
+      # MCP Streamable HTTP spec allows servers to return 405 if they don't support SSE.
+      # ActionMCP uses Tasks for async operations instead of SSE streaming.
+      head :method_not_allowed
     end
 
     # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
@@ -211,15 +89,6 @@ module ActionMCP
 
       result = json_rpc_handler.call(jsonrpc_params)
       process_handler_results(result, session, session_initially_missing, is_initialize_request)
-    rescue ActionController::Live::ClientDisconnected, IOError => e
-      if ActionMCP.configuration.verbose_logging
-        Rails.logger.debug "Unified SSE (POST): Client disconnected during response: #{e.message}"
-      end
-      begin
-        response.stream&.close
-      rescue StandardError
-        nil
-      end
     rescue StandardError => e
       Rails.logger.error "Unified POST Error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       id = begin
@@ -319,28 +188,14 @@ module ActionMCP
       request.headers[MCP_SESSION_ID_HEADER].presence
     end
 
-    # Checks if the client's Accept header includes the required types.
-    def accepts_valid_content_types?
-      request.accepts.any? { |type| type.to_s == "application/json" } &&
-        request.accepts.any? { |type| type.to_s == "text/event-stream" }
-    end
-
-    # Checks if the Accept headers for POST are valid according to server preference.
+    # Checks if the Accept headers for POST are valid.
     def post_accept_headers_valid?
-      if ActionMCP.configuration.post_response_preference == :sse
-        accepts_valid_content_types?
-      else
-        request.accepts.any? { |type| type.to_s == "application/json" }
-      end
+      request.accepts.any? { |type| type.to_s == "application/json" }
     end
 
     # Returns the appropriate error message for POST Accept header validation.
     def post_accept_headers_error_message
-      if ActionMCP.configuration.post_response_preference == :sse
-        "Client must accept 'application/json' and 'text/event-stream'"
-      else
-        "Client must accept 'application/json'"
-      end
+      "Client must accept 'application/json'"
     end
 
     # Checks if the parsed body represents an 'initialize' request.
@@ -371,81 +226,17 @@ module ActionMCP
                   result
       end
 
-      # Determine response format
-      server_preference = ActionMCP.configuration.post_response_preference
-      use_sse = (server_preference == :sse)
       add_session_header = is_initialize_request && session_initially_missing && session.persisted?
-
-      if use_sse
-        render_sse_response(payload, session, add_session_header)
-      else
-        render_json_response(payload, session, add_session_header)
-      end
+      render_json_response(payload, session, add_session_header)
     end
 
-    # Renders the JSON-RPC response(s) as a direct JSON HTTP response.
+    # Renders the JSON-RPC response as a JSON HTTP response.
     def render_json_response(payload, session, add_session_header)
       response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
       # Add MCP-Protocol-Version header if session has been initialized
       response.headers["MCP-Protocol-Version"] = session.protocol_version if session&.initialized?
       response.headers["Content-Type"] = "application/json"
       render json: payload, status: :ok
-    end
-
-    # Renders the JSON-RPC response(s) as an SSE stream.
-    def render_sse_response(payload, session, add_session_header)
-      response.headers[MCP_SESSION_ID_HEADER] = session.id if add_session_header
-      # Add MCP-Protocol-Version header if session has been initialized
-      response.headers["MCP-Protocol-Version"] = session.protocol_version if session&.initialized?
-      response.headers["Content-Type"] = "text/event-stream"
-      response.headers["X-Accel-Buffering"] = "no"
-      response.headers["Cache-Control"] = "no-cache"
-      response.headers["Connection"] = "keep-alive"
-      sse = SSE.new(response.stream)
-      write_sse_event(sse, session, payload)
-    ensure
-      sse&.close
-      begin
-        response.stream&.close
-      rescue StandardError
-        nil
-      end
-      Rails.logger.debug "Unified SSE (POST): Response stream closed." if ActionMCP.configuration.verbose_logging
-    end
-
-    # Helper to write a JSON payload as an SSE event with a unique ID.
-    # Also stores the event for potential resumability.
-    def write_sse_event(sse, session, payload)
-      event_id = session.increment_sse_counter!
-      # Ensure we're always writing valid JSON strings
-      data = case payload
-      when String
-               payload
-      when Hash
-               MultiJson.dump(payload)
-      else
-               MultiJson.dump(payload.to_h)
-      end
-      # Use the SSE class's write method with proper options
-      # According to MCP spec, we need to send with event type "message"
-      sse.write(data, event: "message", id: event_id)
-
-      begin
-        session.store_sse_event(event_id, payload, session.max_stored_sse_events)
-      rescue StandardError => e
-        Rails.logger.error "Failed to store SSE event for resumability: #{e.message}"
-      end
-    end
-
-    # Helper to clean up old SSE events for a session
-    def cleanup_old_sse_events(session)
-      retention_period = session.sse_event_retention_period
-      count = session.cleanup_old_sse_events(retention_period)
-      if count.positive? && ActionMCP.configuration.verbose_logging
-        Rails.logger.debug "Cleaned up #{count} old SSE events for session: #{session.id}"
-      end
-    rescue StandardError => e
-      Rails.logger.error "Error cleaning up old SSE events: #{e.message}"
     end
 
     def format_tools_list(tools, session)

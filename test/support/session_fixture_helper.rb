@@ -14,8 +14,7 @@ module SessionFixtureHelper
       server_capabilities: fixture.server_capabilities,
       tool_registry: fixture.tool_registry,
       prompt_registry: fixture.prompt_registry,
-      resource_registry: fixture.resource_registry,
-      sse_event_counter: fixture.sse_event_counter
+      resource_registry: fixture.resource_registry
     }
   end
 end

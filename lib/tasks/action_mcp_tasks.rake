@@ -179,10 +179,7 @@ namespace :action_mcp do
 
     # Transport Configuration
     puts "\n\e[36mTransport Configuration:\e[0m"
-    puts "  SSE Heartbeat Interval: #{config.sse_heartbeat_interval}s"
-    puts "  Post Response Preference: #{config.post_response_preference}"
-    puts "  SSE Event Retention Period: #{config.sse_event_retention_period}"
-    puts "  Max Stored SSE Events: #{config.max_stored_sse_events}"
+    puts "  Protocol Version: #{config.protocol_version}"
 
     # Pub/Sub Adapter
     puts "\n\e[36mPub/Sub Adapter:\e[0m"
@@ -330,37 +327,6 @@ namespace :action_mcp do
       end
     rescue StandardError => e
       puts "  Error accessing message data: #{e.message}"
-    end
-
-    # SSE Event Statistics (if table exists)
-    puts "\n\e[36mSSE Event Statistics:\e[0m"
-
-    begin
-      if ActionMCP::ApplicationRecord.connection.table_exists?("action_mcp_sse_events")
-        total_events = ActionMCP::Session::SSEEvent.count
-        puts "  Total SSE Events: #{total_events}"
-
-        if total_events.positive?
-          # Recent events
-          recent_events = ActionMCP::Session::SSEEvent.where("created_at > ?", 1.hour.ago).count
-          puts "  SSE Events (Last Hour): #{recent_events}"
-
-          # Events by session
-          events_by_session = ActionMCP::Session::SSEEvent.joins(:session)
-                                                          .group("action_mcp_sessions.id")
-                                                          .count
-                                                          .sort_by { |_session_id, count| -count }
-                                                          .first(5)
-          puts "  Top Sessions by SSE Events:"
-          events_by_session.each do |session_id, count|
-            puts "    #{session_id}: #{count} events"
-          end
-        end
-      else
-        puts "  SSE Events table not found"
-      end
-    rescue StandardError => e
-      puts "  Error accessing SSE event data: #{e.message}"
     end
 
     # Storage Information
