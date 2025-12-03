@@ -17,9 +17,6 @@ module ActionMCP
 
         # Filter out repetitive MCP notifications
         return if FILTERED_METHODS.any? { |method| message.include?(method) }
-
-        # Filter out MCP protocol version debug messages
-        return if message.include?("MCP-Protocol-Version header validation passed")
       end
 
       super

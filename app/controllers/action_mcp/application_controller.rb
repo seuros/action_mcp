@@ -298,7 +298,6 @@ module ActionMCP
         end
       end
 
-      ActionMCP.logger.debug "MCP-Protocol-Version header validation passed: #{header_version}"
       true
     end
 
