@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.100.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.90.0...action_mcp/v0.100.0) (2025-12-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* Servers must now use HTTP polling for async results instead of SSE push notifications.
+
+### Features
+
+* remove SSE support and implement HTTP Streamable transport ([#164](https://github.com/seuros/action_mcp/issues/164)) ([50d8b4c](https://github.com/seuros/action_mcp/commit/50d8b4cde7474f66602d16fb7f6238fa6db2aa7a))
+
+
+### Bug Fixes
+
+* clear the debug message. ([97f0509](https://github.com/seuros/action_mcp/commit/97f05091d604d8623fcbd4e7dd436c5a8a1b59fe))
+* remove debug, they are noisy in dev ([fef019e](https://github.com/seuros/action_mcp/commit/fef019e1d41d5906a5dbdf6511a89ff4821309f6))
+
 ## [0.90.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.83.4...action_mcp/v0.90.0) (2025-11-26)
 
 
