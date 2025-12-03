@@ -214,9 +214,6 @@ module ActionMCP
       capabilities = {}
       profile = @profiles[active_profile]
 
-      Rails.logger.debug "[ActionMCP] Generating capabilities for profile: #{active_profile}"
-      Rails.logger.debug "[ActionMCP] Profile config: #{profile.inspect}"
-
       # Check profile configuration instead of registry contents
       # If profile includes tools (either "all" or specific tools), advertise tools capability
       capabilities[:tools] = { listChanged: @list_changed } if profile && profile[:tools]&.any?
