@@ -30,12 +30,7 @@ module ActionMCP
                   # --- Authentication Options ---
                   :authentication_methods,
                   # --- Transport Options ---
-                  :sse_heartbeat_interval,
-                  :post_response_preference, # :json or :sse
                   :protocol_version,
-                  # --- SSE Resumability Options ---
-                  :sse_event_retention_period,
-                  :max_stored_sse_events,
                   # --- Gateway Options ---
                   :gateway_class,
                   # --- Session Store Options ---
@@ -67,18 +62,12 @@ module ActionMCP
       # Authentication defaults - empty means all configured identifiers will be tried
       @authentication_methods = []
 
-      @sse_heartbeat_interval = 30
-      @post_response_preference = :json
       @protocol_version = "2025-06-18"  # Default to stable version for backwards compatibility
 
       # Tasks defaults (MCP 2025-11-25)
       @tasks_enabled = false
       @tasks_list_enabled = true
       @tasks_cancel_enabled = true
-
-      # Resumability defaults
-      @sse_event_retention_period = 15.minutes
-      @max_stored_sse_events = 100
 
       # Gateway - resolved lazily to account for Zeitwerk autoloading
       @gateway_class_name = nil

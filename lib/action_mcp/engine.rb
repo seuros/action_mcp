@@ -10,7 +10,6 @@ module ActionMCP
     isolate_namespace ActionMCP
 
     ActiveSupport::Inflector.inflections(:en) do |inflect|
-      inflect.acronym "SSE"
       inflect.acronym "MCP"
     end
 

@@ -25,7 +25,6 @@ Zeitwerk::Loader.for_gem.tap do |loader|
   )
 
   loader.inflector.inflect("action_mcp" => "ActionMCP")
-  loader.inflector.inflect("sse_listener" => "SSEListener")
 end.setup
 
 module ActionMCP

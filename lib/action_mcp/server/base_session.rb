@@ -5,7 +5,7 @@ module ActionMCP
     # Base session object that mimics ActiveRecord Session with common functionality
     class BaseSession
       attr_accessor :id, :status, :initialized, :role, :messages_count,
-                    :sse_event_counter, :protocol_version, :client_info,
+                    :protocol_version, :client_info,
                     :client_capabilities, :server_info, :server_capabilities,
                     :tool_registry, :prompt_registry, :resource_registry,
                     :created_at, :updated_at, :ended_at, :last_event_id,
@@ -16,8 +16,6 @@ module ActionMCP
         @messages = Concurrent::Array.new
         @subscriptions = Concurrent::Array.new
         @resources = Concurrent::Array.new
-        @sse_events = Concurrent::Array.new
-        @sse_counter = Concurrent::AtomicFixnum.new(0)
         @message_counter = Concurrent::AtomicFixnum.new(0)
         @new_record = true
 
@@ -117,47 +115,6 @@ module ActionMCP
 
       def resources
         ResourceCollection.new(@resources)
-      end
-
-      def sse_events
-        SSEEventCollection.new(@sse_events)
-      end
-
-      # SSE event management
-      def increment_sse_counter!
-        new_value = @sse_counter.increment
-        self.sse_event_counter = new_value
-        save
-        new_value
-      end
-
-      def store_sse_event(event_id, data, max_events = nil)
-        max_events ||= max_stored_sse_events
-        event = { event_id: event_id, data: data, created_at: Time.current }
-        @sse_events << event
-
-        @sse_events.shift while @sse_events.size > max_events
-
-        event
-      end
-
-      def get_sse_events_after(last_event_id, limit = 50)
-        @sse_events.select { |e| e[:event_id] > last_event_id }.first(limit)
-      end
-
-      def cleanup_old_sse_events(max_age = 15.minutes)
-        cutoff_time = Time.current - max_age
-        original_size = @sse_events.size
-        @sse_events.delete_if { |e| e[:created_at] < cutoff_time }
-        original_size - @sse_events.size
-      end
-
-      def max_stored_sse_events
-        ActionMCP.configuration.max_stored_sse_events || 100
-      end
-
-      def sse_event_retention_period
-        ActionMCP.configuration.sse_event_retention_period || 15.minutes
       end
 
       # Adapter methods
@@ -417,33 +374,6 @@ module ActionMCP
       end
 
       class ResourceCollection < Array
-      end
-
-      class SSEEventCollection < Array
-        def create!(attributes)
-          self << attributes
-          attributes
-        end
-
-        def count
-          size
-        end
-
-        def where(_condition, value)
-          select { |e| e[:event_id] > value }
-        end
-
-        def order(field)
-          sort_by { |e| e[field.is_a?(Hash) ? field.keys.first : field] }
-        end
-
-        def limit(n)
-          first(n)
-        end
-
-        def delete_all
-          clear
-        end
       end
     end
   end

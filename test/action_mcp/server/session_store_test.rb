@@ -122,28 +122,6 @@ module ActionMCP
         assert_equal 2, session.messages_count
       end
 
-      test "memory session handles SSE events" do
-        session = @volatile_store.create_session("test-id")
-
-        # Test increment counter
-        count1 = session.increment_sse_counter!
-        count2 = session.increment_sse_counter!
-        assert_equal 1, count1
-        assert_equal 2, count2
-
-        # Test store event
-        session.store_sse_event(1, { data: "test" })
-        session.store_sse_event(2, { data: "test2" })
-
-        # Test get events after
-        events = session.get_sse_events_after(0)
-        assert_equal 2, events.size
-
-        events = session.get_sse_events_after(1)
-        assert_equal 1, events.size
-        assert_equal 2, events.first[:event_id]
-      end
-
       test "memory session handles subscriptions" do
         session = @volatile_store.create_session("test-id")
 

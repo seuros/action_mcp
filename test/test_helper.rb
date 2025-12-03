@@ -56,19 +56,6 @@ class MockOrder
   end
 end
 
-# Helper to read only the first SSE event from a streamed response in tests.
-def read_first_sse_event(response)
-  buffer = +""
-  # Rails test response.body is an IO-like object for streamed responses
-  while (chunk = response.body.readpartial(1024))
-    buffer << chunk
-    break if buffer.include?("\n\n") # SSE events end with double newline
-  end
-  buffer
-rescue EOFError
-  buffer
-end
-
 class MockProduct
   def self.find_by(id:)
     new(id: id) if id.to_i.positive?
