@@ -25,7 +25,6 @@ module ActionMCP
   end
 
   class ApplicationControllerJSONTest < ApplicationControllerTestBase
-
     test "JSON response works correctly" do
       session = create_initialized_session
       session_id = session.id

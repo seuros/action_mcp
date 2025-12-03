@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Sse < ActiveRecord::Migration[8.1]
+class RemoveSseSupport < ActiveRecord::Migration[8.1]
   def up
     # Drop SSE events table
     drop_table :action_mcp_sse_events, if_exists: true
@@ -25,7 +25,7 @@ class Sse < ActiveRecord::Migration[8.1]
       end
 
       add_index :action_mcp_sse_events, :created_at
-      add_index :action_mcp_sse_events, [:session_id, :event_id], unique: true
+      add_index :action_mcp_sse_events, [ :session_id, :event_id ], unique: true
     end
   end
 end
