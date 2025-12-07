@@ -127,12 +127,12 @@ module ActionMCP
     end
 
     # Define an object property
-    # @param name [Symbol] Object property name
+    # @param name [Symbol, nil] Object property name. If nil, returns schema directly (for array items)
     # @param required [Boolean] Whether the object is required
     # @param description [String] Property description
     # @param additional_properties [Boolean, Hash] Whether to allow additional properties
     # @param block [Proc] Block defining object properties
-    def object(name, required: false, description: nil, additional_properties: nil, &block)
+    def object(name = nil, required: false, description: nil, additional_properties: nil, &block)
       raise ArgumentError, "Object definition requires a block" unless block_given?
 
       # Create nested builder for object properties
@@ -149,10 +149,14 @@ module ActionMCP
       # Add additionalProperties if specified
       add_additional_properties_to_schema(schema, additional_properties)
 
-      @properties[name.to_s] = schema
-      @required << name.to_s if required
-
-      name.to_s
+      if name
+        @properties[name.to_s] = schema
+        @required << name.to_s if required
+        name.to_s
+      else
+        # Return schema directly for use in array items
+        schema
+      end
     end
 
     # Set additionalProperties for the root schema

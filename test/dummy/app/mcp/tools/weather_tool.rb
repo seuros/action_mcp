@@ -70,23 +70,27 @@ class WeatherTool < ApplicationMCPTool
     }
 
     # Add forecast if requested
+    # Data structure must match schema: `object :day do` requires `day:` wrapper
     if include_forecast
       weather_data[:forecast] = [
         {
-          date: Date.current.to_s,
-          high: units == "fahrenheit" ? 75 : 24,
-          low: units == "fahrenheit" ? 68 : 20,
-          condition: "Sunny",
-          precipitation: 0
+          day: {
+            date: Date.current.to_s,
+            high: units == "fahrenheit" ? 75 : 24,
+            low: units == "fahrenheit" ? 68 : 20,
+            condition: "Sunny",
+            precipitation: 0
+          }
         },
         {
-          date: (Date.current + 1).to_s,
-          high: units == "fahrenheit" ? 73 : 23,
-          low: units == "fahrenheit" ? 66 : 19,
-          condition: "Light rain",
-          precipitation: 2.5
+          day: {
+            date: (Date.current + 1).to_s,
+            high: units == "fahrenheit" ? 73 : 23,
+            low: units == "fahrenheit" ? 66 : 19,
+            condition: "Light rain",
+            precipitation: 2.5
+          }
         }
-        # ... more forecast days
       ]
 
       render text: "Including 5-day forecast"

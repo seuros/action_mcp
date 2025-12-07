@@ -360,6 +360,50 @@ end
 
 **Key benefit:** LLMs can reliably extract specific data from your tool's response instead of parsing free-form text.
 
+### Schema-Data Alignment (MCP Compliance)
+
+Per MCP specification, servers **MUST** provide structured results that conform to the declared `output_schema`. Your data structure must exactly match your schema declaration.
+
+**Named objects in arrays create wrappers:**
+
+```ruby
+output_schema do
+  array :items do
+    object :entry do        # Named object = items have "entry" wrapper
+      property :name, type: "string"
+      property :value, type: "number"
+    end
+  end
+end
+
+def perform
+  # Data MUST include the "entry" wrapper to match schema
+  render structured: {
+    items: [
+      { entry: { name: "foo", value: 42 } }
+    ]
+  }
+end
+```
+
+**Enable validation to catch mismatches:**
+
+ActionMCP can validate structured content against your schema. Add `json_schemer` to your Gemfile:
+
+```ruby
+# Gemfile
+gem 'json_schemer', '~> 2.4'
+```
+
+Then enable validation:
+
+```ruby
+# config/environments/development.rb
+config.action_mcp.validate_structured_content = true
+```
+
+When enabled, `render structured:` will raise `ActionMCP::StructuredContentValidationError` if data doesn't match schema.
+
 ### Input vs Output Schema Differences
 
 **Important distinction:**

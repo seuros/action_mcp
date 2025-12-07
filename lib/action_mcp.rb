@@ -31,6 +31,9 @@ module ActionMCP
   require_relative "action_mcp/version"
   require_relative "action_mcp/client"
 
+  # Error raised when structured content doesn't match the declared output_schema
+  class StructuredContentValidationError < StandardError; end
+
   # Protocol version constants
   SUPPORTED_VERSIONS = [
     "2025-11-25", # The Task Master - Tasks, icons, tool naming, polling SSE

@@ -34,5 +34,5 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Development dependencies
-  spec.add_development_dependency 'json_schemer', '~> 2.0'
+  spec.add_development_dependency 'json_schemer', '>= 2.4'
 end
