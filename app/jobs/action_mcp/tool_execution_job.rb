@@ -27,7 +27,7 @@ module ActionMCP
       @session = step(:validate_session, @task)
       return unless @session
 
-      @tool = step(:prepare_tool, @session, tool_name, arguments)
+      @tool = step(:prepare_tool, @session, tool_name, arguments, @task)
       return unless @tool
 
       step(:execute_tool) do
@@ -60,7 +60,7 @@ module ActionMCP
       session
     end
 
-    def prepare_tool(session, tool_name, arguments)
+    def prepare_tool(session, tool_name, arguments, task)
       tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
       unless tool_class
         @task.update(status_message: "Tool '#{tool_name}' not found")
@@ -76,6 +76,8 @@ module ActionMCP
           params: @task.request_params
         }
       })
+      # Enable report_progress! inside the tool during task-augmented runs
+      tool.instance_variable_set(:@_task, task)
 
       tool
     end

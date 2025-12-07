@@ -219,6 +219,111 @@ sum_tool = CalculateSumTool.new(a: 5, b: 10)
 result = sum_tool.call
 ```
 
+#### Structured output (output_schema)
+
+Advertise a JSON Schema for your tool's structuredContent and return machine-validated results alongside any text output.
+
+```ruby
+class PriceQuoteTool < ApplicationMCPTool
+  tool_name "price_quote"
+  description "Return a structured price quote"
+
+  property :sku, type: "string", description: "SKU to price", required: true
+
+  output_schema do
+    string :sku, required: true, description: "SKU that was priced"
+    number :price_cents, required: true, description: "Total price in cents"
+    object :meta do
+      string :currency, required: true, enum: %w[USD EUR GBP]
+      boolean :cached, default: false
+    end
+  end
+
+  def perform
+    price_cents = lookup_price_cents(sku) # Implement your lookup
+
+    render structured: { sku: sku,
+                         price_cents: price_cents,
+                         meta: { currency: "USD", cached: false } }
+  end
+end
+```
+
+The schema is included in the tool definition, and the `structured` payload is emitted as `structuredContent` in the response while remaining compatible with text/audio/image renders.
+
+#### Returning resource links from a tool
+
+When you want to hand back a URI instead of embedding the payload, use the built-in `render_resource_link`, which produces the MCP `resource_link` content type.
+
+```ruby
+class ReportLinkTool < ApplicationMCPTool
+  tool_name "report_link"
+  description "Return a downloadable report link"
+
+  property :report_id, type: "string", required: true
+
+  def perform
+    render_resource_link(
+      uri: "reports://#{report_id}.json",
+      name: "Report #{report_id}",
+      description: "Downloadable JSON for report #{report_id}",
+      mime_type: "application/json"
+    )
+  end
+end
+```
+
+Clients can resolve the URI with a separate `resources/read` call, keeping tool responses lightweight while still discoverable.
+
+#### Task-augmented tools (async execution with progress)
+
+Use MCP Tasks when work might take seconds/minutes. Advertise task support with `task_required!` (or `task_optional!`) and let callers opt in by sending `_meta.task` on `tools/call`. While running as a task, you can emit progress updates with `report_progress!`.
+
+```ruby
+class BatchIndexTool < ApplicationMCPTool
+  tool_name "batch_index"
+  description "Index many items asynchronously with progress updates"
+
+  task_required! # advertise that this tool is intended to run as a task
+  property :items, type: "array_string", description: "Items to index", required: true
+
+  def perform
+    total = items.length
+    items.each_with_index do |item, idx|
+      index_item(item) # your indexing logic
+
+      percent = ((idx + 1) * 100.0 / total).round
+      report_progress!(percent: percent, message: "Indexed #{idx + 1}/#{total}")
+    end
+
+    render(text: "Indexed #{total} items")
+  end
+
+  private
+
+  def index_item(item)
+    # Implement your indexing logic here
+  end
+end
+```
+
+Call it as a task from a client by adding `_meta.task` (creates a Task record and runs the tool via `ToolExecutionJob`):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "batch_index",
+    "arguments": { "items": ["a", "b", "c"] },
+    "_meta": { "task": { "ttl": 120000, "pollInterval": 2000 } }
+  }
+}
+```
+
+Poll task status with `tasks/get` or fetch the result when finished with `tasks/result`. Use `tasks/cancel` to stop non-terminal tasks.
+
 ### ActionMCP::ResourceTemplate
 
 `ActionMCP::ResourceTemplate` facilitates the creation of URI templates for dynamic resources that LLMs can access.
@@ -311,6 +416,10 @@ ActionMCP provides comprehensive documentation across multiple specialized guide
   - Transport configuration and connection handling
   - Tool, prompt, and resource collections
   - Production deployment patterns
+- **[🔐 GATEWAY.md](GATEWAY.md)** - Authentication gateway guide
+  - Implementing `ApplicationGateway`
+  - Identifier handling via `ActionMCP::Current`
+  - Auth patterns, error handling, and hardening tips
 
 ### Protocol & Technical Details
 - **[🚀 The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md)** - Protocol versions and migration
