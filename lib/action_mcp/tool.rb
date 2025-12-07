@@ -490,6 +490,9 @@ module ActionMCP
     # Override render to collect Content objects and support structured content
     def render(structured: nil, **args)
       if structured
+        # Validate structured content against output_schema if enabled
+        validate_structured_content!(structured) if self.class._output_schema
+
         # Render structured content
         set_structured_content(structured)
         structured
@@ -551,6 +554,42 @@ module ActionMCP
       return unless @response
 
       @response.set_structured_content(content)
+    end
+
+    # Validates structured content against the declared output_schema
+    # Only runs if validate_structured_content is enabled in configuration
+    # @param content [Hash] The structured content to validate
+    # @raise [StructuredContentValidationError] If content doesn't match schema
+    def validate_structured_content!(content)
+      return unless ActionMCP.configuration.validate_structured_content
+
+      schema = self.class._output_schema
+      return unless schema.present?
+
+      # Lazy load json_schemer - only required if validation is enabled
+      gem "json_schemer", ">= 2.4"
+      require "json_schemer"
+
+      schemer = JSONSchemer.schema(schema.deep_stringify_keys)
+      errors = schemer.validate(deep_stringify_content(content)).to_a
+
+      return if errors.empty?
+
+      error_messages = errors.map { |e| e["error"] }.join(", ")
+      raise ActionMCP::StructuredContentValidationError,
+            "Structured content does not match output_schema: #{error_messages}"
+    end
+
+    # Deep stringify keys for validation (handles symbols and nested structures)
+    def deep_stringify_content(content)
+      case content
+      when Hash
+        content.transform_keys(&:to_s).transform_values { |v| deep_stringify_content(v) }
+      when Array
+        content.map { |v| deep_stringify_content(v) }
+      else
+        content
+      end
     end
 
     private

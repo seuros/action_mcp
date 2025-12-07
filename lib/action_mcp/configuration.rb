@@ -47,7 +47,9 @@ module ActionMCP
                   # --- Tasks Options (MCP 2025-11-25) ---
                   :tasks_enabled,
                   :tasks_list_enabled,
-                  :tasks_cancel_enabled
+                  :tasks_cancel_enabled,
+                  # --- Schema Validation Options ---
+                  :validate_structured_content
 
     def initialize
       @logging_enabled = false
@@ -68,6 +70,9 @@ module ActionMCP
       @tasks_enabled = false
       @tasks_list_enabled = true
       @tasks_cancel_enabled = true
+
+      # Schema validation - disabled by default for backward compatibility
+      @validate_structured_content = false
 
       # Gateway - resolved lazily to account for Zeitwerk autoloading
       @gateway_class_name = nil
