@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.101.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.100.1...action_mcp/v0.101.0) (2025-12-07)
+
+
+### Features
+
+* add structured content validation against output_schema ([#166](https://github.com/seuros/action_mcp/issues/166)) ([dbb18f2](https://github.com/seuros/action_mcp/commit/dbb18f29a41f15ffd64045c2584d213e1e6583c7))
+
 ## [0.100.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.100.0...action_mcp/v0.100.1) (2025-12-07)
 
 
