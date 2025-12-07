@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.100.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.100.0...action_mcp/v0.100.1) (2025-12-07)
+
+
+### Bug Fixes
+
+* tool execution fix and documention ([b0c2bef](https://github.com/seuros/action_mcp/commit/b0c2befef0a4a169f575aa2470a712ba82b8686e))
+
 ## [0.100.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.90.0...action_mcp/v0.100.0) (2025-12-03)
 
 
