@@ -61,24 +61,24 @@ module ActionMCP
 
         # Without optional text or blob
         resource = Resource.new(uri, mime_type)
-        expected = { type: "resource", uri: uri, mimeType: mime_type }
+        expected = { type: "resource", resource: { uri: uri, mimeType: mime_type } }
         assert_equal expected, resource.to_h
 
         # With text only
         text_content = "Optional text"
         resource_with_text = Resource.new(uri, mime_type, text: text_content)
-        expected_with_text = { type: "resource", uri: uri, mimeType: mime_type, text: text_content }
+        expected_with_text = { type: "resource", resource: { uri: uri, mimeType: mime_type, text: text_content } }
         assert_equal expected_with_text, resource_with_text.to_h
 
         # With blob only
         blob_content = "base64encodedblob"
         resource_with_blob = Resource.new(uri, mime_type, blob: blob_content)
-        expected_with_blob = { type: "resource", uri: uri, mimeType: mime_type, blob: blob_content }
+        expected_with_blob = { type: "resource", resource: { uri: uri, mimeType: mime_type, blob: blob_content } }
         assert_equal expected_with_blob, resource_with_blob.to_h
 
         # With both text and blob
         resource_full = Resource.new(uri, mime_type, text: text_content, blob: blob_content)
-        expected_full = { type: "resource", uri: uri, mimeType: mime_type, text: text_content, blob: blob_content }
+        expected_full = { type: "resource", resource: { uri: uri, mimeType: mime_type, text: text_content, blob: blob_content } }
         assert_equal expected_full, resource_full.to_h
       end
 
@@ -87,7 +87,7 @@ module ActionMCP
         mime_type = "application/pdf"
         annotations = { "audience" => [ "user" ], "priority" => 1 }
         resource = Resource.new(uri, mime_type, annotations: annotations)
-        expected = { type: "resource", uri: uri, mimeType: mime_type, annotations: annotations }
+        expected = { type: "resource", resource: { uri: uri, mimeType: mime_type, annotations: annotations } }
         assert_equal annotations, resource.annotations
         assert_equal expected, resource.to_h
       end

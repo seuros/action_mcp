@@ -28,13 +28,16 @@ module ActionMCP
       end
 
       # Returns a hash representation of the resource content.
+      # Per MCP spec, embedded resources have type "resource" with a nested resource object.
       #
       # @return [Hash] The hash representation of the resource content.
       def to_h
-        resource_data = super.merge(uri: @uri, mimeType: @mime_type)
-        resource_data[:text] = @text if @text
-        resource_data[:blob] = @blob if @blob
-        resource_data
+        inner = { uri: @uri, mimeType: @mime_type }
+        inner[:text] = @text if @text
+        inner[:blob] = @blob if @blob
+        inner[:annotations] = @annotations if @annotations
+
+        { type: @type, resource: inner }
       end
     end
   end

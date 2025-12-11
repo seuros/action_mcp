@@ -50,14 +50,14 @@ module ActionMCP
 
       test "#to_h returns correct hash with uri and mime_type" do
         resource = Resource.new("gemfile://test", "text/plain", annotations: nil)
-        expected = { type: "resource", uri: "gemfile://test", mimeType: "text/plain" }
+        expected = { type: "resource", resource: { uri: "gemfile://test", mimeType: "text/plain" } }
 
         assert_equal expected, resource.to_h
       end
 
       test "#to_h includes text when present" do
         resource = Resource.new("gemfile://test", "text/plain", text: "sample text", annotations: nil)
-        expected = { type: "resource", uri: "gemfile://test", mimeType: "text/plain", text: "sample text" }
+        expected = { type: "resource", resource: { uri: "gemfile://test", mimeType: "text/plain", text: "sample text" } }
 
         assert_equal expected, resource.to_h
       end
@@ -65,7 +65,7 @@ module ActionMCP
       test "#to_h includes blob when present" do
         blob = Base64.strict_encode64("sample blob")
         resource = Resource.new("gemfile://test", "application/octet-stream", blob: blob, annotations: nil)
-        expected = { type: "resource", uri: "gemfile://test", mimeType: "application/octet-stream", blob: blob }
+        expected = { type: "resource", resource: { uri: "gemfile://test", mimeType: "application/octet-stream", blob: blob } }
 
         assert_equal expected, resource.to_h
       end
@@ -82,9 +82,11 @@ module ActionMCP
 
         expected = {
           type: "resource",
-          uri: "gemfile://test",
-          mimeType: "application/json",
-          text: gemfile_json
+          resource: {
+            uri: "gemfile://test",
+            mimeType: "application/json",
+            text: gemfile_json
+          }
         }
 
         assert_equal expected, resource.to_h
