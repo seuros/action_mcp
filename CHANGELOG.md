@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.102.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.101.0...action_mcp/v0.102.0) (2025-12-11)
+
+
+### Bug Fixes
+
+* embedded resource format per MCP spec ([#168](https://github.com/seuros/action_mcp/issues/168)) ([a838927](https://github.com/seuros/action_mcp/commit/a838927fb87714e1f89280a4b9948f6ba0cd266a))
+
 ## [0.101.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.100.1...action_mcp/v0.101.0) (2025-12-07)
 
 
