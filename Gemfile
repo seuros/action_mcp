@@ -15,7 +15,14 @@ gem "rubocop-rails-omakase", require: false
 # Start debugger with binding.b [https://github.com/ruby/debug]
 gem "debug", ">= 1.0.0"
 gem "rails_app_version"
-gem "railties", ENV.fetch("RAILS_VERSION", ">= 8.0.4")
+
+# Support testing against Rails edge/development branch
+if ENV["RAILS_VERSION"] == "dev"
+  gem "railties", github: "rails/rails", branch: "main"
+else
+  gem "railties", ENV.fetch("RAILS_VERSION", ">= 8.0.4")
+end
+
 gem "simplecov", require: false
 # Optional PubSub adapters - at least one is recommended for production
 gem "solid_cache"
