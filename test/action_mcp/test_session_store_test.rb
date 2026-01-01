@@ -19,14 +19,9 @@ module ActionMCP
 
       # Get the server's session store (will be created as TestSessionStore due to config override)
       @server_store = ActionMCP::Server.session_store
-      @client_store = Client::SessionStoreFactory.create(:test)
-
-      # Make them available for assertions
-      Thread.current[:test_client_session_store] = @client_store
     end
 
     def teardown
-      Thread.current[:test_client_session_store] = nil
       ActionMCP::Server.instance_variable_set(:@session_store, nil)
       ActionMCP::Server.instance_variable_set(:@session_store_type, nil)
 
@@ -59,64 +54,17 @@ module ActionMCP
       assert_session_operation_count 4
     end
 
-    test "client test store tracks session operations" do
-      # Save a session
-      @client_store.save_session("client-123", {
-                                   id: "client-123",
-                                   protocol_version: "2025-06-18"
-                                 })
-
-      # Load it
-      @client_store.load_session("client-123")
-
-      # Update it
-      @client_store.update_session("client-123", {
-                                     last_event_id: 42
-                                   })
-
-      # Delete it
-      @client_store.delete_session("client-123")
-
-      assert_client_session_saved "client-123"
-      assert_client_session_loaded "client-123"
-      assert_client_session_updated "client-123"
-      assert_client_session_deleted "client-123"
-
-      # update_session internally calls load, save, and then load again to return the updated data
-      # So we have: save, load, update (which does load + save + load), delete = 7 operations
-      assert_client_session_operation_count 7
-    end
-
-    test "client test store tracks session data" do
-      session_data = {
-        id: "data-test",
-        protocol_version: "2025-06-18",
-        client_info: { name: "TestClient" }
-      }
-
-      @client_store.save_session("data-test", session_data)
-
-      assert_client_session_data_includes "data-test", {
-        id: "data-test",
-        protocol_version: "2025-06-18"
-      }
-    end
-
     test "test stores can be reset" do
       # Perform some operations
       @server_store.create_session("reset-1")
       @server_store.create_session("reset-2")
-      @client_store.save_session("client-reset", { id: "client-reset" })
 
       assert_session_operation_count 2
-      assert_client_session_operation_count 1
 
       # Reset tracking
       @server_store.reset_tracking!
-      @client_store.reset_tracking!
 
       assert_session_operation_count 0
-      assert_client_session_operation_count 0
     end
 
     test "test store operation details are tracked" do

@@ -29,7 +29,6 @@ end.setup
 
 module ActionMCP
   require_relative "action_mcp/version"
-  require_relative "action_mcp/client"
 
   # Error raised when structured content doesn't match the declared output_schema
   class StructuredContentValidationError < StandardError; end
