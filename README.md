@@ -46,6 +46,14 @@ In short, ActionMCP helps you build an MCP server (the component that exposes ca
 
 > **Client connections:** The client part of ActionMCP is meant to connect to remote MCP servers only. Connecting to local processes (such as via STDIO) is not supported.
 
+## Requirements
+
+- **Ruby**: 3.4.8+ or 4.0.0+
+- **Rails**: 8.1.1+
+- **Database**: PostgreSQL, MySQL, or SQLite3
+
+ActionMCP is tested against Ruby 3.4.8 and 4.0.0 with Rails 8.1.1+.
+
 ## Installation
 
 To start using ActionMCP, add it to your project:
@@ -179,7 +187,7 @@ For tools that perform sensitive operations (file system access, database modifi
 class FileSystemTool < ApplicationMCPTool
   tool_name "read_file"
   description "Read contents of a file"
-  
+
   # Require explicit consent before execution
   requires_consent!
 
@@ -392,7 +400,7 @@ ActionMCP provides comprehensive documentation across multiple specialized guide
 - **[Installation & Configuration](README.md#installation)** - Initial setup, database migrations, and basic configuration
 - **[Authentication with Gateway](README.md#authentication-with-gateway)** - User authentication and authorization patterns
 
-### Component Development  
+### Component Development
 - **[📋 TOOLS.MD](TOOLS.MD)** - Complete guide to developing MCP tools
   - Generator usage and best practices
   - Property definitions, validation, and consent management
@@ -1042,7 +1050,7 @@ class MyTool < ApplicationMCPTool
       report_error("Clear error message for the LLM")
       return
     end
-    
+
     # Normal processing
     render(text: "Success message")
   end
