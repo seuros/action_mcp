@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.103.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.102.0...action_mcp/v0.103.0) (2026-01-01)
+
+
+### Features
+
+* Add Rails edge/dev testing support ([#173](https://github.com/seuros/action_mcp/issues/173)) ([9eefc16](https://github.com/seuros/action_mcp/commit/9eefc163a838c148981ead782029a72abc204720))
+
+
+### Bug Fixes
+
+* add Rails edge/dev testing support to CI ([#171](https://github.com/seuros/action_mcp/issues/171)) ([fa80f3b](https://github.com/seuros/action_mcp/commit/fa80f3b8b0043d6d107658602b403d3489564b30))
+
 ## [0.102.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.101.0...action_mcp/v0.102.0) (2025-12-11)
 
 
