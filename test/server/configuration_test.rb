@@ -113,6 +113,70 @@ module ActionMCP
 
         assert_equal({}, config.adapter_options("development"))
       end
+
+      def test_server_instructions_array_format
+        config_file = create_temp_config_file(
+          "development" => {
+            "adapter" => "simple",
+            "server_instructions" => [ "Always validate", "Be helpful" ]
+          }
+        )
+        @temp_files << config_file
+
+        config = Configuration.new(config_file.path)
+        dev_config = config.for_env("development")
+
+        assert_equal [ "Always validate", "Be helpful" ], dev_config["server_instructions"]
+      end
+
+      def test_server_instructions_environment_specific
+        config_file = create_temp_config_file(
+          "development" => {
+            "adapter" => "simple",
+            "server_instructions" => [ "Dev instruction" ]
+          },
+          "production" => {
+            "adapter" => "solid_cable",
+            "server_instructions" => [ "Prod instruction" ]
+          }
+        )
+        @temp_files << config_file
+
+        config = Configuration.new(config_file.path)
+
+        dev_config = config.for_env("development")
+        assert_equal [ "Dev instruction" ], dev_config["server_instructions"]
+
+        prod_config = config.for_env("production")
+        assert_equal [ "Prod instruction" ], prod_config["server_instructions"]
+      end
+
+      def test_server_instructions_empty_array
+        config_file = create_temp_config_file(
+          "development" => {
+            "adapter" => "simple",
+            "server_instructions" => []
+          }
+        )
+        @temp_files << config_file
+
+        config = Configuration.new(config_file.path)
+        dev_config = config.for_env("development")
+
+        assert_equal [], dev_config["server_instructions"]
+      end
+
+      def test_server_instructions_missing
+        config_file = create_temp_config_file(
+          "development" => { "adapter" => "simple" }
+        )
+        @temp_files << config_file
+
+        config = Configuration.new(config_file.path)
+        dev_config = config.for_env("development")
+
+        assert_nil dev_config["server_instructions"]
+      end
     end
   end
 end

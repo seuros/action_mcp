@@ -44,12 +44,12 @@ module ActionMCP
                   :max_queue,
                   :polling_interval,
                   :connects_to,
-                  # --- Tasks Options (MCP 2025-11-25) ---
-                  :tasks_enabled,
-                  :tasks_list_enabled,
-                  :tasks_cancel_enabled,
-                  # --- Schema Validation Options ---
-                  :validate_structured_content
+                   # --- Tasks Options (MCP 2025-11-25) ---
+                   :tasks_enabled,
+                   :tasks_list_enabled,
+                   :tasks_cancel_enabled,
+                   # --- Schema Validation Options ---
+                   :validate_structured_content
 
     def initialize
       @logging_enabled = false
@@ -74,6 +74,9 @@ module ActionMCP
       # Schema validation - disabled by default for backward compatibility
       @validate_structured_content = false
 
+      # Server instructions - empty by default
+      @server_instructions = []
+
       # Gateway - resolved lazily to account for Zeitwerk autoloading
       @gateway_class_name = nil
 
@@ -89,6 +92,30 @@ module ActionMCP
 
     def version
       @version || (has_rails_version ? Rails.application.version.to_s : "0.0.1")
+    end
+
+    # Server information (name and version only)
+    def server_info
+      {
+        name: name,
+        version: version
+      }
+    end
+
+    # Instructions for LLMs about the server's purpose (joined as string for MCP payload)
+    def instructions
+      return nil if server_instructions.nil? || server_instructions.empty?
+
+      server_instructions.join("\n")
+    end
+
+    # Custom getter/setter to ensure array elements are strings
+    def server_instructions
+      @server_instructions
+    end
+
+    def server_instructions=(value)
+      @server_instructions = parse_instructions(value)
     end
 
     def gateway_class
@@ -343,9 +370,14 @@ module ActionMCP
         @client_session_store_type = config["client_session_store_type"].to_sym
       end
 
-      return unless config["server_session_store_type"]
+      if config["server_session_store_type"]
+        @server_session_store_type = config["server_session_store_type"].to_sym
+      end
 
-      @server_session_store_type = config["server_session_store_type"].to_sym
+      # Extract server instructions
+      if config["server_instructions"]
+        @server_instructions = parse_instructions(config["server_instructions"])
+      end
     end
 
     def should_include_all?(type)
@@ -362,6 +394,10 @@ module ActionMCP
       true
     rescue LoadError
       false
+    end
+
+    def parse_instructions(instructions)
+      Array(instructions).map(&:to_s)
     end
 
     def ensure_mcp_components_loaded

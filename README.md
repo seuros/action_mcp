@@ -470,6 +470,12 @@ module Tron
     config.action_mcp.version = "1.2.3"                               # defaults to "0.0.1"
     config.action_mcp.logging_enabled = true                          # defaults to true
     config.action_mcp.logging_level = :info                           # defaults to :info, can be :debug, :info, :warn, :error, :fatal
+
+    # Server instructions - helps LLMs understand the server's purpose
+    config.action_mcp.server_instructions = [
+      "Use this server to access and control Tron system programs",
+      "Helpful for managing system processes and user data"
+    ]
   end
 end
 ```
@@ -520,6 +526,35 @@ production:
   max_threads: 20     # Maximum number of threads in the pool
   max_queue: 500      # Maximum number of tasks that can be queued
 ```
+
+### Server Instructions
+
+Server instructions help LLMs understand **what your server is for** and **when to use it**. They describe the server's purpose and goal, not technical details like rate limits or authentication (tools are self-documented via their own descriptions).
+
+Instructions are returned at the top level of the MCP initialization response.
+
+You can configure server instructions in your `config/mcp.yml` file:
+
+```yaml
+shared:
+  # Describe the server's purpose - helps LLMs know when to use this server
+  server_instructions:
+    - "Use this server to manage Fizzy project tickets and workflows"
+    - "Helpful for tracking bugs, features, and sprint planning"
+
+development:
+  # Development-specific purpose description
+  server_instructions:
+    - "Development server for testing Fizzy integration"
+    - "Use for prototyping ticket management workflows"
+
+production:
+  # Production-specific purpose description
+  server_instructions:
+    - "Production Fizzy server for managing live project data"
+```
+
+Instructions are sent as a single string (joined by newlines) at the top level of the initialization response, helping LLMs understand your server's purpose.
 
 #### SolidMCP (Database-backed, Recommended)
 

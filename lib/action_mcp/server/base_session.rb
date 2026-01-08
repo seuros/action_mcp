@@ -128,11 +128,15 @@ module ActionMCP
 
       # Capability methods
       def server_capabilities_payload
-        {
+        payload = {
           protocolVersion: ActionMCP::LATEST_VERSION,
           serverInfo: server_info,
           capabilities: server_capabilities
         }
+        # Add instructions at top level if configured
+        instructions = ActionMCP.configuration.instructions
+        payload[:instructions] = instructions if instructions
+        payload
       end
 
       def set_protocol_version(version)

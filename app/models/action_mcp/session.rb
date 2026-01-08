@@ -140,11 +140,15 @@ module ActionMCP
     end
 
     def server_capabilities_payload
-      {
+      payload = {
         protocolVersion: protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION,
         serverInfo: server_info,
         capabilities: server_capabilities
       }
+      # Add instructions at top level if configured
+      instructions = ActionMCP.configuration.instructions
+      payload[:instructions] = instructions if instructions
+      payload
     end
 
     def server_capabilities
@@ -359,10 +363,7 @@ module ActionMCP
 
     # This will keep the version and name of the server when this session was created
     def set_server_info
-      self.server_info = {
-        name: ActionMCP.configuration.name,
-        version: ActionMCP.configuration.version
-      }
+      self.server_info = ActionMCP.configuration.server_info
     end
 
     # This can be overridden by the application in future versions
