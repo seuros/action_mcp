@@ -353,4 +353,73 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     refute capabilities[:prompts], "Empty prompts array should not generate capability"
     refute capabilities[:resources], "Empty resources array should not generate capability"
   end
+
+  test "loads server instructions from YAML configuration" do
+    config_content = {
+      "shared" => {
+        "authentication" => [ "none" ],
+        "server_instructions" => [ "Always validate input", "Be helpful and concise" ]
+      },
+      "development" => {
+        "profile" => "primary",
+        "adapter" => "simple"
+      }
+    }
+
+    File.write(@original_config_path, YAML.dump(config_content))
+
+    # Force configuration reload
+    ActionMCP.instance_variable_set(:@configuration, nil)
+    config = ActionMCP.configuration
+    config.load_profiles
+
+    assert_equal [ "Always validate input", "Be helpful and concise" ], config.server_instructions
+  end
+
+  test "instructions returns joined string from server_instructions" do
+    config_content = {
+      "shared" => {
+        "authentication" => [ "none" ],
+        "server_instructions" => [ "Use this server for testing", "Helpful for development" ]
+      },
+      "development" => {
+        "profile" => "primary",
+        "adapter" => "simple"
+      }
+    }
+
+    File.write(@original_config_path, YAML.dump(config_content))
+
+    # Force configuration reload
+    ActionMCP.instance_variable_set(:@configuration, nil)
+    config = ActionMCP.configuration
+    config.load_profiles
+
+    assert_equal "Use this server for testing\nHelpful for development", config.instructions
+    # server_info should not include instructions
+    refute config.server_info.key?(:instructions)
+  end
+
+  test "instructions returns nil when server_instructions is empty" do
+    config_content = {
+      "shared" => {
+        "authentication" => [ "none" ]
+      },
+      "development" => {
+        "profile" => "primary",
+        "adapter" => "simple"
+      }
+    }
+
+    File.write(@original_config_path, YAML.dump(config_content))
+
+    # Force configuration reload
+    ActionMCP.instance_variable_set(:@configuration, nil)
+    config = ActionMCP.configuration
+    config.load_profiles
+
+    assert_nil config.instructions
+    assert config.name
+    assert config.version
+  end
 end

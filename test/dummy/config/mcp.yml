@@ -17,6 +17,11 @@ shared:
   # server_session_store_type: active_record
 
 
+  # Server instructions - helps LLMs understand the server's purpose
+  server_instructions:
+    - "Use this server to test ActionMCP tools, prompts, and resources"
+    - "Helpful for development and integration testing of MCP capabilities"
+
   # MCP capability profiles
   profiles:
     primary:
@@ -52,6 +57,11 @@ development:
 
   # Disable verbose logging to reduce noise
   verbose_logging: false
+
+  # Development-specific purpose description
+  server_instructions:
+    - "Development server for testing ActionMCP integration"
+    - "Use for experimenting with MCP tools and prompts"
 
   # Use solid_mcp pub/sub adapter for development
   adapter: solid_mcp

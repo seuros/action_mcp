@@ -72,5 +72,33 @@ module ActionMCP
       session.revoke_consent("non_existent")
       assert session.consent_granted_for?("tool1")
     end
+
+    test "server_capabilities_payload includes instructions at top level" do
+      # Set up configuration with instructions
+      ActionMCP.configuration.server_instructions = [ "Use this server for testing", "Helpful for development" ]
+
+      session = Session.create
+
+      # Get the actual payload
+      payload = session.server_capabilities_payload
+
+      # Verify instructions are at top level as joined string
+      assert_equal "Use this server for testing\nHelpful for development", payload[:instructions]
+      # serverInfo should not contain instructions
+      refute session.server_info.key?("instructions")
+    end
+
+    test "server_capabilities_payload omits instructions when not configured" do
+      # Ensure no instructions are configured
+      ActionMCP.configuration.server_instructions = []
+
+      session = Session.create
+
+      # Get the actual payload
+      payload = session.server_capabilities_payload
+
+      # Verify instructions are not present
+      refute payload.key?(:instructions)
+    end
   end
 end

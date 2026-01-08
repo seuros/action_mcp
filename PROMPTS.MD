@@ -92,7 +92,7 @@ class GreetingPrompt < ApplicationMCPPrompt
     # Or use render and it will be added as a user message
     render text: "The greeting should be in #{style} style."
   end
-  
+
   # After callback for logging or additional processing
   after_perform do |result|
     # Generated greeting for #{name} in #{style} style

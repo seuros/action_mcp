@@ -16,6 +16,11 @@ shared:
   # Server-specific session store type (falls back to session_store_type if not specified)
   # server_session_store_type: active_record
 
+  # Server instructions - helps LLMs understand the server's purpose
+  # Describe what the server is for, not technical details (tools are self-documented)
+  # server_instructions:
+  #   - "Use this server to manage project tickets and workflows"
+  #   - "Helpful for tracking bugs, features, and sprint planning"
 
   # MCP capability profiles
   profiles:
@@ -45,6 +50,11 @@ shared:
 development:
   # Use simple pub/sub adapter for development
   adapter: simple
+
+  # Development-specific purpose description
+  # server_instructions:
+  #   - "Development server for testing your MCP integration"
+  #   - "Use for prototyping and experimenting with tools"
 
   # Session store examples for development
   # Use volatile client sessions for faster development

@@ -9,10 +9,10 @@ This document explains the Gateway concept in ActionMCP, how it authenticates ca
 - Rejects the request with `ActionMCP::UnauthorizedError` if authentication fails.
 
 ## Lifecycle
-1) Request hits the MCP endpoint.  
-2) `ApplicationGateway#authenticate!` executes.  
-3) On success, it returns a hash whose keys match `identified_by` declarations.  
-4) Identifiers are stored on `ActionMCP::Current` and the session; tools/prompts/resources can read them via helper methods (`current_user`, etc.).  
+1) Request hits the MCP endpoint.
+2) `ApplicationGateway#authenticate!` executes.
+3) On success, it returns a hash whose keys match `identified_by` declarations.
+4) Identifiers are stored on `ActionMCP::Current` and the session; tools/prompts/resources can read them via helper methods (`current_user`, etc.).
 5) On failure, a JSON-RPC error (`-32001 Unauthorized`) is returned; no tool code runs.
 
 ## Implementing `ApplicationGateway`
@@ -57,21 +57,21 @@ end
 - **Session cookies:** Generally avoid—MCP traffic is not browser-oriented and runs best stateless.
 
 ## Authorization vs Authentication
-- Gateway authenticates and attaches identity.  
+- Gateway authenticates and attaches identity.
 - Authorization should stay in tools/prompts (e.g., `authorize! current_user, :action`), because permissions depend on the specific operation.
 
 ## Error Handling
-- Raise `ActionMCP::UnauthorizedError` for auth failures; include only user-safe messages.  
+- Raise `ActionMCP::UnauthorizedError` for auth failures; include only user-safe messages.
 - Avoid leaking reason details (e.g., “token expired”) unless you are certain they’re safe to expose.
 
 ## Testing Checklist
-- Missing token → unauthorized.  
-- Invalid token → unauthorized.  
-- Valid token → identifiers set (`ActionMCP::Current.user`).  
+- Missing token → unauthorized.
+- Invalid token → unauthorized.
+- Valid token → identifiers set (`ActionMCP::Current.user`).
 - Multi-tenant: ensure the correct org/tenant is bound.
 
 ## Production Hardening Tips
-- Keep `authenticate!` fast (DB lookups OK; no remote HTTP).  
-- Prefer short-lived tokens; rotate signing keys.  
-- Log auth failures at warn level without secrets.  
+- Keep `authenticate!` fast (DB lookups OK; no remote HTTP).
+- Prefer short-lived tokens; rotate signing keys.
+- Log auth failures at warn level without secrets.
 - Pair with `mcp_vanilla.ru` if web middleware interferes; Gateway still runs as usual.

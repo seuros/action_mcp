@@ -167,4 +167,64 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "protocol version defaults" do
     assert_equal "2025-06-18", @config.protocol_version
   end
+
+  # Server Instructions Tests
+  test "server_instructions defaults to empty array" do
+    assert_equal [], @config.server_instructions
+  end
+
+  test "server_instructions can be set via configuration" do
+    @config.server_instructions = [ "Always validate input", "Log all operations" ]
+    assert_equal [ "Always validate input", "Log all operations" ], @config.server_instructions
+  end
+
+  test "server_instructions accepts array format" do
+    instructions = [ "Instruction 1", "Instruction 2", "Instruction 3" ]
+    @config.server_instructions = instructions
+    assert_equal instructions, @config.server_instructions
+  end
+
+  test "server_instructions converts array elements to strings" do
+    @config.server_instructions = [ "Instruction 1", :instruction_2, 123 ]
+    assert_equal [ "Instruction 1", "instruction_2", "123" ], @config.server_instructions
+  end
+
+  test "server_info includes basic server information" do
+    @config.name = "Test Server"
+    @config.version = "1.2.3"
+
+    server_info = @config.server_info
+
+    assert_equal "Test Server", server_info[:name]
+    assert_equal "1.2.3", server_info[:version]
+  end
+
+  test "server_info only includes name and version" do
+    @config.server_instructions = [ "Always be helpful", "Validate all inputs" ]
+
+    server_info = @config.server_info
+
+    assert_equal 2, server_info.keys.length
+    assert server_info.key?(:name)
+    assert server_info.key?(:version)
+    refute server_info.key?(:instructions)
+  end
+
+  test "instructions returns joined string when present" do
+    @config.server_instructions = [ "Use this server for testing", "Helpful for development" ]
+
+    assert_equal "Use this server for testing\nHelpful for development", @config.instructions
+  end
+
+  test "instructions returns nil when empty" do
+    @config.server_instructions = []
+
+    assert_nil @config.instructions
+  end
+
+  test "instructions returns nil when server_instructions is nil" do
+    @config.server_instructions = nil
+
+    assert_nil @config.instructions
+  end
 end
