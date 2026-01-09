@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.104.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.103.0...action_mcp/v0.104.0) (2026-01-08)
+
+
+### Features
+
+* add server instructions for LLM guidance ([#174](https://github.com/seuros/action_mcp/issues/174)) ([d2fd158](https://github.com/seuros/action_mcp/commit/d2fd15816d9ebb4c3da2dee63ee8d0e5a94e2e57))
+
 ## [0.103.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.102.0...action_mcp/v0.103.0) (2026-01-01)
 
 
