@@ -44,12 +44,14 @@ module ActionMCP
                   :max_queue,
                   :polling_interval,
                   :connects_to,
-                   # --- Tasks Options (MCP 2025-11-25) ---
-                   :tasks_enabled,
-                   :tasks_list_enabled,
-                   :tasks_cancel_enabled,
-                   # --- Schema Validation Options ---
-                   :validate_structured_content
+                  # --- Tasks Options (MCP 2025-11-25) ---
+                  :tasks_enabled,
+                  :tasks_list_enabled,
+                  :tasks_cancel_enabled,
+                  # --- Schema Validation Options ---
+                  :validate_structured_content,
+                  # --- Allowed identity keys for gateway ---
+                  :allowed_identity_keys
 
     def initialize
       @logging_enabled = false
@@ -84,6 +86,11 @@ module ActionMCP
       @session_store_type = Rails.env.production? ? :active_record : :volatile
       @client_session_store_type = nil # defaults to session_store_type
       @server_session_store_type = nil # defaults to session_store_type
+
+      # Whitelist of allowed identity attribute names to prevent method shadowing
+      # and unauthorized attribute assignment. Extend this list if you use custom
+      # identifier names in your GatewayIdentifier implementations.
+      @allowed_identity_keys = %w[user api_key jwt bearer token account session].freeze
     end
 
     def name
@@ -116,6 +123,10 @@ module ActionMCP
 
     def server_instructions=(value)
       @server_instructions = parse_instructions(value)
+    end
+
+    def allowed_identity_keys=(value)
+      @allowed_identity_keys = Array(value).map(&:to_s).freeze
     end
 
     def gateway_class
