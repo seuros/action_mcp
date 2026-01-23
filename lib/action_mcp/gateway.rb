@@ -4,11 +4,6 @@ module ActionMCP
   class UnauthorizedError < StandardError; end
 
   class Gateway
-    # Whitelist of allowed identity attribute names to prevent method shadowing
-    # and unauthorized attribute assignment. Extend this list if you use custom
-    # identifier names in your GatewayIdentifier implementations.
-    ALLOWED_IDENTITY_KEYS = %w[user api_key jwt bearer token account session].freeze
-
     class << self
       # pluck in one or many GatewayIdentifier classes
       def identified_by(*klasses)
@@ -78,9 +73,9 @@ module ActionMCP
         name_str = name.to_s
 
         # Validate identity key against whitelist to prevent method shadowing
-        unless ALLOWED_IDENTITY_KEYS.include?(name_str)
+        unless allowed_identity_keys.include?(name_str)
           raise ArgumentError, "Invalid identity key: '#{name_str}'. " \
-                               "Allowed keys: #{ALLOWED_IDENTITY_KEYS.join(', ')}"
+                               "Allowed keys: #{allowed_identity_keys.join(', ')}"
         end
 
         # define accessor on the fly
@@ -113,6 +108,10 @@ module ActionMCP
     # @param identities [Hash] The authenticated identities from authenticate!
     def apply_profile_from_authentication(identities)
       # Default: do nothing. Override in subclass if you want profile switching.
+    end
+
+    def allowed_identity_keys
+      ActionMCP.configuration.allowed_identity_keys
     end
   end
 end

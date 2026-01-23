@@ -33,7 +33,7 @@ class ActionMCP::GatewaySecurityTest < ActiveSupport::TestCase
     gateway = ActionMCP::Gateway.new(@request)
 
     # Test all allowed keys
-    ActionMCP::Gateway::ALLOWED_IDENTITY_KEYS.each do |key|
+    ActionMCP.configuration.allowed_identity_keys.each do |key|
       assert_nothing_raised do
         gateway.send(:assign_identities, { key => "test_value" })
       end
@@ -75,7 +75,7 @@ class ActionMCP::GatewaySecurityTest < ActiveSupport::TestCase
 
     # Verify the error message includes the allowed keys
     assert_match(/Allowed keys:/, error.message)
-    ActionMCP::Gateway::ALLOWED_IDENTITY_KEYS.each do |key|
+    ActionMCP.configuration.allowed_identity_keys.each do |key|
       assert_match(/#{key}/, error.message)
     end
   end
