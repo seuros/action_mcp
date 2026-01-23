@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.104.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.104.0...action_mcp/v0.104.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* Move `ALLOWED_IDENTITY_KEYS` to a configurable option ([#176](https://github.com/seuros/action_mcp/issues/176)) ([#177](https://github.com/seuros/action_mcp/issues/177)) ([f9c9453](https://github.com/seuros/action_mcp/commit/f9c9453fc4b2aa1dea881329edc84bdbd0498ef7))
+
 ## [0.104.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.103.0...action_mcp/v0.104.0) (2026-01-08)
 
 
