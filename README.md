@@ -763,7 +763,7 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 ## Engine and Mounting
 
-**ActionMCP** runs as a standalone Rack application. **Do not attempt to mount it in your application's `routes.rb`**—it is not designed to be mounted as an engine at a custom path. When you use `run ActionMCP::Engine` in your `mcp.ru`, the MCP endpoint is always available at the root path (`/`).
+**ActionMCP** runs as a standalone Rack application. **Do not attempt to mount it in your application's `routes.rb`**—it is not designed to be mounted as an engine at a custom path. When you use `run ActionMCP::Engine` in your `mcp.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`.
 
 ### Installing ActionMCP
 
@@ -916,7 +916,7 @@ In production, **MCPS0** (the MCP server) is a standard Rack application. You ca
 
 > **For best performance and concurrency, it is highly recommended to use a modern, synchronous server like [Falcon](https://github.com/socketry/falcon)**. Falcon is optimized for streaming and concurrent workloads, making it ideal for MCP servers. You can still use Puma, Unicorn, or Passenger, but Falcon will generally provide superior throughput and responsiveness for real-time and streaming use cases.
 
-You have two main options for exposing the server:
+You have several main options for exposing the server:
 
 ### 1. Dedicated Port
 
@@ -930,6 +930,11 @@ bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp.ru
 **With Puma:**
 ```bash
 bundle exec rails s -c mcp.ru -p 62770
+```
+
+**With Passenger:**
+```bash
+passenger start --rackup mcp.ru --port 62770
 ```
 
 Then, use your web server (Nginx, Apache, etc.) to reverse proxy requests to this port.
@@ -948,6 +953,11 @@ bundle exec falcon serve --bind unix:/tmp/mcps0.sock mcp.ru
 bundle exec puma -C config/puma.rb -b unix:///tmp/mcps0.sock -c mcp.ru
 ```
 
+**With Passenger:**
+```bash
+passenger start --rackup mcp.ru --socket /tmp/mcps0.sock
+```
+
 And configure your web server to proxy to the socket:
 
 ```nginx
@@ -957,6 +967,30 @@ location /mcp/ {
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }
 ```
+
+### 3. Nginx With Passenger
+
+You can run both the main app and the MCP app using Passenger processes within Nginx.
+
+```nginx
+location / {
+  root /path/to/current/public;
+  passenger_app_root /path/to/current;
+  passenger_enabled on;
+
+   # ... additional configuration for the main Rails app
+}
+
+location ~* ^/mcp {
+  root /path/to/current/public;
+  passenger_app_root /path/to/current;
+  passenger_enabled on;
+  passenger_startup_file mcp.ru;
+  passenger_app_group_name mcp;
+}
+```
+
+You must set the `config.action_mcp.base_path` to match the above Nginx configuration, i.e. `config.action_mcp.base_path = '/mcp'`.
 
 **Key Points:**
 - MCPS0 is a standalone Rack app—run it separately from your main Rails server.

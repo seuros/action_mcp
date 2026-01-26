@@ -13,6 +13,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal :warning, @config.logging_level
     assert_equal false, @config.resources_subscribe
     assert_equal :primary, @config.active_profile
+    assert_equal "/", @config.base_path
   end
 
   test "default profiles are loaded" do
@@ -226,5 +227,11 @@ class ConfigurationTest < ActiveSupport::TestCase
     @config.server_instructions = nil
 
     assert_nil @config.instructions
+  end
+
+  test "base_path can be set and retrieved" do
+    @config.base_path = "/mcp"
+
+    assert_equal "/mcp", @config.base_path
   end
 end

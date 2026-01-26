@@ -45,7 +45,9 @@ module ActionMCP
       ActionMCP.configuration.eager_load_if_needed
     end
 
-    config.middleware.use JSONRPC_Rails::Middleware::Validator, [ "/" ]
+    initializer "action_mcp.insert_middleware" do |app|
+      config.middleware.use JSONRPC_Rails::Middleware::Validator, [ ActionMCP.configuration.base_path ].compact.freeze
+    end
 
     # Load MCP profiles during initialization
     initializer "action_mcp.load_profiles" do
