@@ -51,7 +51,9 @@ module ActionMCP
                   # --- Schema Validation Options ---
                   :validate_structured_content,
                   # --- Allowed identity keys for gateway ---
-                  :allowed_identity_keys
+                  :allowed_identity_keys,
+                  # --- JSON-RPC Path ---
+                  :base_path
 
     def initialize
       @logging_enabled = false
@@ -91,6 +93,9 @@ module ActionMCP
       # and unauthorized attribute assignment. Extend this list if you use custom
       # identifier names in your GatewayIdentifier implementations.
       @allowed_identity_keys = %w[user api_key jwt bearer token account session].freeze
+
+      # Path for JSON-RPC endpoint
+      @base_path = "/"
     end
 
     def name
