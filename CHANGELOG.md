@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.105.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.104.1...action_mcp/v0.105.0) (2026-02-04)
+
+
+### Features
+
+* Allow a base path to be set ([#179](https://github.com/seuros/action_mcp/issues/179)) ([#180](https://github.com/seuros/action_mcp/issues/180)) ([b92bcf5](https://github.com/seuros/action_mcp/commit/b92bcf5ef7ae0b9ebe33bd12a952b967044ff08d))
+
 ## [0.104.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.104.0...action_mcp/v0.104.1) (2026-01-23)
 
 
