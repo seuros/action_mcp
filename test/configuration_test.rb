@@ -234,4 +234,26 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal "/mcp", @config.base_path
   end
+
+  test "custom_method_handler defaults to nil" do
+    assert_nil @config.custom_method_handler
+  end
+
+  test "custom_method_handler can be set to a callable" do
+    handler = ->(_method, _id, _params, _transport) { true }
+    @config.custom_method_handler = handler
+    assert_equal handler, @config.custom_method_handler
+  end
+
+  test "custom_method_handler can be cleared with nil" do
+    @config.custom_method_handler = ->(_m, _id, _p, _t) { true }
+    @config.custom_method_handler = nil
+    assert_nil @config.custom_method_handler
+  end
+
+  test "custom_method_handler rejects non-callable values" do
+    assert_raises(ArgumentError) { @config.custom_method_handler = "not callable" }
+    assert_raises(ArgumentError) { @config.custom_method_handler = 42 }
+    assert_raises(ArgumentError) { @config.custom_method_handler = Object.new }
+  end
 end

@@ -18,7 +18,26 @@ module ActionMCP
     #   @return [Boolean] Whether to subscribe to resources.
     # @!attribute logging_level
     #   @return [Symbol] The logging level.
+    # @!attribute custom_method_handler
+    #   @return [#call, nil] Callable for handling vendor-specific JSON-RPC methods
+    #     that don't match a core MCP namespace (prompts/, resources/, tools/, tasks/, etc.).
+    #     Methods routed to a core namespace are handled by ActionMCP internally and
+    #     will never reach this handler.
+    #
+    #     Signature: ->(rpc_method, id, params, transport) { ... }
+    #     Return truthy if the method was handled; falsy triggers method_not_found.
     attr_writer :name, :version
+    attr_reader :custom_method_handler
+
+    # Validates that the handler responds to #call before assigning.
+    def custom_method_handler=(handler)
+      if handler.nil? || handler.respond_to?(:call)
+        @custom_method_handler = handler
+      else
+        raise ArgumentError, "custom_method_handler must respond to #call, got #{handler.class}"
+      end
+    end
+
     attr_accessor :logging_enabled,
                   :list_changed,
                   :resources_subscribe,
@@ -80,6 +99,9 @@ module ActionMCP
 
       # Server instructions - empty by default
       @server_instructions = []
+
+      # Extension hooks
+      @custom_method_handler = nil
 
       # Gateway - resolved lazily to account for Zeitwerk autoloading
       @gateway_class_name = nil
