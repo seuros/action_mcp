@@ -307,6 +307,7 @@ module ActionMCP
     # @return [void]
     def self.property(prop_name, type: "string", description: nil, required: false, default: nil, **opts)
       # Build the JSON Schema definition.
+      type_str = type.to_s
       prop_definition = { type: type }
       prop_definition[:description] = description if description && !description.empty?
       prop_definition.merge!(opts) if opts.any?
@@ -320,7 +321,7 @@ module ActionMCP
       attribute prop_name, map_json_type_to_active_model_type(type), default: default
       validates prop_name, presence: true, if: -> { required }
 
-      return unless %w[number integer].include?(type)
+      return unless %w[number integer].include?(type_str)
 
       validates prop_name, numericality: true, allow_nil: !required
     end
@@ -629,7 +630,7 @@ module ActionMCP
         next if value.nil? && !self.class._required_properties.include?(key_str)
 
         # Validate based on expected JSON Schema type
-        case expected_type
+        case expected_type.to_s
         when "number"
           validate_number_parameter(key_str, value)
         when "integer"
