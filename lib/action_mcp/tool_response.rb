@@ -23,6 +23,15 @@ module ActionMCP
     # Set structured content for the response
     def set_structured_content(content)
       @structured_content = content
+
+      if ActionMCP.configuration.include_serialized_structured_content_in_response
+        @contents << {
+          type: "text",
+          text: content.to_json
+        }
+      end
+
+      content
     end
 
     # Report a tool execution error (as opposed to protocol error)
