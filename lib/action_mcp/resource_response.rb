@@ -73,12 +73,22 @@ module ActionMCP
     end
 
     def mark_as_not_found!(uri)
-      # Use method_not_found for resource not found (closest standard JSON-RPC error)
-      mark_as_error!(
-        :method_not_found, # -32601 - closest standard error for "not found"
-        message: "Resource not found",
-        data: { uri: uri }
-      )
+      @is_error = true
+      @symbol = nil
+      @error_message = "Resource not found"
+      @error_data = { uri: uri }
+      self
+    end
+
+    # Override to_h to use -32002 for resource not found (consistent with send_resource_read)
+    def to_h(_options = nil)
+      if @is_error && @symbol.nil?
+        { code: -32_002, message: @error_message, data: @error_data }
+      elsif @is_error
+        JSON_RPC::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
+      else
+        build_success_hash
+      end
     end
 
     # Implementation of build_success_hash for ResourceResponse

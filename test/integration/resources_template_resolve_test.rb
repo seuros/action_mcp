@@ -65,15 +65,17 @@ module ActionMCP
       assert_not_nil result["result"]["contents"]
       assert_equal 1, result["result"]["contents"].size
 
-      # Verify the ProductsTemplate was processed correctly
+      # Verify MCP-compliant ReadResourceResult content shape
       content = result["result"]["contents"][0]
       assert_equal "ecommerce://products/123", content["uri"]
-      assert_equal "Product 123", content["name"]
-      assert_match(/Product information for product 123/, content["description"])
       assert_equal "application/json", content["mimeType"]
+      # Content::Resource returns text with JSON data
+      assert_not_nil content["text"]
+      parsed = JSON.parse(content["text"])
+      assert_equal "123", parsed["id"].to_s
     end
 
-    test "resources/read returns method_not_found error for ProductsTemplate with negative product ID" do
+    test "resources/read returns resource not found error for ProductsTemplate with negative product ID" do
       # Test resources/read with negative product ID that won't be found
       post action_mcp.mcp_post_path,
            params: {
@@ -95,7 +97,7 @@ module ActionMCP
       assert_equal "2.0", result["jsonrpc"]
       assert_equal 2, result["id"]
       assert_not_nil result["error"], "Expected an error for non-existent product"
-      assert_equal(-32601, result["error"]["code"], "Expected method_not_found error code")
+      assert_equal(-32002, result["error"]["code"], "Expected resource not found error code")
       assert_match(/Resource not found/, result["error"]["message"])
       assert_equal "template://ProductsTemplate", result["error"]["data"]["uri"]
       assert_nil result["result"]

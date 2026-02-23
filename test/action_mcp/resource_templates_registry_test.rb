@@ -5,40 +5,48 @@ require "test_helper"
 module ActionMCP
   class ResourceTemplatesRegistryTest < ActiveSupport::TestCase
     def setup
-      # Save original registered templates
+      # Save original state
       @original_templates = ResourceTemplate.registered_templates.dup
+      @original_registry = ResourceTemplatesRegistry.items.dup
+
       # Clear for testing
       ResourceTemplate.instance_variable_set(:@registered_templates, [])
+      ResourceTemplatesRegistry.instance_variable_set(:@items, {})
 
-      # Create some test templates
+      # Create and register test templates
       @user_profile_template = Class.new(ResourceTemplate) do
         def self.name = "UserProfileTemplate"
         uri_template "service://users/{id}/profile"
         description "User profile"
       end
+      ResourceTemplatesRegistry.register(@user_profile_template)
 
       @user_template = Class.new(ResourceTemplate) do
         def self.name = "UserTemplate"
         uri_template "service://users/{id}"
         description "User resource"
       end
+      ResourceTemplatesRegistry.register(@user_template)
 
       @product_template = Class.new(ResourceTemplate) do
         def self.name = "ProductTemplate"
         uri_template "service://products/{id}"
         description "Product resource"
       end
+      ResourceTemplatesRegistry.register(@product_template)
 
       @category_products_template = Class.new(ResourceTemplate) do
         def self.name = "CategoryProductsTemplate"
         uri_template "service://categories/{category_id}/products"
         description "Products in a category"
       end
+      ResourceTemplatesRegistry.register(@category_products_template)
     end
 
     def teardown
-      # Restore original registered templates
+      # Restore original state
       ResourceTemplate.instance_variable_set(:@registered_templates, @original_templates)
+      ResourceTemplatesRegistry.instance_variable_set(:@items, @original_registry)
     end
 
     test "finds the correct template for a URI" do
@@ -72,6 +80,7 @@ module ActionMCP
         uri_template "service://users/admin/profile"
         description "Admin user profile"
       end
+      ResourceTemplatesRegistry.register(specific_template)
 
       # This should match the specific template
       uri = "service://users/admin/profile"

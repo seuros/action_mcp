@@ -61,7 +61,7 @@ class ResourceTemplateErrorHandlingTest < ActiveSupport::TestCase
     response = template.call
 
     assert response.error?
-    assert_equal(-32_601, response.to_h[:code])
+    assert_equal(-32_002, response.to_h[:code])
     assert_equal "Resource not found", response.to_h[:message]
   end
 

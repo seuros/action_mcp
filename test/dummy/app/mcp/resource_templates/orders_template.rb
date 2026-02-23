@@ -35,12 +35,12 @@ class OrdersTemplate < ApplicationMCPResTemplate
     order = MockOrder.find_by(id: order_id)
     return unless order
 
-    ActionMCP::Resource.new(
-      uri: "ecommerce://orders/#{order_id}",
-      name: "Order #{order_id}",
-      description: "Order information for order #{order_id}",
-      mime_type: "application/json",
-      size: order.to_json.length
+    data = { id: order.id, customer_id: customer_id }
+
+    ActionMCP::Content::Resource.new(
+      "ecommerce://customers/#{customer_id}/orders/#{order_id}",
+      "application/json",
+      text: data.to_json
     )
   end
 end
