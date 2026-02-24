@@ -337,33 +337,50 @@ Poll task status with `tasks/get` or fetch the result when finished with `tasks/
 `ActionMCP::ResourceTemplate` facilitates the creation of URI templates for dynamic resources that LLMs can access.
 This allows models to request specific data using parameterized URIs.
 
+Templates support two MCP resource surfaces:
+- **`resources/templates/list`** — parameterized URI patterns (existing behavior)
+- **`resources/list`** — concrete resources with known URIs (via `self.list`)
+
+> **Note:** Not all MCP clients support both resource endpoints. Claude Code (as of v2.1.50) only calls `resources/list`, and Codex stubs resource methods entirely. Implement `self.list` on your templates to ensure resources are visible to all clients. Crush and VS Code support both endpoints.
+
 **Example:**
 
 ```ruby
-
 class ProductResourceTemplate < ApplicationMCPResTemplate
   uri_template "product/{id}"
   description "Access product information by ID"
+  mime_type "application/json"
 
   parameter :id, description: "Product identifier", required: true
 
   validates :id, format: { with: /\A\d+\z/, message: "must be numeric" }
 
+  # Optional: enumerate concrete resources for resources/list
+  def self.list(session: nil)
+    Product.limit(50).map do |product|
+      build_resource(
+        uri: "product/#{product.id}",
+        name: product.name,
+        title: "Product ##{product.id}"
+      )
+    end
+  end
+
+  # Resolve a specific resource for resources/read
   def resolve
     product = Product.find_by(id: id)
     return unless product
-    ActionMCP::Resource.new(
-      uri: "ecommerce://products/#{product_id}",
-      name: "Product #{product_id}",
-      description: "Product information for product #{product_id}",
-      mime_type: "application/json",
-      size: product.to_json.length
+
+    ActionMCP::Content::Resource.new(
+      "product/#{id}",
+      mime_type,
+      text: product.to_json
     )
   end
 end
 ```
 
-# Example of callbacks:
+**Callbacks:**
 
 ```ruby
 before_resolve do |template|
@@ -376,21 +393,13 @@ end
 
 around_resolve do |template, block|
   start_time = Time.current
-  # Starting resolution for product: #{template.product_id}
-
   resource = block.call
-
-  if resource
-    # Product #{template.product_id} resolved successfully in #{Time.current - start_time}s
-  else
-    # Product #{template.product_id} not found
-  end
-
   resource
 end
 ```
 
 Resource templates are automatically registered and used when LLMs request resources matching their patterns.
+See [RESOURCE_TEMPLATES.md](RESOURCE_TEMPLATES.md) for the full API reference including pagination, deduplication, and read contract details.
 
 ## 📚 Documentation
 

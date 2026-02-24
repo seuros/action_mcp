@@ -13,7 +13,10 @@ module ActionMCP
 
     # Track all registered templates
     @registered_templates = []
-    attr_reader :execution_context, :description, :uri_template, :mime_type
+    attr_reader :execution_context
+
+    # Delegate to class-level DSL values so instances see template metadata.
+    delegate :description, :uri_template, :mime_type, to: :class
 
     class << self
       attr_reader :registered_templates, :description, :uri_template,
@@ -126,6 +129,60 @@ module ActionMCP
         return "" if name.nil?
 
         @capability_name ||= name.demodulize.underscore.sub(/_template$/, "")
+      end
+
+      # --- Static resource listing API ---
+
+      # Override in subclasses to enumerate concrete resources.
+      # Returns Array<ActionMCP::Resource>.
+      #
+      # @param session [Object, nil] The current MCP session
+      # @return [Array<ActionMCP::Resource>]
+      def list(session: nil)
+        []
+      end
+
+      # Returns true if this template subclass overrides +list+.
+      def lists_resources?
+        method(:list).owner != ActionMCP::ResourceTemplate.singleton_class
+      end
+
+      # Factory helper that fills in template-level defaults.
+      #
+      # @param uri [String] The concrete resource URI
+      # @param name [String] Display name
+      # @param title [String, nil] Human-readable title
+      # @param description [String, nil] Falls back to template description
+      # @param mime_type [String, nil] Falls back to template mime_type
+      # @param size [Integer, nil] Size in bytes
+      # @param annotations [Hash, nil] Optional annotations
+      # @return [ActionMCP::Resource]
+      def build_resource(uri:, name:, title: nil, description: nil, mime_type: nil, size: nil, annotations: nil)
+        ActionMCP::Resource.new(
+          uri: uri,
+          name: name,
+          title: title,
+          description: description || @description,
+          mime_type: mime_type || @mime_type,
+          size: size,
+          annotations: annotations
+        )
+      end
+
+      # Check if a concrete URI is readable by this template.
+      # Returns false if the URI doesn't match the template pattern.
+      #
+      # @param uri [String] A concrete URI to check
+      # @return [Boolean]
+      def readable_uri?(uri)
+        return false unless @uri_template
+
+        params = extract_params_from_uri(uri)
+        return false if params.nil?
+
+        new(params).valid?
+      rescue StandardError
+        false
       end
 
       # Process a URI string to create a template instance

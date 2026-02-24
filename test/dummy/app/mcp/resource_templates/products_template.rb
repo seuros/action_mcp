@@ -28,16 +28,29 @@ class ProductsTemplate < ApplicationMCPResTemplate
     response
   end
 
+  # Enumerate concrete products for resources/list
+  def self.list(session: nil)
+    # Return a few well-known products as static resources
+    [ 1, 2, 3 ].map do |id|
+      build_resource(
+        uri: "ecommerce://products/#{id}",
+        name: "Product #{id}",
+        title: "Product ##{id}",
+        description: "Product information for product #{id}"
+      )
+    end
+  end
+
   def resolve
     product = MockProduct.find_by(id: product_id)
     return unless product
 
-    ActionMCP::Resource.new(
-      uri: "ecommerce://products/#{product_id}",
-      name: "Product #{product_id}",
-      description: "Product information for product #{product_id}",
-      mime_type: "application/json",
-      size: product.to_json.length
+    data = { id: product.id, name: "Product #{product_id}" }
+
+    ActionMCP::Content::Resource.new(
+      "ecommerce://products/#{product_id}",
+      "application/json",
+      text: data.to_json
     )
   end
 end

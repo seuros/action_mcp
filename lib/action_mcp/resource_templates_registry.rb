@@ -22,7 +22,8 @@ module ActionMCP
         ResourceTemplate
       end
 
-      # Find the most specific template for a given URI
+      # Find the most specific template for a given URI.
+      # Uses registry-backed source (not ResourceTemplate.registered_templates class array).
       def find_template_for_uri(uri)
         parse_result = parse_uri(uri)
         return nil unless parse_result
@@ -31,7 +32,7 @@ module ActionMCP
         path = parse_result[:path]
         path_segments = path.split("/")
 
-        matching_templates = ResourceTemplate.registered_templates.select do |template|
+        matching_templates = resource_templates.values.select do |template|
           next unless template.uri_template
 
           # Parse the template

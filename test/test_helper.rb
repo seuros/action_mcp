@@ -40,37 +40,8 @@ if ApplicationRecord.connection.adapter_name == "SQLite"
   end
 end
 
-class MockOrder
-  def self.find_by(id:)
-    new(id: id) if id.to_i.positive?
-  end
 
-  attr_reader :id
-
-  def initialize(id:)
-    @id = id
-  end
-
-  def to_json(*_args)
-    { id: id }.to_json
-  end
-end
-
-class MockProduct
-  def self.find_by(id:)
-    new(id: id) if id.to_i.positive?
-  end
-
-  attr_reader :id
-
-  def initialize(id:)
-    @id = id
-  end
-
-  def to_json(*_args)
-    { id: id }.to_json
-  end
-end
+# MockProduct and MockOrder are in test/dummy/app/models/
 
 module FixtureHelpers
   FIXTURE_CACHE = {}
