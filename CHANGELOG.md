@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.106.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.105.0...action_mcp/v0.106.0) (2026-02-24)
+
+
+### Features
+
+* Implement static resources for resources/list endpoint ([#187](https://github.com/seuros/action_mcp/issues/187)) ([ba4e428](https://github.com/seuros/action_mcp/commit/ba4e4286767e2fa1879adb676e2f716b1961f16b))
+
 ## [0.105.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.104.1...action_mcp/v0.105.0) (2026-02-04)
 
 
