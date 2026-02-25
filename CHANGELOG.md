@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.106.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.106.0...action_mcp/v0.106.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* typo in patch ([02d9c95](https://github.com/seuros/action_mcp/commit/02d9c95e31373ef7c7f547f2574da555cf8e8560))
+
 ## [0.106.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.105.0...action_mcp/v0.106.0) (2026-02-24)
 
 
