@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 ActionMCP::Engine.routes.draw do
-  get "#{ActionMCP.configuration.base_path}}/up", to: "/rails/health#show", as: :action_mcp_health_check
+  get "#{ActionMCP.configuration.base_path}/up", to: "/rails/health#show", as: :action_mcp_health_check
 
   # MCP 2025-03-26 Spec routes
   get ActionMCP.configuration.base_path, to: "application#show", as: :mcp_get
