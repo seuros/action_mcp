@@ -320,6 +320,7 @@ module ActionMCP
       begin
         gateway = gateway_class.new(request)
         gateway.call
+        gateway.configure_session(mcp_session)
       rescue ActionMCP::UnauthorizedError => e
         render_unauthorized(e.message)
       rescue StandardError => e

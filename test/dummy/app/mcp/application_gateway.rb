@@ -12,4 +12,13 @@ class ApplicationGateway < ActionMCP::Gateway
   # 6. None authentication (for development/testing)
   # 7. Test identifier for testing purposes
   identified_by JwtIdentifier, SessionIdentifier, BearerTokenIdentifier, ApiKeyIdentifier, CustomHeaderIdentifier, NoneIdentifier, TestIdentifier
+
+  def configure_session(session)
+    session.session_data = {
+      "user_id" => user&.id,
+      "user_name" => user&.name,
+      "authenticated_at" => Time.current.iso8601
+    }
+    session.save!
+  end
 end

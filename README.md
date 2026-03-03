@@ -881,6 +881,22 @@ ActionMCP uses Rails' CurrentAttributes to store the authenticated context. The 
 - `ActionMCP::Current.gateway` - The gateway instance
 - Any other attributes you define with `identified_by`
 
+### Persisting Context on Sessions
+
+Override `configure_session` in your gateway to persist auth context (user_id, tenant_id, roles) on the session for use in audit trails, background jobs, and cross-request scenarios:
+
+```ruby
+class ApplicationGateway < ActionMCP::Gateway
+  identified_by UserIdentifier
+
+  def configure_session(session)
+    session.session_data = { "user_id" => user.id, "tenant_id" => user.tenant_id }
+  end
+end
+```
+
+Tools access it via `session_data["user_id"]`. See [GATEWAY.md](GATEWAY.md) for details.
+
 ### 1. Create `mcp/config.ru`
 
 The install generator (`rails generate action_mcp:install`) creates this automatically. If you need to create it manually:
