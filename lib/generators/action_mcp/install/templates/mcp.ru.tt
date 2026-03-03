@@ -1,0 +1,36 @@
+# frozen_string_literal: true
+
+# ============================================================================
+# ActionMCP Standalone Server - Rackup Configuration
+# ============================================================================
+#
+# ActionMCP runs as a STANDALONE Rack application on its own port.
+# Do NOT mount ActionMCP::Engine in your routes.rb — it won't work correctly.
+#
+# Start this server with:
+#   bin/mcp                                    # Uses Falcon (recommended)
+#   bundle exec falcon serve --bind http://0.0.0.0:62770 mcp.ru
+#   bundle exec rails s -c mcp.ru -p 62770    # Uses Puma (fallback)
+#
+# ============================================================================
+
+# Load the Rails environment
+require_relative "config/environment"
+
+# Ensure STDOUT is not buffered (required for Falcon streaming)
+$stdout.sync = true
+
+# Handle signals gracefully
+Signal.trap("INT") do
+  puts "\nReceived interrupt signal. Shutting down gracefully..."
+  exit(0)
+end
+
+Signal.trap("TERM") do
+  puts "\nReceived termination signal. Shutting down gracefully..."
+  exit(0)
+end
+
+# IMPORTANT: Use ActionMCP.server (not ActionMCP::Engine directly).
+# ActionMCP.server initializes PubSub and other required subsystems.
+run ActionMCP.server

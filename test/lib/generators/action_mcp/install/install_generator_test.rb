@@ -49,6 +49,22 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     end
   end
 
+  test "generator creates mcp.ru rackup file" do
+    run_generator
+    assert_file "mcp.ru" do |content|
+      assert_match(/run ActionMCP\.server/, content)
+      assert_match(/Do NOT mount ActionMCP::Engine/, content)
+    end
+  end
+
+  test "generator creates bin/mcp binstub" do
+    run_generator
+    assert_file "bin/mcp" do |content|
+      assert_match(/mcp\.ru/, content)
+      assert_match(/falcon/, content)
+    end
+  end
+
   test "generator creates all expected directories" do
     run_generator
     assert_directory "app/mcp"
@@ -65,5 +81,10 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     assert_match(/Configuration:/, output)
     assert_match(/Available adapters:/, output)
     assert_match(/Next steps:/, output)
+  end
+
+  test "generator shows do not mount warning" do
+    output = run_generator
+    assert_match(/Do NOT mount ActionMCP::Engine in your routes\.rb/, output)
   end
 end
