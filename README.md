@@ -772,9 +772,9 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 ## Engine and Mounting
 
-> **WARNING: Do NOT mount ActionMCP::Engine in your `routes.rb`.** ActionMCP is a standalone Rack application that runs on its own port via `mcp.ru`. Mounting it as a Rails engine route will not work correctly.
+> **WARNING: Do NOT mount ActionMCP::Engine in your `routes.rb`.** ActionMCP is a standalone Rack application that runs on its own port via `mcp/config.ru`. Mounting it as a Rails engine route will not work correctly.
 
-When you use `run ActionMCP.server` in your `mcp.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`. Always use `ActionMCP.server` (not `ActionMCP::Engine` directly) — it initializes PubSub and other required subsystems.
+When you use `run ActionMCP.server` in your `mcp/config.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`. Always use `ActionMCP.server` (not `ActionMCP::Engine` directly) — it initializes PubSub and other required subsystems.
 
 ### Installing ActionMCP
 
@@ -791,7 +791,7 @@ This will create:
 - `app/mcp/resource_templates/application_mcp_res_template.rb` - Base resource template class
 - `app/mcp/application_gateway.rb` - Gateway for authentication
 - `config/mcp.yml` - Configuration file with example settings for all environments
-- `mcp.ru` - Standalone Rack server configuration
+- `mcp/config.ru` - Standalone Rack server configuration
 - `bin/mcp` - Server binstub (prefers Falcon, falls back to Puma)
 
 > **Note:** Authentication and authorization are not included. You are responsible for securing the endpoint.
@@ -881,15 +881,18 @@ ActionMCP uses Rails' CurrentAttributes to store the authenticated context. The 
 - `ActionMCP::Current.gateway` - The gateway instance
 - Any other attributes you define with `identified_by`
 
-### 1. Create `mcp.ru`
+### 1. Create `mcp/config.ru`
 
 The install generator (`rails generate action_mcp:install`) creates this automatically. If you need to create it manually:
 
 ```ruby
 # Load the full Rails environment to access models, DB, Redis, etc.
-require_relative "config/environment"
+require_relative "../config/environment"
 
 $stdout.sync = true
+
+# Eager load so all tools, prompts, and resources are registered.
+Rails.application.eager_load!
 
 # IMPORTANT: Use ActionMCP.server — it initializes PubSub and other subsystems.
 # Do NOT use ActionMCP::Engine directly.
@@ -897,8 +900,8 @@ run ActionMCP.server
 ```
 ### 2. Start the server
 ```bash
-bin/mcp                                    # Uses Falcon (recommended)
-bin/rails s -c mcp.ru -p 62770            # Uses Puma (fallback)
+bin/mcp                                          # Uses Falcon (recommended)
+bundle exec rails s -c mcp/config.ru -p 62770   # Uses Puma (fallback)
 ```
 
 ### Dealing with Middleware Conflicts
@@ -942,17 +945,17 @@ Run MCPS0 on its own TCP port (commonly `62770`):
 
 **With Falcon:**
 ```bash
-bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp.ru
+bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp/config.ru
 ```
 
 **With Puma:**
 ```bash
-bundle exec rails s -c mcp.ru -p 62770
+bundle exec rails s -c mcp/config.ru -p 62770
 ```
 
 **With Passenger:**
 ```bash
-passenger start --rackup mcp.ru --port 62770
+passenger start --rackup mcp/config.ru --port 62770
 ```
 
 Then, use your web server (Nginx, Apache, etc.) to reverse proxy requests to this port.
@@ -963,17 +966,17 @@ Alternatively, you can run MCPS0 on a Unix socket for improved performance and s
 
 **With Falcon:**
 ```bash
-bundle exec falcon serve --bind unix:/tmp/mcps0.sock mcp.ru
+bundle exec falcon serve --bind unix:/tmp/mcps0.sock mcp/config.ru
 ```
 
 **With Puma:**
 ```bash
-bundle exec puma -C config/puma.rb -b unix:///tmp/mcps0.sock -c mcp.ru
+bundle exec puma -C config/puma.rb -b unix:///tmp/mcps0.sock -c mcp/config.ru
 ```
 
 **With Passenger:**
 ```bash
-passenger start --rackup mcp.ru --socket /tmp/mcps0.sock
+passenger start --rackup mcp/config.ru --socket /tmp/mcps0.sock
 ```
 
 And configure your web server to proxy to the socket:
@@ -1003,7 +1006,7 @@ location ~* ^/mcp {
   root /path/to/current/public;
   passenger_app_root /path/to/current;
   passenger_enabled on;
-  passenger_startup_file mcp.ru;
+  passenger_startup_file mcp/config.ru;
   passenger_app_group_name mcp;
 }
 ```
@@ -1027,7 +1030,7 @@ bin/rails action_mcp:install:migrations  # to copy the migrations
 bin/rails generate action_mcp:install
 ```
 
-This will create the base application classes, configuration file, authentication gateway, `mcp.ru` rackup file, and `bin/mcp` binstub in your app directory.
+This will create the base application classes, configuration file, authentication gateway, `mcp/config.ru` rackup file, and `bin/mcp` binstub in your app directory.
 
 ### Generate a New Prompt
 
@@ -1080,7 +1083,7 @@ You can use the MCP Inspector to test your server implementation:
 
 ```bash
 # Start your MCP server
-bundle exec rails s -c mcp.ru -p 62770
+bundle exec rails s -c mcp/config.ru -p 62770
 
 # In another terminal, run the inspector
 npx @modelcontextprotocol/inspector --url http://localhost:62770

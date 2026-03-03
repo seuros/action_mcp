@@ -32,7 +32,7 @@ module ActionMCP
       end
 
       def create_mcp_rackup_file
-        template "mcp.ru.tt", "mcp.ru"
+        template "mcp/config.ru.tt", "mcp/config.ru"
       end
 
       def create_mcp_binstub
@@ -50,11 +50,11 @@ module ActionMCP
         say "  - app/mcp/resource_templates/application_mcp_res_template.rb"
         say "  - app/mcp/application_gateway.rb"
         say "  - config/mcp.yml"
-        say "  - mcp.ru          (standalone Rack server config)"
+        say "  - mcp/config.ru    (standalone Rack server config)"
         say "  - bin/mcp          (server binstub — Falcon preferred, Puma fallback)"
         say ""
         say "  IMPORTANT: Do NOT mount ActionMCP::Engine in your routes.rb."
-        say "  ActionMCP runs as a standalone server via mcp.ru on its own port."
+        say "  ActionMCP runs as a standalone server via mcp/config.ru on its own port."
         say ""
         say "Configuration:"
         say "  The mcp.yml file contains authentication, profiles, and adapter settings."

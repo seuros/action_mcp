@@ -49,18 +49,19 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     end
   end
 
-  test "generator creates mcp.ru rackup file" do
+  test "generator creates mcp/config.ru rackup file" do
     run_generator
-    assert_file "mcp.ru" do |content|
+    assert_file "mcp/config.ru" do |content|
       assert_match(/run ActionMCP\.server/, content)
       assert_match(/Do NOT mount ActionMCP::Engine/, content)
+      assert_match(/eager_load!/, content)
     end
   end
 
   test "generator creates bin/mcp binstub" do
     run_generator
     assert_file "bin/mcp" do |content|
-      assert_match(/mcp\.ru/, content)
+      assert_match(%r{mcp/config\.ru}, content)
       assert_match(/falcon/, content)
     end
   end
