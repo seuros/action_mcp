@@ -27,6 +27,25 @@ module ActionMCP
       self
     end
 
+    # Hook to persist gateway context on the session.
+    # Called on every authenticated request. Implementations should be idempotent.
+    #
+    # Example:
+    #
+    #   class ApplicationGateway < ActionMCP::Gateway
+    #     def configure_session(session)
+    #       session.session_data = {
+    #         "user_id" => user.id,
+    #         "company_id" => user.company_id
+    #       }
+    #     end
+    #   end
+    #
+    # @param session [ActionMCP::Session] The current MCP session
+    def configure_session(session)
+      # Default: no-op. Override in subclass.
+    end
+
     protected
 
     def authenticate!

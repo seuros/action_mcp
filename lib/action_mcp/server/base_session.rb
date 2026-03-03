@@ -19,8 +19,9 @@ module ActionMCP
         @message_counter = Concurrent::AtomicFixnum.new(0)
         @new_record = true
 
-        # Initialize consents as empty hash if not provided
+        # Initialize consents and session_data as empty hashes if not provided
         @consents = {}
+        @session_data = {}
 
         attributes.each do |key, value|
           send("#{key}=", value) if respond_to?("#{key}=")

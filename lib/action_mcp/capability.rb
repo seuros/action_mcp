@@ -30,6 +30,8 @@ module ActionMCP
       execution_context[:session]
     end
 
+    delegate :session_data, to: :session, allow_nil: true
+
     # use _capability_name or default_capability_name
     def self.capability_name
       _capability_name || default_capability_name

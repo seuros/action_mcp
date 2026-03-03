@@ -23,6 +23,16 @@ class ApplicationGateway < ActionMCP::Gateway
 
   # Option 3: Create custom identifiers (see examples below)
   # identified_by CustomUserIdentifier, CustomAdminIdentifier
+
+  # Override configure_session to persist authentication context on the session.
+  # Called after every successful authentication. Tools access it via session.session_data.
+  #
+  # def configure_session(session)
+  #   session.session_data = {
+  #     "user_id" => user.id,
+  #     "tenant_id" => user.tenant_id
+  #   }
+  # end
 end
 
 # Custom identifier examples - uncomment and customize as needed:

@@ -30,6 +30,8 @@ class UserInfoTool < ApplicationMCPTool
         info[:updated_at] = user.updated_at.iso8601
       end
 
+      info[:session_data] = session_data
+
       render text: "Authenticated user details:\n#{JSON.pretty_generate(info)}"
     else
       render text: "No authenticated user found. Available authentication methods:\n" \
