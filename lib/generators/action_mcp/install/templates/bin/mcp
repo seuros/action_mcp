@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Start ActionMCP as a standalone server.
+#
+# Usage:
+#   bin/mcp          # start on default port 62770 (MCPS0 on a phone keypad)
+#   bin/mcp 3001     # start on custom port
+
+require "bundler/setup"
+
+port = ARGV[0] || 62_770
+rackup = File.expand_path("../mcp/config.ru", __dir__)
+
+# Prefer Falcon for better concurrency.
+begin
+  Gem::Specification.find_by_name("falcon")
+  puts "Starting ActionMCP server with Falcon on port #{port}..."
+  exec("bundle", "exec", "falcon", "serve",
+       "--bind", "http://0.0.0.0:#{port}",
+       "--config", rackup)
+rescue Gem::MissingSpecError
+  puts "Starting ActionMCP server with Puma on port #{port}..."
+  puts "  (tip: add 'falcon' to your Gemfile for better concurrency)"
+  exec("bundle", "exec", "rails", "server",
+       "-c", rackup,
+       "-p", port.to_s)
+end

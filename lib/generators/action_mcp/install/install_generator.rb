@@ -31,6 +31,15 @@ module ActionMCP
         template "application_gateway.rb", File.join("app/mcp", "application_gateway.rb")
       end
 
+      def create_mcp_rackup_file
+        template "mcp/config.ru.tt", "mcp/config.ru"
+      end
+
+      def create_mcp_binstub
+        copy_file "bin/mcp", "bin/mcp"
+        chmod "bin/mcp", 0o755
+      end
+
       def show_instructions
         say ""
         say "ActionMCP has been installed successfully!"
@@ -41,6 +50,11 @@ module ActionMCP
         say "  - app/mcp/resource_templates/application_mcp_res_template.rb"
         say "  - app/mcp/application_gateway.rb"
         say "  - config/mcp.yml"
+        say "  - mcp/config.ru    (standalone Rack server config)"
+        say "  - bin/mcp          (server binstub — Falcon preferred, Puma fallback)"
+        say ""
+        say "  IMPORTANT: Do NOT mount ActionMCP::Engine in your routes.rb."
+        say "  ActionMCP runs as a standalone server via mcp/config.ru on its own port."
         say ""
         say "Configuration:"
         say "  The mcp.yml file contains authentication, profiles, and adapter settings."
@@ -56,7 +70,7 @@ module ActionMCP
         say "  1. Generate your first tool: rails generate action_mcp:tool MyTool"
         say "  2. Generate your first prompt: rails generate action_mcp:prompt MyPrompt"
         say "  3. Generate your first resource template: rails generate action_mcp:resource_template MyResource"
-        say "  4. Start the MCP server: bundle exec rails s -c mcp.ru -p 62770"
+        say "  4. Start the MCP server: bin/mcp"
         say ""
       end
     end
