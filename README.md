@@ -772,7 +772,9 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 ## Engine and Mounting
 
-**ActionMCP** runs as a standalone Rack application. **Do not attempt to mount it in your application's `routes.rb`**—it is not designed to be mounted as an engine at a custom path. When you use `run ActionMCP::Engine` in your `mcp.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`.
+> **WARNING: Do NOT mount ActionMCP::Engine in your `routes.rb`.** ActionMCP is a standalone Rack application that runs on its own port via `mcp.ru`. Mounting it as a Rails engine route will not work correctly.
+
+When you use `run ActionMCP.server` in your `mcp.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`. Always use `ActionMCP.server` (not `ActionMCP::Engine` directly) — it initializes PubSub and other required subsystems.
 
 ### Installing ActionMCP
 
@@ -789,6 +791,8 @@ This will create:
 - `app/mcp/resource_templates/application_mcp_res_template.rb` - Base resource template class
 - `app/mcp/application_gateway.rb` - Gateway for authentication
 - `config/mcp.yml` - Configuration file with example settings for all environments
+- `mcp.ru` - Standalone Rack server configuration
+- `bin/mcp` - Server binstub (prefers Falcon, falls back to Puma)
 
 > **Note:** Authentication and authorization are not included. You are responsible for securing the endpoint.
 
@@ -879,17 +883,22 @@ ActionMCP uses Rails' CurrentAttributes to store the authenticated context. The 
 
 ### 1. Create `mcp.ru`
 
+The install generator (`rails generate action_mcp:install`) creates this automatically. If you need to create it manually:
+
 ```ruby
 # Load the full Rails environment to access models, DB, Redis, etc.
 require_relative "config/environment"
 
-# No need to set a custom endpoint path. The MCP endpoint is always served at root ("/")
-# when using ActionMCP::Engine directly.
-run ActionMCP::Engine
+$stdout.sync = true
+
+# IMPORTANT: Use ActionMCP.server — it initializes PubSub and other subsystems.
+# Do NOT use ActionMCP::Engine directly.
+run ActionMCP.server
 ```
 ### 2. Start the server
 ```bash
-bin/rails s -c mcp.ru -p 62770 -P tmp/pids/mcps0.pid
+bin/mcp                                    # Uses Falcon (recommended)
+bin/rails s -c mcp.ru -p 62770            # Uses Puma (fallback)
 ```
 
 ### Dealing with Middleware Conflicts
@@ -1018,7 +1027,7 @@ bin/rails action_mcp:install:migrations  # to copy the migrations
 bin/rails generate action_mcp:install
 ```
 
-This will create the base application classes, configuration file, and authentication gateway in your app directory.
+This will create the base application classes, configuration file, authentication gateway, `mcp.ru` rackup file, and `bin/mcp` binstub in your app directory.
 
 ### Generate a New Prompt
 

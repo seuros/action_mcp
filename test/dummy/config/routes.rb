@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  # NOTE: This mount exists ONLY for integration test infrastructure (e.g. MCPNoneAuthenticationTest).
+  # In production apps, ActionMCP runs as a standalone server via mcp.ru — do NOT mount it in routes.rb.
   mount ActionMCP::Engine, at: "/"
 
   # Gateway test endpoint
