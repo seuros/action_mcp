@@ -24,9 +24,7 @@ else
 end
 
 gem "simplecov", require: false
-# Optional PubSub adapters - at least one is recommended for production
 gem "solid_cache"
-gem "solid_mcp", "~> 0.2.3" # Database-backed adapter optimized for MCP
 gem "solid_queue"
 
 # Authentication for dummy app
