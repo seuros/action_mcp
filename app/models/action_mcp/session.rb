@@ -5,44 +5,31 @@
 # database_dialect = "SQLite"
 #
 # columns = [
-#   { name = "id", type = "string", primary_key = true, nullable = false },
-#   { name = "role", type = "string", nullable = false, default = "server" },
-#   { name = "status", type = "string", nullable = false, default = "pre_initialize" },
-#   { name = "ended_at", type = "datetime", nullable = true },
-#   { name = "protocol_version", type = "string", nullable = true },
-#   { name = "server_capabilities", type = "json", nullable = true },
-#   { name = "client_capabilities", type = "json", nullable = true },
-#   { name = "server_info", type = "json", nullable = true },
-#   { name = "client_info", type = "json", nullable = true },
-#   { name = "initialized", type = "boolean", nullable = false, default = "0" },
-#   { name = "messages_count", type = "integer", nullable = false, default = "0" },
-#   { name = "sse_event_counter", type = "integer", nullable = false, default = "0" },
-#   { name = "tool_registry", type = "json", nullable = true, default = "[]" },
-#   { name = "prompt_registry", type = "json", nullable = true, default = "[]" },
-#   { name = "resource_registry", type = "json", nullable = true, default = "[]" },
-#   { name = "created_at", type = "datetime", nullable = false },
-#   { name = "updated_at", type = "datetime", nullable = false },
-#   { name = "consents", type = "json", nullable = false, default = "{}" }
+#   { name = "id", type = "string", pk = true, null = false },
+#   { name = "client_capabilities", type = "json" },
+#   { name = "client_info", type = "json" },
+#   { name = "consents", type = "json", null = false, default = "{}" },
+#   { name = "session_data", type = "json", null = false, default = "{}" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "ended_at", type = "datetime" },
+#   { name = "initialized", type = "boolean", null = false },
+#   { name = "messages_count", type = "integer", null = false, default = 0 },
+#   { name = "prompt_registry", type = "json", default = "[]" },
+#   { name = "protocol_version", type = "string" },
+#   { name = "resource_registry", type = "json", default = "[]" },
+#   { name = "role", type = "string", null = false, default = "server" },
+#   { name = "server_capabilities", type = "json" },
+#   { name = "server_info", type = "json" },
+#   { name = "status", type = "string", null = false, default = "pre_initialize" },
+#   { name = "tool_registry", type = "json", default = "[]" },
+#   { name = "updated_at", type = "datetime", null = false }
 # ]
 #
-# == Notes
-# - Association 'messages' has N+1 query risk. Consider using includes/preload
-# - Association 'subscriptions' has N+1 query risk. Consider using includes/preload
-# - Association 'resources' has N+1 query risk. Consider using includes/preload
-# - Association 'sse_events' has N+1 query risk. Consider using includes/preload
-# - Column 'protocol_version' should probably have NOT NULL constraint
-# - Column 'server_capabilities' should probably have NOT NULL constraint
-# - Column 'client_capabilities' should probably have NOT NULL constraint
-# - Column 'server_info' should probably have NOT NULL constraint
-# - Column 'client_info' should probably have NOT NULL constraint
-# - Column 'tool_registry' should probably have NOT NULL constraint
-# - Column 'prompt_registry' should probably have NOT NULL constraint
-# - Column 'resource_registry' should probably have NOT NULL constraint
-# - String column 'id' has no length limit - consider adding one
-# - String column 'role' has no length limit - consider adding one
-# - String column 'status' has no length limit - consider adding one
-# - String column 'protocol_version' has no length limit - consider adding one
-# - Column 'status' is commonly used in queries - consider adding an index
+# [callbacks]
+# before_create = [{ method = "initialize_registries" }, { method = "set_server_info", if = ["proc"] }, { method = "set_server_capabilities", if = ["proc"] }]
+# after_initialize = [{ method = "proc" }]
+#
+# notes = ["messages:N_PLUS_ONE", "subscriptions:N_PLUS_ONE", "tasks:N_PLUS_ONE", "client_capabilities:NOT_NULL", "client_info:NOT_NULL", "prompt_registry:NOT_NULL", "protocol_version:NOT_NULL", "resource_registry:NOT_NULL", "server_capabilities:NOT_NULL", "server_info:NOT_NULL", "tool_registry:NOT_NULL", "id:LIMIT", "protocol_version:LIMIT", "role:LIMIT", "status:LIMIT", "status:INDEX"]
 # <rails-lens:schema:end>
 module ActionMCP
   ##
@@ -67,12 +54,6 @@ module ActionMCP
              foreign_key: "session_id",
              dependent: :delete_all,
              inverse_of: :session
-    has_many :resources,
-             class_name: "ActionMCP::Session::Resource",
-             foreign_key: "session_id",
-             dependent: :delete_all,
-             inverse_of: :session
-
     has_many :tasks,
              class_name: "ActionMCP::Session::Task",
              foreign_key: "session_id",
@@ -93,8 +74,6 @@ module ActionMCP
     validates :protocol_version, inclusion: { in: ActionMCP::SUPPORTED_VERSIONS }, allow_nil: true
 
     def close!
-      dummy_callback = ->(*) { } # this callback seem broken
-      adapter.unsubscribe(session_key, dummy_callback)
       if messages_count.zero?
         # if there are no messages, we can delete the session immediately
         destroy
@@ -117,14 +96,6 @@ module ActionMCP
 
     def read(data)
       messages.create!(data: data, direction: role)
-    end
-
-    def session_key
-      "action_mcp:session:#{id}"
-    end
-
-    def adapter
-      @adapter ||= ActionMCP::Server.server.pubsub
     end
 
     def set_protocol_version(version)
@@ -320,7 +291,6 @@ module ActionMCP
     def uses_all_resources?
       resource_registry == [ "*" ]
     end
-
 
     # Consent management methods as per MCP specification
     # These methods manage user consents for tools and resources

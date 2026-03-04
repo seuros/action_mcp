@@ -278,7 +278,7 @@ Born from the frustration of LLMs timing out on long-running tasks, 2025-11-25 l
 2. **Configure Tasks capability** - Enable in `config/mcp.yml` if desired
 3. **Add taskSupport to tools** - Use `task_support :optional` for long-running tools
 4. **Handle Task responses** - Clients may receive `{ task: {...} }` instead of immediate results
-5. **Implement task polling** - Or use SSE for `notifications/tasks/status`
+5. **Implement task polling** - Poll `tasks/get` for `notifications/tasks/status`
 
 ### **From 2025-03-26 to 2025-06-18:**
 1. **Remove batch requests** - 2025-06-18 will reject them anyway
@@ -319,13 +319,12 @@ Born from the frustration of LLMs timing out on long-running tasks, 2025-11-25 l
 - **Background Jobs:** ActiveJob for async execution
 - **Database:** Tasks stored in `action_mcp_session_tasks` table
 - **TTL:** Configurable expiration for automatic cleanup
-- **Notifications:** Real-time status updates via SSE
+- **Notifications:** Status updates via `notifications/tasks/status`
 
 ### **Transport Layer:**
 - **HTTP/HTTPS Only:** No STDIO, ever
-- **SSE Support:** Real-time streaming with event replay
 - **Session Resumability:** Last-Event-ID support
-- **Task Polling:** Alternative to SSE for task status
+- **Task Polling:** `tasks/get` for checking task status
 
 ### **Content Types Supported:**
 - Text content (obviously)

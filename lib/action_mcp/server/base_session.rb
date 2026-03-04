@@ -15,7 +15,6 @@ module ActionMCP
         @store = store
         @messages = Concurrent::Array.new
         @subscriptions = Concurrent::Array.new
-        @resources = Concurrent::Array.new
         @message_counter = Concurrent::AtomicFixnum.new(0)
         @new_record = true
 
@@ -112,19 +111,6 @@ module ActionMCP
 
       def subscriptions
         SubscriptionCollection.new(@subscriptions)
-      end
-
-      def resources
-        ResourceCollection.new(@resources)
-      end
-
-      # Adapter methods
-      def adapter
-        ActionMCP::Server.server.pubsub
-      end
-
-      def session_key
-        "action_mcp:session:#{id}"
       end
 
       # Capability methods
@@ -378,8 +364,6 @@ module ActionMCP
         end
       end
 
-      class ResourceCollection < Array
-      end
     end
   end
 end

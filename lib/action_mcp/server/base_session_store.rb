@@ -18,7 +18,6 @@ module ActionMCP
           initialized: false,
           role: "server",
           messages_count: 0,
-          sse_event_counter: 0,
           created_at: Time.current,
           updated_at: Time.current
         }.merge(attributes)

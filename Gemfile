@@ -53,6 +53,7 @@ gem "json_schemer", ">= 2.4", group: [ :development, :test ]
 
 # File system watching for development
 gem "listen", group: :development
+gem "rails_lens", require: false, group: :development
 
 gem "rubocop-minitest", "~> 0.38.1", group: :development
 
