@@ -17,7 +17,6 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
         t.json :client_info, comment: 'The information about the client'
         t.boolean :initialized, null: false, default: false
         t.integer :messages_count, null: false, default: 0
-        t.integer :sse_event_counter, default: 0, null: false
         t.json :tool_registry, default: []
         t.json :prompt_registry, default: []
         t.json :resource_registry, default: []
@@ -57,46 +56,10 @@ class ConsolidatedMigration < ActiveRecord::Migration[8.0]
       end
     end
 
-    # Create session resources table
-    unless table_exists?(:action_mcp_session_resources)
-      create_table :action_mcp_session_resources do |t|
-        t.references :session,
-                     null: false,
-                     foreign_key: { to_table: :action_mcp_sessions, on_delete: :cascade },
-                     type: :string
-        t.string :uri, null: false
-        t.string :name
-        t.text :description
-        t.string :mime_type, null: false
-        t.boolean :created_by_tool, default: false
-        t.datetime :last_accessed_at
-        t.json :metadata
-        t.timestamps
-      end
-    end
-
-    # Create SSE events table
-    unless table_exists?(:action_mcp_sse_events)
-      create_table :action_mcp_sse_events do |t|
-        t.references :session, null: false, foreign_key: { to_table: :action_mcp_sessions }, index: true, type: :string
-        t.integer :event_id, null: false
-        t.text :data, null: false
-        t.timestamps
-
-        # Index for efficiently retrieving events after a given ID for a specific session
-        t.index %i[session_id event_id], unique: true
-        t.index :created_at # For cleanup of old events
-      end
-    end
-
     # Add missing columns to existing tables if they exist
 
     # For action_mcp_sessions
     if table_exists?(:action_mcp_sessions)
-      unless column_exists?(:action_mcp_sessions, :sse_event_counter)
-        add_column :action_mcp_sessions, :sse_event_counter, :integer, default: 0, null: false
-      end
-
       unless column_exists?(:action_mcp_sessions, :tool_registry)
         add_column :action_mcp_sessions, :tool_registry, :json, default: []
       end

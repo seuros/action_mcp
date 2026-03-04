@@ -1,5 +1,44 @@
 # frozen_string_literal: true
 
+# <rails-lens:schema:begin>
+# table = "action_mcp_session_tasks"
+# database_dialect = "SQLite"
+#
+# columns = [
+#   { name = "id", type = "string", pk = true, null = false },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "last_updated_at", type = "datetime", null = false },
+#   { name = "poll_interval", type = "integer" },
+#   { name = "progress_message", type = "string" },
+#   { name = "progress_percent", type = "integer" },
+#   { name = "request_method", type = "string" },
+#   { name = "request_name", type = "string" },
+#   { name = "request_params", type = "json" },
+#   { name = "result_payload", type = "json" },
+#   { name = "session_id", type = "string", null = false },
+#   { name = "status", type = "string", null = false, default = "working" },
+#   { name = "status_message", type = "string" },
+#   { name = "ttl", type = "integer" },
+#   { name = "updated_at", type = "datetime", null = false }
+# ]
+#
+# indexes = [
+#   { name = "index_action_mcp_session_tasks_on_status", columns = ["status"] },
+#   { name = "index_action_mcp_session_tasks_on_session_id", columns = ["session_id"] },
+#   { name = "index_action_mcp_session_tasks_on_session_id_and_status", columns = ["session_id", "status"] },
+#   { name = "index_action_mcp_session_tasks_on_created_at", columns = ["created_at"] }
+# ]
+#
+# foreign_keys = [
+#   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id", on_delete = "cascade", on_update = "cascade" }
+# ]
+#
+# [callbacks]
+# before_validation = [{ method = "set_last_updated_at" }]
+# around_validation = [{ method = "machine" }]
+#
+# notes = ["index_action_mcp_session_tasks_on_session_id:REDUND_IDX", "session:COUNTER_CACHE", "poll_interval:NOT_NULL", "progress_message:NOT_NULL", "progress_percent:NOT_NULL", "request_method:NOT_NULL", "request_name:NOT_NULL", "request_params:NOT_NULL", "result_payload:NOT_NULL", "status_message:NOT_NULL", "ttl:NOT_NULL", "status_message:DEFAULT", "id:LIMIT", "progress_message:LIMIT", "request_method:LIMIT", "request_name:LIMIT", "session_id:LIMIT", "status:LIMIT", "status_message:LIMIT", "status_message:INDEX"]
+# <rails-lens:schema:end>
 require "state_machines-activerecord"
 
 module ActionMCP

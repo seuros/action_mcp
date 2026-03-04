@@ -206,7 +206,6 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     config_content = {
       "shared" => {
         "authentication" => [ "none" ],
-        "adapter" => "simple",
         "verbose_logging" => true,
         "profiles" => {
           "primary" => {
@@ -217,7 +216,6 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
         }
       },
       "test" => {
-        "adapter" => "test",
         "verbose_logging" => false,
         "gateway_class" => "CustomGateway"
       }
@@ -230,7 +228,6 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     config = ActionMCP.configuration
     config.load_profiles
 
-    assert_equal "test", config.adapter
     assert_equal false, config.verbose_logging
     assert_equal "CustomGateway", config.instance_variable_get(:@gateway_class_name)
   end

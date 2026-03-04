@@ -5,17 +5,17 @@
 # database_dialect = "SQLite"
 #
 # columns = [
-#   { name = "id", type = "integer", primary_key = true, nullable = false },
-#   { name = "session_id", type = "string", nullable = false },
-#   { name = "direction", type = "string", nullable = false, default = "client" },
-#   { name = "message_type", type = "string", nullable = false },
-#   { name = "jsonrpc_id", type = "string", nullable = true },
-#   { name = "message_json", type = "json", nullable = true },
-#   { name = "is_ping", type = "boolean", nullable = false, default = "0" },
-#   { name = "request_acknowledged", type = "boolean", nullable = false, default = "0" },
-#   { name = "request_cancelled", type = "boolean", nullable = false, default = "0" },
-#   { name = "created_at", type = "datetime", nullable = false },
-#   { name = "updated_at", type = "datetime", nullable = false }
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "direction", type = "string", null = false, default = "client" },
+#   { name = "is_ping", type = "boolean", null = false },
+#   { name = "jsonrpc_id", type = "string" },
+#   { name = "message_json", type = "json" },
+#   { name = "message_type", type = "string", null = false },
+#   { name = "request_acknowledged", type = "boolean", null = false },
+#   { name = "request_cancelled", type = "boolean", null = false },
+#   { name = "session_id", type = "string", null = false },
+#   { name = "updated_at", type = "datetime", null = false }
 # ]
 #
 # indexes = [
@@ -26,14 +26,10 @@
 #   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id", on_delete = "cascade", on_update = "cascade" }
 # ]
 #
-# == Notes
-# - Column 'message_json' should probably have NOT NULL constraint
-# - String column 'session_id' has no length limit - consider adding one
-# - String column 'direction' has no length limit - consider adding one
-# - String column 'message_type' has no length limit - consider adding one
-# - String column 'jsonrpc_id' has no length limit - consider adding one
-# - Column 'message_type' is commonly used in queries - consider adding an index
-# - Column 'is_ping' uses non-conventional prefix - consider removing 'is_' or 'has_'
+# [callbacks]
+# after_create = [{ method = "acknowledge_request", if = ["proc"] }]
+#
+# notes = ["message_json:NOT_NULL", "direction:LIMIT", "jsonrpc_id:LIMIT", "message_type:LIMIT", "session_id:LIMIT", "message_type:INDEX"]
 # <rails-lens:schema:end>
 module ActionMCP
   class Session
@@ -49,15 +45,12 @@ module ActionMCP
                  inverse_of: :messages,
                  counter_cache: true
 
-      delegate :adapter,
-               :role,
-               :session_key,
+      delegate :role,
                to: :session
 
       # Virtual attribute for data
       attr_reader :data
 
-      after_create_commit :broadcast_message, if: :outgoing_message?
       # Set is_ping on responses if the original request was a ping
       after_create :acknowledge_request, if: -> { %w[response error].include?(message_type) }
 
@@ -116,16 +109,6 @@ module ActionMCP
       end
 
       private
-
-      def outgoing_message?
-        direction != role
-      end
-
-      def broadcast_message
-        return unless adapter.present?
-
-        adapter.broadcast(session_key, data.to_json)
-      end
 
       def process_json_content(content)
         if content.is_a?(JSON_RPC::Notification) || content.is_a?(JSON_RPC::Request) || content.is_a?(JSON_RPC::Response)

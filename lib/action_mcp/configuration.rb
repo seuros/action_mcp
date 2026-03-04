@@ -37,12 +37,10 @@ module ActionMCP
                   :session_store_type,
                   :client_session_store_type,
                   :server_session_store_type,
-                  # --- Pub/Sub and Thread Pool Options ---
-                  :adapter,
+                  # --- Thread Pool Options ---
                   :min_threads,
                   :max_threads,
                   :max_queue,
-                  :polling_interval,
                   :connects_to,
                   # --- Tasks Options (MCP 2025-11-25) ---
                   :tasks_enabled,
@@ -350,21 +348,12 @@ module ActionMCP
       # Create a wrapper that handles both symbol and string keys
       config = HashWithIndifferentAccess.new(app_config)
 
-      # Extract adapter configuration
-      if config["adapter"]
-        # This will be handled by the pub/sub system, we just store it for now
-        @adapter = config["adapter"]
-      end
-
       # Extract thread pool settings
       @min_threads = config["min_threads"] if config["min_threads"]
 
       @max_threads = config["max_threads"] if config["max_threads"]
 
       @max_queue = config["max_queue"] if config["max_queue"]
-
-      # Extract polling interval for solid_cable
-      @polling_interval = config["polling_interval"] if config["polling_interval"]
 
       # Extract connects_to setting
       @connects_to = config["connects_to"] if config["connects_to"]

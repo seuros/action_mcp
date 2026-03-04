@@ -1,6 +1,4 @@
 # ActionMCP Configuration
-# This file contains configuration for the ActionMCP server including
-# authentication, profiles, and pub/sub system settings.
 
 shared:
   # Authentication configuration - array of methods to try in order
@@ -63,12 +61,6 @@ development:
     - "Development server for testing ActionMCP integration"
     - "Use for experimenting with MCP tools and prompts"
 
-  # Use solid_mcp pub/sub adapter for development
-  adapter: solid_mcp
-  polling_interval: 0.1
-  batch_size: 100
-  flush_interval: 0.05
-
   # Session store - use active_record for Falcon multi-process compatibility
   session_store_type: active_record
 
@@ -85,10 +77,6 @@ test:
 
   # Configure the gateway class for authentication
   gateway_class: "ApplicationGateway"
-
-  # Test adapter for testing
-  adapter: test
-
   # Use volatile sessions for testing (fast cleanup)
   # session_store_type: volatile
 
@@ -104,30 +92,11 @@ production:
       prompts: []
       resources: []
 
-  # Production session store configuration
-  # Use persistent storage for production reliability
   # session_store_type: active_record
-  # Or configure separately:
-  # client_session_store_type: active_record  # Client connections persist across restarts
-  # server_session_store_type: active_record  # Server state persists across deployments
-
-  # Choose one of the following adapters:
-
-  # 1. Database-backed adapter (recommended)
-  adapter: solid_mcp
-  polling_interval: 0.5.seconds
-  batch_size: 200      # Number of messages to write in a single batch
-  flush_interval: 0.05 # Seconds between batch flushes
+  # client_session_store_type: active_record
+  # server_session_store_type: active_record
 
   # Thread pool configuration (optional)
-  min_threads: 10     # Minimum number of threads in the pool
-  max_threads: 20     # Maximum number of threads in the pool
-  max_queue: 500      # Maximum number of tasks that can be queued
-
-  # 2. Redis-backed adapter (alternative)
-  # adapter: redis
-  # url: redis://localhost:6379/1
-  # channel_prefix: my_mcp_app_production
-  # min_threads: 10    # Minimum number of threads in the pool
-  # max_threads: 20    # Maximum number of threads in the pool
-  # max_queue: 500     # Maximum number of tasks that can be queued
+  # min_threads: 10
+  # max_threads: 20
+  # max_queue: 500

@@ -5,12 +5,12 @@
 # database_dialect = "SQLite"
 #
 # columns = [
-#   { name = "id", type = "integer", primary_key = true, nullable = false },
-#   { name = "session_id", type = "string", nullable = false },
-#   { name = "uri", type = "string", nullable = false },
-#   { name = "last_notification_at", type = "datetime", nullable = true },
-#   { name = "created_at", type = "datetime", nullable = false },
-#   { name = "updated_at", type = "datetime", nullable = false }
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "last_notification_at", type = "datetime" },
+#   { name = "session_id", type = "string", null = false },
+#   { name = "updated_at", type = "datetime", null = false },
+#   { name = "uri", type = "string", null = false }
 # ]
 #
 # indexes = [
@@ -21,10 +21,7 @@
 #   { column = "session_id", references_table = "action_mcp_sessions", references_column = "id", on_delete = "cascade" }
 # ]
 #
-# == Notes
-# - Consider adding counter cache for 'session'
-# - String column 'session_id' has no length limit - consider adding one
-# - String column 'uri' has no length limit - consider adding one
+# notes = ["session:COUNTER_CACHE", "session_id:LIMIT", "uri:LIMIT"]
 # <rails-lens:schema:end>
 module ActionMCP
   class Session

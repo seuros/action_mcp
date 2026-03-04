@@ -43,18 +43,9 @@ module ActionMCP
   DEFAULT_PROTOCOL_VERSION = "2025-06-18" # Default to previous stable version for backwards compatibility
   class << self
     # Returns a Rack-compatible application for serving MCP requests
-    # This makes ActionMCP.server work similar to ActionCable.server
     # @return [#call] A Rack application that can be used with `run ActionMCP.server`
     def server
-      @server ||= begin
-        # Initialize the actual server for PubSub.
-        # The return value is intentionally discarded as only the side effects are needed.
-        Server.server
-
-        # Return the Engine as the Rack application
-        # The Engine will handle routing to the UnifiedController
-        Engine
-      end
+      Engine
     end
 
     # Returns the configuration instance.

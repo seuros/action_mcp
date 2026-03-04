@@ -5,15 +5,15 @@
 # database_dialect = "SQLite"
 #
 # columns = [
-#   { name = "id", type = "integer", primary_key = true, nullable = false },
-#   { name = "email", type = "string", nullable = true },
-#   { name = "name", type = "string", nullable = true },
-#   { name = "created_at", type = "datetime", nullable = false },
-#   { name = "updated_at", type = "datetime", nullable = false },
-#   { name = "password_digest", type = "string", nullable = true },
-#   { name = "api_key", type = "string", nullable = true },
-#   { name = "active", type = "boolean", nullable = true, default = "1" },
-#   { name = "last_login_at", type = "datetime", nullable = true }
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "active", type = "boolean", default = true },
+#   { name = "api_key", type = "string" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "email", type = "string" },
+#   { name = "last_login_at", type = "datetime" },
+#   { name = "name", type = "string" },
+#   { name = "password_digest", type = "string" },
+#   { name = "updated_at", type = "datetime", null = false }
 # ]
 #
 # indexes = [
@@ -21,16 +21,10 @@
 #   { name = "index_users_on_api_key", columns = ["api_key"], unique = true }
 # ]
 #
-# == Notes
-# - Column 'email' should probably have NOT NULL constraint
-# - Column 'name' should probably have NOT NULL constraint
-# - Column 'password_digest' should probably have NOT NULL constraint
-# - Column 'api_key' should probably have NOT NULL constraint
-# - Column 'active' should probably have NOT NULL constraint
-# - String column 'email' has no length limit - consider adding one
-# - String column 'name' has no length limit - consider adding one
-# - String column 'password_digest' has no length limit - consider adding one
-# - String column 'api_key' has no length limit - consider adding one
+# [callbacks]
+# before_create = [{ method = "generate_api_key" }]
+#
+# notes = ["active:NOT_NULL", "api_key:NOT_NULL", "email:NOT_NULL", "name:NOT_NULL", "password_digest:NOT_NULL", "api_key:LIMIT", "email:LIMIT", "name:LIMIT", "password_digest:LIMIT"]
 # <rails-lens:schema:end>
 class User < ApplicationRecord
   has_secure_password

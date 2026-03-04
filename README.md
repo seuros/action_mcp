@@ -491,51 +491,6 @@ end
 
 For dynamic versioning, consider adding the `rails_app_version` gem.
 
-
-### PubSub Configuration
-
-ActionMCP uses a pub/sub system for real-time communication. You can choose between several adapters:
-
-1. **SolidMCP** - Database-backed pub/sub (no Redis required)
-2. **Simple** - In-memory pub/sub for development and testing
-3. **Redis** - Redis-backed pub/sub (if you prefer Redis)
-
-#### Migrating from ActionCable
-
-If you were previously using ActionCable with ActionMCP, you will need to migrate to the new PubSub system. Here's how:
-
-1. Remove the ActionCable dependency from your Gemfile (if you don't need it for other purposes)
-2. Install one of the PubSub adapters (SolidMCP recommended)
-3. Create a configuration file at `config/mcp.yml` (you can use the generator: `bin/rails g action_mcp:config`)
-4. Run your tests to ensure everything works correctly
-
-The new PubSub system maintains the same API as the previous ActionCable-based implementation, so your existing code should continue to work without changes.
-
-Configure your adapter in `config/mcp.yml`:
-
-```yaml
-development:
-  adapter: solid_mcp
-  polling_interval: 0.1.seconds
-  # Thread pool configuration (optional)
-  # min_threads: 5     # Minimum number of threads in the pool
-  # max_threads: 10    # Maximum number of threads in the pool
-  # max_queue: 100     # Maximum number of tasks that can be queued
-
-test:
-  adapter: test    # Uses the simple in-memory adapter
-
-production:
-  adapter: solid_mcp
-  polling_interval: 0.5.seconds
-  # Optional: connects_to: cable  # If using a separate database
-
-  # Thread pool configuration for high-traffic environments
-  min_threads: 10     # Minimum number of threads in the pool
-  max_threads: 20     # Maximum number of threads in the pool
-  max_queue: 500      # Maximum number of tasks that can be queued
-```
-
 ### Server Instructions
 
 Server instructions help LLMs understand **what your server is for** and **when to use it**. They describe the server's purpose and goal, not technical details like rate limits or authentication (tools are self-documented via their own descriptions).
@@ -564,46 +519,6 @@ production:
 ```
 
 Instructions are sent as a single string (joined by newlines) at the top level of the initialization response, helping LLMs understand your server's purpose.
-
-#### SolidMCP (Database-backed, Recommended)
-
-For SolidMCP, add it to your Gemfile:
-
-```ruby
-gem "solid_mcp"  # Database-backed adapter optimized for MCP
-```
-
-Then install it:
-
-```bash
-bundle install
-bin/rails solid_mcp:install:migrations
-bin/rails db:migrate
-```
-
-The installer will create the necessary database migration for message storage. Configure it in your `config/mcp.yml`.
-
-#### Redis Adapter
-
-If you prefer Redis, add it to your Gemfile:
-
-```ruby
-gem "redis", "~> 5.0"
-```
-
-Then configure the Redis adapter in your `config/mcp.yml`:
-
-```yaml
-production:
-  adapter: redis
-  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  channel_prefix: your_app_production
-
-  # Thread pool configuration for high-traffic environments
-  min_threads: 10     # Minimum number of threads in the pool
-  max_threads: 20     # Maximum number of threads in the pool
-  max_queue: 500      # Maximum number of tasks that can be queued
-```
 
 ## Session Storage
 
@@ -747,7 +662,6 @@ You can configure the thread pool in your `config/mcp.yml`:
 
 ```yaml
 production:
-  adapter: solid_mcp
   # Thread pool configuration
   min_threads: 10    # Minimum number of threads to keep in the pool
   max_threads: 20    # Maximum number of threads the pool can grow to
@@ -774,7 +688,7 @@ This ensures all thread pools are properly terminated and tasks are completed.
 
 > **WARNING: Do NOT mount ActionMCP::Engine in your `routes.rb`.** ActionMCP is a standalone Rack application that runs on its own port via `mcp/config.ru`. Mounting it as a Rails engine route will not work correctly.
 
-When you use `run ActionMCP.server` in your `mcp/config.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`. Always use `ActionMCP.server` (not `ActionMCP::Engine` directly) — it initializes PubSub and other required subsystems.
+When you use `run ActionMCP.server` in your `mcp/config.ru`, the MCP endpoint is available at the root path (`/`) by default and can be configured via `config.action_mcp.base_path`. Always use `ActionMCP.server` (not `ActionMCP::Engine` directly) — it initializes required subsystems.
 
 ### Installing ActionMCP
 
@@ -798,7 +712,7 @@ This will create:
 
 ## Authentication with Gateway
 
-ActionMCP provides a Gateway system similar to ActionCable's Connection for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
+ActionMCP provides a Gateway system for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
 
 ActionMCP uses a Gateway pattern with pluggable identifiers for authentication. You can implement custom authentication strategies using session-based auth, API keys, bearer tokens, or integrate with existing authentication systems like Warden, Devise, or external OAuth providers.
 
@@ -910,7 +824,7 @@ $stdout.sync = true
 # Eager load so all tools, prompts, and resources are registered.
 Rails.application.eager_load!
 
-# IMPORTANT: Use ActionMCP.server — it initializes PubSub and other subsystems.
+# IMPORTANT: Use ActionMCP.server — it initializes required subsystems.
 # Do NOT use ActionMCP::Engine directly.
 run ActionMCP.server
 ```
