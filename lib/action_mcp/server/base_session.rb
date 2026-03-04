@@ -363,7 +363,6 @@ module ActionMCP
           find { |s| s[:uri] == attributes[:uri] }
         end
       end
-
     end
   end
 end
