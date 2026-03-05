@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.107.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.106.1...action_mcp/v0.107.0) (2026-03-04)
+
+
+### Features
+
+* add configure_session hook to Gateway for persistent auth context ([#193](https://github.com/seuros/action_mcp/issues/193)) ([34be37f](https://github.com/seuros/action_mcp/commit/34be37f1679dd2cd50b51283d292a42a7443b436))
+* generate mcp.ru and bin/mcp on install, fix Engine references ([#191](https://github.com/seuros/action_mcp/issues/191)) ([42f8c47](https://github.com/seuros/action_mcp/commit/42f8c47a33781940ef25867f9351df665b03b9db))
+
 ## [0.106.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.106.0...action_mcp/v0.106.1) (2026-02-25)
 
 
