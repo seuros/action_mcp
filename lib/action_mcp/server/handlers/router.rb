@@ -4,6 +4,8 @@ module ActionMCP
   module Server
     module Handlers
       class Router
+        include CustomMethodRouting
+
         def initialize(handler)
           @handler = handler
         end
@@ -23,8 +25,7 @@ module ActionMCP
           when "completion/complete"
             @handler.process_completion_complete(id, params)
           else
-            raise ActionMCP::Server::JSON_RPC::JsonRpcError.new(:method_not_found,
-                                                                message: "Method not found: #{rpc_method}")
+            route_custom_method_or_raise(rpc_method, id, params, @handler.transport)
           end
         end
       end
