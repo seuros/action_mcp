@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.107.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.107.0...action_mcp/v0.107.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* handle object type in property DSL without ActiveModel coercion ([b366895](https://github.com/seuros/action_mcp/commit/b366895229dcbefc37993ddd0b9d672dea50cbec))
+
 ## [0.107.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.106.1...action_mcp/v0.107.0) (2026-03-04)
 
 
