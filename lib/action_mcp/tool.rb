@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "action_mcp/types/float_array_type"
+require "action_mcp/types/hash_type"
 require "action_mcp/schema_helpers"
 
 module ActionMCP
@@ -601,10 +602,13 @@ module ActionMCP
     # @return [Symbol] The corresponding ActiveModel attribute type.
     def self.map_json_type_to_active_model_type(type)
       case type.to_s
-      when "number" then :float # JSON Schema "number" is a float in Ruby, the spec doesn't have an integer type yet.
-      when "array_number" then :float_array
+      when "number"        then :float # JSON Schema "number" maps to float; no distinct integer type in JSON Schema number.
+      when "integer"       then :integer
+      when "boolean"       then :boolean
+      when "object"        then Types::HashType.new
+      when "array_number"  then :float_array
       when "array_integer" then :integer_array
-      when "array_string" then :string_array
+      when "array_string"  then :string_array
       else :string
       end
     end

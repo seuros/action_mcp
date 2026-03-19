@@ -126,6 +126,27 @@ class ToolTest < ActiveSupport::TestCase
   end
 end
 
+class ObjectTypeToolTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "MetadataTool to_h includes object type in inputSchema" do
+    schema = MetadataTool.to_h
+    assert_equal "object", schema.dig(:inputSchema, :properties, "attributes", :type)
+  end
+
+  test "object property preserves Hash without coercion" do
+    attrs = { "env" => "production", "region" => "us-east-1" }
+    tool = MetadataTool.new(name: "app", attributes: attrs)
+    assert_instance_of Hash, tool.attributes
+    assert_equal attrs, tool.attributes
+  end
+
+  test "object property returns nil when not provided" do
+    tool = MetadataTool.new(name: "app")
+    assert_nil tool.attributes
+  end
+end
+
 class ToolExecutionTest < ActiveSupport::TestCase
   include ActionMCP::TestHelper
 
