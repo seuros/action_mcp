@@ -189,6 +189,48 @@ ActionMCP::Content::Resource.new(uri, "image/png", blob: Base64.strict_encode64(
 - Standard Rails validations apply to parameters
 - Listed URIs are validated against the declaring template's pattern
 
+## Testing
+
+ActionMCP provides test helpers for resource templates. Include `ActionMCP::TestHelper` in your test class:
+
+```ruby
+require "test_helper"
+require "action_mcp/test_helper"
+
+class ProductTemplateTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "template is registered" do
+    assert_mcp_resource_template_findable("products")
+  end
+
+  test "resolves a product by URI" do
+    resp = resolve_mcp_resource("store://products/1")
+
+    assert resp.success?
+    assert_not_empty resp.contents
+    assert_equal "application/json", resp.contents.first.mime_type
+  end
+
+  test "returns error for nonexistent product" do
+    resp = resolve_mcp_resource_with_error("store://products/0")
+
+    assert resp.is_error
+  end
+
+  test "lists available resources" do
+    resources = ProductTemplate.list
+    assert_kind_of Array, resources
+  end
+end
+```
+
+Available helpers:
+
+- `assert_mcp_resource_template_findable(name)` - Verifies a resource template is registered
+- `resolve_mcp_resource(uri)` - Resolves a URI via the matching template and asserts success
+- `resolve_mcp_resource_with_error(uri)` - Resolves a URI without asserting success (for testing error cases)
+
 ## Callbacks
 
 Resource templates support callbacks around the `resolve` method:

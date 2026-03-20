@@ -999,13 +999,55 @@ class ToolTest < ActiveSupport::TestCase
 end
 ```
 
-The TestHelper provides several assertion methods:
-- `assert_tool_findable(name)` - Verifies a tool exists and is registered
-- `assert_prompt_findable(name)` - Verifies a prompt exists and is registered
-- `execute_tool(name, **args)` - Executes a tool with arguments
-- `execute_prompt(name, **args)` - Executes a prompt with arguments
-- `assert_tool_output(result, expected)` - Asserts tool output matches expected text
-- `assert_prompt_output(result)` - Extracts and returns prompt output for assertions
+The TestHelper provides several assertion and execution methods:
+
+**Tools:**
+- `assert_mcp_tool_findable(name)` - Verifies a tool exists and is registered
+- `execute_mcp_tool(name, **args)` - Executes a tool with arguments and asserts success
+- `execute_mcp_tool_with_error(name, **args)` - Executes a tool without asserting success (for testing error cases)
+- `assert_mcp_tool_output(expected, response)` - Asserts tool output matches expected content
+
+**Prompts:**
+- `assert_mcp_prompt_findable(name)` - Verifies a prompt exists and is registered
+- `execute_mcp_prompt(name, **args)` - Executes a prompt with arguments
+- `assert_mcp_prompt_output(expected, response)` - Asserts prompt output matches expected content
+
+**Resource Templates:**
+- `assert_mcp_resource_template_findable(name)` - Verifies a resource template exists and is registered
+- `resolve_mcp_resource(uri)` - Resolves a resource URI and asserts success
+- `resolve_mcp_resource_with_error(uri)` - Resolves a resource URI without asserting success (for testing error cases)
+
+**General:**
+- `assert_mcp_error_code(code, response)` - Asserts a specific JSON-RPC error code
+
+### Testing Resource Templates
+
+```ruby
+require "test_helper"
+require "action_mcp/test_helper"
+
+class ProductResourceTest < ActiveSupport::TestCase
+  include ActionMCP::TestHelper
+
+  test "product template is registered" do
+    assert_mcp_resource_template_findable("products")
+  end
+
+  test "resolves a product resource by URI" do
+    resp = resolve_mcp_resource("ecommerce://products/1")
+
+    assert resp.success?
+    assert_not_empty resp.contents
+    assert_equal "application/json", resp.contents.first.mime_type
+  end
+
+  test "returns error for nonexistent product" do
+    resp = resolve_mcp_resource_with_error("ecommerce://products/0")
+
+    assert resp.is_error
+  end
+end
+```
 
 ## Inspecting Your MCP Server
 
