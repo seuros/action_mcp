@@ -307,6 +307,70 @@ module ActionMCP
       assert_equal "bad-init", error_response["id"]
     end
 
+    test "initialize with unknown Mcp-Session-Id header returns error instead of crashing" do
+      init_request = {
+        jsonrpc: "2.0",
+        id: "1",
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          clientInfo: { name: "test-client", version: "1.0.0" },
+          capabilities: {}
+        }
+      }
+
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json",
+             "Mcp-Session-Id" => "nonexistent-session-id"
+           },
+           params: init_request.to_json
+
+      assert_response :ok
+      body = response.parsed_body
+      assert_equal "1", body["id"], "Should preserve the request ID"
+      assert_not_nil body["error"], "Should return a JSON-RPC error, not crash"
+      assert_match(/session not found/i, body["error"]["message"])
+    end
+
+    test "Copilot Studio initialize with unknown session ID and unsupported protocol version" do
+      copilot_payload = {
+        jsonrpc: "2.0",
+        id: "1",
+        method: "initialize",
+        params: {
+          capabilities: {},
+          clientInfo: {
+            agentAuthenticationMode: "None",
+            agentName: "MCP2",
+            appId: "81004344-fb1a-4701-a2bd-ef33bab6bff9",
+            cdsBotId: "d340d39c-b1d9-f011-8406-7c1e523701e8",
+            channelId: "pva-studio",
+            name: "mcs",
+            version: "1.0.0"
+          },
+          protocolVersion: "2024-11-05",
+          sessionContext: {
+            "Mcp-Session-Id": "c829a212-7973-4e15-828e-7effa6b7f7f3"
+          }
+        }
+      }
+
+      post "/",
+           headers: {
+             "CONTENT_TYPE" => "application/json",
+             "ACCEPT" => "application/json",
+             "Mcp-Session-Id" => "c829a212-7973-4e15-828e-7effa6b7f7f3"
+           },
+           params: copilot_payload.to_json
+
+      assert_response :ok
+      body = response.parsed_body
+      assert_equal "1", body["id"], "Should preserve the request ID"
+      assert_not_nil body["error"], "Should return a JSON-RPC error, not crash"
+    end
+
     test "ping" do
       session = create_initialized_session
       session_id = session.id
