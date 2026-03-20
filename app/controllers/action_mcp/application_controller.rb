@@ -70,6 +70,11 @@ module ActionMCP
         end
       end
 
+      if session.nil?
+        id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
+        return render_not_found("Session not found.", id)
+      end
+
       if session.new_record?
         session.save!
         response.headers[MCP_SESSION_ID_HEADER] = session.id
