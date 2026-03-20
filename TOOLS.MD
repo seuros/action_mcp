@@ -117,6 +117,33 @@ def fetch_weather_for(city)
 end
 ```
 
+## Base Classes and `abstract!`
+
+The generator creates `ApplicationMCPTool` as your base class. If you create additional intermediate base classes (e.g., for shared behavior across a group of tools), mark them with `abstract!` so they don't appear in tool listings:
+
+```ruby
+class AdminBaseTool < ApplicationMCPTool
+  abstract!
+
+  # Shared behavior for all admin tools
+  before_perform :require_admin!
+
+  private
+
+  def require_admin!
+    report_error("Admin access required") unless current_user&.admin?
+  end
+end
+
+class ManageUsersTool < AdminBaseTool
+  tool_name "manage_users"
+  description "Manage user accounts"
+  # This tool WILL appear in listings
+end
+```
+
+Without `abstract!`, your base class would register as a tool and appear in `rails action_mcp:list_tools`. The same applies to `ApplicationMCPPrompt` and `ApplicationMCPResTemplate` — the install generator already handles this for the top-level base classes, but any intermediate base classes you create need `abstract!` explicitly.
+
 ## The Core Pattern
 
 Every tool follows this pattern:
@@ -927,6 +954,22 @@ end
 5. **Validate input** when resuming from continuation
 6. **Set reasonable timeouts** to avoid hanging jobs
 7. **Log important transitions** between steps
+
+## Introspection API
+
+### `schema_property_keys`
+
+Returns an array of string keys for all defined properties on a tool class. Useful for logging, debugging, or building dynamic tool wrappers:
+
+```ruby
+CalculateSumTool.schema_property_keys
+# => ["a", "b"]
+
+FlexibleApiTool.schema_property_keys
+# => ["endpoint", "method"]
+```
+
+This is a class method available on any `ActionMCP::Tool` subclass. The result is cached and automatically invalidated when properties change.
 
 ## Security Best Practices
 

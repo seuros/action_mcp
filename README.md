@@ -712,9 +712,11 @@ This will create:
 
 ## Authentication with Gateway
 
-ActionMCP provides a Gateway system for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components.
+ActionMCP provides a Gateway system for handling authentication. The Gateway allows you to authenticate users and make them available throughout your MCP components. For the full gateway reference including identifier classes, session persistence, profile switching, and production hardening tips, see **[GATEWAY.md](GATEWAY.md)**.
 
 ActionMCP uses a Gateway pattern with pluggable identifiers for authentication. You can implement custom authentication strategies using session-based auth, API keys, bearer tokens, or integrate with existing authentication systems like Warden, Devise, or external OAuth providers.
+
+> **Note:** Auth errors return HTTP 200 with a JSON-RPC error payload (not HTTP 401). This is correct per the MCP specification — all MCP communication uses JSON-RPC over HTTP, and protocol-level errors are expressed within the JSON-RPC envelope. The `initialize` request bypasses authentication per MCP spec.
 
 ### Creating an ApplicationGateway
 
@@ -1000,12 +1002,38 @@ end
 ```
 
 The TestHelper provides several assertion methods:
-- `assert_tool_findable(name)` - Verifies a tool exists and is registered
-- `assert_prompt_findable(name)` - Verifies a prompt exists and is registered
-- `execute_tool(name, **args)` - Executes a tool with arguments
-- `execute_prompt(name, **args)` - Executes a prompt with arguments
-- `assert_tool_output(result, expected)` - Asserts tool output matches expected text
-- `assert_prompt_output(result)` - Extracts and returns prompt output for assertions
+- `assert_mcp_tool_findable(name)` - Verifies a tool exists and is registered
+- `assert_mcp_prompt_findable(name)` - Verifies a prompt exists and is registered
+- `execute_mcp_tool(name, **args)` - Executes a tool with arguments and asserts success
+- `execute_mcp_tool_with_error(name, **args)` - Executes a tool without asserting success (for testing error cases)
+- `execute_mcp_prompt(name, **args)` - Executes a prompt with arguments
+- `assert_mcp_tool_output(result, expected)` - Asserts tool output matches expected content
+- `assert_mcp_prompt_output(result, expected)` - Asserts prompt output matches expected content
+- `assert_mcp_error_code(code, response)` - Asserts a specific JSON-RPC error code
+
+### Testing Resource Templates
+
+Resource templates don't have a dedicated test helper yet. Test them by instantiating and calling `resolve` directly:
+
+```ruby
+class ProductResourceTemplateTest < ActiveSupport::TestCase
+  test "resolves a product resource" do
+    product = Product.create!(name: "Widget", price: 9.99)
+    template = ProductResourceTemplate.new(id: product.id.to_s)
+
+    assert template.valid?
+    resource = template.resolve
+
+    assert_not_nil resource
+    assert_equal "application/json", resource.mime_type
+  end
+
+  test "list returns available resources" do
+    resources = ProductResourceTemplate.list
+    assert_kind_of Array, resources
+  end
+end
+```
 
 ## Inspecting Your MCP Server
 
