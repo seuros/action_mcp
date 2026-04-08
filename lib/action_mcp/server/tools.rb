@@ -20,6 +20,25 @@ module ActionMCP
         # Use session's registered tools instead of global registry
         registered_tools = session.registered_tools
 
+        # Allow session to narrow down which tools appear in tools/list responses.
+        #
+        # NOTE: This is a *display filter* for the listing only. It does NOT restrict
+        # tool execution — clients can still call any registered tool by name via
+        # tools/call. Do not rely on this hook for authorization or access control.
+        #
+        # On error (or non-Array return), falls back to the unfiltered list so that
+        # a buggy filter never breaks discoverability (fail-open).
+        if session.respond_to?(:filter_tools_list)
+          begin
+            filtered = session.filter_tools_list(registered_tools, params)
+            if filtered.is_a?(Array)
+              registered_tools = filtered.select { |t| t.is_a?(Class) && t.respond_to?(:tool_name) }
+            end
+          rescue StandardError => e
+            Rails.logger.error "filter_tools_list error: #{e.class} - #{e.message}"
+          end
+        end
+
         tools = registered_tools.map do |tool_class|
           tool_class.to_h(protocol_version: protocol_version)
         end

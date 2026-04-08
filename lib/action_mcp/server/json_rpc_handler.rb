@@ -8,6 +8,7 @@ module ActionMCP
       include Handlers::PromptHandler
       include Handlers::LoggingHandler
       include Handlers::TaskHandler
+      include Handlers::CustomMethodRouting
       include ErrorHandling
       include ErrorAware
 
@@ -62,7 +63,7 @@ module ActionMCP
         when Methods::LOGGING_SET_LEVEL
           handle_logging_set_level(id, params)
         else
-          raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Method not found: #{rpc_method}")
+          route_custom_method_or_raise(rpc_method, id, params, transport)
         end
       end
 
