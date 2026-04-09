@@ -330,7 +330,7 @@ Call it as a task from a client by adding `_meta.task` (creates a Task record an
 }
 ```
 
-Poll task status with `tasks/get` or fetch the result when finished with `tasks/result`. Use `tasks/cancel` to stop non-terminal tasks.
+Poll task status with `tasks/get` or fetch the result when finished with `tasks/result`. Use `tasks/cancel` to stop non-terminal tasks. `tasks/list` returns tasks in recent-first order and always paginates (default 50 per page, or `pagination_page_size` if configured). The response includes an opaque `nextCursor` when more results are available — treat cursors as opaque tokens.
 
 ### ActionMCP::ResourceTemplate
 
@@ -490,6 +490,25 @@ end
 ```
 
 For dynamic versioning, consider adding the `rails_app_version` gem.
+
+### Pagination
+
+All list endpoints (`tools/list`, `prompts/list`, `resources/list`, `resources/templates/list`) support cursor-based pagination per the MCP specification. Pagination is **off by default** — set `pagination_page_size` to enable:
+
+```ruby
+config.action_mcp.pagination_page_size = 10
+```
+
+Or in `config/mcp.yml`:
+
+```yaml
+shared:
+  pagination_page_size: 10
+```
+
+When set, responses include an opaque `nextCursor` when more items are available. When `nil` (default), all items are returned in a single response. Enable only when your clients support cursor-based pagination.
+
+`tasks/list` always paginates regardless of this setting (defaults to 50 per page, or `pagination_page_size` if configured).
 
 ### Server Instructions
 

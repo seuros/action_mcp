@@ -3,10 +3,15 @@
 module ActionMCP
   module Server
     module Prompts
-      def send_prompts_list(request_id)
-        # Use session's registered prompts
-        prompts = session.registered_prompts.map(&:to_h)
-        send_jsonrpc_response(request_id, result: { prompts: prompts })
+      def send_prompts_list(request_id, params = {})
+        page, next_cursor = paginate(session.registered_prompts, cursor: params["cursor"])
+
+        result = { prompts: page.map(&:to_h) }
+        result[:nextCursor] = next_cursor if next_cursor
+
+        send_jsonrpc_response(request_id, result: result)
+      rescue Server::CursorError => e
+        send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
 
       def send_prompts_get(request_id, prompt_name, params)

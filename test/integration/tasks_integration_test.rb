@@ -144,6 +144,56 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 13, body["result"]["tasks"].length
   end
 
+  test "tasks/list cursor follows recent ordering when ids and insert order diverge" do
+    original_page_size = ActionMCP.configuration.pagination_page_size
+    ActionMCP.configuration.pagination_page_size = 1
+    @session.tasks.delete_all
+
+    older = @session.tasks.create!(
+      id: "z-task",
+      request_method: "tools/call",
+      request_name: "older_task"
+    )
+    newer = @session.tasks.create!(
+      id: "a-task",
+      request_method: "tools/call",
+      request_name: "newer_task"
+    )
+
+    base_time = Time.zone.parse("2026-01-01 00:00:00 UTC")
+    older.update_columns(created_at: base_time, updated_at: base_time, last_updated_at: base_time)
+    newer.update_columns(created_at: base_time + 1.second, updated_at: base_time + 1.second, last_updated_at: base_time + 1.second)
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "test-5a",
+           method: "tasks/list"
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal [ newer.id ], body["result"]["tasks"].map { |task| task["id"] }
+    assert body["result"]["nextCursor"]
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "test-5b",
+           method: "tasks/list",
+           params: { cursor: body["result"]["nextCursor"] }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal [ older.id ], body["result"]["tasks"].map { |task| task["id"] }
+    assert_nil body["result"]["nextCursor"]
+  ensure
+    ActionMCP.configuration.pagination_page_size = original_page_size
+  end
+
   # tasks/result tests
   test "tasks/result returns result for completed task" do
     post "/",

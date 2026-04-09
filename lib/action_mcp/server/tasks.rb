@@ -37,25 +37,21 @@ module ActionMCP
         send_jsonrpc_response(request_id, result: task.to_task_result)
       end
 
-      # List tasks for the session with optional pagination
+      # List tasks for the session with keyset pagination.
+      # Tasks always paginate (AR-backed, can grow unbounded).
+      # Cursor is the last task id from the previous page. We resolve it
+      # through AR so the boundary matches the recent scope exactly.
       # @param request_id [String, Integer] JSON-RPC request ID
       # @param cursor [String, nil] Pagination cursor
       def send_tasks_list(request_id, cursor: nil)
-        # Parse cursor if provided
-        offset = cursor.to_i if cursor.present?
-        offset ||= 0
-        limit = 50
+        page, next_cursor = paginate_tasks_by_recent(cursor: cursor, page_size: pagination_page_size || 50)
 
-        tasks = session.tasks.recent.offset(offset).limit(limit + 1)
-        has_more = tasks.length > limit
-        tasks = tasks.first(limit)
-
-        result = {
-          tasks: tasks.map(&:to_task_data)
-        }
-        result[:nextCursor] = (offset + limit).to_s if has_more
+        result = { tasks: page.map(&:to_task_data) }
+        result[:nextCursor] = next_cursor if next_cursor
 
         send_jsonrpc_response(request_id, result: result)
+      rescue Server::CursorError => e
+        send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
 
       # Cancel a task
@@ -118,6 +114,30 @@ module ActionMCP
           # Note: we need the request_id to send error, but this is called from handler
           # The handler should handle the nil return
         end
+        task
+      end
+
+      def paginate_tasks_by_recent(cursor:, page_size:)
+        relation = session.tasks.recent
+
+        if cursor
+          cursor_task = find_task_cursor(cursor)
+          relation = relation.before_recent(cursor_task)
+        end
+
+        page = relation.limit(page_size + 1).to_a
+        has_more = page.size > page_size
+        items = has_more ? page.first(page_size) : page
+        next_cursor = has_more ? encode_keyset_cursor(items.last, :id) : nil
+
+        [ items, next_cursor ]
+      end
+
+      def find_task_cursor(cursor)
+        task_id = decode_keyset_cursor(cursor)
+        task = session.tasks.select(:id, :created_at).find_by(id: task_id)
+        raise Server::CursorError, "Invalid cursor" unless task
+
         task
       end
     end

@@ -113,7 +113,7 @@ module ActionMCP
 
       assert_not_nil result["error"]
       assert_equal(-32_602, result["error"]["code"])
-      assert_match(/Invalid cursor value/, result["error"]["message"])
+      assert_match(/Invalid cursor/, result["error"]["message"])
     end
 
     test "resources/templates/list returns templates" do
@@ -183,7 +183,7 @@ module ActionMCP
 
       assert_not_nil result["error"]
       assert_equal(-32_602, result["error"]["code"])
-      assert_match(/Invalid cursor value/, result["error"]["message"])
+      assert_match(/Cursor must be a non-empty string/, result["error"]["message"])
     end
 
     test "resources/read returns MCP-compliant content shape" do

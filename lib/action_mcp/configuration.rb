@@ -73,6 +73,10 @@ module ActionMCP
       @tasks_list_enabled = true
       @tasks_cancel_enabled = true
 
+      # Pagination - nil means off. Set a number to enable with that page size.
+      # Most MCP clients (including Claude Code) don't follow nextCursor yet.
+      @pagination_page_size = nil
+
       # Schema validation - disabled by default for backward compatibility
       @validate_structured_content = false
 
@@ -130,6 +134,19 @@ module ActionMCP
 
     def allowed_identity_keys=(value)
       @allowed_identity_keys = Array(value).map(&:to_s).freeze
+    end
+
+    # Pagination page size. nil = pagination disabled, positive integer = enabled.
+    attr_reader :pagination_page_size
+
+    def pagination_page_size=(value)
+      if value.nil?
+        @pagination_page_size = nil
+      else
+        size = value.to_i
+        raise ArgumentError, "pagination_page_size must be a positive integer, got: #{value.inspect}" unless size > 0
+        @pagination_page_size = size
+      end
     end
 
     def gateway_class
@@ -382,6 +399,11 @@ module ActionMCP
       # Extract server instructions
       if config["server_instructions"]
         @server_instructions = parse_instructions(config["server_instructions"])
+      end
+
+      # Extract pagination page size (nil = off, positive integer = on)
+      if config.key?("pagination_page_size")
+        self.pagination_page_size = config["pagination_page_size"]
       end
     end
 

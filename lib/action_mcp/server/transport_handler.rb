@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "pagination"
 require_relative "response_collector"
 require_relative "base_messaging"
 
@@ -11,6 +12,7 @@ module ActionMCP
       delegate :initialize!, :initialized?, to: :session
       delegate :read, :write, to: :session
 
+      include  Pagination
       include  MessagingService
       include  Capabilities
       include  Tools

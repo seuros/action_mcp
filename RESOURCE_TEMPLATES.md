@@ -145,13 +145,23 @@ Fields `description` and `mime_type` fall back to the template's values if not p
 
 ### Cursor Pagination
 
-Both `resources/list` and `resources/templates/list` support cursor-based pagination:
+All list endpoints (`resources/list`, `resources/templates/list`, `tools/list`, `prompts/list`) support cursor-based pagination per the MCP specification.
 
-```json
-{"jsonrpc":"2.0","id":1,"method":"resources/list","params":{"cursor":"MTA="}}
+Pagination is **opt-in** — set `pagination_page_size` in your configuration to enable it:
+
+```ruby
+config.action_mcp.pagination_page_size = 10
 ```
 
-The response includes `nextCursor` when more results are available.
+When enabled, responses include a `nextCursor` when more results are available. Clients should pass this cursor back to fetch the next page:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"resources/list","params":{"cursor":"MTA"}}
+```
+
+When `pagination_page_size` is `nil` (the default), all items are returned in a single response. Enable only when your clients support cursor-based pagination.
+
+Tasks (`tasks/list`) always paginate regardless of this setting since they are database-backed and can grow unbounded.
 
 ## Read Contract (`resources/read`)
 

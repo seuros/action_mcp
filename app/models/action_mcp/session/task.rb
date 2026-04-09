@@ -68,7 +68,15 @@ module ActionMCP
       # Scopes - state_machines >= 0.100.0 auto-generates .with_status(:state) scopes
       scope :terminal, -> { with_status(:completed, :failed, :cancelled) }
       scope :non_terminal, -> { with_status(:working, :input_required) }
-      scope :recent, -> { order(created_at: :desc) }
+      scope :recent, -> { order(created_at: :desc, id: :desc) }
+      scope :before_recent, lambda { |task|
+        table = arel_table
+
+        where(
+          table[:created_at].lt(task.created_at)
+            .or(table[:created_at].eq(task.created_at).and(table[:id].lt(task.id)))
+        )
+      }
 
       # State machine definition per MCP spec
       state_machine :status, initial: :working do

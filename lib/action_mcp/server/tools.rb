@@ -5,35 +5,24 @@ module ActionMCP
     module Tools
       def send_tools_list(request_id, params = {})
         protocol_version = session.protocol_version
-        # Extract progress token from _meta if provided
         progress_token = params.dig("_meta", "progressToken")
 
-        # Send initial progress notification if token is provided
         if progress_token
-          send_progress_notification(
-            progressToken: progress_token,
-            progress: 0,
-            message: "Starting tools list retrieval"
-          )
+          send_progress_notification(progressToken: progress_token, progress: 0, message: "Starting tools list retrieval")
         end
 
-        # Use session's registered tools instead of global registry
-        registered_tools = session.registered_tools
+        page, next_cursor = paginate(session.registered_tools, cursor: params["cursor"])
 
-        tools = registered_tools.map do |tool_class|
-          tool_class.to_h(protocol_version: protocol_version)
-        end
+        result = { tools: page.map { |t| t.to_h(protocol_version: protocol_version) } }
+        result[:nextCursor] = next_cursor if next_cursor
 
-        # Send completion progress notification if token is provided
         if progress_token
-          send_progress_notification(
-            progressToken: progress_token,
-            progress: 100,
-            message: "Tools list retrieval complete"
-          )
+          send_progress_notification(progressToken: progress_token, progress: 100, message: "Tools list retrieval complete")
         end
 
-        send_jsonrpc_response(request_id, result: { tools: tools })
+        send_jsonrpc_response(request_id, result: result)
+      rescue Server::CursorError => e
+        send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
 
       def send_tools_call(request_id, tool_name, arguments, _meta = {})

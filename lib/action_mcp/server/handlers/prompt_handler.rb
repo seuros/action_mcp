@@ -35,8 +35,8 @@ module ActionMCP
           transport.send_prompts_get(id, name, arguments)
         end
 
-        def handle_prompts_list(id, _params)
-          transport.send_prompts_list(id)
+        def handle_prompts_list(id, params)
+          transport.send_prompts_list(id, params)
         end
 
         def extract_name(params)

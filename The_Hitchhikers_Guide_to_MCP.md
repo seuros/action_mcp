@@ -185,7 +185,7 @@ Born from the frustration of LLMs timing out on long-running tasks, 2025-11-25 l
 - **New RPC Methods:**
   - `tasks/get` - Check on your task's status (like asking "are we there yet?")
   - `tasks/result` - Get the final output (blocks until terminal state)
-  - `tasks/list` - See all your tasks (with pagination, because we're civilized)
+  - `tasks/list` - See all your tasks, newest first, with opaque cursor pagination
   - `tasks/cancel` - Give up on a task (we've all been there)
 - **Status Notifications:** `notifications/tasks/status` broadcasts state changes (no more polling every 100ms)
 
@@ -320,6 +320,7 @@ Born from the frustration of LLMs timing out on long-running tasks, 2025-11-25 l
 - **Database:** Tasks stored in `action_mcp_session_tasks` table
 - **TTL:** Configurable expiration for automatic cleanup
 - **Notifications:** Status updates via `notifications/tasks/status`
+- **Task Listing:** `tasks/list` follows recent ordering (`created_at DESC, id DESC`) so page boundaries stay stable
 
 ### **Transport Layer:**
 - **HTTP/HTTPS Only:** No STDIO, ever
