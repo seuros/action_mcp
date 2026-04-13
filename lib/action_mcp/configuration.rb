@@ -25,7 +25,6 @@ module ActionMCP
                   :logging_level,
                   :active_profile,
                   :profiles,
-                  :elicitation_enabled,
                   :verbose_logging,
                   # --- Authentication Options ---
                   :authentication_methods,
@@ -58,7 +57,6 @@ module ActionMCP
       @list_changed = true
       @logging_level = :warning
       @resources_subscribe = false
-      @elicitation_enabled = false
       @verbose_logging = false
       @active_profile = :primary
       @profiles = default_profiles
@@ -280,7 +278,6 @@ module ActionMCP
         capabilities[:resources] = { subscribe: @resources_subscribe, listChanged: @list_changed }
       end
 
-      capabilities[:elicitation] = {} if @elicitation_enabled
 
       # Tasks capability (MCP 2025-11-25)
       if @tasks_enabled

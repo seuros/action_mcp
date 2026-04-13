@@ -85,6 +85,100 @@ dr_identity_mcbouncer_session:
   created_at: <%= Time.now.utc.iso8601 %>
   updated_at: <%= Time.now.utc.iso8601 %>
 
+elicitation_form_session:
+  id: elicitation_form_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-06-18"
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
+  messages_count: 0
+  client_capabilities:
+    elicitation: {}
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
+elicitation_url_session:
+  id: elicitation_url_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-11-25"
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
+  messages_count: 0
+  client_capabilities:
+    elicitation:
+      form: {}
+      url: {}
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
+no_elicitation_session:
+  id: no_elicitation_session
+  role: server
+  status: initialized
+  initialized: true
+  protocol_version: "2025-06-18"
+  tool_registry:
+    - "*"
+  prompt_registry:
+    - "*"
+  resource_registry:
+    - "*"
+  consents: {}
+  messages_count: 0
+  client_capabilities: {}
+  server_capabilities:
+    tools:
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+    resources:
+      subscribe: false
+      listChanged: true
+  server_info:
+    name: "ActionMCP Dummy"
+    version: "9.9.9"
+  created_at: <%= Time.now.utc.iso8601 %>
+  updated_at: <%= Time.now.utc.iso8601 %>
+
 task_master_session:
   id: task_master_session
   role: server
