@@ -114,4 +114,11 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     # Verify tool response content
     assert_equal [ { "type" => "text", "text" => "Processed input: test" } ], body["result"]["content"]
   end
+
+  test "GET returns 405 with Allow header per RFC 9110" do
+    get "/"
+
+    assert_response :method_not_allowed
+    assert_equal "POST, DELETE", response.headers["Allow"]
+  end
 end

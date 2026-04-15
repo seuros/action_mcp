@@ -34,6 +34,7 @@ module ActionMCP
     def show
       # MCP Streamable HTTP spec allows servers to return 405 if they don't support SSE.
       # ActionMCP uses Tasks for async operations instead of SSE streaming.
+      response.headers["Allow"] = "POST, DELETE"
       head :method_not_allowed
     end
 
