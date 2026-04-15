@@ -12,7 +12,7 @@ class MetaEchoTemplate < ApplicationMCPResTemplate
       "meta-echo://item/#{id}",
       "application/json",
       text: "{}",
-      _meta: { ui: { prefersBorder: true } }
+      meta: { ui: { prefersBorder: true } }
     )
   end
 end

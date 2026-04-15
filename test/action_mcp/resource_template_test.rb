@@ -31,15 +31,15 @@ module ActionMCP
       end
     end
 
-    test "build_resource forwards _meta to Resource" do
+    test "build_resource forwards meta to Resource" do
       template = create_temp_template(uri_template: "meta://item/{id}", name: "MetaTemplate")
       resource = template.build_resource(
         uri: "meta://item/1",
         name: "item 1",
-        _meta: { ui: { prefersBorder: false } }
+        meta: { ui: { prefersBorder: false } }
       )
 
-      assert_equal({ ui: { prefersBorder: false } }, resource._meta)
+      assert_equal({ ui: { prefersBorder: false } }, resource.meta)
     end
 
     test "allows unique URI templates" do

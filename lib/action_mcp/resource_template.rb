@@ -156,9 +156,9 @@ module ActionMCP
       # @param mime_type [String, nil] Falls back to template mime_type
       # @param size [Integer, nil] Size in bytes
       # @param annotations [Hash, nil] Optional annotations
-      # @param _meta [Hash, nil] Optional _meta extension metadata passed through to the Resource
+      # @param meta [Hash, #to_hash, #to_h, nil] Optional extension metadata passed through to the Resource (emitted as `_meta`)
       # @return [ActionMCP::Resource]
-      def build_resource(uri:, name:, title: nil, description: nil, mime_type: nil, size: nil, annotations: nil, _meta: nil)
+      def build_resource(uri:, name:, title: nil, description: nil, mime_type: nil, size: nil, annotations: nil, meta: nil)
         ActionMCP::Resource.new(
           uri: uri,
           name: name,
@@ -167,7 +167,7 @@ module ActionMCP
           mime_type: mime_type || @mime_type,
           size: size,
           annotations: annotations,
-          _meta: _meta
+          meta: meta
         )
       end
 

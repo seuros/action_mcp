@@ -13,7 +13,7 @@ module ActionMCP
         mime_type: "text/plain",
         size: 42,
         annotations: { audience: [ "user" ] },
-        _meta: { ui: { prefersBorder: true } }
+        meta: { ui: { prefersBorder: true } }
       )
 
       assert_equal "file:///test.txt", resource.uri
@@ -23,7 +23,7 @@ module ActionMCP
       assert_equal "text/plain", resource.mime_type
       assert_equal 42, resource.size
       assert_equal({ audience: [ "user" ] }, resource.annotations)
-      assert_equal({ ui: { prefersBorder: true } }, resource._meta)
+      assert_equal({ ui: { prefersBorder: true } }, resource.meta)
       assert_equal({ ui: { prefersBorder: true } }, resource.to_h[:_meta])
     end
 
@@ -115,10 +115,20 @@ module ActionMCP
       assert_equal "text/plain", parsed["mimeType"]
     end
 
-    test "rejects non-Hash _meta" do
+    test "rejects meta that is neither Hash-like nor nil" do
       assert_raises(ArgumentError) do
-        Resource.new(uri: "file:///a", name: "a", _meta: "bad")
+        Resource.new(uri: "file:///a", name: "a", meta: "bad")
       end
+    end
+
+    test "accepts Hash-like meta via to_hash" do
+      hashlike = Class.new do
+        def to_hash = { ui: { prefersBorder: true } }
+      end.new
+
+      resource = Resource.new(uri: "file:///a", name: "a", meta: hashlike)
+      assert_equal({ ui: { prefersBorder: true } }, resource.meta)
+      assert_equal({ ui: { prefersBorder: true } }, resource.to_h[:_meta])
     end
   end
 end
