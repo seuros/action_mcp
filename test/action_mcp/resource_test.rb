@@ -12,7 +12,8 @@ module ActionMCP
         description: "A test file",
         mime_type: "text/plain",
         size: 42,
-        annotations: { audience: [ "user" ] }
+        annotations: { audience: [ "user" ] },
+        _meta: { ui: { prefersBorder: true } }
       )
 
       assert_equal "file:///test.txt", resource.uri
@@ -22,6 +23,8 @@ module ActionMCP
       assert_equal "text/plain", resource.mime_type
       assert_equal 42, resource.size
       assert_equal({ audience: [ "user" ] }, resource.annotations)
+      assert_equal({ ui: { prefersBorder: true } }, resource._meta)
+      assert_equal({ ui: { prefersBorder: true } }, resource.to_h[:_meta])
     end
 
     test "creates resource with only required fields" do
@@ -58,6 +61,7 @@ module ActionMCP
       hash = resource.to_h
 
       assert_equal({ uri: "file:///test.txt", name: "test.txt" }, hash)
+      refute hash.key?(:_meta)
     end
 
     test "to_h converts mime_type to mimeType" do
@@ -109,6 +113,12 @@ module ActionMCP
       assert_equal "file:///test.txt", parsed["uri"]
       assert_equal "test.txt", parsed["name"]
       assert_equal "text/plain", parsed["mimeType"]
+    end
+
+    test "rejects non-Hash _meta" do
+      assert_raises(ArgumentError) do
+        Resource.new(uri: "file:///a", name: "a", _meta: "bad")
+      end
     end
   end
 end

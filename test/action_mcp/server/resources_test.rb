@@ -59,6 +59,16 @@ module ActionMCP
         assert_equal "Resource not found", response[:error][:message]
         assert_equal({ uri: uri }, response[:error][:data])
       end
+
+      test "send_resource_read passes _meta through on contents" do
+        transport = TestTransport.new
+        transport.send_resource_read(101, { "uri" => "meta-echo://item/42" })
+
+        response = transport.responses.last
+        assert_nil response[:error]
+        content = response[:result][:contents].first
+        assert_equal({ ui: { prefersBorder: true } }, content[:_meta])
+      end
     end
   end
 end

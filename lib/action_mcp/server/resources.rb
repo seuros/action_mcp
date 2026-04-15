@@ -163,13 +163,14 @@ module ActionMCP
 
       # Normalize a content object to MCP ReadResourceResult content shape.
       #
-      # @return [Hash] with keys: uri, mimeType, and text or blob
+      # @return [Hash] with keys: uri, mimeType, text or blob, and optional _meta
       def normalize_read_content(content, _uri)
         case content
         when ActionMCP::Content::Resource
           inner = { uri: content.uri, mimeType: content.mime_type }
           inner[:text] = content.text if content.text
           inner[:blob] = content.blob if content.blob
+          inner[:_meta] = content._meta if content._meta && !content._meta.empty?
           inner
         else
           content.respond_to?(:to_h) ? content.to_h : content
