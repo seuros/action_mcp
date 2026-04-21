@@ -96,7 +96,7 @@ module ActionMCP
       result = json_rpc_handler.call(jsonrpc_params)
       process_handler_results(result, session, session_initially_missing, is_initialize_request)
     rescue StandardError => e
-      Rails.logger.error "Unified POST Error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
+      Rails.error.report(e, handled: true, severity: :error)
       id = begin
         jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
       rescue StandardError
@@ -129,7 +129,7 @@ module ActionMCP
         Rails.logger.info "Unified DELETE: Terminated session: #{session.id}" if ActionMCP.configuration.verbose_logging
         head :no_content
       rescue StandardError => e
-        Rails.logger.error "Unified DELETE: Error terminating session #{session.id}: #{e.class} - #{e.message}"
+        Rails.error.report(e, handled: true, severity: :error)
         render_internal_server_error("Failed to terminate session.")
       end
     end
@@ -330,7 +330,7 @@ module ActionMCP
       rescue ActionMCP::UnauthorizedError => e
         render_unauthorized(e.message)
       rescue StandardError => e
-        Rails.logger.error "Gateway authentication error: #{e.class} - #{e.message}"
+        Rails.error.report(e, handled: true, severity: :error)
         render_unauthorized("Authentication system error")
       end
     end
