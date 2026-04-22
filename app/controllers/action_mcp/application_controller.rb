@@ -11,6 +11,9 @@ module ActionMCP
     include JSONRPC_Rails::ControllerHelpers
     include ActionController::Instrumentation
 
+    # Origin validation is enforced by ActionMCP::Middleware::OriginValidation
+    # (see engine.rb) so invalid requests are rejected before routing.
+
     # Provides the ActionMCP::Session for the current request.
     # Handles finding existing sessions via header/param or initializing a new one.
     # Specific controllers/handlers might need to enforce session ID presence based on context.

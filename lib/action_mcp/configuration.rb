@@ -50,7 +50,9 @@ module ActionMCP
                   # --- Allowed identity keys for gateway ---
                   :allowed_identity_keys,
                   # --- JSON-RPC Path ---
-                  :base_path
+                  :base_path,
+                  # --- Origin validation (DNS rebinding protection) ---
+                  :allowed_origins
 
     def initialize
       @logging_enabled = false
@@ -96,6 +98,9 @@ module ActionMCP
 
       # Path for JSON-RPC endpoint
       @base_path = "/"
+
+      # Allowed origins for DNS rebinding protection (nil = derive from request.host)
+      @allowed_origins = nil
     end
 
     def name
@@ -401,6 +406,11 @@ module ActionMCP
       # Extract pagination page size (nil = off, positive integer = on)
       if config.key?("pagination_page_size")
         self.pagination_page_size = config["pagination_page_size"]
+      end
+
+      # Extract allowed origins for DNS rebinding protection
+      if config["allowed_origins"]
+        @allowed_origins = Array(config["allowed_origins"])
       end
     end
 

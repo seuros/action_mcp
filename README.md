@@ -1282,6 +1282,21 @@ For comprehensive client documentation, including examples, session management, 
 - **Implement proper authorization** in your tools and prompts
 - **Validate all inputs** using property definitions and Rails validations
 - **Use consent management** for sensitive operations
+- **Protect against DNS rebinding**: ActionMCP validates the `Origin` header on every request. If `Origin` is present and its host doesn't match the server's own host, the server returns HTTP 403 with a JSON-RPC error body (no `id`), as required by the MCP spec. Non-browser clients (Claude Desktop, CLI tools) don't send `Origin` and are unaffected. To allow additional trusted origins, configure `allowed_origins`:
+
+  ```ruby
+  # config/initializers/action_mcp.rb
+  ActionMCP.configure do |config|
+    config.allowed_origins = ["app.example.com", "api.example.com"]
+  end
+  ```
+
+  For defence-in-depth, also configure Rails' `ActionDispatch::HostAuthorization` to restrict which `Host` headers are accepted (a separate check against host-header injection):
+
+  ```ruby
+  # config/environments/production.rb
+  config.hosts = ["api.example.com"]
+  ```
 
 ### Performance
 
