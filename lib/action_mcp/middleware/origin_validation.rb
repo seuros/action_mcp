@@ -26,9 +26,10 @@ module ActionMCP
       def call(env)
         return @app.call(env) unless guard_path?(env["PATH_INFO"])
 
-        origin = env["HTTP_ORIGIN"]
+        request = ActionDispatch::Request.new(env)
+        origin = request.origin
         return @app.call(env) if origin.nil? || origin.empty?
-        return @app.call(env) if origin_allowed?(origin, env)
+        return @app.call(env) if origin_allowed?(origin, request)
 
         forbidden_response
       end
@@ -48,7 +49,7 @@ module ActionMCP
         end
       end
 
-      def origin_allowed?(origin, env)
+      def origin_allowed?(origin, request)
         return false if origin == "null"
 
         uri = URI.parse(origin)
@@ -60,7 +61,8 @@ module ActionMCP
         if allowed && !allowed.empty?
           allowed.any? { |pattern| match?(pattern, origin_host) }
         else
-          origin_host.casecmp?(strip_brackets(server_host(env)))
+          # ActionDispatch::Request#host strips the port and handles IPv6 brackets
+          origin_host.casecmp?(strip_brackets(request.host))
         end
       rescue URI::InvalidURIError
         false
@@ -71,18 +73,6 @@ module ActionMCP
         when Regexp then pattern.match?(host)
         when String then host.casecmp?(strip_brackets(pattern))
         else             false
-        end
-      end
-
-      def server_host(env)
-        host = env["HTTP_HOST"] || env["SERVER_NAME"] || ""
-        # Strip port. IPv6 literals are bracketed ("[::1]:3000"); non-bracketed
-        # hosts use the first colon ("localhost:3000").
-        if host.start_with?("[")
-          closing = host.index("]")
-          closing ? host[0..closing] : host
-        else
-          host.split(":", 2).first.to_s
         end
       end
 

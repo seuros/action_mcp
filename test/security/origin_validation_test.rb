@@ -2,9 +2,6 @@
 
 require "test_helper"
 
-# Tests MCP spec requirement: servers MUST validate the Origin header on all
-# incoming connections to prevent DNS rebinding attacks.
-# Spec: Streamable HTTP transport, Security section (2025-11-25).
 class OriginValidationTest < ActionDispatch::IntegrationTest
   setup do
     @base_url = "http://localhost:62770"
@@ -15,13 +12,11 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     ActionMCP.configuration.allowed_origins = @original_allowed_origins
   end
 
-  # Non-browser clients (Claude Desktop, curl) never send Origin — must be allowed.
   test "allows request with no Origin header" do
     get @base_url
     assert_response :method_not_allowed
   end
 
-  # Same-host browser origin is always allowed.
   test "allows same-host Origin" do
     get @base_url, headers: { "Origin" => "http://localhost" }
     assert_response :method_not_allowed
@@ -32,7 +27,6 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert_response :method_not_allowed
   end
 
-  # DNS rebinding: evil.com rebinds to 127.0.0.1, browser sends Origin: http://evil.com
   test "rejects foreign Origin" do
     get @base_url, headers: { "Origin" => "http://evil.com" }
     assert_response :forbidden
@@ -43,7 +37,6 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  # 403 body must be JSON-RPC with no id per MCP spec.
   test "forbidden response is JSON-RPC with no id" do
     post @base_url,
          params: { jsonrpc: "2.0", id: "req-1", method: "initialize", params: {} }.to_json,
@@ -60,7 +53,6 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert body.dig("error", "code")
   end
 
-  # Explicit allowed_origins configuration.
   test "allows Origin on explicit allowed_origins list" do
     ActionMCP.configuration.allowed_origins = [ "trusted.example.com" ]
 
@@ -85,7 +77,6 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  # IPv6 normalization: URI.parse returns "[::1]" — patterns written as "::1" must match.
   test "allowed_origins entry without brackets matches bracketed IPv6 Origin" do
     ActionMCP.configuration.allowed_origins = [ "::1" ]
 
