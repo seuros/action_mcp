@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.109.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.108.0...action_mcp/v0.109.0) (2026-04-21)
+
+
+### Features
+
+* implement MCP elicitation with form and URL modes ([#210](https://github.com/seuros/action_mcp/issues/210)) ([c8fb0d1](https://github.com/seuros/action_mcp/commit/c8fb0d1dfd7245fe92efe78b2ea52b8aa6898c19))
+* implement spec-compliant cursor pagination for all list endpoints ([#206](https://github.com/seuros/action_mcp/issues/206)) ([10e6fba](https://github.com/seuros/action_mcp/commit/10e6fbaf60b76cda597383a03d8265b3f65c68b1))
+* pass _meta through resources/read path ([#211](https://github.com/seuros/action_mcp/issues/211)) ([e495469](https://github.com/seuros/action_mcp/commit/e49546963542c5a8374b9bb3938546618ded5851))
+
+
+### Bug Fixes
+
+* include Allow header in 405 response per RFC 9110 ([#213](https://github.com/seuros/action_mcp/issues/213)) ([0866046](https://github.com/seuros/action_mcp/commit/086604651c43901f49fce6029d72ef9002343b24)), closes [#209](https://github.com/seuros/action_mcp/issues/209)
+* use Rails.error.report in controller rescues for proper error tracking ([#216](https://github.com/seuros/action_mcp/issues/216)) ([6ab37d7](https://github.com/seuros/action_mcp/commit/6ab37d7fc54e175a2e70d843d3a0913e5ad26964))
+
 ## [0.108.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.107.1...action_mcp/v0.108.0) (2026-04-08)
 
 
