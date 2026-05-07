@@ -187,6 +187,31 @@ module ActionMCP
         end
       end
 
+      # Declares the UI resource this tool renders. Merges a `ui:` entry into
+      # `_meta` so the tool listing advertises the dashboard.
+      #
+      # @param resource_uri [String] a `ui://` URI
+      # @param visibility [Array<Symbol, String>, nil] subset of `[:model, :app]`
+      def renders_ui(resource_uri, visibility: nil)
+        unless resource_uri.is_a?(String) && resource_uri.match?(%r{\Aui://\S+\z})
+          raise ArgumentError, "renders_ui requires a ui:// URI, got: #{resource_uri.inspect}"
+        end
+
+        ui_meta = { resourceUri: resource_uri }
+
+        if visibility
+          normalized = Array(visibility).map(&:to_s)
+          invalid = normalized - %w[model app]
+          if invalid.any?
+            raise ArgumentError, "renders_ui visibility must be model and/or app, got: #{visibility.inspect}"
+          end
+
+          ui_meta[:visibility] = normalized
+        end
+
+        self._meta = _meta.merge(ui: ui_meta)
+      end
+
       # Marks this tool as requiring consent before execution
       def requires_consent!
         self._requires_consent = true

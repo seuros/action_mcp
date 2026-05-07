@@ -32,6 +32,12 @@ module ActionMCP
 
     delegate :session_data, to: :session, allow_nil: true
 
+    # Returns true when the connected client advertises the MCP Apps UI extension.
+    def client_supports_ui?
+      extensions = session&.client_capabilities&.dig("extensions")
+      extensions.is_a?(Hash) && extensions.key?("io.modelcontextprotocol/ui")
+    end
+
     # use _capability_name or default_capability_name
     def self.capability_name
       _capability_name || default_capability_name
