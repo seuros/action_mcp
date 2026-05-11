@@ -4,6 +4,8 @@ class WeatherTool < ApplicationMCPTool
   tool_name "weather"
   description "Get weather information for a location with structured output"
 
+  renders_ui "ui://weather/dashboard"
+
   # Input properties (existing pattern)
   property :location, type: "string", required: true, description: "City name or coordinates"
   property :units, type: "string", default: "celsius", enum: [ "celsius", "fahrenheit" ], description: "Temperature units"
