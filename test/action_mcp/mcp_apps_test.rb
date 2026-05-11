@@ -53,6 +53,32 @@ module ActionMCP
       end
     end
 
+    test "ui macro rejects CSP origins without scheme" do
+      template = Class.new(ApplicationMCPResTemplate)
+      assert_raises(ArgumentError) do
+        template.ui csp: { connectDomains: %w[api.example.com] }
+      end
+    end
+
+    test "ui macro rejects non-http schemes in CSP origins" do
+      template = Class.new(ApplicationMCPResTemplate)
+      assert_raises(ArgumentError) do
+        template.ui csp: { connectDomains: %w[wss://stream.example.com] }
+      end
+      assert_raises(ArgumentError) do
+        template.ui csp: { resourceDomains: %w[ftp://files.example.com] }
+      end
+    end
+
+    test "ui macro accepts http/https origins, wildcards, ports, and paths" do
+      template = Class.new(ApplicationMCPResTemplate)
+      template.ui csp: {
+        connectDomains: %w[https://api.example.com http://localhost:3000],
+        resourceDomains: %w[https://*.cloudflare.com https://cdn.example.com/static]
+      }
+      assert template.ui_meta[:csp][:connectDomains].include?("https://api.example.com")
+    end
+
     test "client_supports_ui? is true when the extension key is present" do
       assert capability_for(extensions: { "io.modelcontextprotocol/ui" => {} }).client_supports_ui?
     end

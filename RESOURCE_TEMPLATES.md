@@ -235,6 +235,8 @@ Recognized keys:
 
 Successive `ui(**)` calls merge via `deep_merge`, so you can split declarations or have a base template define CSP and a subclass add `prefersBorder`.
 
+**Origin validation at class load.** The `ui` macro validates every `csp.*Domains` entry as an `http(s)://` origin and raises `ArgumentError` immediately for bare hostnames or unsupported schemes (e.g., `wss://`, `ftp://`). Wildcard subdomains (`https://*.cloudflare.com`), ports, and paths are accepted. Validation happens at class declaration time so misconfigured templates fail at file load — not on the first `resources/read` call.
+
 #### Metadata Location: `resources/list` vs `resources/read`
 
 The spec allows `_meta.ui` on both the `resources/list` entry (static default reviewable at connection time) and the `resources/read` content item (per-response, possibly dynamic). When both are present, **the content-item value takes precedence**, and hosts MUST check both locations.

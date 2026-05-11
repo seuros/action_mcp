@@ -121,9 +121,27 @@ module ActionMCP
       def ui(**data)
         raise ArgumentError, "ui metadata must not be empty" if data.empty?
 
+        validate_ui_csp_origins!(data[:csp])
         @ui_meta ||= {}
         @ui_meta = @ui_meta.deep_merge(data)
       end
+
+      private
+
+      def validate_ui_csp_origins!(csp)
+        return unless csp.is_a?(Hash)
+
+        Apps::CSP_KEYS.each do |key|
+          Array(csp[key]).each do |origin|
+            next if origin.is_a?(String) && Apps::ORIGIN_PATTERN.match?(origin)
+
+            raise ArgumentError,
+                  "ui csp #{key} entries must be http(s):// origins, got: #{origin.inspect}"
+          end
+        end
+      end
+
+      public
 
       def to_h
         name_value = defined?(@template_name) ? @template_name : name.demodulize.underscore.gsub(/_template$/, "")
