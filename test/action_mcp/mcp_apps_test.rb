@@ -33,7 +33,7 @@ module ActionMCP
 
       assert_equal MIME_TYPE_APP_HTML, content.mime_type
       refute_empty content.text
-      assert_equal({ csp: { connectDomains: [ "api.openweathermap.org" ] }, prefersBorder: true },
+      assert_equal({ csp: { connectDomains: [ "https://api.openweathermap.org" ] }, prefersBorder: true },
                    content.meta[:ui])
     end
 

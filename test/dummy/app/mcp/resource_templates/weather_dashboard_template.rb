@@ -5,7 +5,7 @@ class WeatherDashboardTemplate < ApplicationMCPResTemplate
   uri_template "ui://weather/dashboard"
   mime_type :mcp_app
 
-  ui csp: { connectDomains: %w[api.openweathermap.org] },
+  ui csp: { connectDomains: %w[https://api.openweathermap.org] },
      prefersBorder: true
 
   def resolve

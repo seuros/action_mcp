@@ -189,6 +189,180 @@ For binary resources, use `blob:` instead of `text:`:
 ActionMCP::Content::Resource.new(uri, "image/png", blob: Base64.strict_encode64(image_data))
 ```
 
+## MCP Apps (UI Resources)
+
+Resource templates can serve interactive HTML UIs under the MCP Apps extension (`io.modelcontextprotocol/ui`, SEP-1865). The host renders the HTML in a sandboxed iframe and communicates with it via JSON-RPC over `postMessage`. See the Hitchhiker's Guide for the narrative; this section is the reference.
+
+### MIME Type Shorthand
+
+The spec MIME is `text/html;profile=mcp-app`. The `:mcp_app` symbol resolves to that string through `ActionMCP::MimeTypes`, which is engine-owned (no global `Mime::Type.register` pollution):
+
+```ruby
+mime_type :mcp_app                          # resolves to "text/html;profile=mcp-app"
+mime_type "text/html;profile=mcp-app"       # equivalent, explicit
+mime_type ActionMCP::MimeTypes::APP_HTML    # equivalent, constant
+```
+
+Unknown symbols fall back to `Mime[]` (the app's own registered formats), and raise `KeyError` if nothing matches.
+
+### The `ui` Class Macro
+
+`ui(**data)` declares the `_meta.ui` block emitted on every `resources/read` response for this template. The keys are spec-defined and stored verbatim (camelCase per the wire format):
+
+```ruby
+class WeatherDashboardTemplate < ApplicationMCPResTemplate
+  uri_template "ui://weather/dashboard"
+  mime_type :mcp_app
+
+  ui csp: { connectDomains: %w[https://api.openweathermap.org],
+            resourceDomains: %w[https://cdn.jsdelivr.net] },
+     permissions: { clipboardWrite: {} },
+     prefersBorder: true,
+     domain: "a904794854a047f6.claudemcpcontent.com"
+
+  def resolve
+    render_ui(template: "mcp/ui/weather_dashboard")
+  end
+end
+```
+
+Recognized keys:
+
+- **`csp`** — `{ connectDomains:, resourceDomains:, frameDomains:, baseUriDomains: }`. Each is an array of **origins** (scheme + host, optionally wildcard subdomain): `https://api.example.com`, `wss://stream.example.com`, `https://*.cloudflare.com`. This is a strict subset of CSP source expressions — no `'self'`, `'unsafe-inline'`, `data:`, nonces, or hashes; the host adds its own implicit sources. Bare hostnames are not valid. Per-directive defaults when omitted or `[]`: `connectDomains` → no external network, `resourceDomains` → no external scripts/images/styles/fonts, `frameDomains` → `frame-src 'none'`, `baseUriDomains` → `base-uri 'self'`. If the entire `csp` key is omitted, the host applies a fully restrictive default CSP (essentially `'self' + 'unsafe-inline'` for inline scripts/styles, `connect-src 'none'`). Note: this is **not** the same as Rails' `Content-Security-Policy` HTTP header — Rails CSP applies to responses your app serves; MCP CSP is JSON metadata the host uses to construct the iframe's CSP.
+- **`permissions`** — `{ camera: {}, microphone: {}, geolocation: {}, clipboardWrite: {} }`. Requests Permission Policy features for the inner iframe; hosts MAY honor these via the iframe `allow` attribute. `clipboardWrite` maps specifically to `clipboard-write`. Apps SHOULD feature-detect and handle denial — never assume a permission was granted.
+- **`prefersBorder`** — boolean. `true` requests host-rendered border + background; `false` requests none; omitted means host decides. The spec recommends setting this explicitly since host defaults vary.
+- **`domain`** — string. Optional dedicated sandbox origin for the View. **Host-dependent format** — common patterns include hash-based subdomains (Claude: `{hash}.claudemcpcontent.com`) or URL-derived subdomains (ChatGPT: `www-example-com.oaiusercontent.com`). Consult host-specific documentation; do not copy example domains. If omitted, the host uses its default sandbox origin (typically per-conversation). Set this when you need a stable origin for OAuth callbacks, CORS allowlists, or API key origin checks.
+
+Successive `ui(**)` calls merge via `deep_merge`, so you can split declarations or have a base template define CSP and a subclass add `prefersBorder`.
+
+#### Metadata Location: `resources/list` vs `resources/read`
+
+The spec allows `_meta.ui` on both the `resources/list` entry (static default reviewable at connection time) and the `resources/read` content item (per-response, possibly dynamic). When both are present, **the content-item value takes precedence**, and hosts MUST check both locations.
+
+ActionMCP emits `_meta.ui` on the `resources/read` content via `render_ui` — the spec's recommended location for dynamic or per-response metadata. The class-level `meta(...)` macro (distinct from `ui(...)`) feeds the `resources/list` entry's `_meta`, which is where you'd put static defaults if you want hosts to review security configuration without fetching the resource.
+
+### The `render_ui` Instance Helper
+
+`render_ui` builds the `ActionMCP::Content::Resource` for you, pulling in the class-level `ui` metadata, the template's `uri_template`, and the resolved `mime_type`. Two source modes:
+
+```ruby
+# From a Rails view (preferred — ERB interpolation, view paths, partials all work)
+def resolve
+  render_ui(template: "mcp/ui/weather_dashboard")
+end
+
+# From an inline string (useful for trivial UIs or runtime-generated HTML)
+def resolve
+  render_ui(text: "<!doctype html><html>...</html>")
+end
+```
+
+Full signature:
+
+```ruby
+render_ui(text: nil, template: nil, layout: false, locals: {})
+```
+
+- **`text:`** — raw HTML string. Mutually exclusive with `template:`.
+- **`template:`** — Rails view path. Rendered via `ApplicationController.render` so all your view paths, helpers, and layouts are available.
+- **`layout:`** — defaults to `false` (no layout). Pass a layout name to wrap the view.
+- **`locals:`** — passed through to the renderer.
+
+Raises `ArgumentError` if neither `:text` nor `:template` is supplied.
+
+### Where the HTML Lives
+
+Rails views by convention. For a template that calls `render_ui(template: "mcp/ui/weather_dashboard")`, the file is at `app/views/mcp/ui/weather_dashboard.html.erb`. Standard ERB rules apply: helpers, partials, locals, layouts.
+
+```erb
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Weather</title>
+</head>
+<body data-locale="<%= I18n.locale %>">
+  <div class="card" id="weather"></div>
+  <script>
+    // The View acts as an MCP client over postMessage.
+    // Send ui/initialize, wait for hostContext, then consume tool results.
+  </script>
+</body>
+</html>
+```
+
+The host MUST NOT push tool results until the View sends `ui/notifications/initialized`. Pages that skip the handshake render but never receive data.
+
+### Linking from Tools
+
+A Tool declares which UI to render with its result via `renders_ui`:
+
+```ruby
+class WeatherTool < ApplicationMCPTool
+  tool_name "weather"
+  renders_ui "ui://weather/dashboard"
+  # Optionally restrict visibility:
+  # renders_ui "ui://weather/dashboard", visibility: %i[model app]
+
+  property :location, type: "string", required: true
+
+  def perform
+    render structured: {
+      current: { temperature: 22.5, condition: "Sunny", humidity: 65 },
+      metadata: { location_found: location }
+    }
+  end
+end
+```
+
+`renders_ui` emits `_meta.ui.resourceUri` (and optionally `_meta.ui.visibility`) on `tools/list`. The deprecated flat `_meta["ui/resourceUri"]` form is never emitted.
+
+**No fallback branches (ActionMCP convention).** The spec says servers SHOULD provide text-only fallback behavior; ActionMCP is more opinionated and skips it. Tools always emit their structured response; clients are expected to consume structured output. Hosts that don't support the extension see the same payload and ignore the `_meta.ui` metadata.
+
+### Wire Format Reference
+
+What `resources/read` returns for the WeatherDashboardTemplate above:
+
+```json
+{
+  "contents": [
+    {
+      "uri": "ui://weather/dashboard",
+      "mimeType": "text/html;profile=mcp-app",
+      "text": "<!doctype html>...</html>",
+      "_meta": {
+        "ui": {
+          "csp": {
+            "connectDomains": ["https://api.openweathermap.org"],
+            "resourceDomains": ["https://cdn.jsdelivr.net"]
+          },
+          "permissions": { "clipboardWrite": {} },
+          "prefersBorder": true,
+          "domain": "a904794854a047f6.claudemcpcontent.com"
+        }
+      }
+    }
+  ]
+}
+```
+
+And what `tools/list` returns for the linked tool:
+
+```json
+{
+  "name": "weather",
+  "description": "...",
+  "inputSchema": { "type": "object", ... },
+  "_meta": {
+    "ui": { "resourceUri": "ui://weather/dashboard" }
+  }
+}
+```
+
+### Capability Introspection
+
+`Capability#client_supports_ui?` returns `true` when the connected client advertised `io.modelcontextprotocol/ui` in `capabilities.extensions` during `initialize`. It's available on every Tool, Prompt, and ResourceTemplate instance for observability and metrics; ActionMCP does not branch response content off it.
+
 ## Implementation Notes
 
 - Templates can represent nested or related resources
