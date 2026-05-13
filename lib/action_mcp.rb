@@ -42,7 +42,7 @@ module ActionMCP
   LATEST_VERSION = SUPPORTED_VERSIONS.first.freeze
   DEFAULT_PROTOCOL_VERSION = "2025-06-18" # Default to previous stable version for backwards compatibility
 
-  MIME_TYPE_APP_HTML = "text/html;profile=mcp-app" # MCP Apps UI resources (ext-apps, draft 2026-01-26)
+  MIME_TYPE_APP_HTML = Apps::MIME_TYPE # MCP Apps UI resources (ext-apps, draft 2026-01-26)
   class << self
     # Returns a Rack-compatible application for serving MCP requests
     # @return [#call] A Rack application that can be used with `run ActionMCP.server`

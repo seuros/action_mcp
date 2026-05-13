@@ -33,7 +33,7 @@ module ActionMCP
 
       assert_equal MIME_TYPE_APP_HTML, content.mime_type
       refute_empty content.text
-      assert_equal({ csp: { connectDomains: [ "api.openweathermap.org" ] }, prefersBorder: true },
+      assert_equal({ csp: { connectDomains: [ "https://api.openweathermap.org" ] }, prefersBorder: true },
                    content.meta[:ui])
     end
 
@@ -51,6 +51,35 @@ module ActionMCP
       assert_raises(ArgumentError) do
         RendersUiDemoTool.renders_ui "ui://widgets/panel", visibility: %i[model agent]
       end
+    end
+
+    # The rejection tests target the validation invoked by the `ui` macro.
+    # `validate_ui_csp_origins!` raises before any state is merged into
+    # `@ui_meta`, so calling `.ui csp: { bad }` on a real fixture template is
+    # safe — no mutation leaks across tests.
+    test "ui macro rejects CSP origins without scheme" do
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { connectDomains: %w[api.example.com] }
+      end
+    end
+
+    test "ui macro rejects non-http schemes in CSP origins" do
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { connectDomains: %w[wss://stream.example.com] }
+      end
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { resourceDomains: %w[ftp://files.example.com] }
+      end
+    end
+
+    test "ui macro accepts http/https origins, wildcards, ports, and paths" do
+      connect = UiOriginsDemoTemplate.ui_meta[:csp][:connectDomains]
+      resource = UiOriginsDemoTemplate.ui_meta[:csp][:resourceDomains]
+
+      assert_includes connect, "https://api.example.com"
+      assert_includes connect, "http://localhost:3000"
+      assert_includes resource, "https://*.cloudflare.com"
+      assert_includes resource, "https://cdn.example.com/static"
     end
 
     test "client_supports_ui? is true when the extension key is present" do

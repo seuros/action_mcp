@@ -20,7 +20,7 @@ module ActionMCP
 
     class << self
       attr_reader :registered_templates, :description, :uri_template,
-                  :mime_type, :template_name, :parameters, :_meta
+                  :mime_type, :template_name, :parameters, :_meta, :ui_meta
 
       def abstract?
         @abstract ||= false
@@ -94,7 +94,9 @@ module ActionMCP
       end
 
       def mime_type(value = nil)
-        value ? @mime_type = value : @mime_type
+        return @mime_type unless value
+
+        @mime_type = ActionMCP::MimeTypes.resolve(value)
       end
 
       # Sets or retrieves the _meta field
@@ -108,6 +110,38 @@ module ActionMCP
           @_meta || {}
         end
       end
+
+      # Declares MCP Apps UI metadata for this resource template. Stored verbatim
+      # (camelCase keys per the ext-apps spec). Used both for the `resources/list`
+      # entry's `_meta.ui` and the default content `_meta.ui` produced by
+      # `render_ui`.
+      #
+      # @example
+      #   ui csp: { connectDomains: %w[api.openweathermap.org] }, prefersBorder: true
+      def ui(**data)
+        raise ArgumentError, "ui metadata must not be empty" if data.empty?
+
+        validate_ui_csp_origins!(data[:csp])
+        @ui_meta ||= {}
+        @ui_meta = @ui_meta.deep_merge(data)
+      end
+
+      private
+
+      def validate_ui_csp_origins!(csp)
+        return unless csp.is_a?(Hash)
+
+        Apps::CSP_KEYS.each do |key|
+          Array(csp[key]).each do |origin|
+            next if origin.is_a?(String) && Apps::ORIGIN_PATTERN.match?(origin)
+
+            raise ArgumentError,
+                  "ui csp #{key} entries must be http(s):// origins, got: #{origin.inspect}"
+          end
+        end
+      end
+
+      public
 
       def to_h
         name_value = defined?(@template_name) ? @template_name : name.demodulize.underscore.gsub(/_template$/, "")
@@ -296,6 +330,31 @@ module ActionMCP
                 "URI template conflict detected: '#{new_template}' conflicts with existing template '#{registered_class.uri_template}' registered by #{registered_class.name}"
         end
       end
+    end
+
+    # Build a `Content::Resource` for an MCP Apps UI view. Accepts either a raw
+    # `:text` string or a Rails `:template` path; the class-level `ui` macro
+    # supplies the content-level `_meta.ui` automatically.
+    #
+    # @example
+    #   render_ui(template: "mcp/ui/weather_dashboard")
+    def render_ui(text: nil, template: nil, layout: false, locals: {})
+      resolved =
+        if text
+          text
+        elsif template
+          ApplicationController.render(template: template, layout: layout, locals: locals)
+        else
+          raise ArgumentError, "render_ui requires :text or :template"
+        end
+
+      ui = self.class.ui_meta
+      ActionMCP::Content::Resource.new(
+        self.class.uri_template,
+        self.class.mime_type || ActionMCP::Apps::MIME_TYPE,
+        text: resolved,
+        meta: (ui&.any? ? { ui: ui } : nil)
+      )
     end
 
     # Initialize with attribute values
