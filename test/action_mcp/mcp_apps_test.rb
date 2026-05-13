@@ -53,30 +53,33 @@ module ActionMCP
       end
     end
 
+    # The rejection tests target the validation invoked by the `ui` macro.
+    # `validate_ui_csp_origins!` raises before any state is merged into
+    # `@ui_meta`, so calling `.ui csp: { bad }` on a real fixture template is
+    # safe — no mutation leaks across tests.
     test "ui macro rejects CSP origins without scheme" do
-      template = Class.new(ApplicationMCPResTemplate)
       assert_raises(ArgumentError) do
-        template.ui csp: { connectDomains: %w[api.example.com] }
+        UiOriginsDemoTemplate.ui csp: { connectDomains: %w[api.example.com] }
       end
     end
 
     test "ui macro rejects non-http schemes in CSP origins" do
-      template = Class.new(ApplicationMCPResTemplate)
       assert_raises(ArgumentError) do
-        template.ui csp: { connectDomains: %w[wss://stream.example.com] }
+        UiOriginsDemoTemplate.ui csp: { connectDomains: %w[wss://stream.example.com] }
       end
       assert_raises(ArgumentError) do
-        template.ui csp: { resourceDomains: %w[ftp://files.example.com] }
+        UiOriginsDemoTemplate.ui csp: { resourceDomains: %w[ftp://files.example.com] }
       end
     end
 
     test "ui macro accepts http/https origins, wildcards, ports, and paths" do
-      template = Class.new(ApplicationMCPResTemplate)
-      template.ui csp: {
-        connectDomains: %w[https://api.example.com http://localhost:3000],
-        resourceDomains: %w[https://*.cloudflare.com https://cdn.example.com/static]
-      }
-      assert template.ui_meta[:csp][:connectDomains].include?("https://api.example.com")
+      connect = UiOriginsDemoTemplate.ui_meta[:csp][:connectDomains]
+      resource = UiOriginsDemoTemplate.ui_meta[:csp][:resourceDomains]
+
+      assert_includes connect, "https://api.example.com"
+      assert_includes connect, "http://localhost:3000"
+      assert_includes resource, "https://*.cloudflare.com"
+      assert_includes resource, "https://cdn.example.com/static"
     end
 
     test "client_supports_ui? is true when the extension key is present" do
