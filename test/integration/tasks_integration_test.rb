@@ -9,6 +9,9 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     # Force active_record session store for Tasks tests
     # Tasks require persistent sessions since they're stored in DB
     @original_session_store_type = ActionMCP.configuration.server_session_store_type
+    @original_tasks_result_strategy = ActionMCP.configuration.tasks_result_strategy
+    @original_tasks_result_timeout = ActionMCP.configuration.tasks_result_timeout
+    @original_tasks_result_poll_interval = ActionMCP.configuration.tasks_result_poll_interval
     ActionMCP.configuration.server_session_store_type = :active_record
     # Reset the session store singleton by setting it to nil
     ActionMCP::Server.instance_variable_set(:@session_store, nil)
@@ -33,7 +36,11 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @failed_task = @session.tasks.create!(
       request_method: "tools/call",
       request_name: "failed_tool",
-      status_message: "Something went wrong"
+      status_message: "Something went wrong",
+      result_payload: {
+        isError: true,
+        content: [ { type: "text", text: "Something went wrong" } ]
+      }
     )
     @failed_task.mark_failed!
   end
@@ -41,6 +48,9 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   teardown do
     # Restore original session store type
     ActionMCP.configuration.server_session_store_type = @original_session_store_type
+    ActionMCP.configuration.tasks_result_strategy = @original_tasks_result_strategy
+    ActionMCP.configuration.tasks_result_timeout = @original_tasks_result_timeout
+    ActionMCP.configuration.tasks_result_poll_interval = @original_tasks_result_poll_interval
     ActionMCP::Server.instance_variable_set(:@session_store, nil)
   end
 
@@ -58,10 +68,12 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
-    assert body["result"]["task"]
-    assert_equal @working_task.id, body["result"]["task"]["id"]
-    assert_equal "working", body["result"]["task"]["status"]
-    assert_equal "Processing...", body["result"]["task"]["statusMessage"]
+    assert_equal @working_task.id, body["result"]["taskId"]
+    assert_equal "working", body["result"]["status"]
+    assert_equal "Processing...", body["result"]["statusMessage"]
+    assert body["result"]["createdAt"]
+    assert body["result"]["lastUpdatedAt"]
+    assert_nil body["result"]["ttl"]
   end
 
   test "tasks/get returns error for non-existent task" do
@@ -112,7 +124,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert body["result"]["tasks"]
     assert_equal 3, body["result"]["tasks"].length
 
-    task_ids = body["result"]["tasks"].map { |t| t["id"] }
+    task_ids = body["result"]["tasks"].map { |t| t["taskId"] }
     assert_includes task_ids, @working_task.id
     assert_includes task_ids, @completed_task.id
     assert_includes task_ids, @failed_task.id
@@ -174,7 +186,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = response.parsed_body
-    assert_equal [ newer.id ], body["result"]["tasks"].map { |task| task["id"] }
+    assert_equal [ newer.id ], body["result"]["tasks"].map { |task| task["taskId"] }
     assert body["result"]["nextCursor"]
 
     post "/",
@@ -188,7 +200,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = response.parsed_body
-    assert_equal [ older.id ], body["result"]["tasks"].map { |task| task["id"] }
+    assert_equal [ older.id ], body["result"]["tasks"].map { |task| task["taskId"] }
     assert_nil body["result"]["nextCursor"]
   ensure
     ActionMCP.configuration.pagination_page_size = original_page_size
@@ -208,13 +220,16 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
-    assert body["result"]["task"]
-    assert body["result"]["result"]
-    assert_equal "completed", body["result"]["task"]["status"]
-    assert_equal [ { "type" => "text", "text" => "Done!" } ], body["result"]["result"]["content"]
+    assert_equal [ { "type" => "text", "text" => "Done!" } ], body["result"]["content"]
+    assert_equal @completed_task.id,
+                 body["result"]["_meta"]["io.modelcontextprotocol/related-task"]["taskId"]
   end
 
-  test "tasks/result returns error for non-terminal task" do
+  test "tasks/result uses bounded blocking HTTP for non-terminal task" do
+    ActionMCP.configuration.tasks_result_strategy = :blocking_http
+    ActionMCP.configuration.tasks_result_timeout = 0.01
+    ActionMCP.configuration.tasks_result_poll_interval = 0.005
+
     post "/",
          params: {
            jsonrpc: "2.0",
@@ -226,9 +241,61 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = response.parsed_body
+    assert body["error"], "Expected bounded wait timeout in response, got: #{body.inspect}"
+    assert_equal(-32_000, body["error"]["code"])
+    assert_match(/Timed out waiting for task/, body["error"]["message"])
+  end
+
+  test "tasks/result returns immediately for input_required task" do
+    input_task = @session.tasks.create!(
+      request_method: "tools/call",
+      request_name: "needs_input",
+      result_payload: {
+        inputRequests: [
+          {
+            type: "text",
+            name: "confirmation",
+            message: "Continue?"
+          }
+        ]
+      }
+    )
+    input_task.require_input!
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "test-7-input",
+           method: "tasks/result",
+           params: { taskId: input_task.id }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert body["result"], "Expected input_required result in response, got: #{body.inspect}"
+    assert_equal "confirmation", body["result"]["inputRequests"].first["name"]
+    assert_equal input_task.id,
+                 body["result"]["_meta"]["io.modelcontextprotocol/related-task"]["taskId"]
+  end
+
+  test "tasks/result returns not-complete error for non-terminal task in polling-only mode" do
+    ActionMCP.configuration.tasks_result_strategy = :polling_only
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "test-7-polling",
+           method: "tasks/result",
+           params: { taskId: @working_task.id }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
     assert body["error"], "Expected error in response, got: #{body.inspect}"
-    assert_match(/not yet complete/, body["error"]["message"])
-    assert_match(/working/, body["error"]["message"])
+    assert_match(/not ready/, body["error"]["message"])
+    assert_match(/tasks\/get/, body["error"]["message"])
   end
 
   test "tasks/result works for failed tasks" do
@@ -244,7 +311,9 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
-    assert_equal "failed", body["result"]["task"]["status"]
+    assert_equal true, body["result"]["isError"]
+    assert_equal @failed_task.id,
+                 body["result"]["_meta"]["io.modelcontextprotocol/related-task"]["taskId"]
   end
 
   # tasks/cancel tests
@@ -261,7 +330,8 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
-    assert_equal "cancelled", body["result"]["task"]["status"]
+    assert_equal "cancelled", body["result"]["status"]
+    assert_equal @working_task.id, body["result"]["taskId"]
 
     @working_task.reload
     assert_equal "cancelled", @working_task.status
@@ -299,6 +369,22 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert_match(/not found/, body["error"]["message"])
   end
 
+  test "tasks/resume is not accepted as a spec task method" do
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "test-resume",
+           method: "tasks/resume",
+           params: { taskId: @working_task.id, input: "value" }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal(-32_601, body["error"]["code"])
+    assert_match(/Unknown tasks method/, body["error"]["message"])
+  end
+
   # Protocol version validation
   test "tasks methods require 2025-11-25 protocol version" do
     # Use a 2025-06-18 session (fixture already in DB)
@@ -317,11 +403,10 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
            "MCP-Protocol-Version" => "2025-06-18"
          }
 
-    # Should return method not found since tasks aren't in older protocols
+    assert_response :success
     body = response.parsed_body
-    # The server may handle this differently - it might accept or reject
-    # We're mainly testing that the infrastructure works
-    assert body["result"] || body["error"]
+    assert_equal(-32_601, body["error"]["code"])
+    assert_match(/only available in MCP 2025-11-25/, body["error"]["message"])
   end
 
   # Task-augmented tool call tests
@@ -343,9 +428,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
            params: {
              name: "async_calculator",
              arguments: { x: 5, y: 3, operation: "add" },
-             _meta: {
-               task: { ttl: 60_000, pollInterval: 5_000 }
-             }
+             task: { ttl: 60_000 }
            }
          }.to_json,
          headers: request_headers
@@ -354,16 +437,19 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
     assert body["result"]["task"], "Expected task in result"
-    assert body["result"]["task"]["id"], "Expected task id"
+    assert body["result"]["task"]["taskId"], "Expected task id"
     assert_equal "working", body["result"]["task"]["status"]
+    assert_equal body["result"]["task"]["taskId"],
+                 body["result"]["_meta"]["io.modelcontextprotocol/related-task"]["taskId"]
 
     # Verify task was created in database
-    task_id = body["result"]["task"]["id"]
+    task_id = body["result"]["task"]["taskId"]
     task = @session.tasks.find_by(id: task_id)
     assert task, "Task should exist in database"
     assert_equal "tools/call", task.request_method
     assert_equal "async_calculator", task.request_name
     assert_equal 60_000, task.ttl
+    assert_equal task.id, task.request_params["_meta"]["io.modelcontextprotocol/related-task"]["taskId"]
   ensure
     ActionMCP.configuration.tasks_enabled = original_tasks_enabled
   end
@@ -386,7 +472,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
            params: {
              name: "async_calculator",
              arguments: { x: 10, y: 4, operation: "subtract" }
-             # No _meta.task parameter - should execute synchronously
+             # No task parameter - should execute synchronously
            }
          }.to_json,
          headers: request_headers
@@ -398,6 +484,93 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     assert body["result"]["content"], "Expected content in result for sync execution"
     # Result can be integer (6) or float (6.0) depending on JSON parsing
     assert_match(/Result: 6(\.0)?/, body["result"]["content"].first["text"])
+  ensure
+    ActionMCP.configuration.tasks_enabled = original_tasks_enabled
+  end
+
+  test "tool call with task parameter rejects tools that forbid task execution" do
+    original_tasks_enabled = ActionMCP.configuration.tasks_enabled
+    ActionMCP.configuration.tasks_enabled = true
+
+    ActionMCP::ToolsRegistry.register(AddTool)
+    @session.register_tool(AddTool)
+    @session.save!
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "forbidden-task-tool-1",
+           method: "tools/call",
+           params: {
+             name: "add",
+             arguments: { a: 1, b: 2 },
+             task: { ttl: 60_000 }
+           }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal(-32_601, body["error"]["code"])
+    assert_match(/does not support task-augmented execution/, body["error"]["message"])
+  ensure
+    ActionMCP.configuration.tasks_enabled = original_tasks_enabled
+  end
+
+  test "tool call without task parameter rejects tools that require task execution" do
+    original_tasks_enabled = ActionMCP.configuration.tasks_enabled
+    ActionMCP.configuration.tasks_enabled = true
+
+    ActionMCP::ToolsRegistry.register(RequiredTaskDemoTool)
+    @session.register_tool(RequiredTaskDemoTool)
+    @session.save!
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "required-task-tool-1",
+           method: "tools/call",
+           params: {
+             name: "required_task_demo",
+             arguments: {}
+           }
+         }.to_json,
+         headers: request_headers
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal(-32_601, body["error"]["code"])
+    assert_match(/requires task-augmented execution/, body["error"]["message"])
+  ensure
+    ActionMCP.configuration.tasks_enabled = original_tasks_enabled
+  end
+
+  test "tool call with task parameter is rejected when tasks are not negotiated" do
+    original_tasks_enabled = ActionMCP.configuration.tasks_enabled
+    ActionMCP.configuration.tasks_enabled = true
+    old_session = action_mcp_sessions(:dr_identity_mcbouncer_session)
+
+    ActionMCP::ToolsRegistry.register(AsyncCalculatorTool)
+    old_session.register_tool(AsyncCalculatorTool)
+    old_session.save!
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "old-task-tool-1",
+           method: "tools/call",
+           params: {
+             name: "async_calculator",
+             arguments: { x: 1, y: 2, operation: "add" },
+             task: { ttl: 60_000 }
+           }
+         }.to_json,
+         headers: old_protocol_headers(old_session.id)
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal(-32_601, body["error"]["code"])
+    assert_match(/not available/, body["error"]["message"])
   ensure
     ActionMCP.configuration.tasks_enabled = original_tasks_enabled
   end
@@ -429,6 +602,28 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     # Should have execution metadata with taskSupport
     assert async_calc["execution"], "Expected execution metadata for tool with task_support"
     assert_equal "optional", async_calc["execution"]["taskSupport"]
+  end
+
+  test "tools/list omits execution metadata before 2025-11-25" do
+    old_session = action_mcp_sessions(:dr_identity_mcbouncer_session)
+
+    ActionMCP::ToolsRegistry.register(AsyncCalculatorTool)
+    old_session.register_tool(AsyncCalculatorTool)
+    old_session.save!
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "tools-list-old-protocol",
+           method: "tools/list"
+         }.to_json,
+         headers: old_protocol_headers(old_session.id)
+
+    assert_response :success
+    body = response.parsed_body
+    async_calc = body["result"]["tools"].find { |t| t["name"] == "async_calculator" }
+    assert async_calc, "Expected async_calculator tool in list"
+    refute async_calc["execution"], "Execution metadata is only defined for MCP 2025-11-25"
   end
 
   test "tools/list excludes execution metadata for tools without task_support" do
@@ -465,6 +660,15 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
       "ACCEPT" => "application/json, text/event-stream",
       "Mcp-Session-Id" => @session_id,
       "MCP-Protocol-Version" => "2025-11-25"
+    }
+  end
+
+  def old_protocol_headers(session_id)
+    {
+      "CONTENT_TYPE" => "application/json",
+      "ACCEPT" => "application/json, text/event-stream",
+      "Mcp-Session-Id" => session_id,
+      "MCP-Protocol-Version" => "2025-06-18"
     }
   end
 end

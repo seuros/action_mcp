@@ -315,7 +315,7 @@ class BatchIndexTool < ApplicationMCPTool
 end
 ```
 
-Call it as a task from a client by adding `_meta.task` (creates a Task record and runs the tool via `ToolExecutionJob`):
+Call it as a task from a client by adding top-level `task` params (creates a Task record and runs the tool via `ToolExecutionJob`):
 
 ```json
 {
@@ -325,12 +325,27 @@ Call it as a task from a client by adding `_meta.task` (creates a Task record an
   "params": {
     "name": "batch_index",
     "arguments": { "items": ["a", "b", "c"] },
-    "_meta": { "task": { "ttl": 120000, "pollInterval": 2000 } }
+    "task": { "ttl": 120000 }
   }
 }
 ```
 
-Poll task status with `tasks/get` or fetch the result when finished with `tasks/result`. Use `tasks/cancel` to stop non-terminal tasks. `tasks/list` returns tasks in recent-first order and always paginates (default 50 per page, or `pagination_page_size` if configured). The response includes an opaque `nextCursor` when more results are available — treat cursors as opaque tokens.
+Poll task status with `tasks/get` or fetch the result with `tasks/result`.
+By default, `tasks/result` uses spec-aligned blocking HTTP: if the task is still working, the request waits until the task reaches `completed`, `failed`, `cancelled`, or `input_required`, then returns one JSON response. Configure the wait bounds for your Rails app:
+
+```ruby
+config.action_mcp.tasks_result_strategy = :blocking_http
+config.action_mcp.tasks_result_timeout = 30.seconds
+config.action_mcp.tasks_result_poll_interval = 0.25.seconds
+```
+
+Rails apps that cannot hold request workers open can opt into `:polling_only`, where clients must poll `tasks/get` until terminal or `input_required` before calling `tasks/result`. This is a deliberate MCP spec deviation:
+
+```ruby
+config.action_mcp.tasks_result_strategy = :polling_only
+```
+
+Use `tasks/cancel` to stop non-terminal tasks. `tasks/list` returns tasks in recent-first order and always paginates (default 50 per page, or `pagination_page_size` if configured). The response includes an opaque `nextCursor` when more results are available; treat cursors as opaque tokens.
 
 ### ActionMCP::ResourceTemplate
 

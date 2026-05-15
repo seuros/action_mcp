@@ -45,6 +45,9 @@ module ActionMCP
                   :tasks_enabled,
                   :tasks_list_enabled,
                   :tasks_cancel_enabled,
+                  :tasks_result_strategy,
+                  :tasks_result_timeout,
+                  :tasks_result_poll_interval,
                   # --- Schema Validation Options ---
                   :validate_structured_content,
                   # --- Allowed identity keys for gateway ---
@@ -72,6 +75,9 @@ module ActionMCP
       @tasks_enabled = false
       @tasks_list_enabled = true
       @tasks_cancel_enabled = true
+      @tasks_result_strategy = :blocking_http
+      @tasks_result_timeout = 30.seconds
+      @tasks_result_poll_interval = 0.25
 
       # Pagination - nil means off. Set a number to enable with that page size.
       # Most MCP clients (including Claude Code) don't follow nextCursor yet.
@@ -150,6 +156,23 @@ module ActionMCP
         raise ArgumentError, "pagination_page_size must be a positive integer, got: #{value.inspect}" unless size > 0
         @pagination_page_size = size
       end
+    end
+
+    def tasks_result_strategy=(value)
+      strategy = value.to_sym
+      unless %i[blocking_http polling_only].include?(strategy)
+        raise ArgumentError, "tasks_result_strategy must be :blocking_http or :polling_only, got: #{value.inspect}"
+      end
+
+      @tasks_result_strategy = strategy
+    end
+
+    def tasks_result_timeout=(value)
+      @tasks_result_timeout = normalize_positive_duration(value, "tasks_result_timeout")
+    end
+
+    def tasks_result_poll_interval=(value)
+      @tasks_result_poll_interval = normalize_positive_duration(value, "tasks_result_poll_interval")
     end
 
     def gateway_class
@@ -408,6 +431,12 @@ module ActionMCP
         self.pagination_page_size = config["pagination_page_size"]
       end
 
+      self.tasks_result_strategy = config["tasks_result_strategy"] if config.key?("tasks_result_strategy")
+      self.tasks_result_timeout = config["tasks_result_timeout"] if config.key?("tasks_result_timeout")
+      if config.key?("tasks_result_poll_interval")
+        self.tasks_result_poll_interval = config["tasks_result_poll_interval"]
+      end
+
       # Extract allowed origins for DNS rebinding protection
       if config["allowed_origins"]
         @allowed_origins = Array(config["allowed_origins"])
@@ -432,6 +461,13 @@ module ActionMCP
 
     def parse_instructions(instructions)
       Array(instructions).map(&:to_s)
+    end
+
+    def normalize_positive_duration(value, setting_name)
+      duration = value.respond_to?(:to_f) ? value.to_f : value.to_s.to_f
+      raise ArgumentError, "#{setting_name} must be positive, got: #{value.inspect}" unless duration.positive?
+
+      duration
     end
 
     def ensure_mcp_components_loaded

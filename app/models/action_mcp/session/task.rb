@@ -52,6 +52,8 @@ module ActionMCP
     #   input_required -> completed | failed | cancelled
     #
     class Task < ApplicationRecord
+      RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task"
+
       self.table_name = "action_mcp_session_tasks"
 
       attribute :id, :string, default: -> { SecureRandom.uuid_v7 }
@@ -139,6 +141,10 @@ module ActionMCP
         status.in?(%w[completed failed cancelled])
       end
 
+      def result_ready?
+        terminal? || input_required?
+      end
+
       # Check if task is in a non-terminal state
       def non_terminal?
         !terminal?
@@ -148,30 +154,71 @@ module ActionMCP
       # @return [Hash] Task data for JSON-RPC responses
       def to_task_data
         data = {
-          id: id,
+          taskId: id,
           status: status,
-          lastUpdatedAt: last_updated_at.iso8601(3)
+          createdAt: created_at.iso8601(3),
+          lastUpdatedAt: last_updated_at.iso8601(3),
+          ttl: ttl
         }
         data[:statusMessage] = status_message if status_message.present?
-
-        # Add progress if available (ActiveJob::Continuable support)
-        if progress_percent.present? || progress_message.present?
-          data[:progress] = {}.tap do |progress|
-            progress[:percent] = progress_percent if progress_percent.present?
-            progress[:message] = progress_message if progress_message.present?
-          end
-        end
+        data[:pollInterval] = poll_interval if poll_interval.present?
 
         data
       end
 
-      # Convert to full task result format
-      # @return [Hash] Complete task with result for tasks/result response
-      def to_task_result
+      def to_create_task_result
         {
           task: to_task_data,
-          result: result_payload
+          _meta: related_task_meta
         }
+      end
+
+      # Convert to the original request's result payload for tasks/result.
+      # The result carries related-task metadata because its structure does not
+      # otherwise include the task identifier.
+      # @return [Hash] Result payload for tasks/result response
+      def to_task_result
+        payload = result_payload.is_a?(Hash) ? result_payload.deep_dup : {}
+        meta = payload.delete("_meta") || payload.delete(:_meta) || {}
+        meta = meta.to_h if meta.respond_to?(:to_h)
+        meta = {} unless meta.is_a?(Hash)
+
+        payload[:_meta] = meta.deep_merge(related_task_meta)
+        payload
+      end
+
+      def to_task_error
+        return unless result_payload.is_a?(Hash)
+
+        code = result_payload["code"] || result_payload[:code]
+        message = result_payload["message"] || result_payload[:message]
+        return unless code && message
+        return if result_payload.key?("content") || result_payload.key?(:content)
+        return if result_payload.key?("isError") || result_payload.key?(:isError)
+
+        error = { code: code, message: message }
+        data = result_payload["data"] || result_payload[:data]
+        error[:data] = data unless data.nil?
+        error
+      end
+
+      def related_task_meta
+        {
+          RELATED_TASK_META_KEY => {
+            "taskId" => id
+          }
+        }
+      end
+
+      def request_meta_with_related_task(meta = nil)
+        existing_meta =
+          if meta.respond_to?(:to_h)
+            meta.to_h.deep_dup
+          else
+            {}
+          end
+
+        existing_meta.deep_merge(related_task_meta)
       end
 
       # Broadcast status change notification to the session

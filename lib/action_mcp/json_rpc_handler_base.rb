@@ -40,7 +40,6 @@ module ActionMCP
       TASKS_RESULT = "tasks/result"
       TASKS_LIST = "tasks/list"
       TASKS_CANCEL = "tasks/cancel"
-      TASKS_RESUME = "tasks/resume"
 
       # Task notifications
       NOTIFICATIONS_TASKS_STATUS = "notifications/tasks/status"

@@ -53,6 +53,7 @@ module ActionMCP
       session = task.session
       unless session
         task.update(status_message: "Session not found")
+        task.result_payload = { code: -32_603, message: "Session not found" }
         task.mark_failed!
         return nil
       end
@@ -64,6 +65,10 @@ module ActionMCP
       tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
       unless tool_class
         @task.update(status_message: "Tool '#{tool_name}' not found")
+        @task.result_payload = {
+          code: -32_601,
+          message: "Tool '#{tool_name}' not found"
+        }
         @task.mark_failed!
         return nil
       end
@@ -101,12 +106,13 @@ module ActionMCP
     def update_task_result(task, result)
       return if task.terminal? # Guard against double-complete
 
-      if result.is_error
-        task.result_payload = result.to_h
+      payload = result.to_h
+      if result.is_error || payload[:isError] || payload["isError"]
+        task.result_payload = payload
         task.status_message = result.respond_to?(:error_message) ? result.error_message : "Tool returned error"
         task.mark_failed!
       else
-        task.result_payload = result.to_h
+        task.result_payload = payload
         task.record_step!(:completed)
         task.complete!
       end
@@ -123,6 +129,10 @@ module ActionMCP
 
       task.update(
         status_message: "Job failed: #{error.message}",
+        result_payload: {
+          code: -32_603,
+          message: "Job failed: #{error.message}"
+        },
         continuation_state: {
           step: :failed,
           error: { class: error.class.name, message: error.message },
