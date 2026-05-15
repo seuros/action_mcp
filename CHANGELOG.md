@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.110.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.109.0...action_mcp/v0.110.0) (2026-05-15)
+
+
+### Features
+
+* add DNS rebinding / host authorization note to security section ([#214](https://github.com/seuros/action_mcp/issues/214)) ([ee31ed0](https://github.com/seuros/action_mcp/commit/ee31ed059da0e52b5a6fe0cefad0ebe90dd31015)), closes [#208](https://github.com/seuros/action_mcp/issues/208)
+* add MCP Apps support (renders_ui DSL, weather dashboard demo) ([#212](https://github.com/seuros/action_mcp/issues/212)) ([612b9a3](https://github.com/seuros/action_mcp/commit/612b9a39098b853c4d8bb222d15a2b58ca164105))
+
+
+### Bug Fixes
+
+* align tasks/* with MCP 2025-11-25 spec ([#219](https://github.com/seuros/action_mcp/issues/219)) ([8d96ccc](https://github.com/seuros/action_mcp/commit/8d96cccffaf6eb918bd5f4fac0de4a03eb51a9e2))
+* mcp apps cleanup ([#218](https://github.com/seuros/action_mcp/issues/218)) ([27a2298](https://github.com/seuros/action_mcp/commit/27a22985850dd9198fddfe18e46bfe0d19ee88c3))
+
 ## [0.109.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.108.0...action_mcp/v0.109.0) (2026-04-21)
 
 
