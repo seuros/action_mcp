@@ -25,7 +25,7 @@ module ActionMCP
         send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
 
-      def send_tools_call(request_id, tool_name, arguments, _meta = {})
+      def send_tools_call(request_id, tool_name, arguments, _meta = {}, task_params = nil)
         # Find tool in session's registry
         tool_class = session.registered_tools.find { |t| t.tool_name == tool_name }
 
@@ -47,10 +47,36 @@ module ActionMCP
           return
         end
 
-        # Check for task-augmented execution (MCP 2025-11-25)
-        task_params = _meta["task"] || _meta[:task]
-        if task_params && tasks_enabled?
+        task_support = tool_task_support(tool_class)
+        task_requested = !task_params.nil?
+
+        if task_requested && !tasks_enabled?
+          send_jsonrpc_error(request_id, :method_not_found,
+                             "Task-augmented execution is not available for this session")
+          return
+        end
+
+        if task_requested
+          unless task_params.respond_to?(:to_h)
+            send_jsonrpc_error(request_id, :invalid_params, "Task parameters must be an object")
+            return
+          end
+
+          task_params = task_params.to_h
+
+          if task_support == :forbidden
+            send_jsonrpc_error(request_id, :method_not_found,
+                               "Tool '#{tool_name}' does not support task-augmented execution")
+            return
+          end
+
           handle_task_augmented_tool_call(request_id, tool_name, arguments, _meta, task_params)
+          return
+        end
+
+        if !task_requested && task_support == :required
+          send_jsonrpc_error(request_id, :method_not_found,
+                             "Tool '#{tool_name}' requires task-augmented execution")
           return
         end
 
@@ -114,7 +140,6 @@ module ActionMCP
       def handle_task_augmented_tool_call(request_id, tool_name, arguments, _meta, task_params)
         # Extract task configuration
         ttl = task_params["ttl"] || task_params[:ttl] || 60_000
-        poll_interval = task_params["pollInterval"] || task_params[:pollInterval] || 5_000
 
         # Create task record
         task = session.tasks.create!(
@@ -123,24 +148,39 @@ module ActionMCP
           request_params: {
             name: tool_name,
             arguments: arguments,
+            task: task_params,
             _meta: _meta
           },
-          ttl: ttl,
-          poll_interval: poll_interval
+          ttl: ttl
+        )
+        request_meta = task.request_meta_with_related_task(_meta)
+        task.update!(
+          request_params: {
+            name: tool_name,
+            arguments: arguments,
+            task: task_params,
+            _meta: request_meta
+          }
         )
 
         # Return CreateTaskResult immediately
-        send_jsonrpc_response(request_id, result: { task: task.to_task_data })
+        send_jsonrpc_response(request_id, result: task.to_create_task_result)
 
         # Execute tool asynchronously via ActiveJob
-        ToolExecutionJob.perform_later(task.id, tool_name, arguments, _meta)
+        ToolExecutionJob.perform_later(task.id, tool_name, arguments, request_meta)
       rescue StandardError => e
         Rails.logger.error "Failed to create task: #{e.class} - #{e.message}"
         send_jsonrpc_error(request_id, :internal_error, "Failed to create task")
       end
 
       def tasks_enabled?
-        ActionMCP.configuration.tasks_enabled
+        ActionMCP.configuration.tasks_enabled && session.protocol_version == "2025-11-25"
+      end
+
+      def tool_task_support(tool_class)
+        return :forbidden unless tool_class.respond_to?(:task_support)
+
+        (tool_class.task_support || :forbidden).to_sym
       end
 
       def format_registry_items(registry, protocol_version = nil)

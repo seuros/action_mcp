@@ -118,7 +118,7 @@ module ActionMCP
         payload = {
           protocolVersion: ActionMCP::LATEST_VERSION,
           serverInfo: server_info,
-          capabilities: server_capabilities
+          capabilities: capabilities_for_protocol(server_capabilities)
         }
         # Add instructions at top level if configured
         instructions = ActionMCP.configuration.instructions
@@ -279,6 +279,22 @@ module ActionMCP
       end
 
       private
+
+      def capabilities_for_protocol(capabilities)
+        filtered =
+          if capabilities.respond_to?(:deep_dup)
+            capabilities.deep_dup
+          elsif capabilities
+            capabilities.dup
+          else
+            {}
+          end
+        return filtered if protocol_version == "2025-11-25"
+
+        filtered.delete("tasks")
+        filtered.delete(:tasks)
+        filtered
+      end
 
       def normalize_name(class_or_name, type)
         case class_or_name

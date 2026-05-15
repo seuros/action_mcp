@@ -96,6 +96,17 @@ module ActionMCP
         refute task.terminal?
       end
 
+      test "result_ready? returns true for terminal and input_required statuses" do
+        task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
+        refute task.result_ready?
+
+        task.require_input!
+        assert task.result_ready?
+
+        task.complete!
+        assert task.result_ready?
+      end
+
       test "non_terminal? is inverse of terminal?" do
         task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
         assert task.non_terminal?
@@ -154,13 +165,18 @@ module ActionMCP
         task = @session.tasks.create!(
           request_method: "tools/call",
           request_name: "test_tool",
-          status_message: "Processing"
+          status_message: "Processing",
+          ttl: 60_000,
+          poll_interval: 5_000
         )
 
         data = task.to_task_data
-        assert_equal task.id, data[:id]
+        assert_equal task.id, data[:taskId]
         assert_equal "working", data[:status]
+        assert data[:createdAt].present?
         assert data[:lastUpdatedAt].present?
+        assert_equal 60_000, data[:ttl]
+        assert_equal 5_000, data[:pollInterval]
         assert_equal "Processing", data[:statusMessage]
       end
 
@@ -171,7 +187,7 @@ module ActionMCP
         refute data.key?(:statusMessage)
       end
 
-      test "to_task_result includes task data and result payload" do
+      test "to_task_result returns underlying result with related task metadata" do
         task = @session.tasks.create!(
           request_method: "tools/call",
           request_name: "test_tool",
@@ -180,9 +196,16 @@ module ActionMCP
         task.complete!
 
         result = task.to_task_result
-        assert result[:task].present?
-        assert result[:result].present?
-        assert_equal "Result", result[:result]["content"].first["text"]
+        assert_equal "Result", result["content"].first["text"]
+        assert_equal task.id, result[:_meta]["io.modelcontextprotocol/related-task"]["taskId"]
+      end
+
+      test "to_create_task_result includes task and related task metadata" do
+        task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
+
+        result = task.to_create_task_result
+        assert_equal task.id, result[:task][:taskId]
+        assert_equal task.id, result[:_meta]["io.modelcontextprotocol/related-task"]["taskId"]
       end
 
       # JSON storage

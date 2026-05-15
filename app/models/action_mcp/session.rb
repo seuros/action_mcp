@@ -114,7 +114,7 @@ module ActionMCP
       payload = {
         protocolVersion: protocol_version || ActionMCP::DEFAULT_PROTOCOL_VERSION,
         serverInfo: server_info,
-        capabilities: server_capabilities
+        capabilities: capabilities_for_protocol(server_capabilities)
       }
       # Add instructions at top level if configured
       instructions = ActionMCP.configuration.instructions
@@ -128,6 +128,23 @@ module ActionMCP
 
     def server_capabilities=(value)
       super(parsed_json_attribute(value))
+    end
+
+    def capabilities_for_protocol(capabilities)
+      parsed = parsed_json_attribute(capabilities)
+      filtered =
+        if parsed.respond_to?(:deep_dup)
+          parsed.deep_dup
+        elsif parsed
+          parsed.dup
+        else
+          {}
+        end
+      return filtered if protocol_version == "2025-11-25"
+
+      filtered.delete("tasks")
+      filtered.delete(:tasks)
+      filtered
     end
 
     def initialize!

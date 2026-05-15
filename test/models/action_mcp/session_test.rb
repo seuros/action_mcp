@@ -101,6 +101,34 @@ module ActionMCP
       refute payload.key?(:instructions)
     end
 
+    test "server_capabilities_payload omits tasks before 2025-11-25" do
+      session = Session.create!(
+        protocol_version: "2025-06-18",
+        server_capabilities: {
+          tools: { listChanged: true },
+          tasks: { list: {}, cancel: {}, requests: { tools: { call: {} } } }
+        }
+      )
+
+      capabilities = session.server_capabilities_payload[:capabilities]
+      assert capabilities.key?("tools")
+      refute capabilities.key?("tasks")
+      refute capabilities.key?(:tasks)
+    end
+
+    test "server_capabilities_payload includes tasks for 2025-11-25" do
+      session = Session.create!(
+        protocol_version: "2025-11-25",
+        server_capabilities: {
+          tools: { listChanged: true },
+          tasks: { list: {}, cancel: {}, requests: { tools: { call: {} } } }
+        }
+      )
+
+      capabilities = session.server_capabilities_payload[:capabilities]
+      assert capabilities.key?("tasks")
+    end
+
     test "register_tool is a no-op on wildcard registry" do
       session = Session.create
       assert_equal [ "*" ], session.tool_registry

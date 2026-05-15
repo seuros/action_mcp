@@ -166,6 +166,32 @@ module ActionMCP
       ensure
         ActionMCP.configuration.pagination_page_size = nil
       end
+
+      test "tasks_result_strategy validates supported strategies" do
+        original = ActionMCP.configuration.tasks_result_strategy
+
+        ActionMCP.configuration.tasks_result_strategy = :blocking_http
+        assert_equal :blocking_http, ActionMCP.configuration.tasks_result_strategy
+
+        ActionMCP.configuration.tasks_result_strategy = "polling_only"
+        assert_equal :polling_only, ActionMCP.configuration.tasks_result_strategy
+
+        assert_raises(ArgumentError) do
+          ActionMCP.configuration.tasks_result_strategy = :sse
+        end
+      ensure
+        ActionMCP.configuration.tasks_result_strategy = original
+      end
+
+      test "tasks_result duration settings require positive values" do
+        assert_raises(ArgumentError) do
+          ActionMCP.configuration.tasks_result_timeout = 0
+        end
+
+        assert_raises(ArgumentError) do
+          ActionMCP.configuration.tasks_result_poll_interval = -0.1
+        end
+      end
     end
   end
 end

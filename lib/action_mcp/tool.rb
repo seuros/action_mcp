@@ -422,7 +422,7 @@ module ActionMCP
 
       # Add execution metadata (MCP 2025-11-25)
       # Only include if not default (forbidden) to minimize payload
-      if _task_support && _task_support != :forbidden
+      if _task_support && _task_support != :forbidden && task_metadata_supported?(protocol_version)
         result[:execution] = execution_metadata
       end
 
@@ -431,6 +431,11 @@ module ActionMCP
 
       result
     end
+
+    def self.task_metadata_supported?(protocol_version)
+      protocol_version.nil? || protocol_version == "2025-11-25"
+    end
+    private_class_method :task_metadata_supported?
 
     # --------------------------------------------------------------------------
     # Instance Methods
