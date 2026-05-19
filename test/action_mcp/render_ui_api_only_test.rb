@@ -19,7 +19,7 @@ module ActionMCP
     include ActionMCP::TestHelper
 
     setup do
-      skip "Set ACTION_MCP_API_ONLY=1 to run API-only host regression" unless ENV["ACTION_MCP_API_ONLY"]
+      skip "Set ACTION_MCP_API_ONLY=1 to run API-only host regression" unless ENV["ACTION_MCP_API_ONLY"] == "1"
     end
 
     test "dummy ApplicationController is API-only in this run" do
