@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.110.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.0...action_mcp/v0.110.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* render_ui(template:) works in API-only Rails hosts ([#220](https://github.com/seuros/action_mcp/issues/220)) ([cf9389b](https://github.com/seuros/action_mcp/commit/cf9389b69e76a37d6e8533f8fd06901f07a7f139))
+
 ## [0.110.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.109.0...action_mcp/v0.110.0) (2026-05-15)
 
 
