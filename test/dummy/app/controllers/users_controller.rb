@@ -2,7 +2,9 @@
 
 # User management controller for demonstration purposes
 class UsersController < ApplicationController
-  skip_before_action :verify_authenticity_token
+  # raise: false keeps the dummy boot-safe when ACTION_MCP_API_ONLY=1 swaps
+  # ApplicationController to ActionController::API (no CSRF callback to skip).
+  skip_before_action :verify_authenticity_token, raise: false
 
   # <rails-lens:routes:begin>
   # ROUTE: /users, name: users, via: POST

@@ -2,7 +2,9 @@
 
 # Session-based authentication controller for web applications
 class SessionsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [ :create, :destroy ]
+  # raise: false keeps the dummy boot-safe when ACTION_MCP_API_ONLY=1 swaps
+  # ApplicationController to ActionController::API (no CSRF callback to skip).
+  skip_before_action :verify_authenticity_token, only: [ :create, :destroy ], raise: false
 
   # <rails-lens:routes:begin>
   # ROUTE: /login, name: login, via: GET

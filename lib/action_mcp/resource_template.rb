@@ -343,7 +343,15 @@ module ActionMCP
         if text
           text
         elsif template
-          ApplicationController.render(template: template, layout: layout, locals: locals)
+          rendered = ActionMCP::MCPAppRenderer.render(template: template, layout: layout, locals: locals)
+          if rendered.to_s.strip.empty?
+            ActionMCP.logger.warn(
+              "[ActionMCP] render_ui produced empty output for #{self.class.name} " \
+              "(uri_template=#{self.class.uri_template.inspect}, template=#{template.inspect}). " \
+              "Check the template path and host view configuration."
+            )
+          end
+          rendered
         else
           raise ArgumentError, "render_ui requires :text or :template"
         end

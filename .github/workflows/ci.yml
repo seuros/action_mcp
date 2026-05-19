@@ -70,6 +70,12 @@ jobs:
       - name: Run tests
         run: bin/rails test
 
+      - name: Run API-only host regression (edge only)
+        if: matrix.rails-version == 'dev'
+        env:
+          ACTION_MCP_API_ONLY: "1"
+        run: bin/rails test test/action_mcp/render_ui_api_only_test.rb
+
   test-sqlite3:
     name: Tests (SQLite3, Ruby ${{ matrix.ruby-version }}, Rails ${{ matrix.rails-version }})
     runs-on: ubuntu-latest
@@ -105,3 +111,9 @@ jobs:
 
       - name: Run tests
         run: bin/rails test
+
+      - name: Run API-only host regression (edge only)
+        if: matrix.rails-version == 'dev'
+        env:
+          ACTION_MCP_API_ONLY: "1"
+        run: bin/rails test test/action_mcp/render_ui_api_only_test.rb
