@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
-class ApplicationController < ActionController::Base
+# Set ACTION_MCP_API_ONLY=1 to boot the dummy app's ApplicationController as
+# API-only. Used by test/action_mcp/render_ui_api_only_test.rb to verify that
+# ActionMCP::MCPAppRenderer renders templates regardless of host view stack.
+# Explicit "1" check so accidental values like "0" or "false" don't enable it.
+ApplicationControllerParent = ENV["ACTION_MCP_API_ONLY"] == "1" ? ActionController::API : ActionController::Base
+
+class ApplicationController < ApplicationControllerParent
   # Standard authentication helpers for demonstration
   # These work alongside the Gateway authentication system
 
@@ -27,5 +33,5 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  helper_method :current_user, :user_signed_in?
+  helper_method :current_user, :user_signed_in? unless ENV["ACTION_MCP_API_ONLY"] == "1"
 end
