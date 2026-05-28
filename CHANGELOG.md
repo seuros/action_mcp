@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.110.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.1...action_mcp/v0.110.2) (2026-05-28)
+
+
+### Bug Fixes
+
+* drop deprecated require_dependency ([#222](https://github.com/seuros/action_mcp/issues/222)) ([ca30d98](https://github.com/seuros/action_mcp/commit/ca30d9865a7ee4656f47f61ec86df64a38b4bb06))
+
 ## [0.110.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.0...action_mcp/v0.110.1) (2026-05-19)
 
 
