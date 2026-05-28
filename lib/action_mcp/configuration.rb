@@ -474,35 +474,8 @@ module ActionMCP
       # Only load if we haven't loaded yet - but in development, always reload
       return if @mcp_components_loaded && !Rails.env.development?
 
-      # Use Zeitwerk eager loading if available (in to_prepare phase)
       mcp_path = Rails.root.join("app/mcp")
-      if mcp_path.exist? && Rails.autoloaders.main.respond_to?(:eager_load_dir)
-        # This will trigger all inherited hooks properly
-        Rails.autoloaders.main.eager_load_dir(mcp_path)
-      elsif mcp_path.exist?
-        # Fallback for initialization phase - use require_dependency
-        # Load base classes first in specific order
-        base_files = [
-          mcp_path.join("application_gateway.rb"),
-          mcp_path.join("tools/application_mcp_tool.rb"),
-          mcp_path.join("prompts/application_mcp_prompt.rb"),
-          mcp_path.join("resource_templates/application_mcp_res_template.rb"),
-          # Load ArithmeticTool before other tools that inherit from it
-          mcp_path.join("tools/arithmetic_tool.rb")
-        ]
-
-        base_files.each do |file|
-          require_dependency file.to_s if file.exist?
-        end
-
-        # Then load all other files
-        Dir.glob(mcp_path.join("**/*.rb")).sort.each do |file|
-          # Skip base classes we already loaded
-          next if base_files.any? { |base| file == base.to_s }
-
-          require_dependency file
-        end
-      end
+      Rails.autoloaders.main.eager_load_dir(mcp_path) if mcp_path.exist?
       @mcp_components_loaded = true unless Rails.env.development?
     end
   end
