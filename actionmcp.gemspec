@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'jsonrpc-rails', '>= 0.5.3'
   spec.add_dependency 'multi_json'
   spec.add_dependency 'railties', '>= 8.1.0'
-  spec.add_dependency 'zeitwerk', '~> 2.6'
+  spec.add_dependency 'zeitwerk', '>= 2.6.2', '< 3.0'
   spec.add_dependency 'state_machines-activerecord', '>= 0.100.0'
 
   spec.bindir        = 'exe'
