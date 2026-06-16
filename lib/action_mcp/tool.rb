@@ -345,6 +345,7 @@ module ActionMCP
       # Map the JSON Schema type to an ActiveModel attribute type.
       attribute prop_name, map_json_type_to_active_model_type(type), default: default
       validates prop_name, presence: true, if: -> { required }
+      validates prop_name, inclusion: { in: opts[:enum] }, allow_nil: !required if opts[:enum]
 
       return unless %w[number integer].include?(type)
 
@@ -362,10 +363,12 @@ module ActionMCP
     # @param required [Boolean] Whether the collection is required (default: false).
     # @param default [Array, nil] The default value for the collection.
     # @return [void]
-    def self.collection(prop_name, type:, description: nil, required: false, default: [])
+    def self.collection(prop_name, type:, description: nil, required: false, default: [], **opts)
       raise ArgumentError, "Type is required for a collection" if type.nil?
 
-      collection_definition = { type: "array", items: { type: type } }
+      items_definition = { type: type }
+      items_definition[:enum] = opts[:enum] if opts[:enum]
+      collection_definition = { type: "array", items: items_definition }
       collection_definition[:description] = description if description && !description.empty?
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => collection_definition)
@@ -381,11 +384,13 @@ module ActionMCP
       end
 
       attribute prop_name, mapped_type, default: default
+      validates_with ArrayEnumValidator, prop_name:, enum: opts[:enum] if opts[:enum]
 
       # For arrays, we need to check if the attribute is nil, not if it's empty
       return unless required
 
       validates prop_name, presence: true, unless: -> { send(prop_name).is_a?(Array) }
+
       validate do
         errors.add(prop_name, "can't be blank") if send(prop_name).nil?
       end

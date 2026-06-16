@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+class ActionMCP::Tool::ArrayEnumValidator < ActiveModel::Validator
+  def validate(record)
+    values = record.send(options[:prop_name])
+    return if values.nil? || !values.is_a?(Array)
+
+    invalid_values = values - options[:enum]
+    return if invalid_values.empty?
+
+    record.errors.add(options[:prop_name], "contains invalid value(s) #{invalid_values.inspect}, allowed values are: #{options[:enum].inspect}")
+  end
+end
