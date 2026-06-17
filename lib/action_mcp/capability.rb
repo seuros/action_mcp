@@ -32,10 +32,12 @@ module ActionMCP
 
     delegate :session_data, to: :session, allow_nil: true
 
-    # Returns true when the connected client advertises the MCP Apps UI extension.
+    # Returns true when the connected client advertises the MCP Apps UI extension
+    # and supports ActionMCP's HTML app resource MIME type.
     def client_supports_ui?
-      !session&.client_capabilities&.dig("extensions", Apps::EXTENSION_KEY).nil?
+      Apps.client_supports?(session&.client_capabilities)
     end
+    alias client_supports_mcp_app? client_supports_ui?
 
     # use _capability_name or default_capability_name
     def self.capability_name

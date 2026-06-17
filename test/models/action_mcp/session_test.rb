@@ -129,6 +129,22 @@ module ActionMCP
       assert capabilities.key?("tasks")
     end
 
+    test "server_capabilities_payload includes mcp apps extension when configured" do
+      original_mcp_apps_enabled = ActionMCP.configuration.mcp_apps_enabled
+      ActionMCP.configuration.mcp_apps_enabled = true
+
+      session = Session.create!
+      capabilities = session.server_capabilities_payload[:capabilities]
+      extensions = capabilities["extensions"] || capabilities[:extensions]
+
+      assert_equal(
+        { "mimeTypes" => [ ActionMCP::MIME_TYPE_APP_HTML ] },
+        (extensions[ActionMCP::Apps::EXTENSION_KEY] || {}).deep_stringify_keys
+      )
+    ensure
+      ActionMCP.configuration.mcp_apps_enabled = original_mcp_apps_enabled
+    end
+
     test "register_tool is a no-op on wildcard registry" do
       session = Session.create
       assert_equal [ "*" ], session.tool_registry

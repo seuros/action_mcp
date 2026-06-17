@@ -48,6 +48,8 @@ module ActionMCP
                   :tasks_result_strategy,
                   :tasks_result_timeout,
                   :tasks_result_poll_interval,
+                  # --- MCP Apps Extension Options ---
+                  :mcp_apps_enabled,
                   # --- Schema Validation Options ---
                   :validate_structured_content,
                   # --- Allowed identity keys for gateway ---
@@ -78,6 +80,9 @@ module ActionMCP
       @tasks_result_strategy = :blocking_http
       @tasks_result_timeout = 30.seconds
       @tasks_result_poll_interval = 0.25
+
+      # MCP Apps extension defaults to explicit opt-in.
+      @mcp_apps_enabled = false
 
       # Pagination - nil means off. Set a number to enable with that page size.
       # Most MCP clients (including Claude Code) don't follow nextCursor yet.
@@ -319,6 +324,11 @@ module ActionMCP
         capabilities[:tasks] = tasks_cap
       end
 
+      if @mcp_apps_enabled
+        capabilities[:extensions] ||= {}
+        capabilities[:extensions][Apps::EXTENSION_KEY] = Apps.extension_settings
+      end
+
       capabilities
     end
 
@@ -341,6 +351,7 @@ module ActionMCP
       @logging_enabled = options[:logging_enabled] unless options[:logging_enabled].nil?
       @logging_level = options[:logging_level] unless options[:logging_level].nil?
       @resources_subscribe = options[:resources_subscribe] unless options[:resources_subscribe].nil?
+      @mcp_apps_enabled = boolean_config_value(options[:mcp_apps_enabled]) unless options[:mcp_apps_enabled].nil?
     end
 
     def eager_load_if_needed
@@ -437,6 +448,8 @@ module ActionMCP
         self.tasks_result_poll_interval = config["tasks_result_poll_interval"]
       end
 
+      @mcp_apps_enabled = boolean_config_value(config["mcp_apps_enabled"]) if config.key?("mcp_apps_enabled")
+
       # Extract allowed origins for DNS rebinding protection
       if config["allowed_origins"]
         @allowed_origins = Array(config["allowed_origins"])
@@ -468,6 +481,17 @@ module ActionMCP
       raise ArgumentError, "#{setting_name} must be positive, got: #{value.inspect}" unless duration.positive?
 
       duration
+    end
+
+    def boolean_config_value(value)
+      case value
+      when true, false
+        value
+      when String
+        !%w[false 0 no off].include?(value.strip.downcase)
+      else
+        !!value
+      end
     end
 
     def ensure_mcp_components_loaded

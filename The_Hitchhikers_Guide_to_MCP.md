@@ -230,7 +230,7 @@ Born from the frustration of LLMs timing out on long-running tasks, 2025-11-25 l
 
 ## The Extensions Track: When Core Wasn't Enough
 
-Late 2025, MCP grew an "extensions track" (SEP-1724) for features too big, too opinionated, or too HTML-flavored to bolt onto the core protocol. Extensions are opt-in, negotiated at `initialize` time, and don't break anything that ignores them. First one to ship: MCP Apps. ActionMCP treats it as a first-class citizen because your AI deserves a UI.
+Late 2025, MCP grew an "extensions track" (SEP-2133) for features too big, too opinionated, or too HTML-flavored to bolt onto the core protocol. Extensions are opt-in, negotiated at `initialize` time, and don't break anything that ignores them. First one to ship: MCP Apps. ActionMCP treats it as a first-class citizen because your AI deserves a UI.
 
 ---
 
@@ -240,9 +240,9 @@ Late 2025, MCP grew an "extensions track" (SEP-1724) for features too big, too o
 
 #### **Their Origin Story:**
 
-For two years, MCP tools returned text, structured JSON, and resource links. Useful, charisma-deficient. Meanwhile MCP-UI (the community playground) and OpenAI's Apps SDK both shipped interactive HTML inside chat, and the working group decided "fine, we'll standardize it." MCP Apps (SEP-1865, draft 2026-01-26) is what you get when text isn't enough but building a whole web app and chasing users to a different tab feels wrong.
+For two years, MCP tools returned text, structured JSON, and resource links. Useful, charisma-deficient. Meanwhile MCP-UI (the community playground) and OpenAI's Apps SDK both shipped interactive HTML inside chat, and the working group decided "fine, we'll standardize it." MCP Apps (SEP-1865, stable 2026-01-26) is what you get when text isn't enough but building a whole web app and chasing users to a different tab feels wrong.
 
-**Extension identifier:** `io.modelcontextprotocol/ui` - the negotiation key the host advertises so the server knows it's safe to ship UI metadata. Yes, the dots-and-slashes thing. No, you're not allowed to use Facebook's logo.
+**Extension identifier:** `io.modelcontextprotocol/ui` - the negotiation key both sides advertise so everyone knows HTML apps are in play. Yes, the dots-and-slashes thing. No, you're not allowed to use Facebook's logo.
 
 #### **The Wire Format Story:**
 
@@ -250,7 +250,7 @@ The MIME type is `text/html;profile=mcp-app` - that's plain `text/html` with an 
 
 UI resources live at `ui://` URIs. The path is arbitrary - servers organize it however makes sense. The scheme is the contract: tools refer to UI resources by URI, never by file path, never by URL.
 
-Two metadata blobs flow over the wire. On `tools/list`, each tool can advertise a `_meta.ui` containing `resourceUri` (which UI to render its result with) and `visibility` (who's allowed to call it). On `resources/read`, the UI resource itself can advertise a `_meta.ui` containing CSP domains (what the iframe can fetch from), permissions (camera, microphone, geolocation, clipboard), a `prefersBorder` boolean (host-rendered border + background), and an optional `domain` field that pins the sandbox to a dedicated origin for OAuth callbacks. The spec prefers the content-level metadata over the listing-level metadata, and ActionMCP emits it where the spec wants it.
+Two metadata blobs flow over the wire. On `tools/list`, each tool can advertise a `_meta.ui` containing `resourceUri` (which UI to render its result with) and `visibility` (who's allowed to call it). On resource listings/templates and on `resources/read`, the UI resource itself can advertise a `_meta.ui` containing CSP domains (what the iframe can fetch from), permissions (camera, microphone, geolocation, clipboard write), a `prefersBorder` boolean (host-rendered border + background), and an optional `domain` field that pins the sandbox to a dedicated origin for OAuth callbacks. The spec prefers the content-level metadata over the listing-level metadata, and ActionMCP emits it in all the useful places.
 
 #### **Visibility - The Two-Way Mirror:**
 
@@ -260,7 +260,26 @@ The server returns everything; the host does the filtering. The spec puts the MU
 
 #### **Capability Negotiation:**
 
-Hosts advertise MCP Apps support in `initialize` by including `io.modelcontextprotocol/ui` in their `capabilities.extensions` block. ActionMCP exposes a `client_supports_ui?` helper on every Capability instance so tools can introspect what the client claims to handle. We don't write fallback branches off it - tools always emit their structured output, and the spec-compliant client is expected to consume it. Clients that don't support UI just see the same structured payload and ignore the `_meta.ui` metadata; non-compliant clients are not our problem.
+MCP Apps are opt-in on the server side. Flip the switch in `config/mcp.yml`:
+
+```yaml
+shared:
+  mcp_apps_enabled: true
+```
+
+Then ActionMCP advertises the extension in `initialize` responses:
+
+```json
+{
+  "extensions": {
+    "io.modelcontextprotocol/ui": {
+      "mimeTypes": ["text/html;profile=mcp-app"]
+    }
+  }
+}
+```
+
+Hosts advertise MCP Apps support in `initialize` by including the same extension key and MIME type in their `capabilities.extensions` block. ActionMCP exposes `client_supports_ui?` and `client_supports_mcp_app?` on every Capability instance so tools can introspect what the client claims to handle. The helper checks for `text/html;profile=mcp-app`, not just the extension key. We don't write fallback branches off it - tools always emit their structured output, and the spec-compliant client is expected to consume it. Clients that don't support UI just see the same structured payload and ignore the `_meta.ui` metadata; non-compliant clients are not our problem.
 
 #### **Iframe Communication - The Postman Always Posts Twice:**
 
@@ -270,20 +289,20 @@ The View (your HTML) acts as an MCP client over `postMessage`. It sends a `ui/in
 
 #### **Security Model:**
 
-Sandboxed iframe with `allow-scripts allow-same-origin`, and that's the entire permission menu. The host enforces CSP derived from the server's declared `csp` domains - hosts can tighten, never loosen. If the server declares no CSP, the host falls back to a restrictive default (essentially `'self' + 'unsafe-inline'`). Every UI-to-host call is auditable JSON-RPC. User consent is required for app-initiated tool calls (the host enforces this). The sandbox can't reach the parent window, can't read cookies or storage, can't navigate other tabs.
+Sandboxed iframe with `allow-scripts allow-same-origin`, and that's the entire permission menu. The host enforces CSP derived from the server's declared `csp` domains - hosts can tighten, never loosen. ActionMCP accepts `http://`, `https://`, `ws://`, and `wss://` for `connectDomains`; the other CSP domain lists are `http://`/`https://` only. If the server declares no CSP, the host falls back to a restrictive default (essentially `'self' + 'unsafe-inline'`). Every UI-to-host call is auditable JSON-RPC. User consent is required for app-initiated tool calls (the host enforces this). The sandbox can't reach the parent window, can't read cookies or storage, can't navigate other tabs.
 
 #### **What ActionMCP Ships Today:**
 
 - ✅ `text/html;profile=mcp-app` MIME via `ActionMCP::MimeTypes` (engine-owned registry, no global `Mime::Type.register` pollution)
+- ✅ Opt-in server capability advertisement with `mcp_apps_enabled`
 - ✅ `renders_ui` Tool DSL with class-load-time validation of URI scheme and visibility values
-- ✅ `ui(**)` class macro + `render_ui(template:)` instance helper on ResourceTemplate
-- ✅ Content-level `_meta.ui` emission on `resources/read` (the spec's preferred location)
-- ✅ `Capability#client_supports_ui?` for graceful degradation
+- ✅ `ui(**)` class macro + `render_ui(template:)` / `render_ui(text:)` instance helper on ResourceTemplate
+- ✅ `_meta.ui` emission on templates, listed resources, and read content
+- ✅ `Capability#client_supports_ui?` / `client_supports_mcp_app?` for graceful degradation
 - ✅ Deprecated flat `_meta["ui/resourceUri"]` explicitly avoided, pinned by negative test
 
 #### **What ActionMCP Doesn't Ship (Yet):**
 
-- ❌ Server-side extension capability advertisement (the host advertises, we read)
 - ❌ Auto-filtering of `tools/list` by visibility (spec puts the MUST on the host)
 - ❌ View-side JS SDK - you write the HTML, you pick the framework
 - ❌ `externalIframes`, `availableDisplayModes`, full theming variable plumbing - on the roadmap
@@ -293,8 +312,10 @@ Sandboxed iframe with `allow-scripts allow-same-origin`, and that's the entire p
 - Extension key `io.modelcontextprotocol/ui` (negotiation key, NOT a wire path)
 - MIME type MUST be exactly `text/html;profile=mcp-app` (parameter included)
 - URI scheme MUST be `ui://` (no `https://`, no `file://`, the host won't even fetch it)
-- `_meta.ui.resourceUri` nested form ONLY - the deprecated flat `_meta["ui/resourceUri"]` will be removed before GA
+- `_meta.ui.resourceUri` nested form ONLY - the deprecated flat `_meta["ui/resourceUri"]` is not emitted
 - Visibility values MUST be one of `"model"`, `"app"` - any other string raises at class load
+- `render_ui` requires exactly one content source: `text:` or `template:`, not both
+- Per-response `render_ui(meta:)` overrides merge over class-level `ui(...)` defaults
 
 **ActionMCP Status:** **THE NEW HOTNESS** - Optional, opt-in, spec-current, and won't break anything that ignores it
 
