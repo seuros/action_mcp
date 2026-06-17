@@ -175,6 +175,30 @@ end
 - `"array"` - List of items
 - `"object"` - ⚠️ **Limited support** - See Input Schema Limitations below
 
+## Property Aliases
+
+Use `alias_property` when a tool should accept more than one input name for the same value:
+
+```ruby
+class SendMessageTool < ApplicationMCPTool
+  tool_name "send_message"
+  description "Send a message in a thread"
+
+  property :thread_id, type: "string", description: "Thread ID", required: true
+  alias_property :root_id, :thread_id
+  property :message, type: "string", description: "Message body", required: true
+
+  def perform
+    # root_id and thread_id read from the same underlying property
+    render(text: "Sending to #{thread_id}")
+  end
+end
+```
+
+Both `thread_id` and `root_id` are accepted when the tool is called. The canonical property
+stays in `inputSchema`, so `thread_id` remains the documented schema field while `root_id`
+works as a compatibility alias.
+
 ## ⚠️ Input Schema Limitations
 
 **Important:** The MCP specification currently only supports **flat, single-level** input schemas. While JSON Schema technically allows nested objects, the MCP spec intentionally keeps input parameters at one level.
@@ -959,7 +983,7 @@ end
 
 ### `schema_property_keys`
 
-Returns an array of string keys for all defined properties on a tool class. Useful for logging, debugging, or building dynamic tool wrappers:
+Returns an array of string keys for all accepted properties on a tool class, including aliases. Useful for logging, debugging, or building dynamic tool wrappers:
 
 ```ruby
 CalculateSumTool.schema_property_keys
