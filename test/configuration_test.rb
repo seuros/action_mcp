@@ -14,6 +14,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal false, @config.resources_subscribe
     assert_equal :primary, @config.active_profile
     assert_equal "/", @config.base_path
+    assert_equal false, @config.mcp_apps_enabled
   end
 
   test "default profiles are loaded" do
@@ -87,6 +88,59 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal true, capabilities[:resources][:listChanged]
 
     assert capabilities[:logging]
+  end
+
+  test "capabilities omit mcp apps extension by default" do
+    capabilities = @config.capabilities
+
+    refute capabilities.key?(:extensions)
+  end
+
+  test "capabilities include mcp apps extension when enabled" do
+    @config.mcp_apps_enabled = true
+
+    capabilities = @config.capabilities
+
+    assert_equal(
+      { mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ] },
+      capabilities.dig(:extensions, ActionMCP::Apps::EXTENSION_KEY)
+    )
+  end
+
+  test "use_profile applies mcp apps option" do
+    @config.profiles[:apps_profile] = {
+      tools: [ "all" ],
+      prompts: [],
+      resources: [ "all" ],
+      options: {
+        mcp_apps_enabled: true
+      }
+    }
+
+    @config.use_profile(:apps_profile)
+
+    assert @config.mcp_apps_enabled
+    assert_equal(
+      { mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ] },
+      @config.capabilities.dig(:extensions, ActionMCP::Apps::EXTENSION_KEY)
+    )
+  end
+
+  test "profile mcp apps option can disable top-level setting" do
+    @config.mcp_apps_enabled = true
+    @config.profiles[:no_apps_profile] = {
+      tools: [ "all" ],
+      prompts: [],
+      resources: [ "all" ],
+      options: {
+        mcp_apps_enabled: false
+      }
+    }
+
+    @config.use_profile(:no_apps_profile)
+
+    refute @config.mcp_apps_enabled
+    refute @config.capabilities.key?(:extensions)
   end
 
   test "empty arrays in profile don't generate capabilities" do

@@ -193,6 +193,28 @@ ActionMCP::Content::Resource.new(uri, "image/png", blob: Base64.strict_encode64(
 
 Resource templates can serve interactive HTML UIs under the MCP Apps extension (`io.modelcontextprotocol/ui`, SEP-1865). The host renders the HTML in a sandboxed iframe and communicates with it via JSON-RPC over `postMessage`. See the Hitchhiker's Guide for the narrative; this section is the reference.
 
+### Enable MCP Apps
+
+MCP Apps are an optional extension, so ActionMCP advertises support only when you opt in:
+
+```yaml
+# config/mcp.yml
+shared:
+  mcp_apps_enabled: true
+```
+
+When enabled, ActionMCP includes this extension capability in `initialize` responses:
+
+```json
+{
+  "extensions": {
+    "io.modelcontextprotocol/ui": {
+      "mimeTypes": ["text/html;profile=mcp-app"]
+    }
+  }
+}
+```
+
 ### MIME Type Shorthand
 
 The spec MIME is `text/html;profile=mcp-app`. The `:mcp_app` symbol resolves to that string through `ActionMCP::MimeTypes`, which is engine-owned (no global `Mime::Type.register` pollution):
@@ -207,7 +229,7 @@ Unknown symbols fall back to `Mime[]` (the app's own registered formats), and ra
 
 ### The `ui` Class Macro
 
-`ui(**data)` declares the `_meta.ui` block emitted on every `resources/read` response for this template. The keys are spec-defined and stored verbatim (camelCase per the wire format):
+`ui(**data)` declares the `_meta.ui` block emitted for this template. The keys are spec-defined and stored verbatim (camelCase per the wire format):
 
 ```ruby
 class WeatherDashboardTemplate < ApplicationMCPResTemplate
@@ -228,20 +250,20 @@ end
 
 Recognized keys:
 
-- **`csp`** — `{ connectDomains:, resourceDomains:, frameDomains:, baseUriDomains: }`. Each is an array of **origins** (scheme + host, optionally wildcard subdomain): `https://api.example.com`, `wss://stream.example.com`, `https://*.cloudflare.com`. This is a strict subset of CSP source expressions — no `'self'`, `'unsafe-inline'`, `data:`, nonces, or hashes; the host adds its own implicit sources. Bare hostnames are not valid. Per-directive defaults when omitted or `[]`: `connectDomains` → no external network, `resourceDomains` → no external scripts/images/styles/fonts, `frameDomains` → `frame-src 'none'`, `baseUriDomains` → `base-uri 'self'`. If the entire `csp` key is omitted, the host applies a fully restrictive default CSP (essentially `'self' + 'unsafe-inline'` for inline scripts/styles, `connect-src 'none'`). Note: this is **not** the same as Rails' `Content-Security-Policy` HTTP header — Rails CSP applies to responses your app serves; MCP CSP is JSON metadata the host uses to construct the iframe's CSP.
+- **`csp`** — `{ connectDomains:, resourceDomains:, frameDomains:, baseUriDomains: }`. Each is an array of **origins** (scheme + host, optionally wildcard subdomain): `https://api.example.com`, `wss://stream.example.com`, `https://*.cloudflare.com`. This is a strict subset of CSP source expressions — no `'self'`, `'unsafe-inline'`, `data:`, nonces, or hashes; the host adds its own implicit sources. Bare hostnames are not valid. `connectDomains` accepts `http://`, `https://`, `ws://`, and `wss://`; the other CSP domain lists accept `http://` and `https://`. Per-directive defaults when omitted or `[]`: `connectDomains` → no external network, `resourceDomains` → no external scripts/images/styles/fonts, `frameDomains` → `frame-src 'none'`, `baseUriDomains` → `base-uri 'self'`. If the entire `csp` key is omitted, the host applies a fully restrictive default CSP (essentially `'self' + 'unsafe-inline'` for inline scripts/styles, `connect-src 'none'`). Note: this is **not** the same as Rails' `Content-Security-Policy` HTTP header — Rails CSP applies to responses your app serves; MCP CSP is JSON metadata the host uses to construct the iframe's CSP.
 - **`permissions`** — `{ camera: {}, microphone: {}, geolocation: {}, clipboardWrite: {} }`. Requests Permission Policy features for the inner iframe; hosts MAY honor these via the iframe `allow` attribute. `clipboardWrite` maps specifically to `clipboard-write`. Apps SHOULD feature-detect and handle denial — never assume a permission was granted.
 - **`prefersBorder`** — boolean. `true` requests host-rendered border + background; `false` requests none; omitted means host decides. The spec recommends setting this explicitly since host defaults vary.
 - **`domain`** — string. Optional dedicated sandbox origin for the View. **Host-dependent format** — common patterns include hash-based subdomains (Claude: `{hash}.claudemcpcontent.com`) or URL-derived subdomains (ChatGPT: `www-example-com.oaiusercontent.com`). Consult host-specific documentation; do not copy example domains. If omitted, the host uses its default sandbox origin (typically per-conversation). Set this when you need a stable origin for OAuth callbacks, CORS allowlists, or API key origin checks.
 
 Successive `ui(**)` calls merge via `deep_merge`, so you can split declarations or have a base template define CSP and a subclass add `prefersBorder`.
 
-**Origin validation at class load.** The `ui` macro validates every `csp.*Domains` entry as an `http(s)://` origin and raises `ArgumentError` immediately for bare hostnames or unsupported schemes (e.g., `wss://`, `ftp://`). Wildcard subdomains (`https://*.cloudflare.com`), ports, and paths are accepted. Validation happens at class declaration time so misconfigured templates fail at file load — not on the first `resources/read` call.
+**Origin validation at class load.** The `ui` macro validates every `csp.*Domains` entry and raises `ArgumentError` immediately for bare hostnames or unsupported schemes. WebSocket origins are accepted only for `connectDomains`; `wss://` in `resourceDomains`, for example, is rejected. Wildcard subdomains (`https://*.cloudflare.com`), ports, and paths are accepted. Validation happens at class declaration time so misconfigured templates fail at file load — not on the first `resources/read` call.
 
 #### Metadata Location: `resources/list` vs `resources/read`
 
-The spec allows `_meta.ui` on both the `resources/list` entry (static default reviewable at connection time) and the `resources/read` content item (per-response, possibly dynamic). When both are present, **the content-item value takes precedence**, and hosts MUST check both locations.
+The spec allows `_meta.ui` on both the resource listing/template entry (static default reviewable at connection time) and the `resources/read` content item (per-response, possibly dynamic). When both are present, **the content-item value takes precedence**, and hosts MUST check both locations.
 
-ActionMCP emits `_meta.ui` on the `resources/read` content via `render_ui` — the spec's recommended location for dynamic or per-response metadata. The class-level `meta(...)` macro (distinct from `ui(...)`) feeds the `resources/list` entry's `_meta`, which is where you'd put static defaults if you want hosts to review security configuration without fetching the resource.
+ActionMCP emits class-level `ui(...)` metadata on `resources/templates/list`, on `resources/list` entries built with `build_resource`, and on `resources/read` content built with `render_ui`. Pass `meta:` to `render_ui` for per-response overrides; those values merge over the class-level `ui(...)` defaults.
 
 ### The `render_ui` Instance Helper
 
@@ -262,15 +284,16 @@ end
 Full signature:
 
 ```ruby
-render_ui(text: nil, template: nil, layout: false, locals: {})
+render_ui(text: nil, template: nil, layout: false, locals: {}, meta: nil)
 ```
 
 - **`text:`** — raw HTML string. Mutually exclusive with `template:`.
-- **`template:`** — Rails view path. Rendered via `ApplicationController.render` so all your view paths, helpers, and layouts are available.
+- **`template:`** — Rails view path. Rendered via ActionMCP's internal `MCPAppRenderer` so view rendering works in API-only Rails hosts.
 - **`layout:`** — defaults to `false` (no layout). Pass a layout name to wrap the view.
 - **`locals:`** — passed through to the renderer.
+- **`meta:`** — optional content-level `_meta` merged over class-level `ui(...)` metadata.
 
-Raises `ArgumentError` if neither `:text` nor `:template` is supplied.
+Raises `ArgumentError` if neither `:text` nor `:template` is supplied, or if both are supplied.
 
 ### Where the HTML Lives
 
@@ -363,7 +386,7 @@ And what `tools/list` returns for the linked tool:
 
 ### Capability Introspection
 
-`Capability#client_supports_ui?` returns `true` when the connected client advertised `io.modelcontextprotocol/ui` in `capabilities.extensions` during `initialize`. It's available on every Tool, Prompt, and ResourceTemplate instance for observability and metrics; ActionMCP does not branch response content off it.
+`Capability#client_supports_ui?` returns `true` when the connected client advertised `io.modelcontextprotocol/ui` in `capabilities.extensions` and included `text/html;profile=mcp-app` in `mimeTypes` during `initialize`. `client_supports_mcp_app?` is an alias. It's available on every Tool, Prompt, and ResourceTemplate instance for observability and metrics; ActionMCP does not branch response content off it.
 
 ## Implementation Notes
 

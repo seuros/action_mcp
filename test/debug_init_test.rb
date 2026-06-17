@@ -30,7 +30,11 @@ class DebugInitTest < ActionDispatch::IntegrationTest
           sampling: {}
         }
       }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: {
+      "Content-Type" => "application/json",
+      "Accept" => "application/json",
+      "Mcp-Session-Id" => @session_id
+    }
 
     assert_response :success
     body = response.parsed_body
@@ -54,5 +58,50 @@ class DebugInitTest < ActionDispatch::IntegrationTest
       "resources" => { "subscribe" => false, "listChanged" => true }
     }
     assert_equal expected_capabilities, body["result"]["capabilities"]
+  end
+
+  test "initialization advertises mcp apps extension when enabled" do
+    original_mcp_apps_enabled = ActionMCP.configuration.mcp_apps_enabled
+    ActionMCP.configuration.mcp_apps_enabled = true
+    session = ActionMCP::Server.session_store.create_session(nil, {
+                                                               initialized: false,
+                                                               protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION,
+                                                               server_capabilities: ActionMCP.configuration.capabilities
+                                                             })
+
+    post "/", params: {
+      jsonrpc: "2.0",
+      id: "init-apps",
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        clientInfo: { name: "Test Client", version: "1.0" },
+        capabilities: {
+          extensions: {
+            "io.modelcontextprotocol/ui" => {
+              mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ]
+            }
+          }
+        }
+      }
+    }.to_json, headers: {
+      "Content-Type" => "application/json",
+      "Accept" => "application/json",
+      "Mcp-Session-Id" => session.id
+    }
+
+    assert_response :success
+    extensions = response.parsed_body.dig(
+      "result",
+      "capabilities",
+      "extensions"
+    )
+
+    assert_equal(
+      { "mimeTypes" => [ ActionMCP::MIME_TYPE_APP_HTML ] },
+      extensions["io.modelcontextprotocol/ui"]
+    )
+  ensure
+    ActionMCP.configuration.mcp_apps_enabled = original_mcp_apps_enabled
   end
 end

@@ -37,6 +37,53 @@ module ActionMCP
                    content.meta[:ui])
     end
 
+    test "weather dashboard template declares template-level _meta.ui" do
+      assert_equal(
+        { csp: { connectDomains: [ "https://api.openweathermap.org" ] }, prefersBorder: true },
+        WeatherDashboardTemplate.to_h.dig(:_meta, :ui)
+      )
+    end
+
+    test "build_resource includes class ui metadata and preserves explicit meta" do
+      original_templates = ResourceTemplate.registered_templates.dup
+      template = Class.new(ResourceTemplate) do
+        def self.name = "ListedUiTemplate"
+        uri_template "ui://listed/panel"
+        description "Listed UI"
+        mime_type :mcp_app
+        ui prefersBorder: true
+      end
+
+      resource = template.build_resource(uri: "ui://listed/panel", name: "Listed", meta: { foo: "bar" })
+
+      assert_equal({ ui: { prefersBorder: true }, foo: "bar" }, resource.meta)
+      assert_equal({ ui: { prefersBorder: true }, foo: "bar" }, resource.to_h[:_meta])
+    ensure
+      ResourceTemplate.instance_variable_set(:@registered_templates, original_templates)
+    end
+
+    test "render_ui merges response meta over class ui metadata" do
+      content = WeatherDashboardTemplate.new.render_ui(
+        text: "<!doctype html><title>override</title>",
+        meta: { ui: { prefersBorder: false }, source: "test" }
+      )
+
+      assert_equal(
+        { csp: { connectDomains: [ "https://api.openweathermap.org" ] }, prefersBorder: false },
+        content.meta[:ui]
+      )
+      assert_equal "test", content.meta[:source]
+    end
+
+    test "render_ui rejects both text and template" do
+      assert_raises(ArgumentError) do
+        WeatherDashboardTemplate.new.render_ui(
+          text: "<!doctype html>",
+          template: "mcp/ui/weather_dashboard"
+        )
+      end
+    end
+
     test "renders_ui rejects non-String URI" do
       assert_raises(ArgumentError) { RendersUiDemoTool.renders_ui :"ui://widgets/panel" }
       assert_raises(ArgumentError) { RendersUiDemoTool.renders_ui nil }
@@ -63,27 +110,58 @@ module ActionMCP
       end
     end
 
-    test "ui macro rejects non-http schemes in CSP origins" do
-      assert_raises(ArgumentError) do
-        UiOriginsDemoTemplate.ui csp: { connectDomains: %w[wss://stream.example.com] }
-      end
+    test "ui macro rejects unsupported schemes in CSP origins" do
       assert_raises(ArgumentError) do
         UiOriginsDemoTemplate.ui csp: { resourceDomains: %w[ftp://files.example.com] }
       end
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { resourceDomains: %w[wss://stream.example.com] }
+      end
     end
 
-    test "ui macro accepts http/https origins, wildcards, ports, and paths" do
+    test "ui macro accepts http origins and websocket connect origins" do
       connect = UiOriginsDemoTemplate.ui_meta[:csp][:connectDomains]
       resource = UiOriginsDemoTemplate.ui_meta[:csp][:resourceDomains]
 
       assert_includes connect, "https://api.example.com"
       assert_includes connect, "http://localhost:3000"
+      assert_includes connect, "wss://stream.example.com"
       assert_includes resource, "https://*.cloudflare.com"
       assert_includes resource, "https://cdn.example.com/static"
     end
 
-    test "client_supports_ui? is true when the extension key is present" do
-      assert capability_for(extensions: { "io.modelcontextprotocol/ui" => {} }).client_supports_ui?
+    test "ui macro rejects unknown permission keys" do
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui permissions: { clipboard_read: {} }
+      end
+    end
+
+    test "ui macro rejects non-hash permission values" do
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui permissions: { clipboardWrite: true }
+      end
+    end
+
+    test "client_supports_ui? is true when extension advertises mcp app mime type" do
+      assert capability_for(
+        extensions: {
+          "io.modelcontextprotocol/ui" => { "mimeTypes" => [ MIME_TYPE_APP_HTML ] }
+        }
+      ).client_supports_ui?
+    end
+
+    test "client_supports_mcp_app? aliases client_supports_ui?" do
+      capability = capability_for(
+        extensions: {
+          "io.modelcontextprotocol/ui" => { "mimeTypes" => [ MIME_TYPE_APP_HTML ] }
+        }
+      )
+
+      assert capability.client_supports_mcp_app?
+    end
+
+    test "client_supports_ui? is false when extension omits mcp app mime type" do
+      refute capability_for(extensions: { "io.modelcontextprotocol/ui" => {} }).client_supports_ui?
     end
 
     test "client_supports_ui? is false when the extension key is absent" do

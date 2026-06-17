@@ -20,6 +20,10 @@ shared:
   #   - "Use this server to manage project tickets and workflows"
   #   - "Helpful for tracking bugs, features, and sprint planning"
 
+  # MCP Apps are an optional extension. Enable this to advertise
+  # io.modelcontextprotocol/ui with text/html;profile=mcp-app support.
+  # mcp_apps_enabled: true
+
   # MCP capability profiles
   profiles:
     primary:

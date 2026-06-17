@@ -121,24 +121,77 @@ module ActionMCP
       def ui(**data)
         raise ArgumentError, "ui metadata must not be empty" if data.empty?
 
-        validate_ui_csp_origins!(data[:csp])
+        validate_ui_metadata!(data)
         @ui_meta ||= {}
         @ui_meta = @ui_meta.deep_merge(data)
       end
 
+      def meta_with_ui(meta = nil)
+        supplied_meta = coerce_meta(meta)
+        ui_meta = @ui_meta&.any? ? { ui: @ui_meta } : {}
+
+        return nil if ui_meta.empty? && supplied_meta.empty?
+        return supplied_meta if ui_meta.empty?
+        return ui_meta if supplied_meta.empty?
+
+        ui_meta.deep_merge(supplied_meta)
+      end
+
       private
+
+      def validate_ui_metadata!(data)
+        validate_ui_csp_origins!(data[:csp] || data["csp"])
+        validate_ui_permissions!(data[:permissions] || data["permissions"])
+      end
 
       def validate_ui_csp_origins!(csp)
         return unless csp.is_a?(Hash)
 
         Apps::CSP_KEYS.each do |key|
-          Array(csp[key]).each do |origin|
-            next if origin.is_a?(String) && Apps::ORIGIN_PATTERN.match?(origin)
+          pattern = key == :connectDomains ? Apps::CONNECT_ORIGIN_PATTERN : Apps::RESOURCE_ORIGIN_PATTERN
+          scheme_message = key == :connectDomains ? "http(s):// or ws(s)://" : "http(s)://"
+          Array(csp[key] || csp[key.to_s]).each do |origin|
+            next if origin.is_a?(String) && pattern.match?(origin)
 
             raise ArgumentError,
-                  "ui csp #{key} entries must be http(s):// origins, got: #{origin.inspect}"
+                  "ui csp #{key} entries must be #{scheme_message} origins, got: #{origin.inspect}"
           end
         end
+      end
+
+      def validate_ui_permissions!(permissions)
+        return unless permissions
+        raise ArgumentError, "ui permissions must be a hash" unless permissions.is_a?(Hash)
+
+        normalized_keys = permissions.keys.map(&:to_sym)
+        invalid = normalized_keys - Apps::PERMISSION_KEYS
+        if invalid.any?
+          raise ArgumentError,
+                "ui permissions keys must be #{Apps::PERMISSION_KEYS.join('/')}, got: #{invalid.inspect}"
+        end
+
+        permissions.each do |key, value|
+          next if value.respond_to?(:to_hash)
+
+          raise ArgumentError, "ui permissions #{key} value must be a hash, got: #{value.inspect}"
+        end
+      end
+
+      def coerce_meta(meta)
+        coerced =
+          if meta.nil?
+            {}
+          elsif meta.respond_to?(:to_hash)
+            meta.to_hash
+          elsif meta.respond_to?(:to_h)
+            meta.to_h
+          else
+            raise ArgumentError, "meta must respond to :to_hash or :to_h, got: #{meta.class}"
+          end
+
+        coerced = coerced.deep_dup
+        coerced[:ui] = coerced.delete("ui") if coerced.key?("ui") && !coerced.key?(:ui)
+        coerced
       end
 
       public
@@ -153,8 +206,8 @@ module ActionMCP
           mimeType: @mime_type
         }.compact
 
-        # Add _meta if present
-        result[:_meta] = @_meta if @_meta&.any?
+        meta = meta_with_ui(@_meta)
+        result[:_meta] = meta if meta&.any?
 
         result
       end
@@ -201,7 +254,7 @@ module ActionMCP
           mime_type: mime_type || @mime_type,
           size: size,
           annotations: annotations,
-          meta: meta
+          meta: meta_with_ui(meta)
         )
       end
 
@@ -338,11 +391,13 @@ module ActionMCP
     #
     # @example
     #   render_ui(template: "mcp/ui/weather_dashboard")
-    def render_ui(text: nil, template: nil, layout: false, locals: {})
+    def render_ui(text: nil, template: nil, layout: false, locals: {}, meta: nil)
+      raise ArgumentError, "render_ui accepts either :text or :template, not both" if !text.nil? && !template.nil?
+
       resolved =
-        if text
+        if !text.nil?
           text
-        elsif template
+        elsif !template.nil?
           rendered = ActionMCP::MCPAppRenderer.render(template: template, layout: layout, locals: locals)
           if rendered.to_s.strip.empty?
             ActionMCP.logger.warn(
@@ -356,12 +411,11 @@ module ActionMCP
           raise ArgumentError, "render_ui requires :text or :template"
         end
 
-      ui = self.class.ui_meta
       ActionMCP::Content::Resource.new(
         self.class.uri_template,
         self.class.mime_type || ActionMCP::Apps::MIME_TYPE,
         text: resolved,
-        meta: (ui&.any? ? { ui: ui } : nil)
+        meta: self.class.meta_with_ui(meta)
       )
     end
 

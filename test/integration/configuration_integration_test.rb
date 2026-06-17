@@ -160,6 +160,65 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     assert capabilities[:logging], "Logging capability should be present"
   end
 
+  test "loads mcp apps setting from YAML configuration" do
+    config_content = {
+      "shared" => {
+        "authentication" => [ "none" ],
+        "mcp_apps_enabled" => true,
+        "profiles" => {
+          "primary" => {
+            "tools" => [ "all" ],
+            "prompts" => [ "all" ],
+            "resources" => [ "all" ]
+          }
+        }
+      },
+      "test" => {}
+    }
+
+    File.write(@original_config_path, YAML.dump(config_content))
+
+    ActionMCP.instance_variable_set(:@configuration, nil)
+    config = ActionMCP.configuration
+    config.load_profiles
+
+    assert config.mcp_apps_enabled
+    assert_equal(
+      { mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ] },
+      config.capabilities.dig(:extensions, ActionMCP::Apps::EXTENSION_KEY)
+    )
+  end
+
+  test "profile mcp apps option overrides top-level YAML setting" do
+    config_content = {
+      "shared" => {
+        "authentication" => [ "none" ],
+        "mcp_apps_enabled" => false,
+        "profile" => "apps_profile",
+        "profiles" => {
+          "apps_profile" => {
+            "tools" => [ "all" ],
+            "prompts" => [],
+            "resources" => [ "all" ],
+            "options" => {
+              "mcp_apps_enabled" => true
+            }
+          }
+        }
+      },
+      "test" => {}
+    }
+
+    File.write(@original_config_path, YAML.dump(config_content))
+
+    ActionMCP.instance_variable_set(:@configuration, nil)
+    config = ActionMCP.configuration
+    config.load_profiles
+
+    assert_equal :apps_profile, config.active_profile
+    assert config.mcp_apps_enabled
+  end
+
   test "handles missing configuration file gracefully" do
     # Ensure no config file exists
     FileUtils.rm_f(@original_config_path)

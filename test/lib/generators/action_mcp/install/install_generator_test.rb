@@ -35,6 +35,7 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     assert_file "config/mcp.yml" do |content|
       assert_match(/shared:/, content)
       assert_match(/authentication:/, content)
+      assert_match(/mcp_apps_enabled:/, content)
       assert_match(/profiles:/, content)
       assert_match(/development:/, content)
       assert_match(/test:/, content)
