@@ -30,6 +30,7 @@ module ActionMCP
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
     class_attribute :_additional_properties, instance_accessor: false, default: nil
     class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
+    class_attribute :_property_aliases, instance_accessor: false, default: {}
     class_attribute :_task_support, instance_accessor: false, default: :forbidden
     class_attribute :_resumable_steps_block, instance_accessor: false, default: nil
 
@@ -296,16 +297,46 @@ module ActionMCP
       def schema_property_keys
         return _cached_schema_property_keys if _cached_schema_property_keys
 
-        self._cached_schema_property_keys = _schema_properties.keys.map(&:to_s)
+        self._cached_schema_property_keys = (_schema_properties.keys + _property_aliases.keys).map(&:to_s)
         _cached_schema_property_keys
       end
 
-      # Clear cached keys when properties change - use metaprogramming to avoid duplication
-      [ :property, :collection ].each do |method_name|
-        define_method(method_name) do |prop_name, **opts|
-          invalidate_schema_cache
-          super(prop_name, **opts)
+      # Creates an alternate input name for an existing property.
+      #
+      # @example
+      #   property :thread_id, type: "string", required: true
+      #   alias_property :root_id, :thread_id
+      #
+      # Both `root_id` and `thread_id` are accepted when initializing the tool,
+      # and both readers resolve to the same ActiveModel attribute.
+      def alias_property(alias_name, property_name)
+        alias_key = alias_name.to_s
+        property_key = canonical_property_name(property_name)
+
+        unless _schema_properties.key?(property_key)
+          raise ArgumentError, "Cannot alias unknown property '#{property_name}'"
         end
+
+        if alias_key == property_key
+          raise ArgumentError, "Cannot alias property '#{property_key}' to itself"
+        end
+
+        if _schema_properties.key?(alias_key)
+          raise ArgumentError, "Cannot alias '#{alias_key}' because it is already defined as a property"
+        end
+
+        existing_alias = _property_aliases[alias_key]
+        if existing_alias && existing_alias != property_key
+          raise ArgumentError, "Alias '#{alias_key}' already points to property '#{existing_alias}'"
+        end
+
+        self._property_aliases = _property_aliases.merge(alias_key => property_key)
+        alias_attribute alias_key, property_key
+        invalidate_schema_cache
+      end
+
+      def canonical_property_name(name)
+        _property_aliases[name.to_s] || name.to_s
       end
 
       private
@@ -332,6 +363,12 @@ module ActionMCP
     # @param opts [Hash] Additional options for the JSON Schema.
     # @return [void]
     def self.property(prop_name, type: "string", description: nil, required: false, default: nil, **opts)
+      if _property_aliases.key?(prop_name.to_s)
+        raise ArgumentError, "Cannot define property '#{prop_name}' because it is already defined as an alias"
+      end
+
+      invalidate_schema_cache
+
       # Build the JSON Schema definition.
       prop_definition = { type: type }
       prop_definition[:description] = description if description && !description.empty?
@@ -364,6 +401,12 @@ module ActionMCP
     # @return [void]
     def self.collection(prop_name, type:, description: nil, required: false, default: [])
       raise ArgumentError, "Type is required for a collection" if type.nil?
+
+      if _property_aliases.key?(prop_name.to_s)
+        raise ArgumentError, "Cannot define collection '#{prop_name}' because it is already defined as an alias"
+      end
+
+      invalidate_schema_cache
 
       collection_definition = { type: "array", items: { type: type } }
       collection_definition[:description] = description if description && !description.empty?
@@ -443,6 +486,8 @@ module ActionMCP
 
     # Override initialize to validate parameters before ActiveModel conversion
     def initialize(attributes = {})
+      validate_property_alias_conflicts(attributes)
+
       # Separate additional properties from defined attributes if enabled
       if self.class.accepts_additional_properties?
         defined_keys = self.class.schema_property_keys
@@ -647,20 +692,43 @@ module ActionMCP
 
     private
 
+    def validate_property_alias_conflicts(attributes)
+      return unless attributes.is_a?(Hash)
+
+      seen_values = {}
+      seen_keys = {}
+
+      attributes.each do |key, value|
+        key_str = key.to_s
+        property_key = self.class.canonical_property_name(key_str)
+        next unless self.class._schema_properties.key?(property_key)
+
+        if seen_values.key?(property_key) && seen_keys[property_key] != key_str && seen_values[property_key] != value
+          raise ArgumentError,
+                "Conflicting values provided for aliased property '#{property_key}' " \
+                "via '#{seen_keys[property_key]}' and '#{key_str}'"
+        end
+
+        seen_values[property_key] = value
+        seen_keys[property_key] = key_str
+      end
+    end
+
     # Validates parameter types before ActiveModel conversion
     def validate_parameter_types(attributes)
       return unless attributes.is_a?(Hash)
 
       attributes.each do |key, value|
         key_str = key.to_s
-        property_schema = self.class._schema_properties[key_str]
+        property_key = self.class.canonical_property_name(key_str)
+        property_schema = self.class._schema_properties[property_key]
 
         next unless property_schema
 
         expected_type = property_schema[:type]
 
         # Skip validation if value is nil and property is not required
-        next if value.nil? && !self.class._required_properties.include?(key_str)
+        next if value.nil? && !self.class._required_properties.include?(property_key)
 
         # Validate based on expected JSON Schema type
         case expected_type
