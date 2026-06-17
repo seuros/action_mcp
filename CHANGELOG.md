@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.111.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.2...action_mcp/v0.111.0) (2026-06-17)
+
+
+### Features
+
+* complete MCP Apps support ([#224](https://github.com/seuros/action_mcp/issues/224)) ([82bd141](https://github.com/seuros/action_mcp/commit/82bd1415258d487b83af034f9eff600c8fb151d4))
+* **tools:** add alias_property support ([#226](https://github.com/seuros/action_mcp/issues/226)) ([f514738](https://github.com/seuros/action_mcp/commit/f514738f7b96c6eaa85130001572343f0b84598a))
+
 ## [0.110.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.1...action_mcp/v0.110.2) (2026-05-28)
 
 
