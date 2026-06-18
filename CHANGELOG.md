@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.111.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.111.0...action_mcp/v0.111.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **tools:** return -32602 for undeclared params on strict tools ([3f86981](https://github.com/seuros/action_mcp/commit/3f86981b2fad14e897a9bf8b8e4292bd03987ccc))
+
 ## [0.111.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.110.2...action_mcp/v0.111.0) (2026-06-17)
 
 
