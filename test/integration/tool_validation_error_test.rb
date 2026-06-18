@@ -37,6 +37,29 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
     assert error_text == "Validation failed: 'staging' is not supported", "Error must be indicative of validation failure, got: '#{error_text.inspect}'"
   end
 
+  test "undeclared param on a strict tool returns -32602 naming the key" do
+    @current_request_id ||= 1
+    call_params = {
+      jsonrpc: "2.0",
+      id: @current_request_id,
+      method: "tools/call",
+      params: {
+        name: "add",
+        arguments: { x: 5, y: 3, root_id: "oops" }
+      }
+    }
+    @current_request_id += 1
+
+    post action_mcp_path, params: call_params.to_json, headers: @headers
+    assert_response :success
+
+    response_json = JSON.parse(response.body)
+    assert response_json["error"], "Expected JSON-RPC error, got: #{response_json.inspect}"
+    assert_equal(-32_602, response_json["error"]["code"], "Expected invalid_params (-32602)")
+    assert_includes response_json["error"]["message"], "root_id",
+                    "Error message should name the offending key"
+  end
+
   test "tool succeeds when validation passes" do
     response_json = call_environment_tool("production")
 

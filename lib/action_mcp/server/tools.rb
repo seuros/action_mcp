@@ -125,7 +125,10 @@ module ActionMCP
             send_jsonrpc_response(request_id, result: result.to_h)
           end
         rescue ArgumentError => e
-          # Handle parameter validation errors
+          # Handle parameter validation errors (e.g. alias conflicts)
+          send_jsonrpc_error(request_id, :invalid_params, e.message)
+        rescue ActiveModel::UnknownAttributeError => e
+          # Undeclared param on a strict tool — message already names the key + tool
           send_jsonrpc_error(request_id, :invalid_params, e.message)
         rescue StandardError => e
           # Log the actual error for debugging
