@@ -11,8 +11,12 @@ module ActionMCP
 
       argument :name, type: :string, required: true, banner: "ResourceTemplateName"
 
+      class_option :ui, type: :boolean, default: false,
+                        desc: "Generate an MCP Apps UI template (ui:// URI, :mcp_app mime type, render_ui)"
+
       def create_resource_template_file
-        template "resource_template.rb.erb", "app/mcp/resource_templates/#{file_name}.rb"
+        source = options[:ui] ? "resource_template_ui.rb.erb" : "resource_template.rb.erb"
+        template source, "app/mcp/resource_templates/#{file_name}.rb"
       end
 
       private
@@ -24,6 +28,19 @@ module ActionMCP
       def file_name
         base = name.underscore
         base.end_with?("_template") ? base : "#{base}_template"
+      end
+
+      # Name without the Template suffix, for view paths and ui:// URIs.
+      def base_name
+        name.camelize.delete_suffix("Template")
+      end
+
+      def view_name
+        base_name.underscore
+      end
+
+      def uri_name
+        view_name.dasherize
       end
     end
   end

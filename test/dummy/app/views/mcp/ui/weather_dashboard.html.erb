@@ -25,18 +25,23 @@
       <div>Wind <span id="wind">--</span> km/h</div>
     </div>
   </div>
-  <script>
-    (function () {
-      function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
-      window.addEventListener("message", function (event) {
-        var data = event.data && event.data.result;
-        if (!data || !data.current) return;
-        if (data.metadata && data.metadata.location_found) set("loc", data.metadata.location_found);
-        set("temp", Math.round(data.current.temperature));
-        set("hum", data.current.humidity);
-        set("wind", data.current.wind_speed);
-      });
-    }());
+
+  <%= mcp_app_bridge_tag %>
+  <script type="module">
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+    const render = (data) => {
+      if (!data || !data.current) return;
+      if (data.metadata && data.metadata.location_found) set("loc", data.metadata.location_found);
+      set("temp", Math.round(data.current.temperature));
+      set("hum", data.current.humidity);
+      set("wind", data.current.wind_speed);
+    };
+
+    // Register the handler before connecting, per the ext-apps handshake.
+    const app = await ActionMCP.connect({
+      handlers: { ontoolresult: (result) => render(result.structuredContent) },
+    });
   </script>
 </body>
 </html>

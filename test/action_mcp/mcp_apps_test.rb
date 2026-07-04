@@ -27,6 +27,18 @@ module ActionMCP
       assert_equal "bar", RendersUiDemoTool.to_h.dig(:_meta, :foo)
     end
 
+    test "tool listing resolves a compiled view logical URI without mutating class metadata" do
+      original = WeatherTool._meta.deep_dup
+      resolver = lambda do |uri|
+        uri == "ui://weather/dashboard" ? "ui://weather/dashboard.html?v=abc123" : uri
+      end
+
+      serialized = Apps::ViewManifest.stub(:resolve_resource_uri, resolver) { WeatherTool.to_h }
+
+      assert_equal "ui://weather/dashboard.html?v=abc123", serialized.dig(:_meta, :ui, :resourceUri)
+      assert_equal original, WeatherTool._meta
+    end
+
     test "weather dashboard resolves to HTML content with content-level _meta.ui" do
       response = resolve_mcp_resource("ui://weather/dashboard")
       content = response.contents.first
@@ -84,6 +96,48 @@ module ActionMCP
       end
     end
 
+    test "render_ui emits the concrete URI used to process a parameterized template" do
+      original_templates = ResourceTemplate.registered_templates.dup
+      original_registry = ResourceTemplatesRegistry.items.dup
+      template = Class.new(ResourceTemplate) do
+        def self.name = "ParameterizedUiTemplate"
+
+        parameter :id, description: "Panel identifier", required: true
+        uri_template "ui://parameterized/{id}"
+        mime_type :mcp_app
+      end
+
+      record = template.process("ui://parameterized/42")
+      content = record.render_ui(text: "<!doctype html><title>42</title>")
+
+      assert_equal "ui://parameterized/42", record.resolved_uri
+      assert_equal "ui://parameterized/42", content.uri
+      assert_raises(ArgumentError) do
+        template.new(id: "42").render_ui(text: "<!doctype html><title>42</title>")
+      end
+    ensure
+      ResourceTemplate.instance_variable_set(:@registered_templates, original_templates)
+      ResourceTemplatesRegistry.instance_variable_set(:@items, original_registry)
+    end
+
+    test "render_ui validates content and MCP Apps MIME type" do
+      assert_raises(ArgumentError) { WeatherDashboardTemplate.new.render_ui(text: 123) }
+
+      original_templates = ResourceTemplate.registered_templates.dup
+      original_registry = ResourceTemplatesRegistry.items.dup
+      template = Class.new(ResourceTemplate) do
+        def self.name = "WrongMimeUiTemplate"
+
+        uri_template "ui://wrong-mime/panel"
+        mime_type "text/html"
+      end
+
+      assert_raises(ArgumentError) { template.new.render_ui(text: "<!doctype html>") }
+    ensure
+      ResourceTemplate.instance_variable_set(:@registered_templates, original_templates) if original_templates
+      ResourceTemplatesRegistry.instance_variable_set(:@items, original_registry) if original_registry
+    end
+
     test "renders_ui rejects non-String URI" do
       assert_raises(ArgumentError) { RendersUiDemoTool.renders_ui :"ui://widgets/panel" }
       assert_raises(ArgumentError) { RendersUiDemoTool.renders_ui nil }
@@ -136,6 +190,38 @@ module ActionMCP
       end
     end
 
+    test "ui macro rejects metadata types outside the stable schema" do
+      assert_raises(ArgumentError) { UiOriginsDemoTemplate.ui csp: "https://api.example.com" }
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { connectDomains: "https://api.example.com" }
+      end
+      assert_raises(ArgumentError) { UiOriginsDemoTemplate.ui domain: 7 }
+      assert_raises(ArgumentError) { UiOriginsDemoTemplate.ui prefersBorder: "true" }
+    end
+
+    test "ui macro rejects unknown metadata and CSP keys" do
+      assert_raises(ArgumentError) { UiOriginsDemoTemplate.ui futureMode: "fullscreen" }
+      assert_raises(ArgumentError) do
+        UiOriginsDemoTemplate.ui csp: { scriptDomains: [ "https://cdn.example.com" ] }
+      end
+    end
+
+    test "render_ui validates response-level ui metadata after merging" do
+      assert_raises(ArgumentError) do
+        WeatherDashboardTemplate.new.render_ui(
+          text: "<!doctype html>",
+          meta: { ui: { prefersBorder: "true" } }
+        )
+      end
+
+      assert_raises(ArgumentError) do
+        WeatherDashboardTemplate.new.render_ui(
+          text: "<!doctype html>",
+          meta: { ui: { futureMode: "fullscreen" } }
+        )
+      end
+    end
+
     test "ui macro rejects non-hash permission values" do
       assert_raises(ArgumentError) do
         UiOriginsDemoTemplate.ui permissions: { clipboardWrite: true }
@@ -164,6 +250,12 @@ module ActionMCP
       refute capability_for(extensions: { "io.modelcontextprotocol/ui" => {} }).client_supports_ui?
     end
 
+    test "client_supports_ui? rejects a scalar mimeTypes capability" do
+      refute capability_for(
+        extensions: { "io.modelcontextprotocol/ui" => { "mimeTypes" => MIME_TYPE_APP_HTML } }
+      ).client_supports_ui?
+    end
+
     test "client_supports_ui? is false when the extension key is absent" do
       refute capability_for(extensions: { "tools" => {} }).client_supports_ui?
     end
@@ -173,7 +265,7 @@ module ActionMCP
     end
 
     test "client_supports_ui? is false when client_capabilities is nil" do
-      session = Session.new(protocol_version: "2025-06-18")
+      session = Session.new(protocol_version: "2025-11-25")
       session.client_capabilities = nil
 
       refute Capability.new.with_context(session: session).client_supports_ui?
@@ -182,7 +274,7 @@ module ActionMCP
     private
 
     def capability_for(extensions:)
-      session = Session.new(protocol_version: "2025-06-18")
+      session = Session.new(protocol_version: "2025-11-25")
       session.client_capabilities = { "extensions" => extensions }
       Capability.new.with_context(session: session)
     end

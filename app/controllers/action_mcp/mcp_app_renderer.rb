@@ -18,5 +18,6 @@ module ActionMCP
   #
   # Not routed. Not intended to be subclassed or used directly by host apps.
   class MCPAppRenderer < ActionController::Base
+    helper ActionMCP::AppsHelper
   end
 end

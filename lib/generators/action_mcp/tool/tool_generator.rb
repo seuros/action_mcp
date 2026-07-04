@@ -14,6 +14,8 @@ module ActionMCP
       class_option :destructive, type: :boolean, default: false
       class_option :category, type: :string, default: nil
       class_option :properties, type: :array, default: [], banner: "name:type:description:required"
+      class_option :ui, type: :string, default: nil, banner: "ui://views/my-view",
+                        desc: "Link this tool to an MCP Apps UI view via renders_ui"
 
       def create_tool_file
         template "tool.rb.erb", "app/mcp/tools/#{file_name}.rb"
