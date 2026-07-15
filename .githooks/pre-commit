@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+staged_ruby_files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.rb' '*.rake' 'Gemfile' '*.gemspec')
+
+if [ -n "$staged_ruby_files" ]; then
+  echo "$staged_ruby_files" | xargs bin/rubocop --force-exclusion
+fi

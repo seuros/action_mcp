@@ -1125,6 +1125,14 @@ bundle exec rails action_mcp:stats
 bundle exec rails action_mcp:show_profile[profile_name]
 ```
 
+### Linting
+
+RuboCop runs as a git pre-commit hook on staged Ruby files. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Error Handling and Troubleshooting
 
 ActionMCP provides comprehensive error handling following the JSON-RPC 2.0 specification:

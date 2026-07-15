@@ -10,20 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Lint code for consistent style
-        run: bin/rubocop -f github
-
   test-postgresql:
     name: Tests (PostgreSQL, Ruby ${{ matrix.ruby-version }}, Rails ${{ matrix.rails-version }})
     runs-on: ubuntu-latest
