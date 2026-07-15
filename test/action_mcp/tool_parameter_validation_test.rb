@@ -4,20 +4,18 @@ require "test_helper"
 
 class ActionMCP::ToolParameterValidationTest < ActiveSupport::TestCase
   test "rejects non-numeric parameter for number property" do
-    error = assert_raises(ArgumentError) do
-      AddTool.new(x: "not_a_number", y: 5)
-    end
+    tool = AddTool.from_wire(x: "not_a_number", y: 5)
 
-    assert_match(/must be a valid number/, error.message)
-    assert_match(/not_a_number/, error.message)
+    refute tool.valid?
+    assert_match(/not a number/, tool.errors.full_messages.join)
+    assert_equal true, tool.call.to_h[:isError]
   end
 
   test "rejects non-array parameter for collection property" do
-    error = assert_raises(ArgumentError) do
-      NumericArrayTool.new(numbers: "not_an_array")
-    end
+    tool = NumericArrayTool.from_wire(numbers: "not_an_array")
 
-    assert_match(/must be an array/, error.message)
+    refute tool.valid?
+    assert_match(/not an array/, tool.errors.full_messages.join)
   end
 
   test "accepts valid numeric parameters" do
@@ -28,27 +26,25 @@ class ActionMCP::ToolParameterValidationTest < ActiveSupport::TestCase
     assert_equal 2.71, tool.y
   end
 
-  test "accepts string convertible to number" do
-    tool = AddTool.new(x: "3.14", y: "2.71")
+  test "rejects numeric strings before ActiveModel coercion" do
+    tool = AddTool.from_wire(x: "3.14", y: "2.71")
 
-    assert tool.valid?
-    assert_equal 3.14, tool.x
-    assert_equal 2.71, tool.y
+    refute tool.valid?
+    assert_equal true, tool.call.to_h[:isError]
   end
 
   test "rejects invalid number strings" do
-    error = assert_raises(ArgumentError) do
-      AddTool.new(x: "not_a_number", y: 5)
-    end
+    tool = AddTool.from_wire(x: "not_a_number", y: 5)
 
-    assert_match(/must be a valid number/, error.message)
+    refute tool.valid?
+    assert_match(/not a number/, tool.errors.full_messages.join)
   end
 
   test "rejects missing required parameters" do
-    tool = AddTool.new(x: 5)
+    tool = AddTool.from_wire(x: 5)
 
     assert_equal false, tool.valid?
-    assert_includes tool.errors.full_messages.join, "can't be blank"
+    assert_includes tool.errors.full_messages.join, "missing required properties: y"
   end
 
   test "accepts valid array of numbers" do
@@ -80,20 +76,18 @@ class ActionMCP::ToolParameterValidationTest < ActiveSupport::TestCase
     assert tool.valid?
   end
 
-  test "coerces numeric strings in arrays" do
-    tool = NumericArrayTool.new(numbers: [ "1.5", "2.5", "3.5" ])
+  test "rejects numeric strings in arrays" do
+    tool = NumericArrayTool.from_wire(numbers: [ "1.5", "2.5", "3.5" ])
 
-    assert tool.valid?
-    # The FloatArrayType should coerce strings to floats
-    assert_equal [ 1.5, 2.5, 3.5 ], tool.numbers
+    refute tool.valid?
+    assert_match(/not a number/, tool.errors.full_messages.join)
   end
 
   test "rejects nil for required number parameter" do
-    error = assert_raises(ArgumentError) do
-      AddTool.new(x: nil, y: 5)
-    end
+    tool = AddTool.from_wire(x: nil, y: 5)
 
-    assert_match(/must be a number/, error.message)
+    refute tool.valid?
+    assert_match(/not a number/, tool.errors.full_messages.join)
   end
 
   test "handles zero values correctly" do
@@ -142,5 +136,35 @@ class ActionMCP::ToolParameterValidationTest < ActiveSupport::TestCase
     assert tool.valid?
     # Should all be floats after coercion
     assert tool.numbers.all? { |n| n.is_a?(Float) }
+  end
+
+  test "enforces the complete advertised JSON Schema" do
+    tool_class = Class.new(ActionMCP::Tool) do
+      tool_name "schema_constraint_test"
+      property :mode, type: "string", enum: [ "fast", "safe" ], required: true
+      property :port, type: "integer", minimum: 1, maximum: 65_535, required: true
+      property :endpoint, type: "string", format: "uri", required: true
+      property :settings,
+               type: "object",
+               properties: { enabled: { type: "boolean" } },
+               allOf: [ { required: [ "enabled" ] } ],
+               additionalProperties: false,
+               required: true
+    end
+
+    tool = tool_class.new(
+      mode: "turbo",
+      port: 70_000,
+      endpoint: "not a uri",
+      settings: { enabled: "yes", extra: true }
+    )
+
+    refute tool.valid?
+    messages = tool.errors.full_messages.join(" ")
+    assert_match(/not one of/, messages)
+    assert_match(/greater than: 65535/, messages)
+    assert_match(/does not match format: uri/, messages)
+    assert_match(/not a boolean/, messages)
+    assert_match(/disallowed additional property/, messages)
   end
 end

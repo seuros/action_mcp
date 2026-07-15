@@ -65,6 +65,27 @@ module ActionMCP
         assert_equal "working", task.status
       end
 
+      test "stale await input cannot transition a cancelled task" do
+        task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
+        stale_task = ActionMCP::Session::Task.find(task.id)
+        task.cancel!
+
+        refute stale_task.await_input!(prompt: "More input")
+
+        assert_equal "cancelled", task.reload.status
+      end
+
+      test "stale continuation resume cannot transition a cancelled task" do
+        task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
+        task.require_input!
+        stale_task = ActionMCP::Session::Task.find(task.id)
+        task.cancel!
+
+        assert_nil stale_task.resume_from_continuation!
+
+        assert_equal "cancelled", task.reload.status
+      end
+
       test "can transition from input_required to completed" do
         task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
         task.require_input!
@@ -96,12 +117,12 @@ module ActionMCP
         refute task.terminal?
       end
 
-      test "result_ready? returns true for terminal and input_required statuses" do
+      test "result_ready? returns true only for terminal statuses" do
         task = @session.tasks.create!(request_method: "tools/call", request_name: "test_tool")
         refute task.result_ready?
 
         task.require_input!
-        assert task.result_ready?
+        refute task.result_ready?
 
         task.complete!
         assert task.result_ready?

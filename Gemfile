@@ -46,9 +46,6 @@ gem "minitest-mock", group: :test # Separate gem in Ruby 4.0+
 gem "minitest-reporters", group: :test
 gem "maxitest", group: :test
 
-# Optional: Schema validation for structured content
-gem "json_schemer", ">= 2.4", group: [ :development, :test ]
-
 # File system watching for development
 gem "listen", group: :development
 gem "rails_lens", require: false, group: :development

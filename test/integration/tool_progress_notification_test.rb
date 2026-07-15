@@ -247,7 +247,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         capabilities: {},
         clientInfo: { name: "Test Client", version: "1.0" }
       }
@@ -283,7 +283,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
   def default_json_headers
     {
       "CONTENT_TYPE" => "application/json",
-      "ACCEPT" => "application/json"
+      "ACCEPT" => "application/json, text/event-stream"
     }
   end
 end

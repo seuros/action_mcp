@@ -19,27 +19,30 @@ module ActionMCP
     end
 
     def test_render_audio
-      result = @renderer.render(audio: "audio/path.mp3", mime_type: "audio/mpeg")
+      data = Base64.strict_encode64("audio data")
+      result = @renderer.render(audio: data, mime_type: "audio/mpeg")
       assert_instance_of Content::Audio, result
-      assert_equal "audio/path.mp3", result.data
+      assert_equal data, result.data
       assert_equal "audio/mpeg", result.mime_type
     end
 
     def test_render_image
-      result = @renderer.render(image: "image/path.png", mime_type: "image/png")
+      data = Base64.strict_encode64("image data")
+      result = @renderer.render(image: data, mime_type: "image/png")
       assert_instance_of Content::Image, result
-      assert_equal "image/path.png", result.data
+      assert_equal data, result.data
       assert_equal "image/png", result.mime_type
     end
 
     def test_render_resource
+      blob = Base64.strict_encode64("binary data")
       result = @renderer.render(resource: "file://paste/path.bin", mime_type: "application/octet-stream",
-                                text: "Resource text", blob: "binarydata")
+                                blob: blob)
       assert_instance_of Content::Resource, result
       assert_equal "file://paste/path.bin", result.uri
       assert_equal "application/octet-stream", result.mime_type
-      assert_equal "Resource text", result.text
-      assert_equal "binarydata", result.blob
+      assert_nil result.text
+      assert_equal blob, result.blob
     end
 
     def test_render_raises_argument_error_when_no_content

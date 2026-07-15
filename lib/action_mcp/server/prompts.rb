@@ -33,13 +33,15 @@ module ActionMCP
           end
 
           if result.is_error
-            send_jsonrpc_response(request_id, error: result)
+            send_jsonrpc_response(request_id, error: result.to_h)
           else
-            send_jsonrpc_response(request_id, result: result)
+            send_jsonrpc_response(request_id, result: result.to_h)
           end
         else
-          send_jsonrpc_error(request_id, :method_not_found, "Prompt '#{prompt_name}' not available in this session")
+          send_jsonrpc_error(request_id, :invalid_params, "Prompt '#{prompt_name}' not available in this session")
         end
+      rescue ArgumentError, ActiveModel::UnknownAttributeError => e
+        send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
     end
   end

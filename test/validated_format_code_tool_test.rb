@@ -79,7 +79,7 @@ class ValidatedFormatCodeToolTest < ActiveSupport::TestCase
 
     # Should fail validation
     refute invalid_tool.valid?, "Tool should be invalid without language"
-    assert invalid_tool.errors.key?(:language), "Should have error on language"
+    assert_match(/missing required properties: language/, invalid_tool.errors.full_messages.join)
   end
 
   test "tool performs formatting correctly" do

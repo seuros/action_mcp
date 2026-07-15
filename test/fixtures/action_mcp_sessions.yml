@@ -32,7 +32,7 @@ step1_session:
   role: server
   status: initialized
   initialized: true
-  protocol_version: "2025-06-18"
+  protocol_version: "2025-11-25"
   tool_registry:
     - "*"
   prompt_registry:
@@ -61,7 +61,7 @@ dr_identity_mcbouncer_session:
   role: server
   status: initialized
   initialized: true
-  protocol_version: "2025-06-18"
+  protocol_version: "2025-11-25"
   tool_registry:
     - "*"
   prompt_registry:
@@ -90,7 +90,7 @@ elicitation_form_session:
   role: server
   status: initialized
   initialized: true
-  protocol_version: "2025-06-18"
+  protocol_version: "2025-11-25"
   tool_registry:
     - "*"
   prompt_registry:
@@ -100,7 +100,8 @@ elicitation_form_session:
   consents: {}
   messages_count: 0
   client_capabilities:
-    elicitation: {}
+    elicitation:
+      form: {}
   server_capabilities:
     tools:
       listChanged: true
@@ -154,7 +155,7 @@ no_elicitation_session:
   role: server
   status: initialized
   initialized: true
-  protocol_version: "2025-06-18"
+  protocol_version: "2025-11-25"
   tool_registry:
     - "*"
   prompt_registry:
@@ -202,7 +203,12 @@ task_master_session:
     resources:
       subscribe: false
       listChanged: true
-    tasks: {}
+    tasks:
+      list: {}
+      cancel: {}
+      requests:
+        tools:
+          call: {}
   server_info:
     name: "ActionMCP Dummy"
     version: "9.9.9"

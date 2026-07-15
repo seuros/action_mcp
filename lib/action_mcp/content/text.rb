@@ -14,13 +14,14 @@ module ActionMCP
       def initialize(text, annotations: nil)
         super("text", annotations: annotations)
         @text = text.to_s
+        to_h
       end
 
       # Returns a hash representation of the text content.
       #
       # @return [Hash] The hash representation of the text content.
       def to_h
-        super.merge(text: @text)
+        super.merge(text: @text).tap { |result| Validation.validate_content_block!(result) }
       end
     end
   end

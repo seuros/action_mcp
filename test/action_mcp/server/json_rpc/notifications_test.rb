@@ -29,10 +29,10 @@ module ActionMCP
           assert_nil @handler.call(notification)
         end
 
-        test "notification method returns true from handle_common_methods" do
+        test "notifications bypass request-only common methods" do
           result = @handler.send(:handle_common_methods, "notifications/cancelled", nil,
                                  { "requestId" => "req-123", "reason" => "Test cancelled" })
-          assert_equal true, result, "handle_common_methods should return true for notifications"
+          assert_nil result
         end
 
         test "unknown notifications are processed without errors" do
@@ -44,6 +44,33 @@ module ActionMCP
 
           # Process the notification
           assert_nil @handler.call(notification)
+        end
+
+        test "roots list changed requests a fresh list when negotiated" do
+          @session.define_singleton_method(:client_capabilities) do
+            { "roots" => { "listChanged" => true } }
+          end
+          notification = JSON_RPC::Notification.new(
+            method: "notifications/roots/list_changed"
+          )
+
+          assert_nil @handler.call(notification)
+
+          request = @session.written
+          assert_instance_of JSON_RPC::Request, request
+          assert_equal "roots/list", request.method
+        end
+
+        test "roots list changed is ignored without listChanged negotiation" do
+          @session.define_singleton_method(:client_capabilities) do
+            { "roots" => {} }
+          end
+          notification = JSON_RPC::Notification.new(
+            method: "notifications/roots/list_changed"
+          )
+
+          assert_nil @handler.call(notification)
+          assert_nil @session.written
         end
       end
     end

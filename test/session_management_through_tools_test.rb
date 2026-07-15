@@ -14,7 +14,7 @@ class SessionManagementThroughToolsTest < ActionDispatch::IntegrationTest
     session_store = ActionMCP::Server.session_store
     @session = session_store.create_session(
       SecureRandom.hex(6),
-      protocol_version: "2025-06-18",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized"
     )

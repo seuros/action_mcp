@@ -7,8 +7,9 @@ class ErrorHandlingTest < ActionDispatch::IntegrationTest
     # Create session through the session store
     session_store = ActionMCP::Server.session_store
     @session = session_store.create_session(nil, {
-                                              initialized: false,
-                                              protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION
+                                              initialized: true,
+                                              status: "initialized",
+                                              protocol_version: "2025-11-25"
                                             })
     @session_id = @session.id
 
@@ -26,13 +27,11 @@ class ErrorHandlingTest < ActionDispatch::IntegrationTest
         name: "error_raising",
         arguments: { input: "test" }
       }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
 
     assert_response :success
     body = response.parsed_body
-    assert body["error"]
-    assert_equal(-32_603, body["error"]["code"]) # internal_error
-    assert_equal "An unexpected error occurred.", body["error"]["message"]
-    # In test environment, we don't expose detailed error information
+    assert_equal true, body.dig("result", "isError")
+    assert_equal "An unexpected error occurred.", body.dig("result", "content", 0, "text")
   end
 end

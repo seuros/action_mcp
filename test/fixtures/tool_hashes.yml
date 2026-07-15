@@ -2,6 +2,7 @@ add:
   name: "add"
   description: "Add two numbers together"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       x:
@@ -11,11 +12,13 @@ add:
         type: number
         description: "Second operand"
     required: ["x", "y"]
+    additionalProperties: false
 
 analyze_csv:
   name: "analyze_csv"
   description: "Analyze a CSV file"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       filepath:
@@ -23,14 +26,16 @@ analyze_csv:
         description: "Path to CSV file"
       operations:
         type: array
-        description: "Operations to perform"
         items:
           type: string
+        description: "Operations to perform"
+    additionalProperties: false
 
 calculate_sum:
   name: "calculate_sum"
   description: "Calculate the sum of two numbers"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       a:
@@ -40,11 +45,13 @@ calculate_sum:
         type: number
         description: "The second number"
     required: ["a", "b"]
+    additionalProperties: false
 
 calculate_sum_with_precision:
   name: "calculate_sum_with_precision"
   description: "Calculate the sum of two numbers with specified precision"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       a:
@@ -60,6 +67,7 @@ calculate_sum_with_precision:
         type: string
         description: "Unit of measurement"
     required: ["a", "b", "precision"]
+    additionalProperties: false
 
 checksum_checker:
   name: "checksum_checker"
@@ -77,6 +85,7 @@ execute_command:
   name: "execute_command"
   description: "Run a shell command"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       command:
@@ -84,9 +93,10 @@ execute_command:
         description: "The command to run"
       args:
         type: array
-        description: "Command arguments"
         items:
           type: string
+        description: "Command arguments"
+    additionalProperties: false
 
 format_source:
   name: "format_source"
@@ -109,6 +119,7 @@ create_github_issue:
   name: "create_github_issue"
   description: "Create a GitHub issue"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       title:
@@ -119,14 +130,16 @@ create_github_issue:
         description: "Issue body"
       labels:
         type: array
-        description: "Issue labels"
         items:
           type: string
+        description: "Issue labels"
+    additionalProperties: false
 
 weather_forecast:
   name: "weather_forecast"
   description: "Get detailed weather forecast for a location with progressive updates"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       location:
@@ -136,16 +149,19 @@ weather_forecast:
         type: integer
         description: "Number of forecast days (1-7)"
     required: ["location"]
+    additionalProperties: false
 
 boom:
   name: "boom"
   description: "Intentionally raises an exception to exercise error handling"
   inputSchema:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
     type: object
     properties:
       message:
         type: string
         description: "Custom exception message"
+    additionalProperties: false
 
 numeric_array:
   name: "numeric_array"

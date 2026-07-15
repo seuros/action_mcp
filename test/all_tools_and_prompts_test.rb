@@ -42,7 +42,7 @@ class AllToolsAndPromptsTest < ActiveSupport::TestCase
     assert_tool_findable("create_github_issue")
 
     # Test custom tool_name (MCP protocol) via session
-    session = ActionMCP::Session.new(protocol_version: "2025-06-18")
+    session = ActionMCP::Session.new(protocol_version: "2025-11-25")
     session.tool_registry = [ "create_github_issue" ] # Register by registry key
     registered_tools = session.registered_tools
 

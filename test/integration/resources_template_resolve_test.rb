@@ -12,11 +12,12 @@ module ActionMCP
              id: 1,
              method: "initialize",
              params: {
+               capabilities: {},
                clientInfo: { name: "test", version: "1.0" },
                protocolVersion: ActionMCP::LATEST_VERSION
              }
            }.to_json,
-           headers: { "Content-Type" => "application/json", "Accept" => "application/json" }
+           headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
 
       assert_response :success
       session_id = response.headers["Mcp-Session-Id"]
@@ -30,7 +31,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            }
 
@@ -50,7 +51,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -86,7 +87,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 

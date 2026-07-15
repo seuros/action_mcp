@@ -24,13 +24,20 @@ This means an AI (like an LLM) can request information or actions from your appl
 
 ## Protocol Support
 
-ActionMCP supports **MCP 2025-06-18** (current) with backward compatibility for **MCP 2025-03-26**. The protocol implementation is fully compliant with the MCP specification, including:
+ActionMCP targets the released **MCP 2025-11-25** protocol. Older protocol versions and unreleased draft versions are not accepted. Core handling includes:
 
 - **JSON-RPC 2.0** transport layer
 - **Capability negotiation** during initialization
 - **Error handling** with proper error codes (-32601 for method not found, -32002 for consent required)
-- **Session management** with resumable sessions
-- **Change notifications** for dynamic capability updates
+- **Stateful session management** with explicit termination
+- **Tasks, tools, prompts, resources, completion, logging, sampling, roots, and elicitation** message handling
+
+The built-in Streamable HTTP endpoint returns one `application/json` message for
+requests and intentionally returns HTTP 405 for GET because it does not provide
+SSE streams. That behavior is allowed by the transport specification. Outbound
+server requests and notifications are retained in session message storage, but
+an application needs an SSE or custom transport to push those messages to a
+client outside the response to an active request.
 
 For a detailed (and entertaining) breakdown of protocol versions, features, and our design decisions, see [The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md).
 
@@ -331,18 +338,10 @@ Call it as a task from a client by adding top-level `task` params (creates a Tas
 ```
 
 Poll task status with `tasks/get` or fetch the result with `tasks/result`.
-By default, `tasks/result` uses spec-aligned blocking HTTP: if the task is still working, the request waits until the task reaches `completed`, `failed`, `cancelled`, or `input_required`, then returns one JSON response. Configure the wait bounds for your Rails app:
+As required by MCP 2025-11-25, `tasks/result` waits while a task is in any non-terminal state, including `input_required`, and returns once it reaches `completed`, `failed`, or `cancelled`. The internal database polling interval must be positive and can be tuned for your Rails app:
 
 ```ruby
-config.action_mcp.tasks_result_strategy = :blocking_http
-config.action_mcp.tasks_result_timeout = 30.seconds
 config.action_mcp.tasks_result_poll_interval = 0.25.seconds
-```
-
-Rails apps that cannot hold request workers open can opt into `:polling_only`, where clients must poll `tasks/get` until terminal or `input_required` before calling `tasks/result`. This is a deliberate MCP spec deviation:
-
-```ruby
-config.action_mcp.tasks_result_strategy = :polling_only
 ```
 
 Use `tasks/cancel` to stop non-terminal tasks. `tasks/list` returns tasks in recent-first order and always paginates (default 50 per page, or `pagination_page_size` if configured). The response includes an opaque `nextCursor` when more results are available; treat cursors as opaque tokens.
@@ -455,7 +454,7 @@ ActionMCP provides comprehensive documentation across multiple specialized guide
 
 ### Protocol & Technical Details
 - **[🚀 The Hitchhiker's Guide to MCP](The_Hitchhikers_Guide_to_MCP.md)** - Protocol versions and migration
-  - Comprehensive comparison of MCP protocol versions (2024-11-05, 2025-03-26, 2025-06-18)
+  - Historical protocol comparison and the current 2025-11-25 behavior
   - Design decisions and architectural rationale
   - Migration paths and compatibility considerations
   - Feature evolution and technical specifications (*Don't Panic!*)
@@ -628,7 +627,7 @@ session_store = ActionMCP::Server.session_store
 # Create a session
 session = session_store.create_session(session_id, {
   status: "initialized",
-  protocol_version: "2025-03-26",
+  protocol_version: "2025-11-25",
   # ... other session attributes
 })
 
@@ -750,7 +749,7 @@ ActionMCP provides a Gateway system for handling authentication. The Gateway all
 
 ActionMCP uses a Gateway pattern with pluggable identifiers for authentication. You can implement custom authentication strategies using session-based auth, API keys, bearer tokens, or integrate with existing authentication systems like Warden, Devise, or external OAuth providers.
 
-> **Note:** Auth errors return HTTP 200 with a JSON-RPC error payload (not HTTP 401). This is correct per the MCP specification — all MCP communication uses JSON-RPC over HTTP, and protocol-level errors are expressed within the JSON-RPC envelope. The `initialize` request bypasses authentication per MCP spec.
+> **Note:** When a Gateway is configured, it authenticates every MCP HTTP request, including `initialize`, GET, and DELETE. Authentication failures return HTTP 401 with a `WWW-Authenticate: Bearer` challenge and a JSON-RPC error body.
 
 ### Creating an ApplicationGateway
 
@@ -881,7 +880,7 @@ If your Rails application uses middleware that interferes with MCP server operat
 
 bundle exec rails s -c mcp_vanilla.ru -p 62770
 # Or with Falcon:
-bundle exec falcon serve --bind http://0.0.0.0:62770 --config mcp_vanilla.ru
+bundle exec falcon serve --bind http://127.0.0.1:62770 --config mcp_vanilla.ru
 ```
 
 Common middleware that can cause issues:
@@ -1115,6 +1114,7 @@ bundle exec rails action_mcp:list
 bundle exec rails action_mcp:list_tools
 bundle exec rails action_mcp:list_prompts
 bundle exec rails action_mcp:list_resources
+bundle exec rails action_mcp:list_widgets
 bundle exec rails action_mcp:list_profiles
 
 # Show configuration and statistics
@@ -1264,7 +1264,7 @@ bin/rails action_mcp:list_profiles
 # Show detailed information about a specific profile
 bin/rails action_mcp:show_profile[admin]
 
-# List all tools, prompts, resources, and profiles
+# List all tools, prompts, resources, UI widgets, and profiles
 bin/rails action_mcp:list
 ```
 
@@ -1297,7 +1297,7 @@ For comprehensive client documentation, including examples, session management, 
 - **Implement proper authorization** in your tools and prompts
 - **Validate all inputs** using property definitions and Rails validations
 - **Use consent management** for sensitive operations
-- **Protect against DNS rebinding**: ActionMCP validates the `Origin` header on every request. If `Origin` is present and its host doesn't match the server's own host, the server returns HTTP 403 with a JSON-RPC error body (no `id`), as required by the MCP spec. Non-browser clients (Claude Desktop, CLI tools) don't send `Origin` and are unaffected. To allow additional trusted origins, configure `allowed_origins`:
+- **Protect against DNS rebinding**: ActionMCP validates the `Origin` header on every request without trusting the request's `Host` header. Loopback origins (`localhost`, `127.0.0.1`, and `::1`) are allowed by default. Other browser origins receive HTTP 403 unless their host is explicitly listed in `allowed_origins`. Non-browser clients that omit `Origin` are unaffected:
 
   ```ruby
   # config/initializers/action_mcp.rb

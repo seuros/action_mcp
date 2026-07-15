@@ -5,7 +5,7 @@ module ActionMCP
     # Tasks module for MCP 2025-11-25 specification
     # Provides methods for handling task-related requests:
     # - tasks/get: Get task status and data
-    # - tasks/result: Get task result (blocking until terminal or input_required state)
+    # - tasks/result: Get task result (blocking until a terminal state)
     # - tasks/list: List tasks for the session
     # - tasks/cancel: Cancel a task
     module Tasks
@@ -19,35 +19,17 @@ module ActionMCP
         send_jsonrpc_response(request_id, result: task.to_task_data)
       end
 
-      # Get task result, blocking until task reaches terminal or input_required state
+      # Get task result, blocking until the task reaches a terminal state.
       # @param request_id [String, Integer] JSON-RPC request ID
       # @param task_id [String] Task ID to get result for
       def send_tasks_result(request_id, task_id)
         task = find_task(task_id)
         return unless task
 
-        unless task.result_ready?
-          case ActionMCP.configuration.tasks_result_strategy
-          when :polling_only
-            send_jsonrpc_error(
-              request_id,
-              :invalid_request,
-              "Task is not ready. Poll tasks/get over HTTP until the task reaches a terminal or input_required status, then retry tasks/result."
-            )
-            return
-          else
-            task = wait_for_result_ready_task(task_id)
-            unless task&.result_ready?
-              send_jsonrpc_response(
-                request_id,
-                error: {
-                  code: -32_000,
-                  message: "Timed out waiting for task '#{task_id}' to reach a terminal or input_required status"
-                }
-              )
-              return
-            end
-          end
+        task = wait_for_terminal_task(task_id) unless task.terminal?
+        unless task
+          send_jsonrpc_error(request_id, :invalid_params, "Task '#{task_id}' not found")
+          return
         end
 
         if (error = task.to_task_error)
@@ -83,19 +65,28 @@ module ActionMCP
         task = find_task(task_id)
         return unless task
 
-        if task.terminal?
+        terminal_status = nil
+        task.with_lock do
+          if task.terminal?
+            terminal_status = task.status
+            next
+          end
+
+          task.status_message = "The task was cancelled by request." if task.status_message.blank?
+          task.result_payload ||= {
+            code: -32_000,
+            message: "Task was cancelled"
+          }
+          task.save! if task.changed?
+          task.cancel!
+        end
+
+        if terminal_status
           send_jsonrpc_error(request_id, :invalid_params,
-                             "Cannot cancel task in terminal status: #{task.status}")
+                             "Cannot cancel task in terminal status: #{terminal_status}")
           return
         end
 
-        task.status_message = "The task was cancelled by request." if task.status_message.blank?
-        task.result_payload ||= {
-          code: -32_000,
-          message: "Task was cancelled"
-        }
-        task.save! if task.changed?
-        task.cancel!
         send_jsonrpc_response(request_id, result: task.to_task_data)
       end
 
@@ -144,17 +135,12 @@ module ActionMCP
         task
       end
 
-      def wait_for_result_ready_task(task_id)
-        deadline = monotonic_time + ActionMCP.configuration.tasks_result_timeout.to_f
-
+      def wait_for_terminal_task(task_id)
         loop do
           task = load_task_for_result(task_id)
-          return task if task.nil? || task.result_ready?
+          return task if task.nil? || task.terminal?
 
-          remaining = deadline - monotonic_time
-          return task unless remaining.positive?
-
-          sleep [ ActionMCP.configuration.tasks_result_poll_interval.to_f, remaining ].min
+          sleep ActionMCP.configuration.tasks_result_poll_interval.to_f
         end
       end
 
@@ -162,10 +148,6 @@ module ActionMCP
         ActiveRecord::Base.connection_pool.with_connection do
           session.tasks.find_by(id: task_id)
         end
-      end
-
-      def monotonic_time
-        Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
     end
   end

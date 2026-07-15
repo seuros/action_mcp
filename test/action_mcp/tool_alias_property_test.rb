@@ -55,12 +55,11 @@ class ActionMCP::ToolAliasPropertyTest < ActiveSupport::TestCase
       alias_property :root_id, :thread_id
     end
 
-    error = assert_raises(ArgumentError) do
-      tool_class.new(root_id: "not-a-number")
-    end
+    tool = tool_class.from_wire(root_id: "not-a-number")
 
-    assert_match(/root_id/, error.message)
-    assert_match(/must be a valid number/, error.message)
+    refute tool.valid?
+    assert_match(%r{/root_id}, tool.errors.full_messages.join)
+    assert_match(/not a number/, tool.errors.full_messages.join)
   end
 
   test "alias_property rejects conflicting canonical and alias values" do
@@ -72,13 +71,12 @@ class ActionMCP::ToolAliasPropertyTest < ActiveSupport::TestCase
       alias_property :root_id, :thread_id
     end
 
-    error = assert_raises(ArgumentError) do
-      tool_class.new(thread_id: "thread-123", root_id: "thread-456")
-    end
+    tool = tool_class.new(thread_id: "thread-123", root_id: "thread-456")
 
-    assert_match(/Conflicting values/, error.message)
-    assert_match(/thread_id/, error.message)
-    assert_match(/root_id/, error.message)
+    refute tool.valid?
+    assert_match(/conflicting values/, tool.errors.full_messages.join)
+    assert_match(/thread_id/, tool.errors.full_messages.join)
+    assert_match(/root_id/, tool.errors.full_messages.join)
   end
 
   test "alias_property requires an existing target property" do
@@ -109,7 +107,7 @@ class ActionMCP::ToolAliasPropertyTest < ActiveSupport::TestCase
     assert_match(/already defined as an alias/, error.message)
   end
 
-  test "alias_property does not duplicate the canonical input schema property" do
+  test "alias_property advertises both accepted input names" do
     tool_class = Class.new(ActionMCP::Tool) do
       tool_name "alias_property_schema"
       description "Tool with canonical schema"
@@ -121,7 +119,9 @@ class ActionMCP::ToolAliasPropertyTest < ActiveSupport::TestCase
     schema = tool_class.to_h[:inputSchema]
 
     assert_includes schema[:properties], "thread_id"
-    refute_includes schema[:properties], "root_id"
-    assert_equal [ "thread_id" ], schema[:required]
+    assert_includes schema[:properties], "root_id"
+    assert_nil schema[:required]
+    alternatives = schema.fetch(:allOf).first.fetch(:anyOf)
+    assert_equal [ [ "thread_id" ], [ "root_id" ] ], alternatives.pluck(:required)
   end
 end

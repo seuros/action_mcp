@@ -39,6 +39,39 @@ module ActionMCP
         assert_includes request.to_params, :_meta
       end
 
+      test "to_params includes valid task metadata" do
+        request = ElicitationRequest.new(
+          message: "Name?",
+          requested_schema: valid_schema,
+          task: { ttl: 60_000 }
+        )
+
+        assert request.valid?
+        assert_equal({ ttl: 60_000 }, request.to_params[:task])
+      end
+
+      test "rejects invalid task metadata" do
+        request = ElicitationRequest.new(
+          message: "Name?",
+          requested_schema: valid_schema,
+          task: { pollInterval: 100 }
+        )
+
+        refute request.valid?
+        assert request.errors[:task].any?
+      end
+
+      test "rejects fractional task ttl" do
+        request = ElicitationRequest.new(
+          message: "Name?",
+          requested_schema: valid_schema,
+          task: { ttl: 1.5 }
+        )
+
+        refute request.valid?
+        assert request.errors[:task].any?
+      end
+
       test "invalid without message" do
         request = ElicitationRequest.new(
           requested_schema: { type: "object", properties: { name: { type: "string" } } }
@@ -62,7 +95,7 @@ module ActionMCP
         )
 
         assert_not request.valid?
-        assert request.errors[:requested_schema].any? { |e| e.include?("object type") }
+        assert request.errors[:requested_schema].any? { |e| e.include?("MCP 2025-11-25") }
       end
 
       test "invalid when schema has no properties" do
@@ -72,7 +105,7 @@ module ActionMCP
         )
 
         assert_not request.valid?
-        assert request.errors[:requested_schema].any? { |e| e.include?("properties") }
+        assert request.errors[:requested_schema].any? { |e| e.include?("MCP 2025-11-25") }
       end
 
       test "invalid with nested object property" do
@@ -85,7 +118,7 @@ module ActionMCP
         )
 
         assert_not request.valid?
-        assert request.errors[:requested_schema].any? { |e| e.include?("primitive type") }
+        assert request.errors[:requested_schema].any? { |e| e.include?("MCP 2025-11-25") }
       end
 
       test "valid with string enum property" do
@@ -100,12 +133,12 @@ module ActionMCP
         assert request.valid?
       end
 
-      test "invalid when string enum is not an array" do
+      test "invalid when a string default has the wrong type" do
         request = ElicitationRequest.new(
           message: "Pick",
           requested_schema: {
             type: "object",
-            properties: { color: { type: "string", enum: "red" } }
+            properties: { color: { type: "string", default: 1 } }
           }
         )
 
@@ -153,7 +186,7 @@ module ActionMCP
         )
 
         assert_not request.valid?
-        assert request.errors[:requested_schema].any? { |e| e.include?("items schema") }
+        assert request.errors[:requested_schema].any? { |e| e.include?("MCP 2025-11-25") }
       end
 
       test "valid with number, integer, and boolean properties" do
@@ -176,7 +209,7 @@ module ActionMCP
         request = ElicitationRequest.new(message: "test", requested_schema: { type: "string" })
 
         error = assert_raises(ArgumentError) { request.assert_valid! }
-        assert_match(/object type/, error.message)
+        assert_match(/MCP 2025-11-25/, error.message)
       end
 
       test "assert_valid! does not raise on valid" do
@@ -224,6 +257,38 @@ module ActionMCP
         )
 
         assert_not request.valid?
+      end
+
+      test "rejects untitled multi-select without string item type" do
+        request = ElicitationRequest.new(
+          message: "Pick",
+          requested_schema: {
+            type: "object",
+            properties: { colors: { type: "array", items: { enum: %w[red green] } } }
+          }
+        )
+
+        assert_not request.valid?
+      end
+
+      test "rejects titled multi-select options without const and title" do
+        request = ElicitationRequest.new(
+          message: "Pick",
+          requested_schema: {
+            type: "object",
+            properties: {
+              colors: { type: "array", items: { anyOf: [ { const: "red" } ] } }
+            }
+          }
+        )
+
+        assert_not request.valid?
+      end
+
+      private
+
+      def valid_schema
+        { type: "object", properties: { name: { type: "string" } } }
       end
     end
   end

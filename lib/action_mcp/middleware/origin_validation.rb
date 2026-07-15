@@ -7,8 +7,8 @@ module ActionMCP
     # Rack middleware that validates the Origin header on MCP requests to
     # prevent DNS rebinding attacks per the MCP Streamable HTTP security
     # section. Non-browser clients (Claude Desktop, curl) never send Origin
-    # and are always allowed. Present Origins must match either
-    # `ActionMCP.configuration.allowed_origins` or the server's own host.
+    # and are always allowed. Present Origins must match the explicitly trusted
+    # hosts in `ActionMCP.configuration.allowed_origins`.
     #
     # Runs as middleware — same layer as `ActionDispatch::HostAuthorization` —
     # so invalid requests are rejected before they reach routing.
@@ -28,7 +28,7 @@ module ActionMCP
 
         request = ActionDispatch::Request.new(env)
         origin = request.origin
-        return @app.call(env) if origin.nil? || origin.empty?
+        return @app.call(env) if origin.nil?
         return @app.call(env) if origin_allowed?(origin, request)
 
         forbidden_response
@@ -49,21 +49,17 @@ module ActionMCP
         end
       end
 
-      def origin_allowed?(origin, request)
+      def origin_allowed?(origin, _request)
         return false if origin == "null"
 
         uri = URI.parse(origin)
-        return false if uri.host.nil? || uri.host.empty?
+        return false unless %w[http https].include?(uri.scheme)
+        return false if uri.host.nil? || uri.host.empty? || uri.userinfo || uri.query || uri.fragment
+        return false unless uri.path.empty?
 
         origin_host = strip_brackets(uri.host)
-        allowed = ActionMCP.configuration.allowed_origins
-
-        if allowed && !allowed.empty?
-          allowed.any? { |pattern| match?(pattern, origin_host) }
-        else
-          # ActionDispatch::Request#host strips the port and handles IPv6 brackets
-          origin_host.casecmp?(strip_brackets(request.host))
-        end
+        allowed = Array(ActionMCP.configuration.allowed_origins)
+        allowed.any? { |pattern| match?(pattern, origin_host) }
       rescue URI::InvalidURIError
         false
       end

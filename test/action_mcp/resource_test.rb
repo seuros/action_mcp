@@ -130,5 +130,38 @@ module ActionMCP
       assert_equal({ ui: { prefersBorder: true } }, resource.meta)
       assert_equal({ ui: { prefersBorder: true } }, resource.to_h[:_meta])
     end
+
+    test "rejects descriptor values outside the stable resource schema" do
+      invalid_attributes = [
+        { uri: "relative/path", name: "name" },
+        { uri: "file:///a", name: "" },
+        { uri: "file:///a", name: "a", title: 1 },
+        { uri: "file:///a", name: "a", description: [] },
+        { uri: "file:///a", name: "a", mime_type: false },
+        { uri: "file:///a", name: "a", size: -1 },
+        { uri: "file:///a", name: "a", annotations: { priority: 2 } }
+      ]
+
+      invalid_attributes.each do |attributes|
+        assert_raises(ArgumentError) { Resource.new(**attributes) }
+      end
+    end
+
+    test "rejects Hash-like metadata that does not produce an object" do
+      invalid_meta = Class.new do
+        def to_h = [ "not", "an", "object" ]
+      end.new
+
+      assert_raises(ArgumentError) do
+        Resource.new(uri: "file:///a", name: "a", meta: invalid_meta)
+      end
+    end
+
+    test "serialization catches invalid annotation mutation" do
+      resource = Resource.new(uri: "file:///a", name: "a", annotations: { priority: 0.5 })
+      resource.annotations[:priority] = 2
+
+      assert_raises(ArgumentError) { resource.to_h }
+    end
   end
 end

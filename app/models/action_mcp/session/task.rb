@@ -142,7 +142,7 @@ module ActionMCP
       end
 
       def result_ready?
-        terminal? || input_required?
+        terminal?
       end
 
       # Check if task is in a non-terminal state
@@ -274,16 +274,26 @@ module ActionMCP
       # @param prompt [String] The prompt/question for the user
       # @param context [Hash] Additional context about the input request
       def await_input!(prompt:, context: {})
-        record_step!(:awaiting_input, data: { prompt: prompt, context: context })
-        require_input!
+        with_lock do
+          return false if terminal?
+
+          record_step!(:awaiting_input, data: { prompt: prompt, context: context })
+          require_input!
+        end
       end
 
       # Resume task from input_required state and re-enqueue job
       # @return [void]
       def resume_from_continuation!
-        return unless input_required?
+        resumed = false
+        with_lock do
+          next unless input_required?
 
-        resume!
+          resume!
+          resumed = true
+        end
+        return unless resumed
+
         # Re-enqueue the job to continue execution
         ActionMCP::ToolExecutionJob.perform_later(id, request_name, request_params, {})
       end

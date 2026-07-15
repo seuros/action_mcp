@@ -21,9 +21,9 @@ module ActionMCP
     #   render(text: "Hello, world!")
     #
     def render(text: nil, audio: nil, image: nil, resource: nil, mime_type: nil, blob: nil)
-      if resource && mime_type
+      if !resource.nil?
         Content::Resource.new(resource, mime_type, text: text, blob: blob, annotations: nil)
-      elsif text
+      elsif !text.nil?
         Content::Text.new(text, annotations: nil)
       elsif audio && mime_type
         Content::Audio.new(audio, mime_type, annotations: nil)
@@ -37,7 +37,7 @@ module ActionMCP
     # Renders a resource link for Model Context Protocol responses.
     #
     # @param uri [String] The URI of the resource
-    # @param name [String, nil] Optional name for the resource
+    # @param name [String] Name for the resource
     # @param description [String, nil] Optional description
     # @param mime_type [String, nil] Optional MIME type
     # @param annotations [Hash, nil] Optional annotations
@@ -47,7 +47,7 @@ module ActionMCP
     # @example Render a resource link
     #   render_resource_link(uri: "file:///path/to/file.txt", name: "Example File")
     #
-    def render_resource_link(uri:, name: nil, description: nil, mime_type: nil, annotations: nil)
+    def render_resource_link(uri:, name:, description: nil, mime_type: nil, annotations: nil)
       Content::ResourceLink.new(uri, name: name, description: description,
                                      mime_type: mime_type, annotations: annotations)
     end

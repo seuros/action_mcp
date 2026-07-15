@@ -17,6 +17,11 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert_response :method_not_allowed
   end
 
+  test "rejects a present empty Origin header" do
+    get @base_url, headers: { "Origin" => "" }
+    assert_response :forbidden
+  end
+
   test "allows same-host Origin" do
     get @base_url, headers: { "Origin" => "http://localhost" }
     assert_response :method_not_allowed
@@ -32,6 +37,12 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "does not trust a matching attacker-controlled Host header" do
+    get "http://rebind.attacker.test", headers: { "Origin" => "http://rebind.attacker.test" }
+
+    assert_response :forbidden
+  end
+
   test "rejects null Origin" do
     get @base_url, headers: { "Origin" => "null" }
     assert_response :forbidden
@@ -42,7 +53,7 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
          params: { jsonrpc: "2.0", id: "req-1", method: "initialize", params: {} }.to_json,
          headers: {
            "Content-Type" => "application/json",
-           "Accept" => "application/json",
+           "Accept" => "application/json, text/event-stream",
            "Origin" => "http://evil.com"
          }
 

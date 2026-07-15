@@ -15,6 +15,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal :primary, @config.active_profile
     assert_equal "/", @config.base_path
     assert_equal false, @config.mcp_apps_enabled
+    assert_equal %w[localhost 127.0.0.1 ::1], @config.allowed_origins
   end
 
   test "default profiles are loaded" do
@@ -220,7 +221,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "protocol version defaults" do
-    assert_equal "2025-06-18", @config.protocol_version
+    assert_equal "2025-11-25", @config.protocol_version
   end
 
   # Server Instructions Tests

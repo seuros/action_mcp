@@ -30,7 +30,9 @@ module GatewayTestHelper
   end
 
   def with_test_authentication
-    original_gateway_class = ActionMCP.configuration.gateway_class
+    config = ActionMCP.configuration
+    had_gateway_override = config.instance_variable_defined?(:@gateway_class)
+    original_gateway_override = config.instance_variable_get(:@gateway_class)
     original_auth_methods = ActionMCP.configuration.authentication_methods.dup
 
     # Create a temporary gateway class that uses our test identifier
@@ -43,12 +45,14 @@ module GatewayTestHelper
 
     yield
   ensure
-    ActionMCP.configuration.gateway_class = original_gateway_class
+    restore_gateway_override(config, had_gateway_override, original_gateway_override)
     ActionMCP.configuration.authentication_methods = original_auth_methods
   end
 
   def with_no_authentication
-    original_gateway_class = ActionMCP.configuration.gateway_class
+    config = ActionMCP.configuration
+    had_gateway_override = config.instance_variable_defined?(:@gateway_class)
+    original_gateway_override = config.instance_variable_get(:@gateway_class)
     original_auth_methods = ActionMCP.configuration.authentication_methods.dup
 
     ActionMCP.configuration.gateway_class = nil
@@ -56,7 +60,7 @@ module GatewayTestHelper
 
     yield
   ensure
-    ActionMCP.configuration.gateway_class = original_gateway_class
+    restore_gateway_override(config, had_gateway_override, original_gateway_override)
     ActionMCP.configuration.authentication_methods = original_auth_methods
   end
 
@@ -80,5 +84,15 @@ module GatewayTestHelper
       "user_id" => user_id,
       "authenticated_at" => Time.current
     }
+  end
+
+  private
+
+  def restore_gateway_override(config, had_override, original_override)
+    if had_override
+      config.gateway_class = original_override
+    elsif config.instance_variable_defined?(:@gateway_class)
+      config.remove_instance_variable(:@gateway_class)
+    end
   end
 end

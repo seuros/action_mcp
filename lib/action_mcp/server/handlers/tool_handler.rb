@@ -10,6 +10,10 @@ module ActionMCP
           params ||= {}
 
           with_error_handling(id) do
+            unless params.is_a?(Hash)
+              raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Tool params must be an object")
+            end
+
             handler = tool_method_handlers[rpc_method]
             if handler
               send(handler, id, params)
@@ -36,6 +40,10 @@ module ActionMCP
         def handle_tools_call(id, params)
           name = validate_required_param(params, "name", "Tool name is required")
           arguments = extract_arguments(params)
+          unless arguments.is_a?(Hash)
+            raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Tool arguments must be an object")
+          end
+
           _meta = params["_meta"] || params[:_meta] || {}
           task_params = params.key?("task") ? params["task"] : params[:task]
           transport.send_tools_call(id, name, arguments, _meta, task_params)

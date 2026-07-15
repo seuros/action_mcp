@@ -50,6 +50,11 @@ development:
   # JWT first, fallback to none for development
   authentication: ["jwt", "none"]
 
+  # MCP Apps (SEP-1865) — advertise io.modelcontextprotocol/ui and register
+  # compiled ui:// views at boot. Development-only so the test suite keeps the
+  # default (extension off) unless a test enables it explicitly.
+  mcp_apps_enabled: true
+
   # Configure the gateway class for authentication
   gateway_class: "ApplicationGateway"
 

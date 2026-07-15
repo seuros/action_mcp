@@ -9,10 +9,13 @@ namespace :action_mcp do
 
     puts "\e[34mACTION MCP TOOLS\e[0m"  # Blue
     puts "\e[34m---------------\e[0m"   # Blue
-    ActionMCP::Tool.descendants.each do |tool|
-      next if tool.abstract?
-
-      puts "\e[34m#{tool.capability_name}:\e[0m #{tool.description}" # Blue name
+    tools = ActionMCP::ToolsRegistry.non_abstract.sort_by(&:name)
+    if tools.any?
+      tools.each do |tool|
+        puts "\e[34m#{tool.name}:\e[0m #{tool.description}" # Blue name
+      end
+    else
+      puts "  No tools registered"
     end
     puts "\n"
   end
@@ -25,10 +28,13 @@ namespace :action_mcp do
 
     puts "\e[32mACTION MCP PROMPTS\e[0m"  # Green
     puts "\e[32m-----------------\e[0m"   # Green
-    ActionMCP::Prompt.descendants.each do |prompt|
-      next if prompt.abstract?
-
-      puts "\e[32m#{prompt.capability_name}:\e[0m #{prompt.description}" # Green name
+    prompts = ActionMCP::PromptsRegistry.non_abstract.sort_by(&:name)
+    if prompts.any?
+      prompts.each do |prompt|
+        puts "\e[32m#{prompt.name}:\e[0m #{prompt.description}" # Green name
+      end
+    else
+      puts "  No prompts registered"
     end
     puts "\n"
   end
@@ -41,11 +47,70 @@ namespace :action_mcp do
 
     puts "\e[33mACTION MCP RESOURCES\e[0m" # Yellow
     puts "\e[33m--------------------\e[0m" # Yellow
-    ActionMCP::ResourceTemplate.descendants.each do |resource|
-      next if resource.abstract?
-
-      puts "\e[33m#{resource.capability_name}:\e[0m #{resource.description} : #{resource.uri_template}" # Yellow name
+    resources = ActionMCP::ResourceTemplatesRegistry.non_abstract.sort_by(&:name)
+    if resources.any?
+      resources.each do |resource|
+        puts "\e[33m#{resource.name}:\e[0m #{resource.description} : #{resource.klass.uri_template}" # Yellow name
+      end
+    else
+      puts "  No resources registered"
     end
+    puts "\n"
+  end
+
+  # bin/rails action_mcp:list_widgets
+  desc "List MCP Apps UI widgets and their linked tools"
+  task list_widgets: :environment do
+    Rails.application.eager_load!
+
+    widgets = ActionMCP::ResourceTemplatesRegistry.non_abstract
+      .select { |resource| resource.klass.mime_type == ActionMCP::Apps::MIME_TYPE }
+      .sort_by(&:name)
+    widget_classes = widgets.map(&:klass)
+    tools_by_widget = Hash.new { |linked, widget| linked[widget] = [] }
+    missing_resources = Hash.new { |uris, uri| uris[uri] = [] }
+
+    ActionMCP::ToolsRegistry.non_abstract.sort_by(&:name).each do |tool|
+      descriptor = tool.klass.to_h(protocol_version: ActionMCP.configuration.protocol_version)
+      meta = descriptor[:_meta] || descriptor["_meta"]
+      ui = meta && (meta[:ui] || meta["ui"])
+      next unless ui.is_a?(Hash)
+
+      resource_uri = ui[:resourceUri] || ui["resourceUri"]
+      next unless resource_uri
+
+      visibility = ui[:visibility] || ui["visibility"]
+      widget = ActionMCP::ResourceTemplatesRegistry.find_template_for_uri(resource_uri, templates: widget_classes)
+      destination = widget ? tools_by_widget[widget] : missing_resources[resource_uri]
+      destination << [ tool.name, Array(visibility) ]
+    end
+
+    puts "\e[36mACTION MCP UI WIDGETS\e[0m" # Cyan
+    puts "\e[36m---------------------\e[0m" # Cyan
+
+    if widgets.any?
+      widgets.each do |widget|
+        uri = widget.klass.uri_template
+        linked_tools = tools_by_widget.fetch(widget.klass, []).map do |tool_name, visibility|
+          visibility.any? ? "#{tool_name} [visibility: #{visibility.join(', ')}]" : tool_name
+        end
+
+        puts "\e[36m#{widget.name}:\e[0m #{uri}"
+        puts "  #{widget.description}" if widget.description.present?
+        puts "  Linked tools: #{linked_tools.any? ? linked_tools.join(', ') : 'None'}"
+      end
+    else
+      puts "  No MCP Apps UI widgets registered"
+    end
+
+    if missing_resources.any?
+      puts "\n\e[31mMISSING UI WIDGET RESOURCES\e[0m" # Red
+      puts "\e[31m---------------------------\e[0m" # Red
+      missing_resources.sort.each do |uri, linked_tools|
+        puts "  #{uri}: #{linked_tools.map(&:first).join(', ')}"
+      end
+    end
+
     puts "\n"
   end
 
@@ -81,9 +146,8 @@ namespace :action_mcp do
     profiles = ActionMCP.configuration.profiles
 
     unless profiles.key?(profile_name)
-      puts "\e[31mProfile '#{profile_name}' not found!\e[0m"
-      puts "Available profiles: #{profiles.keys.join(', ')}"
-      next
+      abort "\e[31mProfile '#{profile_name}' not found!\e[0m\n" \
+            "Available profiles: #{profiles.keys.join(', ')}"
     end
 
     # Temporarily activate this profile to show what would be included
@@ -142,73 +206,70 @@ namespace :action_mcp do
     puts "\n"
   end
 
-  desc "List all tools, prompts, resources and available profiles"
-  task list: %i[list_tools list_prompts list_resources list_profiles] do
-    # This task lists all tools, prompts, resources and profiles
+  desc "List all tools, prompts, resources, UI widgets and available profiles"
+  task list: %i[list_tools list_prompts list_resources list_widgets list_profiles] do
+    # This task lists all registered MCP components and profiles.
   end
 
   # bin/rails action_mcp:info
-  # bin/rails action_mcp:info[test]
-  desc "Display ActionMCP configuration for current or specified environment"
+  desc "Display the live ActionMCP configuration for the current Rails environment"
   task :info, [ :env ] => :environment do |_t, args|
-    env = args[:env] || Rails.env
+    requested_env = args[:env]&.to_s
+    if requested_env && requested_env != Rails.env
+      abort "ActionMCP configuration is initialized when Rails boots. " \
+            "Run `RAILS_ENV=#{requested_env} bin/rails action_mcp:info` instead."
+    end
 
-    # Load configuration for the specified environment
-    original_env = Rails.env
-    Rails.env = env.to_s
-
-    # Reload configuration to get the environment-specific settings
-    config = ActionMCP::Configuration.new
-    config.load_profiles
+    env = Rails.env.to_s
+    config = ActionMCP.configuration
 
     puts "\e[35mActionMCP Configuration (#{env})\e[0m"
     puts "\e[35m#{'=' * (25 + env.length)}\e[0m"
 
-    # Basic Information
     puts "\n\e[36mBasic Information:\e[0m"
     puts "  Name: #{config.name}"
     puts "  Version: #{config.version}"
     puts "  Protocol Version: #{config.protocol_version}"
     puts "  Active Profile: #{config.active_profile}"
 
-    # Session Storage
+    puts "\n\e[36mTransport:\e[0m"
+    puts "  Base Path: #{config.base_path}"
+    puts "  Allowed Origins: #{config.allowed_origins.join(', ')}"
+    puts "  Pagination Page Size: #{config.pagination_page_size || 'disabled'}"
+
     puts "\n\e[36mSession Storage:\e[0m"
     puts "  Session Store Type: #{config.session_store_type}"
     puts "  Client Session Store: #{config.client_session_store_type || 'default'}"
     puts "  Server Session Store: #{config.server_session_store_type || 'default'}"
 
-    # Transport Configuration
-    puts "\n\e[36mTransport Configuration:\e[0m"
-    puts "  Protocol Version: #{config.protocol_version}"
+    puts "\n\e[36mThread Pool:\e[0m"
+    puts "  Min Threads: #{config.min_threads || 'default'}"
+    puts "  Max Threads: #{config.max_threads || 'default'}"
+    puts "  Max Queue: #{config.max_queue || 'default'}"
 
-    # Pub/Sub Adapter
-    puts "\n\e[36mPub/Sub Adapter:\e[0m"
-    puts "  Adapter: #{config.adapter || 'not configured'}"
-    if config.adapter
-      puts "  Polling Interval: #{config.polling_interval}" if config.polling_interval
-      puts "  Min Threads: #{config.min_threads}" if config.min_threads
-      puts "  Max Threads: #{config.max_threads}" if config.max_threads
-      puts "  Max Queue: #{config.max_queue}" if config.max_queue
-    end
-
-    # Authentication
     puts "\n\e[36mAuthentication:\e[0m"
-    puts "  Methods: #{config.authentication_methods.join(', ')}"
-    if config.oauth_config&.any?
-      puts "  OAuth Provider: #{config.oauth_config['provider']}"
-      puts "  OAuth Scopes: #{config.oauth_config['scopes_supported']&.join(', ')}"
-    end
+    methods = config.authentication_methods
+    puts "  Methods: #{methods.any? ? methods.join(', ') : 'none'}"
+    puts "  Allowed Identity Keys: #{config.allowed_identity_keys.join(', ')}"
 
-    # Logging
+    puts "\n\e[36mMCP Apps:\e[0m"
+    puts "  Enabled: #{config.mcp_apps_enabled}"
+    puts "  Views Path: #{config.mcp_apps_views_path}"
+    puts "  Widget MIME Type: #{ActionMCP::Apps::MIME_TYPE}"
+
+    puts "\n\e[36mTasks:\e[0m"
+    puts "  Enabled: #{config.tasks_enabled}"
+    puts "  List Enabled: #{config.tasks_list_enabled}"
+    puts "  Cancel Enabled: #{config.tasks_cancel_enabled}"
+    puts "  Result Poll Interval: #{config.tasks_result_poll_interval}"
+
     puts "\n\e[36mLogging:\e[0m"
     puts "  Logging Enabled: #{config.logging_enabled}"
     puts "  Logging Level: #{config.logging_level}"
 
-    # Gateway
     puts "\n\e[36mGateway:\e[0m"
-    puts "  Gateway Class: #{config.gateway_class}"
+    puts "  Gateway Class: #{config.gateway_class || 'not configured'}"
 
-    # Capabilities
     puts "\n\e[36mEnabled Capabilities:\e[0m"
     capabilities = config.capabilities
     if capabilities.any?
@@ -219,14 +280,10 @@ namespace :action_mcp do
       puts "  None"
     end
 
-    # Available Profiles
     puts "\n\e[36mAvailable Profiles:\e[0m"
     config.profiles.each_key do |profile_name|
       puts "  - #{profile_name}"
     end
-
-    # Restore original environment
-    Rails.env = original_env
 
     puts "\n"
   end
@@ -237,15 +294,25 @@ namespace :action_mcp do
     puts "\e[35mActionMCP Statistics\e[0m"
     puts "\e[35m===================\e[0m"
 
-    # Debug database connection
-    puts "\n\e[36mDatabase Debug:\e[0m"
+    database_path = nil
+
+    puts "\n\e[36mDatabase:\e[0m"
     puts "  Rails Environment: #{Rails.env}"
     puts "  Rails Root: #{Rails.root}"
-    puts "  Database Config: #{ActionMCP::ApplicationRecord.connection_db_config.configuration_hash.inspect}"
-    if ActionMCP::ApplicationRecord.connection.adapter_name.downcase.include?("sqlite")
-      db_path = ActionMCP::ApplicationRecord.connection_db_config.database
-      puts "  Database Path: #{db_path}"
-      puts "  Database Exists?: #{File.exist?(db_path)}" if db_path
+    begin
+      connection = ActionMCP::ApplicationRecord.connection
+      db_config = ActionMCP::ApplicationRecord.connection_db_config
+      puts "  Adapter: #{connection.adapter_name}"
+      puts "  Database: #{db_config.database}"
+
+      if connection.adapter_name.downcase.include?("sqlite") && db_config.database != ":memory:"
+        configured_path = Pathname.new(db_config.database.to_s)
+        database_path = configured_path.absolute? ? configured_path : Rails.root.join(configured_path)
+        puts "  Database Path: #{database_path}"
+        puts "  Database Exists?: #{database_path.file?}"
+      end
+    rescue StandardError => e
+      puts "  Could not inspect database connection: #{e.message}"
     end
 
     # Session Statistics
@@ -332,19 +399,13 @@ namespace :action_mcp do
     # Storage Information
     puts "\n\e[36mStorage Information:\e[0m"
     puts "  Session Store Type: #{ActionMCP.configuration.session_store_type}"
-    puts "  Database Adapter: #{ActionMCP::ApplicationRecord.connection.adapter_name}"
 
-    # Database size (if SQLite)
     begin
-      if ActionMCP::ApplicationRecord.connection.adapter_name.downcase.include?("sqlite")
-        db_config = Rails.application.config.database_configuration[Rails.env]
-        if db_config && db_config["database"]
-          db_file = db_config["database"]
-          if File.exist?(db_file)
-            size_mb = (File.size(db_file) / 1024.0 / 1024.0).round(2)
-            puts "  Database Size: #{size_mb} MB"
-          end
-        end
+      connection = ActionMCP::ApplicationRecord.connection
+      puts "  Database Adapter: #{connection.adapter_name}"
+      if database_path&.file?
+        size_mb = (database_path.size / 1024.0 / 1024.0).round(2)
+        puts "  Database Size: #{size_mb} MB"
       end
     rescue StandardError => e
       puts "  Could not determine database size: #{e.message}"

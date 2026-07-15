@@ -7,14 +7,6 @@ class DebugInitTest < ActionDispatch::IntegrationTest
     # Ensure configuration is properly loaded before creating sessions
     ActionMCP.configuration.name = "ActionMCP Dummy"
     ActionMCP.configuration.load_profiles
-
-    # Create session through the session store (since this is testing initialization)
-    session_store = ActionMCP::Server.session_store
-    @session = session_store.create_session(nil, {
-                                              initialized: false,
-                                              protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION
-                                            })
-    @session_id = @session.id
   end
 
   test "initialization follows MCP spec" do
@@ -23,7 +15,7 @@ class DebugInitTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         clientInfo: { name: "Test Client", version: "1.0" },
         capabilities: {
           roots: { listChanged: true },
@@ -32,8 +24,7 @@ class DebugInitTest < ActionDispatch::IntegrationTest
       }
     }.to_json, headers: {
       "Content-Type" => "application/json",
-      "Accept" => "application/json",
-      "Mcp-Session-Id" => @session_id
+      "Accept" => "application/json, text/event-stream"
     }
 
     assert_response :success
@@ -45,7 +36,7 @@ class DebugInitTest < ActionDispatch::IntegrationTest
     assert body["result"], "Expected result but got: #{body.inspect}"
 
     # Verify MCP protocol version matches request
-    assert_equal "2025-06-18", body["result"]["protocolVersion"]
+    assert_equal "2025-11-25", body["result"]["protocolVersion"]
 
     # Verify server info contains expected values
     assert_equal "ActionMCP Dummy", body["result"]["serverInfo"]["name"]
@@ -55,7 +46,8 @@ class DebugInitTest < ActionDispatch::IntegrationTest
     expected_capabilities = {
       "tools" => { "listChanged" => true },
       "prompts" => { "listChanged" => true },
-      "resources" => { "subscribe" => false, "listChanged" => true }
+      "resources" => { "subscribe" => false, "listChanged" => true },
+      "completions" => {}
     }
     assert_equal expected_capabilities, body["result"]["capabilities"]
   end
@@ -63,18 +55,12 @@ class DebugInitTest < ActionDispatch::IntegrationTest
   test "initialization advertises mcp apps extension when enabled" do
     original_mcp_apps_enabled = ActionMCP.configuration.mcp_apps_enabled
     ActionMCP.configuration.mcp_apps_enabled = true
-    session = ActionMCP::Server.session_store.create_session(nil, {
-                                                               initialized: false,
-                                                               protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION,
-                                                               server_capabilities: ActionMCP.configuration.capabilities
-                                                             })
-
     post "/", params: {
       jsonrpc: "2.0",
       id: "init-apps",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         clientInfo: { name: "Test Client", version: "1.0" },
         capabilities: {
           extensions: {
@@ -86,8 +72,7 @@ class DebugInitTest < ActionDispatch::IntegrationTest
       }
     }.to_json, headers: {
       "Content-Type" => "application/json",
-      "Accept" => "application/json",
-      "Mcp-Session-Id" => session.id
+      "Accept" => "application/json, text/event-stream"
     }
 
     assert_response :success

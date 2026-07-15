@@ -10,7 +10,7 @@ module ActionMCP
       end
 
       def create_session(session_id = nil, attributes = {})
-        session_id ||= SecureRandom.hex(6)
+        session_id ||= SecureRandom.hex(16)
 
         session_data = {
           id: session_id,

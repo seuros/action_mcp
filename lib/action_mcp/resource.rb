@@ -15,23 +15,26 @@ module ActionMCP
     # @param annotations [Hash, nil] Optional annotations
     # @param meta [Hash, #to_hash, #to_h, nil] Optional extension metadata. Emitted on the wire as `_meta`.
     def initialize(uri:, name:, title: nil, description: nil, mime_type: nil, size: nil, annotations: nil, meta: nil)
+      raise ArgumentError, "uri must be a non-empty string" unless uri.is_a?(String) && uri.present?
+      raise ArgumentError, "name must be a non-empty string" unless name.is_a?(String) && name.present?
+
+      { title: title, description: description, mime_type: mime_type }.each do |field, value|
+        raise ArgumentError, "#{field} must be a string or nil" unless value.nil? || value.is_a?(String)
+      end
+      unless size.nil? || (size.is_a?(Integer) && size >= 0)
+        raise ArgumentError, "size must be a non-negative integer or nil"
+      end
+
       @uri = uri
       @name = name
       @title = title
       @description = description
       @mime_type = mime_type
       @size = size
-      @annotations = annotations
-      @meta =
-        if meta.nil?
-          nil
-        elsif meta.respond_to?(:to_hash)
-          meta.to_hash
-        elsif meta.respond_to?(:to_h)
-          meta.to_h
-        else
-          raise ArgumentError, "meta must respond to :to_hash or :to_h, got: #{meta.class}"
-        end
+      @annotations = annotations.nil? ? nil : Content::Validation.copy_object!(annotations, "annotations")
+      Content::Validation.validate_annotations!(@annotations)
+      @meta = meta.nil? ? nil : Content::Validation.copy_object!(meta, "meta")
+      to_h
       freeze
     end
 
@@ -47,6 +50,7 @@ module ActionMCP
       hash[:size] = size if size
       hash[:annotations] = annotations if annotations
       hash[:_meta] = meta if meta && !meta.empty?
+      Content::Validation.validate_resource!(hash)
       hash
     end
 

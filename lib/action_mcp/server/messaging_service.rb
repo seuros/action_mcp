@@ -33,6 +33,8 @@ module ActionMCP
       end
 
       def send_resource_updated_notification(uri)
+        return unless session.resource_subscribed?(uri)
+
         send_jsonrpc_notification("notifications/resources/updated", { uri: uri })
       end
 
@@ -47,7 +49,7 @@ module ActionMCP
       def send_logging_message_notification(level:, data:, logger: nil)
         params = { level: level, data: data }
         params[:logger] = logger if logger.present?
-        send_jsonrpc_notification("notifications/logging/message", params)
+        send_jsonrpc_notification("notifications/message", params)
       end
 
       def send_progress_notification(progressToken:, progress:, total: nil, message: nil, **options)

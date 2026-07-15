@@ -6,13 +6,20 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
   include ActionMCP::Server::Handlers::LoggingHandler
 
   setup do
-    @original_logging_enabled = ActionMCP.configuration.logging_enabled
     ActionMCP::Logging.reset!
     @sent_responses = []
     @sent_errors = []
+    @session = ActionMCP::Server::BaseSession.new(
+      server_capabilities: { "logging" => {} },
+      session_data: {}
+    )
 
     # Mock transport
     @transport = Object.new
+    @transport.instance_variable_set(:@session, @session)
+    def @transport.session
+      @session
+    end
     def @transport.send_jsonrpc_response(id, result:)
       @sent_responses << { id: id, result: result }
     end
@@ -26,42 +33,36 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
   end
 
   teardown do
-    ActionMCP.configuration.logging_enabled = @original_logging_enabled
     ActionMCP::Logging.reset!
   end
 
   test "handle_logging_set_level succeeds when enabled with valid level" do
-    ActionMCP.configuration.logging_enabled = true
-
     handle_logging_set_level("test-id", { level: "error" })
 
     assert_equal 1, @sent_responses.length
     response = @sent_responses.first
     assert_equal "test-id", response[:id]
     assert_equal({}, response[:result])
-    assert_equal :error, ActionMCP::Logging.level
+    assert_equal :error, ActionMCP::Logging.level_for(@session)
+    assert_equal :warning, ActionMCP::Logging.level
   end
 
   test "handle_logging_set_level works with symbol parameter" do
-    ActionMCP.configuration.logging_enabled = true
-
     handle_logging_set_level("test-id", { level: :debug })
 
     assert_equal 1, @sent_responses.length
-    assert_equal :debug, ActionMCP::Logging.level
+    assert_equal :debug, ActionMCP::Logging.level_for(@session)
   end
 
   test "handle_logging_set_level works with string key" do
-    ActionMCP.configuration.logging_enabled = true
-
     handle_logging_set_level("test-id", { "level" => "info" })
 
     assert_equal 1, @sent_responses.length
-    assert_equal :info, ActionMCP::Logging.level
+    assert_equal :info, ActionMCP::Logging.level_for(@session)
   end
 
   test "handle_logging_set_level returns error when disabled" do
-    ActionMCP.configuration.logging_enabled = false
+    @session.server_capabilities = {}
 
     handle_logging_set_level("test-id", { level: "error" })
 
@@ -73,8 +74,6 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
   end
 
   test "handle_logging_set_level returns error when level parameter missing" do
-    ActionMCP.configuration.logging_enabled = true
-
     handle_logging_set_level("test-id", {})
 
     assert_equal 1, @sent_errors.length
@@ -85,8 +84,6 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
   end
 
   test "handle_logging_set_level returns error for invalid level" do
-    ActionMCP.configuration.logging_enabled = true
-
     handle_logging_set_level("test-id", { level: "invalid" })
 
     assert_equal 1, @sent_errors.length
@@ -97,19 +94,15 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
   end
 
   test "handle_logging_set_level handles internal errors gracefully" do
-    ActionMCP.configuration.logging_enabled = true
-
-    # Mock ActionMCP::Logging.set_level to raise an error
-    original_method = ActionMCP::Logging.method(:set_level)
-    ActionMCP::Logging.define_singleton_method(:set_level) do |_|
+    original_method = ActionMCP::Logging.method(:set_level_for)
+    ActionMCP::Logging.define_singleton_method(:set_level_for) do |_, _|
       raise StandardError, "internal error"
     end
 
     begin
       handle_logging_set_level("test-id", { level: "info" })
     ensure
-      # Restore original method
-      ActionMCP::Logging.define_singleton_method(:set_level, original_method)
+      ActionMCP::Logging.define_singleton_method(:set_level_for, original_method)
     end
 
     assert_equal 1, @sent_errors.length
@@ -117,6 +110,14 @@ class ActionMCP::Server::Handlers::LoggingHandlerTest < ActiveSupport::TestCase
     assert_equal "test-id", error[:id]
     assert_equal(:internal_error, error[:code])
     assert_match(/Internal error/, error[:message])
+  end
+
+  test "handle_logging_set_level rejects non-object params" do
+    handle_logging_set_level("test-id", [ "debug" ])
+
+    assert_equal 1, @sent_errors.length
+    assert_equal :invalid_params, @sent_errors.first[:code]
+    assert_equal "Logging params must be an object", @sent_errors.first[:message]
   end
 
   private

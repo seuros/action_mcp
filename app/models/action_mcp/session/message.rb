@@ -142,10 +142,11 @@ module ActionMCP
       def acknowledge_request
         return unless jsonrpc_id.present?
 
-        request_message = session.messages.find_by(
+        request_message = session.messages.where(
           jsonrpc_id: jsonrpc_id,
-          message_type: "request"
-        )
+          message_type: "request",
+          direction: opposite_direction
+        ).order(created_at: :desc).find { |message| message.data["id"] == data["id"] }
 
         return unless request_message
 
@@ -156,6 +157,10 @@ module ActionMCP
         request_message.update(request_acknowledged: true)
 
         save! if changed?
+      end
+
+      def opposite_direction
+        direction == "server" ? "client" : "server"
       end
     end
   end

@@ -138,6 +138,54 @@ module ActionMCP
         assert_includes messages_without_pings, non_ping_request, "Non-ping request should be included"
         assert_includes messages_without_pings, non_ping_response, "Non-ping response should be included"
       end
+
+      test "response acknowledgement is scoped by direction and exact ID type" do
+        incoming = @session.read(
+          { jsonrpc: "2.0", id: 12, method: "tools/list" }
+        )
+        outgoing_integer = @session.write(
+          JSON_RPC::Request.new(id: 12, method: "sampling/createMessage")
+        )
+        outgoing_string = @session.write(
+          JSON_RPC::Request.new(id: "12", method: "sampling/createMessage")
+        )
+
+        @session.read({ jsonrpc: "2.0", id: 12, result: {} })
+
+        refute incoming.reload.request_acknowledged
+        assert outgoing_integer.reload.request_acknowledged
+        refute outgoing_string.reload.request_acknowledged
+      end
+
+      test "session correlates progress and task status with issued client requests" do
+        sampling = @session.write(
+          JSON_RPC::Request.new(
+            id: "sampling",
+            method: "sampling/createMessage",
+            params: { _meta: { progressToken: "progress-1" } }
+          )
+        )
+        elicitation = @session.write(
+          JSON_RPC::Request.new(
+            id: "elicitation",
+            method: "elicitation/create",
+            params: { task: { ttl: 60_000 } }
+          )
+        )
+        @session.read(
+          {
+            jsonrpc: "2.0",
+            id: "elicitation",
+            result: { task: { taskId: "task-1" } }
+          }
+        )
+
+        assert_equal sampling, @session.client_request_for_progress("progress-1")
+        assert_equal elicitation, @session.client_request_for_task("task-1")
+
+        @session.read({ jsonrpc: "2.0", id: "sampling", result: {} })
+        assert_nil @session.client_request_for_progress("progress-1")
+      end
     end
   end
 end

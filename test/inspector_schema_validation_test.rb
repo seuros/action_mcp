@@ -120,7 +120,7 @@ class InspectorSchemaValidationTest < ActiveSupport::TestCase
 
   test "all tools meet MCP Inspector validation requirements" do
     # Use direct class reference with protocol version
-    tool_def = ValidatedFormatCodeTool.to_h(protocol_version: "2025-06-18")
+    tool_def = ValidatedFormatCodeTool.to_h(protocol_version: "2025-11-25")
 
     # 1. Name must be present and a string
     assert tool_def[:name].is_a?(String), "Name must be a string"

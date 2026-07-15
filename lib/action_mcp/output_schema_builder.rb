@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "schema_helpers"
+require_relative "schema_validator"
 
 module ActionMCP
   # DSL builder for creating output JSON Schema from Ruby-like syntax
@@ -173,6 +174,7 @@ module ActionMCP
     # Generate the final JSON Schema
     def to_json_schema
       schema = {
+        "$schema" => SchemaValidator::DEFAULT_DIALECT,
         "type" => "object",
         "properties" => @properties
       }

@@ -11,18 +11,28 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
            id: 1,
            method: "initialize",
            params: {
-             protocolVersion: "2025-06-18",
+             protocolVersion: "2025-11-25",
              clientInfo: { name: "test-client", version: "1.0" },
              capabilities: {}
            }
          }.to_json,
          headers: {
            "Content-Type" => "application/json",
-           "Accept" => "application/json"
+           "Accept" => "application/json, text/event-stream"
          }
 
     assert_response :success
     @session_id = response.headers["Mcp-Session-Id"]
+
+    post "/",
+         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json,
+         headers: {
+           "Content-Type" => "application/json",
+           "Accept" => "application/json, text/event-stream",
+           "Mcp-Session-Id" => @session_id,
+           "MCP-Protocol-Version" => "2025-11-25"
+         }
+    assert_response :accepted
   end
 
   test "tools/list works without authentication in none mode" do
@@ -35,7 +45,7 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -59,7 +69,7 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -86,7 +96,7 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 

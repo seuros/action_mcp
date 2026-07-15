@@ -16,41 +16,58 @@ module ActionMCP
 
     # Add content to the response
     def add(content)
+      serialize_content(content)
       @contents << content
       content # Return the content for chaining
     end
 
     # Set structured content for the response
     def set_structured_content(content)
-      @structured_content = content
+      raise ArgumentError, "structuredContent must be a JSON object" unless content.is_a?(Hash)
+
+      @structured_content = Content::Validation.copy_object!(content, "structuredContent")
     end
 
     # Report a tool execution error (as opposed to protocol error)
     # This follows MCP spec for tool execution errors
     def report_tool_error(message)
       @tool_execution_error = true
-      add(Content::Text.new(message))
+      add(Content::Text.new(message.to_s))
+    end
+
+    def error?
+      super || @tool_execution_error
+    end
+
+    def success?
+      !error?
     end
 
     def to_h(_options = nil)
       if @tool_execution_error
         result = {
           isError: true,
-          content: @contents.map(&:to_h)
+          content: serialized_contents
         }
         result[:structuredContent] = @structured_content if @structured_content
+        Content::Validation.validate_tool_result!(result)
         result
       else
         super
       end
     end
 
+    def as_json(options = nil)
+      to_h(options)
+    end
+
     # Implementation of build_success_hash for ToolResponse
     def build_success_hash
       result = {
-        content: @contents.map(&:to_h)
+        content: serialized_contents
       }
       result[:structuredContent] = @structured_content if @structured_content
+      Content::Validation.validate_tool_result!(result)
       result
     end
 
@@ -72,6 +89,20 @@ module ActionMCP
       parts << "structuredContent: #{structured_content.inspect}" if structured_content
       parts << "isError: #{is_error}"
       "#<#{self.class.name} #{parts.join(', ')}>"
+    end
+
+    private
+
+    def serialized_contents
+      @contents.map { |content| serialize_content(content) }
+    end
+
+    def serialize_content(content)
+      unless content.respond_to?(:to_h)
+        raise ArgumentError, "content must respond to #to_h"
+      end
+
+      content.to_h.tap { |result| Content::Validation.validate_content_block!(result) }
     end
   end
 end

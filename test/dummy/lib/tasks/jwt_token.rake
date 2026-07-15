@@ -13,9 +13,9 @@ namespace :jwt do
     puts "Test this with curl:"
     puts "curl -X POST http://localhost:62770/ \\"
     puts "  -H \"Content-Type: application/json\" \\"
-    puts "  -H \"Accept: application/json\" \\"
+    puts "  -H \"Accept: application/json, text/event-stream\" \\"
     puts "  -H \"Authorization: Bearer #{token}\" \\"
-    puts "  -H \"MCP-Protocol-Version: 2025-06-18\" \\"
+    puts "  -H \"MCP-Protocol-Version: 2025-11-25\" \\"
     puts "  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'"
     puts ""
 

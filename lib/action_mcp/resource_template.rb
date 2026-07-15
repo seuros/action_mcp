@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "active_model"
+require "addressable/template"
+require "addressable/uri"
 
 module ActionMCP
   class ResourceTemplate
@@ -13,7 +15,7 @@ module ActionMCP
 
     # Track all registered templates
     @registered_templates = []
-    attr_reader :execution_context
+    attr_reader :execution_context, :resolved_uri
 
     # Delegate to class-level DSL values so instances see template metadata.
     delegate :description, :uri_template, :mime_type, to: :class
@@ -51,9 +53,8 @@ module ActionMCP
         @required_parameters ||= []
       end
 
-      # Cache compiled regex patterns for URI matching to avoid recompilation
-      def uri_regex_cache
-        @uri_regex_cache ||= {}
+      def addressable_template_cache
+        @addressable_template_cache ||= {}
       end
 
       def parameter(name, description:, required: false, **options)
@@ -129,46 +130,62 @@ module ActionMCP
       def meta_with_ui(meta = nil)
         supplied_meta = coerce_meta(meta)
         ui_meta = @ui_meta&.any? ? { ui: @ui_meta } : {}
+        combined = ui_meta.deep_merge(supplied_meta)
 
-        return nil if ui_meta.empty? && supplied_meta.empty?
-        return supplied_meta if ui_meta.empty?
-        return ui_meta if supplied_meta.empty?
+        return nil if combined.empty?
 
-        ui_meta.deep_merge(supplied_meta)
+        ui_present, combined_ui = metadata_value(combined, :ui)
+        validate_ui_metadata!(combined_ui) if ui_present
+        combined
       end
 
       private
 
       def validate_ui_metadata!(data)
-        validate_ui_csp_origins!(data[:csp] || data["csp"])
-        validate_ui_permissions!(data[:permissions] || data["permissions"])
+        raise ArgumentError, "ui metadata must be a hash" unless data.is_a?(Hash)
+
+        validate_ui_keys!(data, Apps::UI_META_KEYS, "metadata")
+        csp_present, csp = metadata_value(data, :csp)
+        permissions_present, permissions = metadata_value(data, :permissions)
+        domain_present, domain = metadata_value(data, :domain)
+        border_present, border = metadata_value(data, :prefersBorder)
+
+        validate_ui_csp_origins!(csp) if csp_present
+        validate_ui_permissions!(permissions) if permissions_present
+        if domain_present && !domain.is_a?(String)
+          raise ArgumentError, "ui domain must be a string, got: #{domain.inspect}"
+        end
+        if border_present && border != true && border != false
+          raise ArgumentError, "ui prefersBorder must be true or false, got: #{border.inspect}"
+        end
       end
 
       def validate_ui_csp_origins!(csp)
-        return unless csp.is_a?(Hash)
+        raise ArgumentError, "ui csp must be a hash" unless csp.is_a?(Hash)
 
+        validate_ui_keys!(csp, Apps::CSP_KEYS, "csp")
         Apps::CSP_KEYS.each do |key|
           pattern = key == :connectDomains ? Apps::CONNECT_ORIGIN_PATTERN : Apps::RESOURCE_ORIGIN_PATTERN
           scheme_message = key == :connectDomains ? "http(s):// or ws(s)://" : "http(s)://"
-          Array(csp[key] || csp[key.to_s]).each do |origin|
-            next if origin.is_a?(String) && pattern.match?(origin)
+          metadata_values(csp, key).each do |origins|
+            unless origins.is_a?(Array)
+              raise ArgumentError, "ui csp #{key} must be an array, got: #{origins.inspect}"
+            end
 
-            raise ArgumentError,
-                  "ui csp #{key} entries must be #{scheme_message} origins, got: #{origin.inspect}"
+            origins.each do |origin|
+              next if origin.is_a?(String) && pattern.match?(origin)
+
+              raise ArgumentError,
+                    "ui csp #{key} entries must be #{scheme_message} origins, got: #{origin.inspect}"
+            end
           end
         end
       end
 
       def validate_ui_permissions!(permissions)
-        return unless permissions
         raise ArgumentError, "ui permissions must be a hash" unless permissions.is_a?(Hash)
 
-        normalized_keys = permissions.keys.map(&:to_sym)
-        invalid = normalized_keys - Apps::PERMISSION_KEYS
-        if invalid.any?
-          raise ArgumentError,
-                "ui permissions keys must be #{Apps::PERMISSION_KEYS.join('/')}, got: #{invalid.inspect}"
-        end
+        validate_ui_keys!(permissions, Apps::PERMISSION_KEYS, "permissions")
 
         permissions.each do |key, value|
           next if value.respond_to?(:to_hash)
@@ -192,6 +209,30 @@ module ActionMCP
         coerced = coerced.deep_dup
         coerced[:ui] = coerced.delete("ui") if coerced.key?("ui") && !coerced.key?(:ui)
         coerced
+      end
+
+      def metadata_value(data, key)
+        return [ true, data[key] ] if data.key?(key)
+        return [ true, data[key.to_s] ] if data.key?(key.to_s)
+
+        [ false, nil ]
+      end
+
+      def metadata_values(data, key)
+        values = []
+        values << data[key] if data.key?(key)
+        values << data[key.to_s] if data.key?(key.to_s)
+        values
+      end
+
+      def validate_ui_keys!(data, allowed_keys, label)
+        invalid = data.keys.reject do |key|
+          key.respond_to?(:to_sym) && allowed_keys.include?(key.to_sym)
+        end
+        return if invalid.empty?
+
+        raise ArgumentError,
+              "ui #{label} keys must be #{allowed_keys.join('/')}, got: #{invalid.inspect}"
       end
 
       public
@@ -282,84 +323,41 @@ module ActionMCP
         params = extract_params_from_uri(uri_string)
         return new if params.nil? # Return invalid template for bad URI
 
-        # Create new instance with the extracted parameters
-        new(params)
+        # Preserve the concrete URI requested by the client. The template URI
+        # may contain placeholders and must not leak into resource contents.
+        new(params).tap { |record| record.instance_variable_set(:@resolved_uri, uri_string) }
       end
 
       private
 
       # Extract parameters from a URI using the template pattern
       def extract_params_from_uri(uri_string)
-        # Check cache for compiled regex and param names
-        cache_entry = uri_regex_cache[@uri_template]
-
-        unless cache_entry
-          # Convert template parameters to named capture groups
-          regex_parts = []
-          current_pos = 0
-          param_names = []
-
-          # Find all template parameters like {param_name}
-          @uri_template.scan(/\{([^}]+)\}/) do |param_name|
-            param_names << param_name[0]
-
-            # Get the position of this parameter in the template
-            param_start = @uri_template.index("{#{param_name[0]}}", current_pos)
-
-            # Add the text before the parameter (escaped)
-            if param_start > current_pos
-              prefix = Regexp.escape(@uri_template[current_pos...param_start])
-              regex_parts << prefix
-            end
-
-            # Add the named capture group
-            regex_parts << "(?<#{param_name[0]}>[^/]+)"
-
-            # Update current position
-            current_pos = param_start + param_name[0].length + 2 # +2 for { and }
-          end
-
-          # Add any remaining text after the last parameter
-          if current_pos < @uri_template.length
-            suffix = Regexp.escape(@uri_template[current_pos..])
-            regex_parts << suffix
-          end
-
-          # Build the final regex and cache it
-          regex_pattern = regex_parts.join
-          regex = Regexp.new("^#{regex_pattern}$")
-          cache_entry = { regex: regex, param_names: param_names }
-          uri_regex_cache[@uri_template] = cache_entry
-        end
-
-        # Try to match the URI using cached regex
-        match_data = cache_entry[:regex].match(uri_string)
-        return nil unless match_data
-
-        # Extract named captures as parameters
-        params = {}
-        cache_entry[:param_names].each do |name|
-          params[name.to_sym] = match_data[name] if match_data[name]
-        end
-
-        params
+        extracted = compiled_uri_template(@uri_template).extract(uri_string)
+        extracted&.transform_keys(&:to_sym)
       end
 
       # Extract the schema and pattern from a URI template
       def parse_uri_template(template)
-        # Parse the URI template to get schema and pattern
-        # Format: schema://path/{param1}/{param2}...
-        if template =~ %r{^([^:]+)://(.+)$}
-          schema = ::Regexp.last_match(1)
-          pattern = ::Regexp.last_match(2)
-
-          # Replace parameter placeholders with generic markers to compare structure
-          normalized_pattern = pattern.gsub(/\{[^}]+\}/, "{param}")
-
-          return { schema: schema, pattern: normalized_pattern, original: template }
+        addressable_template = compiled_uri_template(template)
+        variables = addressable_template.variables.index_with.with_index do |_, index|
+          "action_mcp_parameter_#{index}"
         end
+        expanded = addressable_template.expand(variables).to_s
+        parsed_uri = Addressable::URI.parse(expanded)
+        raise ArgumentError, "Invalid URI template format: #{template}" if parsed_uri.scheme.blank?
 
-        raise ArgumentError, "Invalid URI template format: #{template}"
+        normalized_pattern = expanded.delete_prefix("#{parsed_uri.scheme}:").delete_prefix("//")
+        variables.each_value { |marker| normalized_pattern.gsub!(marker, "{param}") }
+
+        { schema: parsed_uri.scheme, pattern: normalized_pattern, original: template }
+      rescue Addressable::URI::InvalidURIError,
+             Addressable::Template::InvalidTemplateValueError,
+             Addressable::Template::InvalidTemplateOperatorError => e
+        raise ArgumentError, "Invalid URI template format: #{template} (#{e.message})"
+      end
+
+      def compiled_uri_template(template)
+        addressable_template_cache[template] ||= Addressable::Template.new(template)
       end
 
       # Validate that the URI template is unique
@@ -411,9 +409,26 @@ module ActionMCP
           raise ArgumentError, "render_ui requires :text or :template"
         end
 
+      resource_uri = resolved_uri || self.class.uri_template
+      unless resource_uri.is_a?(String) && ActionMCP::Apps::URI_SCHEME.match?(resource_uri)
+        raise ArgumentError, "render_ui requires a concrete ui:// resource URI, got: #{resource_uri.inspect}"
+      end
+      if resolved_uri.nil? && resource_uri.match?(/\{[^}]+\}/)
+        raise ArgumentError, "render_ui cannot emit a parameterized URI template without a concrete request URI"
+      end
+
+      resource_mime_type = self.class.mime_type || ActionMCP::Apps::MIME_TYPE
+      unless resource_mime_type == ActionMCP::Apps::MIME_TYPE
+        raise ArgumentError,
+              "render_ui requires mime type #{ActionMCP::Apps::MIME_TYPE.inspect}, got: #{resource_mime_type.inspect}"
+      end
+      unless resolved.is_a?(String)
+        raise ArgumentError, "render_ui content must be a string, got: #{resolved.class}"
+      end
+
       ActionMCP::Content::Resource.new(
-        self.class.uri_template,
-        self.class.mime_type || ActionMCP::Apps::MIME_TYPE,
+        resource_uri,
+        resource_mime_type,
         text: resolved,
         meta: self.class.meta_with_ui(meta)
       )

@@ -3,6 +3,7 @@
 require_relative "pagination"
 require_relative "response_collector"
 require_relative "base_messaging"
+require_relative "client_notifications"
 
 module ActionMCP
   module Server
@@ -14,10 +15,12 @@ module ActionMCP
 
       include  Pagination
       include  MessagingService
+      include  ClientNotifications
       include  Capabilities
       include  Tools
       include  Prompts
       include  Resources
+      include  Completions
       include  Sampling
       include  Roots
       include  Elicitation

@@ -4,7 +4,7 @@
 class Progress2025DemoTool < ApplicationMCPTool
   tool_name "progress_2025_demo"
   title "Progress Demo Tool"
-  description "Demo tool showing 2025-06-18 progress notifications"
+  description "Demo tool showing MCP progress notifications"
   read_only
   idempotent
 
@@ -30,7 +30,7 @@ class Progress2025DemoTool < ApplicationMCPTool
 
       # Only send progress notification if we have a valid progress token
       if progress_token
-        send_2025_progress_notification(
+        send_progress_notification(
           progress_token: progress_token,
           current: i,
           total: items_to_process,
@@ -67,7 +67,7 @@ class Progress2025DemoTool < ApplicationMCPTool
     nil
   end
 
-  def send_2025_progress_notification(progress_token:, current:, total:, item_name:)
+  def send_progress_notification(progress_token:, current:, total:, item_name:)
     message = "Processing #{item_name} (#{current}/#{total})"
 
     # Use the session helper method from Capability

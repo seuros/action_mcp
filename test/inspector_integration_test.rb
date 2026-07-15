@@ -11,7 +11,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   setup do
-    @protocol_version = "2025-06-18"
+    @protocol_version = "2025-11-25"
     @request_id_counter = 0
   end
 
@@ -114,7 +114,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
@@ -136,7 +136,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: tools_request.to_json
@@ -157,7 +157,7 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: cancel_notification.to_json

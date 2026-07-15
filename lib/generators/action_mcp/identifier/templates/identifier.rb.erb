@@ -16,7 +16,7 @@ class <%= class_name %> < ActionMCP::GatewayIdentifier
   authenticates :<%= auth_method %>
 
   def resolve
-<%= resolve_implementation %>
+<%= resolve_implementation.chomp %>
   end
 
   private

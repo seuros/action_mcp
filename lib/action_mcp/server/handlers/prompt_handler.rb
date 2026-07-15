@@ -10,6 +10,10 @@ module ActionMCP
           params ||= {}
 
           with_error_handling(id) do
+            unless params.is_a?(Hash)
+              raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Prompt params must be an object")
+            end
+
             handler = prompt_method_handlers[rpc_method]
             if handler
               send(handler, id, params)
@@ -30,8 +34,15 @@ module ActionMCP
         end
 
         def handle_prompts_get(id, params)
-          name = extract_name(params)
+          name = validate_required_param(params, "name", "Prompt name is required")
           arguments = extract_arguments(params)
+          unless arguments.is_a?(Hash)
+            raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Prompt arguments must be an object")
+          end
+          unless arguments.values.all? { |value| value.is_a?(String) }
+            raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Prompt argument values must be strings")
+          end
+
           transport.send_prompts_get(id, name, arguments)
         end
 

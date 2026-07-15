@@ -9,7 +9,7 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
 
   setup do
     # Initialize the test data
-    @protocol_version = "2025-06-18"
+    @protocol_version = "2025-11-25"
     @session_id = nil
   end
 
@@ -147,7 +147,7 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
@@ -166,7 +166,7 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: tools_request.to_json
@@ -189,7 +189,7 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: tool_request.to_json

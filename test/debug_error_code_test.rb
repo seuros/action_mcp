@@ -22,7 +22,7 @@ class DebugErrorCodeTest < ActionDispatch::IntegrationTest
       params: {}
     }.to_json, headers: {
       "Content-Type" => "application/json",
-      "Accept" => "application/json",
+      "Accept" => "application/json, text/event-stream",
       "Mcp-Session-Id" => @session.id
     }
 

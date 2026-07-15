@@ -7,7 +7,7 @@ module ActionMCP
     setup do
       @response = PromptResponse.new
       @text_content = Content::Text.new("Hello world", annotations: nil)
-      @image_content = Content::Image.new("base64data", "image/png", annotations: nil)
+      @image_content = Content::Image.new(Base64.strict_encode64("image data"), "image/png", annotations: nil)
     end
 
     test "initializes with empty messages" do
@@ -145,6 +145,35 @@ module ActionMCP
 
       assert_equal 2, hash.size
       assert_equal "duplicate", hash[@response]
+    end
+
+    test "rejects roles outside the protocol role enum" do
+      assert_raises(ArgumentError) do
+        @response.add_message(role: "system", content: { type: "text", text: "No" })
+      end
+    end
+
+    test "rejects content outside the stable content block union" do
+      assert_raises(ArgumentError) do
+        @response.add_message(role: "user", content: { type: "text", text: 123 })
+      end
+      assert_raises(ArgumentError) do
+        @response.add_message(
+          role: "assistant",
+          content: { type: "image", data: "not base64", mimeType: "image/png" }
+        )
+      end
+    end
+
+    test "copies raw content and revalidates messages before serialization" do
+      content = { type: "text", text: "Hello" }
+      @response.add_message(role: "user", content: content)
+      content[:text] = 123
+
+      assert_equal "Hello", @response.to_h.dig(:messages, 0, :content, :text)
+
+      @response.messages.first[:content][:text] = 123
+      assert_raises(ArgumentError) { @response.to_h }
     end
 
     test "inspect returns readable representation" do

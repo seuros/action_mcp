@@ -10,7 +10,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     @original_logging_level = ActionMCP.configuration.logging_level
     ActionMCP::Logging.reset!
 
-    # Use initialized session from fixtures with 2025-06-18 protocol
+    # Use an initialized session negotiated on the released protocol.
     @session = action_mcp_sessions(:dr_identity_mcbouncer_session)
 
     # Ensure session is in the session store
@@ -29,7 +29,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
 
 
   test "logging/setLevel request fails when logging disabled" do
-    ActionMCP.configuration.logging_enabled = false
+    @session.update!(server_capabilities: @session.server_capabilities.except("logging", :logging))
+    ActionMCP::Server.session_store.save_session(@session)
 
     post "/",
       params: {
@@ -40,8 +41,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
-        "Accept" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18",
+        "Accept" => "application/json, text/event-stream",
+        "MCP-Protocol-Version" => "2025-11-25",
         "Mcp-Session-Id" => @session_id
       }
 
@@ -66,8 +67,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
-        "Accept" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18",
+        "Accept" => "application/json, text/event-stream",
+        "MCP-Protocol-Version" => "2025-11-25",
         "Mcp-Session-Id" => @session_id
       }
 
@@ -77,8 +78,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     assert result.key?("result"), "Should return success result"
     assert_equal({}, result["result"])
 
-    # Verify level was actually set
-    assert_equal :debug, ActionMCP::Logging.level
+    assert_equal :debug, ActionMCP::Logging.level_for(@session.reload)
+    assert_equal :warning, ActionMCP::Logging.level
   end
 
   test "logging/setLevel validates log level parameter" do
@@ -94,8 +95,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
-        "Accept" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18",
+        "Accept" => "application/json, text/event-stream",
+        "MCP-Protocol-Version" => "2025-11-25",
         "Mcp-Session-Id" => @session_id
       }
 
@@ -104,7 +105,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     result = JSON.parse(response.body)
     assert result.key?("error"), "Should return error for invalid level"
     assert_equal(-32602, result["error"]["code"])
-    assert_match(/Invalid log level/, result["error"]["message"])
+    assert_match(%r{value at `/level` is not one of}, result["error"]["message"])
   end
 
   test "logging/setLevel requires level parameter" do
@@ -120,8 +121,8 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
       }.to_json,
       headers: {
         "Content-Type" => "application/json",
-        "Accept" => "application/json",
-        "MCP-Protocol-Version" => "2025-06-18",
+        "Accept" => "application/json, text/event-stream",
+        "MCP-Protocol-Version" => "2025-11-25",
         "Mcp-Session-Id" => @session_id
       }
 
@@ -130,7 +131,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     result = JSON.parse(response.body)
     assert result.key?("error"), "Should return error when level parameter missing"
     assert_equal(-32602, result["error"]["code"])
-    assert_match(/Missing required parameter: level/, result["error"]["message"])
+    assert_match(/missing required properties: level/, result["error"]["message"])
   end
 
   test "default configuration has logging disabled" do

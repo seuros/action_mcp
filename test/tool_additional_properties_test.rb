@@ -19,12 +19,12 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
     assert_equal({ "type" => "string" }, tool_hash[:inputSchema][:additionalProperties])
   end
 
-  test "tool without additional_properties does not include additionalProperties" do
+  test "tool defaults to a closed input schema" do
     # Use existing AddTool which doesn't have additional_properties
     tool_class = AddTool
     tool_hash = tool_class.to_h
 
-    refute_includes tool_hash[:inputSchema], :additionalProperties
+    assert_equal false, tool_hash[:inputSchema][:additionalProperties]
   end
 
   test "tool with additional_properties false explicitly disallows extra properties" do
@@ -74,10 +74,10 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
       "extra_param" => "ignored"
     }
 
-    # Should raise an error when extra parameters are provided to a tool that doesn't accept them
-    assert_raises(ActiveModel::UnknownAttributeError) do
-      AddTool.new(params)
-    end
+    tool = AddTool.new(params)
+    refute tool.valid?
+    assert_match(/disallowed additional property/, tool.errors.full_messages.join)
+    assert_equal true, tool.call.to_h[:isError]
 
     # Test with valid parameters only
     valid_params = { "x" => 5, "y" => 3 }
@@ -102,9 +102,9 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
       "extra_param" => "value"
       # missing required 'endpoint'
     }
-    tool = FlexibleApiTool.new(invalid_params)
+    tool = FlexibleApiTool.from_wire(invalid_params)
     refute tool.valid?
-    assert_includes tool.errors.full_messages.join, "Endpoint"
+    assert_includes tool.errors.full_messages.join, "missing required properties: endpoint"
   end
 
   test "tool call method works with additional parameters" do
@@ -130,7 +130,7 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
     # Test specific values
     assert_equal true, FlexibleApiTool.additional_properties
     assert_equal({ "type" => "string" }, TypedAdditionalPropsTool.additional_properties)
-    assert_nil AddTool.additional_properties
+    assert_equal false, AddTool.additional_properties
   end
 
   test "output schema builder supports additional_properties" do

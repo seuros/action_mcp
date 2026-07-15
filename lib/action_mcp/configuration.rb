@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "gateway"
-require "active_support/core_ext/integer/time"
 
 module ActionMCP
   # Configuration class to hold settings for the ActionMCP server.
@@ -45,13 +44,10 @@ module ActionMCP
                   :tasks_enabled,
                   :tasks_list_enabled,
                   :tasks_cancel_enabled,
-                  :tasks_result_strategy,
-                  :tasks_result_timeout,
                   :tasks_result_poll_interval,
                   # --- MCP Apps Extension Options ---
                   :mcp_apps_enabled,
-                  # --- Schema Validation Options ---
-                  :validate_structured_content,
+                  :mcp_apps_views_path,
                   # --- Allowed identity keys for gateway ---
                   :allowed_identity_keys,
                   # --- JSON-RPC Path ---
@@ -71,25 +67,23 @@ module ActionMCP
       # Authentication defaults - empty means all configured identifiers will be tried
       @authentication_methods = []
 
-      @protocol_version = "2025-06-18"  # Default to stable version for backwards compatibility
+      @protocol_version = "2025-11-25"
 
       # Tasks defaults (MCP 2025-11-25)
       @tasks_enabled = false
       @tasks_list_enabled = true
       @tasks_cancel_enabled = true
-      @tasks_result_strategy = :blocking_http
-      @tasks_result_timeout = 30.seconds
       @tasks_result_poll_interval = 0.25
 
       # MCP Apps extension defaults to explicit opt-in.
       @mcp_apps_enabled = false
+      # Directory holding compiled view bundles + manifest.json, relative to
+      # Rails.root unless absolute.
+      @mcp_apps_views_path = ".action_mcp/views"
 
       # Pagination - nil means off. Set a number to enable with that page size.
       # Most MCP clients (including Claude Code) don't follow nextCursor yet.
       @pagination_page_size = nil
-
-      # Schema validation - disabled by default for backward compatibility
-      @validate_structured_content = false
 
       # Server instructions - empty by default
       @server_instructions = []
@@ -110,8 +104,9 @@ module ActionMCP
       # Path for JSON-RPC endpoint
       @base_path = "/"
 
-      # Allowed origins for DNS rebinding protection (nil = derive from request.host)
-      @allowed_origins = nil
+      # Browser origins allowed to reach a local server. Remote deployments must
+      # explicitly add their trusted origin hosts.
+      @allowed_origins = %w[localhost 127.0.0.1 ::1].freeze
     end
 
     def name
@@ -163,19 +158,6 @@ module ActionMCP
       end
     end
 
-    def tasks_result_strategy=(value)
-      strategy = value.to_sym
-      unless %i[blocking_http polling_only].include?(strategy)
-        raise ArgumentError, "tasks_result_strategy must be :blocking_http or :polling_only, got: #{value.inspect}"
-      end
-
-      @tasks_result_strategy = strategy
-    end
-
-    def tasks_result_timeout=(value)
-      @tasks_result_timeout = normalize_positive_duration(value, "tasks_result_timeout")
-    end
-
     def tasks_result_poll_interval=(value)
       @tasks_result_poll_interval = normalize_positive_duration(value, "tasks_result_poll_interval")
     end
@@ -184,12 +166,14 @@ module ActionMCP
       # Resolve gateway class lazily to account for Zeitwerk autoloading
       # This allows ApplicationGateway to be loaded from app/mcp even if the
       # configuration is initialized before Zeitwerk runs
-      if @gateway_class_name
+      if instance_variable_defined?(:@gateway_class)
+        @gateway_class
+      elsif @gateway_class_name
         @gateway_class_name.constantize
       elsif defined?(::ApplicationGateway)
         ::ApplicationGateway
       else
-        ActionMCP::Gateway
+        nil
       end
     end
 
@@ -305,6 +289,7 @@ module ActionMCP
       capabilities[:prompts] = { listChanged: @list_changed } if profile && profile[:prompts]&.any?
 
       capabilities[:logging] = {} if @logging_enabled
+      capabilities[:completions] = {}
 
       # If profile includes resources, advertise resources capability
       if profile && profile[:resources]&.any?
@@ -442,13 +427,12 @@ module ActionMCP
         self.pagination_page_size = config["pagination_page_size"]
       end
 
-      self.tasks_result_strategy = config["tasks_result_strategy"] if config.key?("tasks_result_strategy")
-      self.tasks_result_timeout = config["tasks_result_timeout"] if config.key?("tasks_result_timeout")
       if config.key?("tasks_result_poll_interval")
         self.tasks_result_poll_interval = config["tasks_result_poll_interval"]
       end
 
       @mcp_apps_enabled = boolean_config_value(config["mcp_apps_enabled"]) if config.key?("mcp_apps_enabled")
+      @mcp_apps_views_path = config["mcp_apps_views_path"].to_s if config.key?("mcp_apps_views_path")
 
       # Extract allowed origins for DNS rebinding protection
       if config["allowed_origins"]

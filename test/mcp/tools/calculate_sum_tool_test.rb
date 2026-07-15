@@ -12,6 +12,9 @@ class CalculateSumToolTest < ActiveSupport::TestCase
   test "should fail the validation" do
     tool = CalculateSumTool.new(a: 123, b: 1)
     response = tool.call
-    assert_equal({ code: -32_602, message: "Invalid input", data: [ "A must be 100 or less" ] }, response.to_h)
+    assert_equal(
+      { isError: true, content: [ { type: "text", text: "Invalid input: A must be 100 or less" } ] },
+      response.to_h
+    )
   end
 end

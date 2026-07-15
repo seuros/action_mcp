@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "minitest/mock"
-
 class ActionMCP::LoggingTest < ActiveSupport::TestCase
   setup do
     @original_logging_enabled = ActionMCP.configuration.logging_enabled
@@ -96,6 +94,28 @@ class ActionMCP::LoggingTest < ActiveSupport::TestCase
     assert_instance_of ActionMCP::Logging::Logger, logger
   end
 
+  test "returns NullLogger when session did not negotiate logging" do
+    ActionMCP.configuration.logging_enabled = true
+    ActionMCP::Logging.state.enable!
+
+    session = mock_session(server_capabilities: {})
+
+    assert_instance_of ActionMCP::Logging::NullLogger,
+                       ActionMCP::Logging.logger(name: "test", session: session)
+  end
+
+  test "stores log levels independently per session" do
+    first_session = mock_session
+    second_session = mock_session
+
+    ActionMCP::Logging.set_level_for(first_session, :debug)
+    ActionMCP::Logging.set_level_for(second_session, :error)
+
+    assert_equal :debug, ActionMCP::Logging.level_for(first_session)
+    assert_equal :error, ActionMCP::Logging.level_for(second_session)
+    assert_equal :warning, ActionMCP::Logging.level
+  end
+
   test "logger_for_context works with execution context" do
     ActionMCP.configuration.logging_enabled = true
     ActionMCP::Logging.state.enable!
@@ -134,10 +154,10 @@ class ActionMCP::LoggingTest < ActiveSupport::TestCase
 
   private
 
-  def mock_session
-    session = Minitest::Mock.new
-    messaging_service = Minitest::Mock.new
-    session.expect(:messaging_service, messaging_service)
-    session
+  def mock_session(server_capabilities: { "logging" => {} })
+    ActionMCP::Server::BaseSession.new(
+      server_capabilities: server_capabilities,
+      session_data: {}
+    )
   end
 end

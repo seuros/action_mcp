@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 module ActionMCP
-  # Implements the MCP endpoints according to the 2025-03-26 specification.
-  # Supports GET for server-initiated SSE streams, POST for client messages
-  # (responding with JSON or SSE), and optionally DELETE for session termination.
+  # Implements the MCP endpoints according to the 2025-11-25 specification.
+  # POST returns one JSON message, DELETE terminates sessions, and GET returns
+  # 405 because the built-in transport does not provide SSE streams.
   class ApplicationController < ActionController::API
     MCP_SESSION_ID_HEADER = "Mcp-Session-Id"
+    POST_ACCEPT_MEDIA_TYPES = %w[application/json text/event-stream].freeze
 
     include Engine.routes.url_helpers
     include JSONRPC_Rails::ControllerHelpers
@@ -15,11 +16,11 @@ module ActionMCP
     # (see engine.rb) so invalid requests are rejected before routing.
 
     # Provides the ActionMCP::Session for the current request.
-    # Handles finding existing sessions via header/param or initializing a new one.
-    # Specific controllers/handlers might need to enforce session ID presence based on context.
-    # @return [ActionMCP::Session] The session object (might be unsaved if new)
+    # @return [ActionMCP::Session, nil] The session identified by the request header.
     def mcp_session
-      @mcp_session ||= find_or_initialize_session
+      return @mcp_session if defined?(@mcp_session)
+
+      @mcp_session = load_session(extract_session_id)
     end
 
     # Provides a unique key for caching or pub/sub based on the session ID.
@@ -35,13 +36,25 @@ module ActionMCP
     # ROUTE: /, name: mcp_get, via: GET
     # <rails-lens:routes:end>
     def show
+      return unless authenticate_gateway!
+
+      if (session_id = extract_session_id)
+        session = load_session(session_id)
+        return render_not_found("Session not found.") unless session
+        return render_not_found("Session has been terminated.") if session.status == "closed"
+
+        @mcp_session = session
+        return unless configure_gateway_session!(session)
+        return unless validate_protocol_version_header(session)
+      end
+
       # MCP Streamable HTTP spec allows servers to return 405 if they don't support SSE.
       # ActionMCP uses Tasks for async operations instead of SSE streaming.
       response.headers["Allow"] = "POST, DELETE"
       head :method_not_allowed
     end
 
-    # Handles POST requests containing client JSON-RPC messages according to 2025-03-26 spec.
+    # Handles POST requests containing one client JSON-RPC message.
     # <rails-lens:routes:begin>
     # ROUTE: /, name: mcp_post, via: POST
     # <rails-lens:routes:end>
@@ -51,54 +64,60 @@ module ActionMCP
         return render_not_acceptable(post_accept_headers_error_message, id)
       end
 
-      # Reject JSON-RPC batch requests as per MCP 2025-06-18 spec
-      return render_bad_request("JSON-RPC batch requests are not supported", nil) if jsonrpc_params_batch?
+      payload = jsonrpc_params
+      is_initialize_request = initialize_request?(payload)
+      session_id = extract_session_id
 
-      is_initialize_request = check_if_initialize_request(jsonrpc_params)
-      session_initially_missing = extract_session_id.nil?
-      session = mcp_session
+      return unless authenticate_gateway!
 
-      # Validate MCP-Protocol-Version header for non-initialize requests
-      return unless validate_protocol_version_header
-
-      unless initialization_related_request?(jsonrpc_params)
-        if session_initially_missing
-          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
-          return render_bad_request("Mcp-Session-Id header is required for this request.", id)
-        elsif session.nil? || session.new_record?
-          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
-          return render_not_found("Session not found.", id)
-        elsif session.status == "closed"
-          id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
-          return render_not_found("Session has been terminated.", id)
+      if (validation_error = ProtocolValidator.client_message_validation_error(payload))
+        if payload.is_a?(JSON_RPC::Notification)
+          return render_notification_error(validation_error)
         end
+
+        return render_jsonrpc_error(validation_error.code, validation_error.message, request_id(payload))
       end
 
-      if session.nil?
-        id = jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
-        return render_not_found("Session not found.", id)
-      end
+      session = if is_initialize_request
+                  if session_id
+                    existing_session = load_session(session_id)
+                    return render_not_found("Session not found.", request_id(payload)) unless existing_session
+                    if existing_session.status == "closed"
+                      return render_not_found("Session has been terminated.", request_id(payload))
+                    end
 
-      if session.new_record?
-        session.save!
-        response.headers[MCP_SESSION_ID_HEADER] = session.id
-      end
+                    return render_bad_request("Initialize requests must not include an Mcp-Session-Id header.", request_id(payload))
+                  end
 
-      # Authenticate the request via gateway (skipped for initialization-related requests)
-      if initialization_related_request?(jsonrpc_params)
-        # Skipping authentication for initialization request: #{jsonrpc_params.method}
+                  create_session
       else
-        authenticate_gateway!
-        return if performed?
+                  return render_bad_request("Mcp-Session-Id header is required for this request.", request_id(payload)) unless session_id
+
+                  existing_session = load_session(session_id)
+                  return render_not_found("Session not found.", request_id(payload)) unless existing_session
+                  if existing_session.status == "closed"
+                    return render_not_found("Session has been terminated.", request_id(payload))
+                  end
+
+                  existing_session
       end
+
+      @mcp_session = session
+      unless configure_gateway_session!(session)
+        Server.session_store.delete_session(session.id) if is_initialize_request
+        return
+      end
+      return unless is_initialize_request || validate_protocol_version_header(session)
+      return unless lifecycle_allows?(payload, session, is_initialize_request)
 
       # Use return mode for the transport handler when we need to capture responses
       transport_handler = Server::TransportHandler.new(session, messaging_mode: :return)
       json_rpc_handler = Server::JsonRpcHandler.new(transport_handler)
 
       result = json_rpc_handler.call(jsonrpc_params)
-      process_handler_results(result, session, session_initially_missing, is_initialize_request)
+      process_handler_results(result, session, is_initialize_request)
     rescue StandardError => e
+      Server.session_store.delete_session(session.id) if is_initialize_request && session
       Rails.error.report(e, handled: true, severity: :error)
       id = begin
         jsonrpc_params.respond_to?(:id) ? jsonrpc_params.id : nil
@@ -108,24 +127,26 @@ module ActionMCP
       render_internal_server_error("An unexpected error occurred.", id) unless performed?
     end
 
-    # Handles DELETE requests for session termination (2025-03-26 spec).
+    # Handles DELETE requests for session termination.
     # <rails-lens:routes:begin>
     # ROUTE: /, name: mcp_delete, via: DELETE
     # <rails-lens:routes:end>
     def destroy
+      return unless authenticate_gateway!
+
       session_id_from_header = extract_session_id
       return render_bad_request("Mcp-Session-Id header is required for DELETE requests.") unless session_id_from_header
 
-      session = Server.session_store.load_session(session_id_from_header)
+      session = load_session(session_id_from_header)
       if session.nil?
         return render_not_found("Session not found.")
       elsif session.status == "closed"
-        return head :no_content
+        return render_not_found("Session has been terminated.")
       end
 
-      # Authenticate the request via gateway
-      authenticate_gateway!
-      return if performed?
+      @mcp_session = session
+      return unless configure_gateway_session!(session)
+      return unless validate_protocol_version_header(session)
 
       begin
         session.close!
@@ -139,23 +160,12 @@ module ActionMCP
 
     private
 
-    # Validates the MCP-Protocol-Version header for non-initialization requests
+    # Validates the MCP-Protocol-Version header for requests after initialization.
     # Returns true if valid, renders error and returns false if invalid
-    def validate_protocol_version_header
-      # Skip validation for initialization-related requests
-      return true if initialization_related_request?(jsonrpc_params)
-
-      # Check for both case variations of the header (spec uses MCP-Protocol-Version)
+    def validate_protocol_version_header(session)
       header_version = request.headers["MCP-Protocol-Version"] || request.headers["mcp-protocol-version"]
-      session = mcp_session
+      return true if header_version.nil? && session.protocol_version == ActionMCP::LATEST_VERSION
 
-      # If header is missing, assume 2025-06-18 for backward compatibility as per spec
-      if header_version.nil?
-        ActionMCP.logger.debug "MCP-Protocol-Version header missing, assuming 2025-06-18 for backward compatibility"
-        return true
-      end
-
-      # Handle array values (take the last one as per TypeScript SDK)
       header_version = header_version.last if header_version.is_a?(Array)
 
       # Check if the header version is supported
@@ -166,30 +176,27 @@ module ActionMCP
         return false
       end
 
-      # If we have an initialized session, check if the header matches the negotiated version
-      if session&.initialized?
-        negotiated_version = session.protocol_version
-        if header_version != negotiated_version
-          ActionMCP.logger.warn "MCP-Protocol-Version mismatch: header=#{header_version}, negotiated=#{negotiated_version}"
-          render_protocol_version_error("MCP-Protocol-Version header (#{header_version}) does not match negotiated version (#{negotiated_version})")
-          return false
-        end
+      negotiated_version = session.protocol_version
+      if header_version != negotiated_version
+        ActionMCP.logger.warn "MCP-Protocol-Version mismatch: header=#{header_version}, negotiated=#{negotiated_version}"
+        render_protocol_version_error("MCP-Protocol-Version header (#{header_version}) does not match negotiated version (#{negotiated_version})")
+        return false
       end
 
       true
     end
 
-    # Finds an existing session based on header or param, or initializes a new one.
-    # Note: This doesn't save the new session; that happens upon first use or explicitly.
-    def find_or_initialize_session
-      session_id = extract_session_id
-      session_store = ActionMCP::Server.session_store
+    def load_session(session_id)
+      return unless session_id
 
-      if session_id
-        session_store.load_session(session_id)
-      else
-        session_store.create_session(nil, protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION)
-      end
+      ActionMCP::Server.session_store.load_session(session_id)
+    end
+
+    def create_session
+      ActionMCP::Server.session_store.create_session(
+        nil,
+        protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION
+      )
     end
 
     # @return [String, nil] The extracted session ID or nil if not found.
@@ -199,30 +206,50 @@ module ActionMCP
 
     # Checks if the Accept headers for POST are valid.
     def post_accept_headers_valid?
-      request.accepts.any? { |type| type.to_s == "application/json" }
+      accepted_media_types = Rack::Utils.q_values(request.get_header("HTTP_ACCEPT")).filter_map do |media_range, quality|
+        Rack::MediaType.type(media_range)&.downcase if quality.positive?
+      end
+
+      POST_ACCEPT_MEDIA_TYPES.all? { |media_type| accepted_media_types.include?(media_type) }
     end
 
     # Returns the appropriate error message for POST Accept header validation.
     def post_accept_headers_error_message
-      "Client must accept 'application/json'"
+      "Not Acceptable: Client must accept both application/json and text/event-stream"
     end
 
-    # Checks if the parsed body represents an 'initialize' request.
-    def check_if_initialize_request(payload)
-      return false unless payload.is_a?(JSON_RPC::Request) && !jsonrpc_params_batch?
-
-      payload.method == "initialize"
+    def initialize_request?(payload)
+      payload.is_a?(JSON_RPC::Request) && payload.method == JsonRpcHandlerBase::Methods::INITIALIZE
     end
 
-    # Checks if the request is related to initialization (initialize or notifications/initialized)
-    def initialization_related_request?(payload)
-      return false unless payload.respond_to?(:method) && !jsonrpc_params_batch?
+    def initialized_notification?(payload)
+      payload.is_a?(JSON_RPC::Notification) &&
+        payload.method == JsonRpcHandlerBase::Methods::NOTIFICATIONS_INITIALIZED
+    end
 
-      %w[initialize notifications/initialized].include?(payload.method)
+    def ping_request?(payload)
+      payload.is_a?(JSON_RPC::Request) && payload.method == JsonRpcHandlerBase::Methods::PING
+    end
+
+    def lifecycle_allows?(payload, session, initialize_request)
+      return true if initialize_request
+
+      if initialized_notification?(payload)
+        return true if session.status == "initializing" && !session.initialized?
+
+        render_bad_request("Session is not awaiting an initialized notification.", request_id(payload))
+        return false
+      end
+
+      return true if session.initialized?
+      return true if session.status == "initializing" && ping_request?(payload)
+
+      render_bad_request("Session initialization is incomplete.", request_id(payload))
+      false
     end
 
     # Processes the results from the JsonRpcHandler.
-    def process_handler_results(result, session, session_initially_missing, is_initialize_request)
+    def process_handler_results(result, session, is_initialize_request)
       # Handle empty result (notifications)
       return head :accepted if result.nil?
 
@@ -235,7 +262,10 @@ module ActionMCP
                   result
       end
 
-      add_session_header = is_initialize_request && session_initially_missing && session.persisted?
+      successful_initialize = is_initialize_request && result.is_a?(JSON_RPC::Response) && result.error.nil?
+      Server.session_store.delete_session(session.id) if is_initialize_request && !successful_initialize
+
+      add_session_header = successful_initialize && session.persisted?
       render_json_response(payload, session, add_session_header)
     end
 
@@ -258,7 +288,7 @@ module ActionMCP
     # Renders a 400 Bad Request response with a JSON-RPC-like error structure.
     def render_bad_request(message = "Bad Request", id = nil)
       id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_600, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_600, message: message } }, status: :bad_request
     end
 
     # Renders a 400 Bad Request response for protocol version errors as per MCP spec
@@ -270,30 +300,40 @@ module ActionMCP
     # Renders a 404 Not Found response with a JSON-RPC-like error structure.
     def render_not_found(message = "Not Found", id = nil)
       id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_001, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_001, message: message } }, status: :not_found
     end
 
     # Renders a 405 Method Not Allowed response.
     def render_method_not_allowed(message = "Method Not Allowed", id = nil)
       id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_601, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_601, message: message } }, status: :method_not_allowed
     end
 
     # Renders a 406 Not Acceptable response.
     def render_not_acceptable(message = "Not Acceptable", id = nil)
       id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_002, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :not_acceptable
     end
 
     # Renders a 501 Not Implemented response.
     def render_not_implemented(message = "Not Implemented", id = nil)
       id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_003, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_003, message: message } }, status: :not_implemented
     end
 
     # Renders a 500 Internal Server Error response.
     def render_internal_server_error(message = "Internal Server Error", id = nil)
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_603, message: message } }, status: :internal_server_error
+    end
+
+    def render_jsonrpc_error(symbol, message, id = nil)
+      error = JSON_RPC::JsonRpcError.new(symbol, message: message)
+      render json: JSON_RPC::Response.new(id: id, error: error), status: :ok
+    end
+
+    def render_notification_error(validation_error)
+      error = JSON_RPC::JsonRpcError.new(validation_error.code, message: validation_error.message)
+      render json: JSON_RPC::Response.new(id: nil, error: error), status: :bad_request
     end
 
     # Extract JSON-RPC ID from request
@@ -316,34 +356,51 @@ module ActionMCP
       end
     end
 
+    def request_id(payload)
+      payload.respond_to?(:id) ? payload.id : nil
+    end
+
     # Authenticates the request using the configured gateway
     def authenticate_gateway!
-      # Skip authentication for initialization-related requests in POST method
-      if request.post? && defined?(jsonrpc_params) && jsonrpc_params && initialization_related_request?(jsonrpc_params)
-        return
-      end
-
       gateway_class = ActionMCP.configuration.gateway_class
-      return unless gateway_class # Skip if no gateway configured
+      return true unless gateway_class
 
       begin
-        gateway = gateway_class.new(request)
-        gateway.call
-        gateway.configure_session(mcp_session)
+        @authenticated_gateway = gateway_class.new(request)
+        @authenticated_gateway.call
+        true
       rescue ActionMCP::UnauthorizedError => e
         render_unauthorized(e.message)
+        false
       rescue StandardError => e
         Rails.error.report(e, handled: true, severity: :error)
         render_unauthorized("Authentication system error")
+        false
       end
+    end
+
+    def configure_gateway_session!(session)
+      return true unless @authenticated_gateway
+
+      @authenticated_gateway.configure_session(session)
+      true
+    rescue ActionMCP::UnauthorizedError => e
+      render_unauthorized(e.message)
+      false
+    rescue StandardError => e
+      Rails.error.report(e, handled: true, severity: :error)
+      render_unauthorized("Authentication system error")
+      false
     end
 
     # Renders an unauthorized response
     def render_unauthorized(message = "Unauthorized", id = nil)
       id ||= extract_jsonrpc_id_from_request
 
-      # Return JSON-RPC error with 200 status as per MCP specification
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }
+      challenge = "Bearer"
+      challenge += ' error="invalid_token"' if request.headers["Authorization"].present?
+      response.headers["WWW-Authenticate"] = challenge
+      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :unauthorized
     end
   end
 end

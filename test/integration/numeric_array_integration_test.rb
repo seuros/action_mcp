@@ -6,7 +6,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   include ActionMCP::TestHelper
 
   setup do
-    @protocol_version = "2025-06-18"
+    @protocol_version = "2025-11-25"
     @session_id = nil
   end
 
@@ -64,7 +64,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal "16.25", response_data["result"]["content"].first["text"]
   end
 
-  test "handles string numbers in JSON request" do
+  test "rejects string numbers before tool coercion" do
     setup_mcp_session
 
     post "/",
@@ -86,10 +86,11 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     response_data = JSON.parse(response.body)
 
     assert_nil response_data["error"]
-    assert_equal "6.640000000000001", response_data["result"]["content"].first["text"]
+    assert_equal true, response_data["result"]["isError"]
+    assert_match(/is not a number/, response_data["result"]["content"].first["text"])
   end
 
-  test "empty arguments uses default empty array" do
+  test "rejects a missing required numbers argument" do
     setup_mcp_session
 
     post "/",
@@ -108,9 +109,9 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     assert_response :success
     response_data = JSON.parse(response.body)
 
-    # With default empty array, should return 0
     assert_nil response_data["error"]
-    assert_equal "0", response_data["result"]["content"].first["text"]
+    assert_equal true, response_data["result"]["isError"]
+    assert_match(/missing required properties: numbers/, response_data["result"]["content"].first["text"])
   end
 
   private
@@ -146,6 +147,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: {
@@ -153,7 +155,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
            method: "notifications/initialized"
          }.to_json
 
-    assert_response :ok
+    assert_response :accepted
   end
 
   def setup_mcp_session
@@ -164,11 +166,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   def mcp_headers
     {
       "Mcp-Session-Id" => @session_id,
-      "CONTENT_TYPE" => "application/json"
+      "CONTENT_TYPE" => "application/json",
+      "ACCEPT" => "application/json, text/event-stream"
     }
   end
 
-  test "handles mixed valid and invalid values" do
+  test "rejects mixed valid and invalid values" do
     setup_mcp_session
 
     post "/",
@@ -190,8 +193,8 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     response_data = JSON.parse(response.body)
 
     assert_nil response_data["error"]
-    # Should sum: 1 + 2 + 3.5 + 4.5 = 11
-    assert_equal "11.0", response_data["result"]["content"].first["text"]
+    assert_equal true, response_data["result"]["isError"]
+    assert_match(%r{value at `/numbers/1` is not a number}, response_data["result"]["content"].first["text"])
   end
 
   test "works with empty array" do

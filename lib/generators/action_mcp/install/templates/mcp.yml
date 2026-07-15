@@ -24,6 +24,10 @@ shared:
   # io.modelcontextprotocol/ui with text/html;profile=mcp-app support.
   # mcp_apps_enabled: true
 
+  # Directory holding JavaScript view bundles compiled from JavaScript or
+  # TypeScript by @action-mcp/vite-plugin. Relative to Rails.root.
+  # mcp_apps_views_path: .action_mcp/views
+
   # MCP capability profiles
   profiles:
     primary:

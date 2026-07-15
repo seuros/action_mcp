@@ -158,6 +158,18 @@ module ActionMCP
         assert_not_nil result.params[:_meta]
       end
 
+      test "send_elicitation_create_url rejects non-object meta" do
+        transport = transport_for(:elicitation_url_session)
+
+        assert_raises(ArgumentError) do
+          transport.send_elicitation_create_url(
+            message: "Auth",
+            url: "https://example.com/auth",
+            _meta: [ "not", "an", "object" ]
+          )
+        end
+      end
+
       # --- Completion notification ---
 
       test "send_elicitation_complete_notification sends notification" do
@@ -167,6 +179,16 @@ module ActionMCP
 
         assert_equal "notifications/elicitation/complete", result.method
         assert_equal "elicit-123", result.params[:elicitationId]
+      end
+
+      test "send_elicitation_complete_notification rejects invalid IDs" do
+        transport = transport_for(:elicitation_url_session)
+
+        [ nil, "", "   ", 123 ].each do |elicitation_id|
+          assert_raises(ArgumentError) do
+            transport.send_elicitation_complete_notification(elicitation_id)
+          end
+        end
       end
 
       # --- URLElicitationRequiredError ---
@@ -192,6 +214,43 @@ module ActionMCP
         assert_equal "Authorization required", error[:message]
         assert_equal 1, error[:data][:elicitations].size
         assert_equal "url", error[:data][:elicitations][0][:mode]
+      end
+
+      test "send_url_elicitation_required_error emits validated normalized URL params" do
+        transport = transport_for(:elicitation_url_session)
+
+        result = transport.send_url_elicitation_required_error(
+          "err-normalized",
+          message: "Complete verification",
+          elicitations: [
+            {
+              mode: "url",
+              elicitationId: 123,
+              message: 456,
+              url: "https://example.com/verify",
+              _meta: { trace: true },
+              vendor: "extension"
+            }
+          ]
+        )
+
+        elicitation = result.error[:data][:elicitations].first
+        assert_equal "123", elicitation[:elicitationId]
+        assert_equal "456", elicitation[:message]
+        assert_equal({ "trace" => true }, elicitation[:_meta])
+        assert_equal "extension", elicitation["vendor"]
+      end
+
+      test "send_url_elicitation_required_error rejects a non-string error message" do
+        transport = transport_for(:elicitation_url_session)
+
+        assert_raises(ArgumentError) do
+          transport.send_url_elicitation_required_error(
+            "err-message",
+            message: 123,
+            elicitations: []
+          )
+        end
       end
 
       test "send_url_elicitation_required_error rejects non-url mode elicitations" do
@@ -231,7 +290,7 @@ module ActionMCP
         end
       end
 
-      test "send_elicitation_create_url raises on protocol 2025-06-18" do
+      test "send_elicitation_create_url raises when only form mode is negotiated" do
         transport = transport_for(:elicitation_form_session)
 
         assert_raises(ActionMCP::Server::UnsupportedElicitationError) do
@@ -240,8 +299,6 @@ module ActionMCP
       end
 
       test "send_elicitation_create_url raises when client has no url mode support" do
-        # elicitation_form_session has elicitation: {} (form only) + protocol 2025-06-18
-        # Use a 2025-11-25 session with form-only caps
         session = action_mcp_sessions(:task_master_session)
         session.update!(client_capabilities: { "elicitation" => { "form" => {} } })
         transport = ActionMCP::Server::TransportHandler.new(session, messaging_mode: :return)
@@ -260,6 +317,45 @@ module ActionMCP
         )
 
         assert_equal "form", result.params[:mode]
+      end
+
+      test "send_elicitation_create rejects an empty elicitation capability" do
+        session = action_mcp_sessions(:task_master_session)
+        session.update!(client_capabilities: { "elicitation" => {} })
+        transport = ActionMCP::Server::TransportHandler.new(session, messaging_mode: :return)
+
+        assert_raises(ActionMCP::Server::UnsupportedElicitationError) do
+          transport.send_elicitation_create(
+            message: "Name?",
+            requested_schema: { type: "object", properties: { name: { type: "string" } } }
+          )
+        end
+      end
+
+      test "task-augmented elicitation requires explicit client task support" do
+        session = action_mcp_sessions(:task_master_session)
+        session.update!(client_capabilities: { "elicitation" => { "form" => {} } })
+        transport = ActionMCP::Server::TransportHandler.new(session, messaging_mode: :return)
+
+        assert_raises(ActionMCP::Server::UnsupportedElicitationError) do
+          transport.send_elicitation_create(
+            message: "Name?",
+            requested_schema: { type: "object", properties: { name: { type: "string" } } },
+            task: { ttl: 60_000 }
+          )
+        end
+
+        session.update!(client_capabilities: {
+          "elicitation" => { "form" => {} },
+          "tasks" => { "requests" => { "elicitation" => { "create" => {} } } }
+        })
+        result = transport.send_elicitation_create(
+          message: "Name?",
+          requested_schema: { type: "object", properties: { name: { type: "string" } } },
+          task: { ttl: 60_000 }
+        )
+
+        assert_equal({ ttl: 60_000 }, result.params[:task])
       end
 
       # --- Elicitation is a client capability ---

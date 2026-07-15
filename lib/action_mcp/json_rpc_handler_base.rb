@@ -31,6 +31,8 @@ module ActionMCP
       # Notification methods
       NOTIFICATIONS_INITIALIZED = "notifications/initialized"
       NOTIFICATIONS_CANCELLED = "notifications/cancelled"
+      NOTIFICATIONS_PROGRESS = "notifications/progress"
+      NOTIFICATIONS_ROOTS_LIST_CHANGED = "notifications/roots/list_changed"
 
       # Elicitation methods
       ELICITATION_CREATE = "elicitation/create"
@@ -73,9 +75,6 @@ module ActionMCP
         transport.send_pong(id)
         # In return mode, get the response that was just created
         transport.messaging_mode == :return ? transport.get_last_response : true
-      when %r{^notifications/}
-        process_notifications(rpc_method, params)
-        true
       end
     end
 
@@ -83,18 +82,14 @@ module ActionMCP
     def process_notifications(rpc_method, params)
       case rpc_method
       when Methods::NOTIFICATIONS_CANCELLED
-        handle_cancelled_notification(params)
+        transport.receive_cancelled_notification(params)
+      when Methods::NOTIFICATIONS_PROGRESS
+        transport.receive_progress_notification(params)
+      when Methods::NOTIFICATIONS_TASKS_STATUS
+        transport.receive_task_status_notification(params)
       else
         Rails.logger.warn("Unknown notifications method: #{rpc_method}")
       end
-    end
-
-    private
-
-    # Handle cancelled notification
-    def handle_cancelled_notification(params)
-      Rails.logger.warn "\e[31m Request #{params['requestId']} cancelled: #{params['reason']}\e[0m"
-      # we don't need to do anything here
     end
   end
 end

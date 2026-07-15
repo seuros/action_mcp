@@ -15,7 +15,7 @@ module ActionMCP
       payload = session.server_capabilities_payload
 
       # Verify basic structure
-      assert_equal "2025-06-18", payload[:protocolVersion]
+      assert_equal "2025-11-25", payload[:protocolVersion]
       assert_equal "ActionMCP Dummy", payload[:serverInfo]["name"]
       assert_equal "9.9.9", payload[:serverInfo]["version"]
 
@@ -35,7 +35,7 @@ module ActionMCP
         payload = session.server_capabilities_payload
 
         # Verify basic structure
-        assert_equal "2025-06-18", payload[:protocolVersion]
+        assert_equal "2025-11-25", payload[:protocolVersion]
         assert_equal "ActionMCP Dummy", payload[:serverInfo]["name"]
         assert_equal "9.9.9", payload[:serverInfo]["version"]
 
@@ -99,21 +99,6 @@ module ActionMCP
 
       # Verify instructions are not present
       refute payload.key?(:instructions)
-    end
-
-    test "server_capabilities_payload omits tasks before 2025-11-25" do
-      session = Session.create!(
-        protocol_version: "2025-06-18",
-        server_capabilities: {
-          tools: { listChanged: true },
-          tasks: { list: {}, cancel: {}, requests: { tools: { call: {} } } }
-        }
-      )
-
-      capabilities = session.server_capabilities_payload[:capabilities]
-      assert capabilities.key?("tools")
-      refute capabilities.key?("tasks")
-      refute capabilities.key?(:tasks)
     end
 
     test "server_capabilities_payload includes tasks for 2025-11-25" do
