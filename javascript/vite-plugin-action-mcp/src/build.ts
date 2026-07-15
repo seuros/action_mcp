@@ -154,6 +154,9 @@ async function buildView(view: ScannedView, root: string, outDir: string): Promi
     root,
     configFile: false,
     envFile: false,
+    // Views bundle everything inline; without this vite copies the project's
+    // public/ directory (the whole Rails public tree) into outDir.
+    publicDir: false,
     logLevel: "warn",
     mode: "production",
     plugins: [virtualEntryPlugin(view), inlineCssPlugin()],

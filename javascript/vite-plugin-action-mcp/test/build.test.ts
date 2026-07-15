@@ -39,6 +39,8 @@ describe("buildViews (integration)", () => {
     expect(jsFiles[0]).toMatch(/^hello-[\w-]+\.js$/);
     // No CSS asset — the bundle must be the only artifact.
     expect(files.some((f) => f.endsWith(".css"))).toBe(false);
+    // The fixture app has a public/ directory; its files stay out of outDir.
+    expect(files).not.toContain("robots.txt");
   });
 
   test("manifest.json matches schema v1", () => {

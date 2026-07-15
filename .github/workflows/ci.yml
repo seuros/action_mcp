@@ -10,6 +10,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test-javascript:
+    name: Tests (vite-plugin-action-mcp)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: javascript/vite-plugin-action-mcp
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run tests
+        run: bun test
+
   test-postgresql:
     name: Tests (PostgreSQL, Ruby ${{ matrix.ruby-version }}, Rails ${{ matrix.rails-version }})
     runs-on: ubuntu-latest
