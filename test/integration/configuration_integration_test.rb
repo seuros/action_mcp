@@ -363,8 +363,6 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
 
     # We can't easily test filtered_tools without real tool classes in the registry
     # So we'll just verify the profile configuration is correct.
-    # (Do NOT define Class.new(ActionMCP::Tool) here: anonymous subclasses
-    # auto-register under "" and leak into the global ToolsRegistry.)
     assert_equal [ "AddTool", "SubtractTool" ], config.profiles[:limited][:tools]
   end
 
