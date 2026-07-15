@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.200.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.111.1...action_mcp/v0.200.0) (2026-07-15)
+
+
+### Features
+
+* complete mcps app implementation ([87f525e](https://github.com/seuros/action_mcp/commit/87f525e090bae94c4a018890701357393e9c99d3))
+* consolidate on MCP 2025-11-25 protocol, validation, completions, client notifications ([72bbb1c](https://github.com/seuros/action_mcp/commit/72bbb1cd8de14d1c8379f5a218b143cf8a74adff))
+* MCP Apps compiled views with vite plugin, browser bridge, generators, dev loop ([69a18f7](https://github.com/seuros/action_mcp/commit/69a18f7d0b1b0bd42dd10276d3b8fadd4be66882))
+
+
+### Bug Fixes
+
+* **test:** stop configuration_integration_test from polluting global state ([0e048c8](https://github.com/seuros/action_mcp/commit/0e048c8572c96f4a0675eb1381421437879c3e9c))
+* **vite-plugin:** keep public/ assets out of compiled view output ([bfef8e4](https://github.com/seuros/action_mcp/commit/bfef8e48388abf2c88932cc1501e1750987366cb))
+
 ## [0.111.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.111.0...action_mcp/v0.111.1) (2026-06-18)
 
 
