@@ -10,11 +10,15 @@ module ActionMCP
         @collected_responses = []
       end
 
-      # Override write_message to collect responses instead of writing them
+      # Collect messages for the HTTP response while retaining the session's
+      # complete wire history. Server-initiated requests cannot be placed in
+      # the empty 202 response required for an incoming notification, so the
+      # generated request must not be silently discarded.
       def write_message(message)
         if messaging_mode == :return
           @collected_responses ||= []
           @collected_responses << message
+          super
           message
         else
           super

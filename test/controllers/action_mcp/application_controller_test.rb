@@ -38,7 +38,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
+             "ACCEPT" => "Application/JSON; charset=utf-8, TEXT/EVENT-STREAM;q=0.5",
              "Mcp-Session-Id" => session_id
            },
            params: request_payload.to_json
@@ -46,6 +46,44 @@ module ActionMCP
       assert_response :success
       assert_match %r{application/json}, response.headers["Content-Type"]
       assert_not_nil response.parsed_body["result"]
+    end
+
+    test "POST requires the JSON content type" do
+      session = create_initialized_session
+      payload = '{"jsonrpc":"2.0","id":"wrong-media-type","method":"ping"}'
+
+      [ "text/plain", nil ].each do |content_type|
+        headers = {
+          "ACCEPT" => "application/json, text/event-stream",
+          "Mcp-Session-Id" => session.id,
+          "MCP-Protocol-Version" => session.protocol_version
+        }
+        headers["CONTENT_TYPE"] = content_type if content_type
+
+        post "/", headers: headers, params: payload
+
+        assert_response :unsupported_media_type
+        assert_equal(-32_000, response.parsed_body.dig("error", "code"))
+        assert_equal "Unsupported Media Type: Content-Type must be application/json",
+                     response.parsed_body.dig("error", "message")
+        assert_nil response.parsed_body["id"]
+      end
+    end
+
+    test "POST requires both MCP response media types in Accept" do
+      payload = '{"jsonrpc":"2.0","id":"bad-accept","method":"ping"}'
+
+      [ "application/json", "application/json, text/event-stream;q=0" ].each do |accept|
+        post "/",
+             headers: { "CONTENT_TYPE" => "application/json", "ACCEPT" => accept },
+             params: payload
+
+        assert_response :not_acceptable
+        assert_equal(-32_000, response.parsed_body.dig("error", "code"))
+        assert_equal "Not Acceptable: Client must accept both application/json and text/event-stream",
+                     response.parsed_body.dig("error", "message")
+        assert_equal "bad-accept", response.parsed_body["id"]
+      end
     end
 
     test "complete basic MCP workflow - initialize, list tools, call tool" do
@@ -58,7 +96,7 @@ module ActionMCP
         id: "init-1",
         method: "initialize",
         params: {
-          protocolVersion: "2025-06-18",
+          protocolVersion: "2025-11-25",
           clientInfo: {
             name: "Test Client",
             version: "1.0.0"
@@ -70,7 +108,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json"
+             "ACCEPT" => "application/json, text/event-stream"
            },
            params: init_request.to_json
 
@@ -95,7 +133,7 @@ module ActionMCP
       assert_not_nil capabilities["resources"]
 
       # Verify protocol version matches
-      assert_equal "2025-06-18", init_response["result"]["protocolVersion"]
+      assert_equal "2025-11-25", init_response["result"]["protocolVersion"]
 
       # ====================================================================
       # STEP 2: Send initialized notification (required by protocol)
@@ -109,7 +147,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
            params: initialized_notification.to_json
@@ -130,7 +168,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
            params: list_tools_request.to_json
@@ -183,7 +221,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
            params: call_tool_request.to_json
@@ -220,7 +258,7 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
            params: list_prompts_request.to_json
@@ -237,7 +275,7 @@ module ActionMCP
       session = Server.session_store.load_session(session_id)
       assert_not_nil session
       assert_equal "initialized", session.status
-      assert_equal "2025-06-18", session.protocol_version
+      assert_equal "2025-11-25", session.protocol_version
       assert session.initialized?
 
       # Skip message history verification for volatile session store
@@ -278,8 +316,7 @@ module ActionMCP
       assert_not_nil session.ended_at
     end
 
-    test "error handling in basic workflow" do
-      # Test initialization with wrong protocol version
+    test "initialization negotiates the latest stable protocol version" do
       init_request = {
         jsonrpc: "2.0",
         id: "bad-init",
@@ -294,17 +331,15 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json"
+             "ACCEPT" => "application/json, text/event-stream"
            },
            params: init_request.to_json
 
       assert_response :ok
-      error_response = response.parsed_body
-      assert_not_nil error_response["error"]
-      assert_equal(-32_602, error_response["error"]["code"])
-      assert_match(/Unsupported protocol version/, error_response["error"]["message"])
-      # The ID should match the request ID if present
-      assert_equal "bad-init", error_response["id"]
+      negotiated_response = response.parsed_body
+      assert_equal "bad-init", negotiated_response["id"]
+      assert_equal "2025-11-25", negotiated_response.dig("result", "protocolVersion")
+      assert response.headers["Mcp-Session-Id"].present?
     end
 
     test "initialize with unknown Mcp-Session-Id header returns error instead of crashing" do
@@ -313,7 +348,7 @@ module ActionMCP
         id: "1",
         method: "initialize",
         params: {
-          protocolVersion: "2025-06-18",
+          protocolVersion: "2025-11-25",
           clientInfo: { name: "test-client", version: "1.0.0" },
           capabilities: {}
         }
@@ -322,12 +357,12 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => "nonexistent-session-id"
            },
            params: init_request.to_json
 
-      assert_response :ok
+      assert_response :not_found
       body = response.parsed_body
       assert_equal "1", body["id"], "Should preserve the request ID"
       assert_not_nil body["error"], "Should return a JSON-RPC error, not crash"
@@ -360,12 +395,12 @@ module ActionMCP
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => "c829a212-7973-4e15-828e-7effa6b7f7f3"
            },
            params: copilot_payload.to_json
 
-      assert_response :ok
+      assert_response :not_found
       body = response.parsed_body
       assert_equal "1", body["id"], "Should preserve the request ID"
       assert_not_nil body["error"], "Should return a JSON-RPC error, not crash"

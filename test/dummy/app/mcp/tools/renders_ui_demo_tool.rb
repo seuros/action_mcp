@@ -8,6 +8,7 @@ class RendersUiDemoTool < ApplicationMCPTool
   renders_ui "ui://demo/panel", visibility: %i[model app]
 
   def perform
-    render text: "demo"
+    render text: "renders_ui_demo panel is live"
+    render structured: { message: "renders_ui_demo panel is live ✓" }
   end
 end

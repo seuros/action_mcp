@@ -43,7 +43,7 @@ module ActionMCP
     end
 
     include MCPConsoleHelpers
-    attribute :id, :string, default: -> { SecureRandom.hex(6) }
+    attribute :id, :string, default: -> { SecureRandom.hex(16) }
     has_many :messages,
              class_name: "ActionMCP::Session::Message",
              foreign_key: "session_id",
@@ -98,6 +98,46 @@ module ActionMCP
       messages.create!(data: data, direction: role)
     end
 
+    # Marks an in-flight request received from the peer as cancelled. JSON-RPC
+    # IDs are scoped by direction, so an outbound request with the same ID must
+    # never be selected here.
+    def cancel_in_flight_request(request_id)
+      return if request_id.nil?
+
+      request = received_requests_with_id(request_id).find do |message|
+        !message.request_acknowledged? && !message.request_cancelled?
+      end
+      return if request&.rpc_method == JsonRpcHandlerBase::Methods::INITIALIZE
+
+      request&.tap { |message| message.update!(request_cancelled: true) }
+    end
+
+    # Locates the server-originated client request associated with a progress
+    # token. This is intentionally limited to MCP client request methods that
+    # ActionMCP can issue.
+    def client_request_for_progress(progress_token)
+      return if progress_token.nil?
+
+      issued_client_requests.find do |request|
+        request.data.dig("params", "_meta", "progressToken") == progress_token &&
+          client_request_accepts_progress?(request)
+      end
+    end
+
+    # Locates the task-augmented client request which created +task_id+.
+    def client_request_for_task(task_id)
+      return unless task_id.is_a?(String) && task_id.present?
+
+      response = messages.responses.where(direction: role).order(created_at: :desc).find do |message|
+        message.data.dig("result", "task", "taskId") == task_id
+      end
+      return unless response
+
+      issued_client_requests_with_id(response.data["id"]).find do |request|
+        request.data.dig("params", "task").is_a?(Hash)
+      end
+    end
+
     def set_protocol_version(version)
       update(protocol_version: version)
     end
@@ -132,24 +172,17 @@ module ActionMCP
 
     def capabilities_for_protocol(capabilities)
       parsed = parsed_json_attribute(capabilities)
-      filtered =
-        if parsed.respond_to?(:deep_dup)
-          parsed.deep_dup
-        elsif parsed
-          parsed.dup
-        else
-          {}
-        end
-      return filtered if protocol_version == "2025-11-25"
+      parsed ? parsed.deep_dup : {}
+    end
 
-      filtered.delete("tasks")
-      filtered.delete(:tasks)
-      filtered
+    def begin_initialization!
+      return false unless status == "pre_initialize" && !initialized?
+
+      update(status: "initializing")
     end
 
     def initialize!
-      # update the session initialized to true
-      return false if initialized?
+      return false unless status == "initializing" && !initialized?
 
       self.initialized = true
       self.status = "initialized"
@@ -170,6 +203,10 @@ module ActionMCP
       subscriptions.find_by(uri: uri)&.destroy
     end
 
+    def resource_subscribed?(uri)
+      subscriptions.exists?(uri: uri)
+    end
+
     def send_progress_notification(progressToken:, progress:, total: nil, message: nil)
       # Create a transport handler to send the notification
       handler = ActionMCP::Server::TransportHandler.new(self)
@@ -179,10 +216,6 @@ module ActionMCP
         total: total,
         message: message
       )
-    end
-
-    def send_progress_notification_legacy(token:, value:, message: nil)
-      send_progress_notification(progressToken: token, progress: value, message: message)
     end
 
     # Registry management methods
@@ -360,6 +393,47 @@ module ActionMCP
     end
 
     private
+
+    CLIENT_REQUEST_METHODS = %w[sampling/createMessage elicitation/create].freeze
+    TERMINAL_CLIENT_TASK_STATUSES = %w[cancelled completed failed].freeze
+
+    def received_requests_with_id(request_id)
+      messages.requests
+        .where(direction: role, jsonrpc_id: request_id.to_s)
+        .order(created_at: :desc)
+        .select { |message| message.data["id"] == request_id }
+    end
+
+    def issued_client_requests
+      messages.requests.where(direction: writer_role).order(created_at: :desc).select do |message|
+        CLIENT_REQUEST_METHODS.include?(message.rpc_method)
+      end
+    end
+
+    def issued_client_requests_with_id(request_id)
+      issued_client_requests.select { |message| message.data["id"] == request_id }
+    end
+
+    def client_request_accepts_progress?(request)
+      return true unless request.request_acknowledged?
+
+      response = messages.responses
+        .where(direction: role, jsonrpc_id: request.jsonrpc_id)
+        .order(created_at: :desc)
+        .find { |message| message.data["id"] == request.data["id"] }
+      task = response&.data&.dig("result", "task")
+      return false unless task.is_a?(Hash) && task["taskId"].is_a?(String)
+
+      latest_status = messages.notifications.where(direction: role).order(created_at: :desc).filter_map do |message|
+        params = message.data["params"]
+        next unless message.data["method"] == JsonRpcHandlerBase::Methods::NOTIFICATIONS_TASKS_STATUS
+        next unless params.is_a?(Hash) && params["taskId"] == task["taskId"]
+
+        params["status"]
+      end.first
+
+      !TERMINAL_CLIENT_TASK_STATUSES.include?(latest_status || task["status"])
+    end
 
     # if this session is from a server, the writer is the client
     def writer_role

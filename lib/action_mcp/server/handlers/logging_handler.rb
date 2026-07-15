@@ -10,13 +10,16 @@ module ActionMCP
         # @param params [Hash] Request parameters containing level
         # @return [Hash] Empty hash on success
         def handle_logging_set_level(id, params)
-          # Check if logging is enabled
-          unless ActionMCP.configuration.logging_enabled
+          unless ActionMCP::Logging.supported_by?(transport.session)
             transport.send_jsonrpc_error(id, :method_not_found, "Logging not enabled")
             return
           end
 
-          # Extract and validate level parameter
+          unless params.is_a?(Hash)
+            transport.send_jsonrpc_error(id, :invalid_params, "Logging params must be an object")
+            return
+          end
+
           level = params[:level] || params["level"]
           unless level
             transport.send_jsonrpc_error(id, :invalid_params, "Missing required parameter: level")
@@ -24,8 +27,7 @@ module ActionMCP
           end
 
           begin
-            # Validate and set the new level
-            ActionMCP::Logging.set_level(level)
+            ActionMCP::Logging.set_level_for(transport.session, level)
 
             # Send successful response (empty object per MCP spec)
             transport.send_jsonrpc_response(id, result: {})

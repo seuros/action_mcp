@@ -10,12 +10,14 @@ class ToolTest < ActiveSupport::TestCase
       name: "add",
       description: "Add two numbers together",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "x" => { type: "number", description: "First operand" },
           "y" => { type: "number", description: "Second operand" }
         },
-        required: %w[x y]
+        required: %w[x y],
+        additionalProperties: false
       }
     }
     assert_equal expected, AddTool.to_h
@@ -26,11 +28,13 @@ class ToolTest < ActiveSupport::TestCase
       name: "execute_command",
       description: "Run a shell command",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "command" => { type: "string", description: "The command to run" },
           "args" => { type: "array", description: "Command arguments", items: { type: "string" } }
-        }
+        },
+        additionalProperties: false
         # No "required" key since no properties were marked as required.
       }
     }
@@ -42,12 +46,14 @@ class ToolTest < ActiveSupport::TestCase
       name: "create_github_issue",
       description: "Create a GitHub issue",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "title" => { type: "string", description: "Issue title" },
           "body" => { type: "string", description: "Issue body" },
           "labels" => { type: "array", description: "Issue labels", items: { type: "string" } }
-        }
+        },
+        additionalProperties: false
         # No required properties.
       }
     }
@@ -59,12 +65,14 @@ class ToolTest < ActiveSupport::TestCase
       name: "analyze_csv",
       description: "Analyze a CSV file",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "filepath" => { type: "string", description: "Path to CSV file" },
           "operations" => { type: "array", description: "Operations to perform",
                             items: { type: "string" } }
-        }
+        },
+        additionalProperties: false
         # No required properties.
       }
     }
@@ -80,12 +88,14 @@ class ToolTest < ActiveSupport::TestCase
       name: "calculate_sum",
       description: "Calculate the sum of two numbers",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "a" => { type: "number", description: "The first number" },
           "b" => { type: "number", description: "The second number" }
         },
-        required: %w[a b]
+        required: %w[a b],
+        additionalProperties: false
       }
     }
     assert_equal expected, CalculateSumTool.to_h
@@ -96,6 +106,7 @@ class ToolTest < ActiveSupport::TestCase
       name: "calculate_sum_with_precision",
       description: "Calculate the sum of two numbers with specified precision",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "a" => { type: "number", description: "The first number" },
@@ -103,7 +114,8 @@ class ToolTest < ActiveSupport::TestCase
           "precision" => { type: "number", description: "Decimal precision" },
           "unit" => { type: "string", description: "Unit of measurement" }
         },
-        required: %w[a b precision] # "precision" is not required and used only for this test
+        required: %w[a b precision], # "precision" is not required and used only for this test
+        additionalProperties: false
       }
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
@@ -114,11 +126,13 @@ class ToolTest < ActiveSupport::TestCase
       name: "execute_command",
       description: "Run a shell command",
       inputSchema: {
+        "$schema" => "https://json-schema.org/draft/2020-12/schema",
         type: "object",
         properties: {
           "command" => { type: "string", description: "The command to run" },
           "args" => { type: "array", description: "Command arguments", items: { type: "string" } }
-        }
+        },
+        additionalProperties: false
         # No required properties specified.
       }
     }
@@ -160,20 +174,24 @@ class ToolExecutionTest < ActiveSupport::TestCase
     assert_tool_output([ { type: "text", text: "16.0" } ], result)
   end
 
-  test "AddTool handles string inputs" do
-    result = execute_tool("add", x: "5", y: "10")
-    assert_tool_output([ { type: "text", text: "15.0" } ], result)
+  test "AddTool rejects numeric strings on the MCP boundary" do
+    result = execute_tool_with_error("add", x: "5", y: "10")
+
+    assert result.error?
+    assert_equal true, result.to_h[:isError]
   end
 
   test "AddTool returns an error for invalid input" do
     result = execute_tool_with_error("add", x: 5, y: "ten")
     assert result.error?
-    assert_error_code(-32_602, result)
+    assert_equal true, result.to_h[:isError]
+    assert_match(/not a number/, result.contents.first.text)
   end
 
   test "AddTool returns an error for missing input" do
     result = execute_tool_with_error("add", x: 5)
     assert result.error?
-    assert_error_code(-32_602, result)
+    assert_equal true, result.to_h[:isError]
+    assert_match(/missing required properties: y/, result.contents.first.text)
   end
 end

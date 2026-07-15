@@ -103,7 +103,7 @@ module ActionMCP
       def session_database_lookup
         <<~RUBY.indent(4)
           # Get #{identity} ID from session
-          #{identity}_id = session&.[]('#{identity}_id')
+          #{identity}_id = session&.[]("#{identity}_id")
           raise Unauthorized, "No #{identity} session" unless #{identity}_id
 
           # Look up #{identity} in database

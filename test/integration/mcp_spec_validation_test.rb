@@ -10,8 +10,9 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     # Create session through the session store
     session_store = ActionMCP::Server.session_store
     @session = session_store.create_session(nil, {
-                                              initialized: false,
-                                              protocol_version: ActionMCP::DEFAULT_PROTOCOL_VERSION
+                                              initialized: true,
+                                              status: "initialized",
+                                              protocol_version: "2025-11-25"
                                             })
     @session_id = @session.id
   end
@@ -22,14 +23,14 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         clientInfo: { name: "Test Client", version: "1.0" },
         capabilities: {
           roots: { listChanged: true },
           sampling: {}
         }
       }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
 
     assert_response :success
     body = response.parsed_body
@@ -40,7 +41,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     assert body["result"]
 
     # Verify MCP protocol version matches request
-    assert_equal "2025-06-18", body["result"]["protocolVersion"]
+    assert_equal "2025-11-25", body["result"]["protocolVersion"]
 
     # Verify server info contains expected values
     assert_equal "ActionMCP Dummy", body["result"]["serverInfo"]["name"]
@@ -50,7 +51,8 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     expected_capabilities = {
       "tools" => { "listChanged" => true },
       "prompts" => { "listChanged" => true },
-      "resources" => { "subscribe" => false, "listChanged" => true }
+      "resources" => { "subscribe" => false, "listChanged" => true },
+      "completions" => {}
     }
     assert_equal expected_capabilities, body["result"]["capabilities"]
   end
@@ -61,7 +63,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
       id: "invalid-1",
       method: "unknown_method",
       params: {}
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
 
     assert_response :success
     body = response.parsed_body
@@ -83,7 +85,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
         name: "consent_required",
         arguments: { input: "test" }
       }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
 
     body = response.parsed_body
     assert body["error"]
@@ -102,7 +104,7 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
         name: "consent_required",
         arguments: { input: "test" }
       }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json", "Mcp-Session-Id" => @session_id }
+    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
 
     body = response.parsed_body
 

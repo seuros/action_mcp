@@ -7,7 +7,8 @@ module ActionMCP
     setup do
       @response = ToolResponse.new
       @text_content = Content::Text.new("Hello world", annotations: nil)
-      @image_content = Content::Image.new("base64data", "image/png", annotations: nil)
+      @image_data = Base64.strict_encode64("image data")
+      @image_content = Content::Image.new(@image_data, "image/png", annotations: nil)
     end
 
     test "initializes with empty contents and no error" do
@@ -42,11 +43,11 @@ module ActionMCP
       @response.add(@image_content)
 
       # Text content should have {type: "text", text: "Hello world"}
-      # Image content should have {type: "image", data: "base64data", mimeType: "image/png"}
+      # Image content should include base64 data and its MIME type.
       expected = {
         content: [
           { type: "text", text: "Hello world" },
-          { type: "image", data: "base64data", mimeType: "image/png" }
+          { type: "image", data: @image_data, mimeType: "image/png" }
         ]
       }
 
@@ -75,12 +76,51 @@ module ActionMCP
       assert_equal expected, @response.to_h
       # Tool execution errors are not protocol errors, so is_error should be false
       assert_not @response.is_error
+      assert @response.error?
+      refute @response.success?
+    end
+
+    test "structured content must be a JSON object" do
+      assert_raises(ArgumentError) { @response.set_structured_content([ "not", "an", "object" ]) }
+
+      @response.set_structured_content({ answer: 42 })
+      assert_equal({ answer: 42 }, @response.structured_content)
+    end
+
+    test "rejects invalid content before adding it" do
+      assert_raises(ArgumentError) { @response.add(Object.new) }
+      assert_raises(ArgumentError) { @response.add({ type: "text", text: 123 }) }
+      assert_empty @response.contents
+    end
+
+    test "copies structured content and rejects non-JSON numeric values" do
+      structured_content = { answer: 42 }
+      @response.set_structured_content(structured_content)
+      structured_content[:answer] = 99
+
+      assert_equal 42, @response.structured_content[:answer]
+      assert_raises(ArgumentError) do
+        @response.set_structured_content({ value: Float::NAN })
+      end
+    end
+
+    test "revalidates contents before serialization" do
+      @response.contents << { type: "text", text: 123 }
+
+      assert_raises(ArgumentError) { @response.to_h }
     end
 
     test "as_json is alias of to_h" do
       @response.add(@text_content)
 
       assert_equal @response.to_h, @response.as_json
+    end
+
+    test "as_json preserves tool execution error semantics" do
+      @response.report_tool_error("Validation failed")
+
+      assert_equal @response.to_h, @response.as_json
+      assert_equal true, @response.as_json[:isError]
     end
 
     test "equality with hash" do

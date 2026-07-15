@@ -15,7 +15,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:test_session)
     session.update!(
       id: "test-session-new",
-      protocol_version: "2025-06-18",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized",
       created_at: Time.current
@@ -33,7 +33,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
 
     response_data = JSON.parse(content.text)
     assert_equal "test-session-new", response_data["session_id"]
-    assert_equal "2025-06-18", response_data["protocol_version"]
+    assert_equal "2025-11-25", response_data["protocol_version"]
     assert_match(/Welcome.*entity.*entered the session realm/, response_data["dramatic_assessment"])
     assert_equal "😊 Blissfully unaware", response_data["psychological_state"]
     assert_match(/95%.*Easy exit/, response_data["escape_probability"])
@@ -44,7 +44,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:test_session)
     session.update!(
       id: "test-session-old",
-      protocol_version: "2025-06-18",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized",
       created_at: 6.minutes.ago
@@ -69,7 +69,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:test_session)
     session.update!(
       id: "test-session-ancient",
-      protocol_version: "2025-06-18",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized",
       created_at: 2.hours.ago
@@ -102,7 +102,7 @@ class SessionInfoToolTest < ActiveSupport::TestCase
     session = action_mcp_sessions(:dr_identity_mcbouncer_session)
     session.update!(
       id: "test-session-client-info",
-      protocol_version: "2025-06-18",
+      protocol_version: "2025-11-25",
       initialized: true,
       status: "initialized",
       created_at: 1.minute.ago

@@ -12,6 +12,11 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
       FileUtils.cp(@original_config_path, @backup_path)
     end
 
+    # Keep the boot-time configuration object so teardown can restore it —
+    # a rebuilt Configuration never re-receives config.action_mcp settings
+    # applied by the dummy app at boot.
+    @original_configuration = ActionMCP.configuration
+
     # Reset ActionMCP configuration
     ActionMCP.instance_variable_set(:@configuration, nil)
 
@@ -35,8 +40,8 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
       FileUtils.rm_f(@original_config_path)
     end
 
-    # Reset configuration
-    ActionMCP.instance_variable_set(:@configuration, nil)
+    # Restore the boot-time configuration object
+    ActionMCP.instance_variable_set(:@configuration, @original_configuration)
   end
 
   test "loads and merges profiles from YAML configuration" do
@@ -356,27 +361,8 @@ class ConfigurationIntegrationTest < ActiveSupport::TestCase
     config = ActionMCP.configuration
     config.load_profiles
 
-    # Create some mock tools for testing
-    add_tool = Class.new(ActionMCP::Tool) do
-      def self.name
-        "AddTool"
-      end
-    end
-
-    subtract_tool = Class.new(ActionMCP::Tool) do
-      def self.name
-        "SubtractTool"
-      end
-    end
-
-    multiply_tool = Class.new(ActionMCP::Tool) do
-      def self.name
-        "MultiplyTool"
-      end
-    end
-
     # We can't easily test filtered_tools without real tool classes in the registry
-    # So we'll just verify the profile configuration is correct
+    # So we'll just verify the profile configuration is correct.
     assert_equal [ "AddTool", "SubtractTool" ], config.profiles[:limited][:tools]
   end
 

@@ -50,4 +50,10 @@ Rails.application.configure do
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
   ActionMCP::Server::TransportHandler.prepend(ActionMCP::TaggedStreamLogging)
+
+  # Allow dev tunnel hosts so an HTTPS URL can reach the standalone MCP server
+  # in development (cloudflared / ngrok).
+  config.hosts << /.*\.trycloudflare\.com/
+  config.hosts << /.*\.ngrok\.app/
+  config.hosts << /.*\.ngrok-free\.app/
 end

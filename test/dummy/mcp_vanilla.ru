@@ -129,7 +129,10 @@ mcp_app = Rack::Builder.new do
   use ActionDispatch::Reloader, Rails.application.executor
   use ActionDispatch::HostAuthorization, Rails.application.config.hosts if Rails.application.config.hosts.present?
   use ActionMCP::Middleware::OriginValidation, "/"
-  use JSONRPC_Rails::Middleware::Validator, "/"
+  use JSONRPC_Rails::Middleware::Validator,
+      "/",
+      payload_validator: ActionMCP::ProtocolValidator,
+      batch_policy: :reject
 
   # Run the ActionMCP routes directly
   run ActionMCP::Engine.routes

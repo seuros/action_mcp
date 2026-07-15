@@ -113,5 +113,31 @@ module ActionMCP
       params = ResourceTemplatesRegistry.extract_parameters(uri, template)
       assert_empty params
     end
+
+    test "finds URN templates and percent-decodes parameters" do
+      urn_template = Class.new(ResourceTemplate) do
+        def self.name = "BookUrnTemplate"
+        uri_template "urn:book:{isbn}"
+      end
+      ResourceTemplatesRegistry.register(urn_template)
+
+      uri = "urn:book:978%20123"
+
+      assert_equal urn_template, ResourceTemplatesRegistry.find_template_for_uri(uri)
+      assert_equal({ isbn: "978 123" }, ResourceTemplatesRegistry.extract_parameters(uri, urn_template))
+    end
+
+    test "matches reserved expansion operators" do
+      path_template = Class.new(ResourceTemplate) do
+        def self.name = "RepositoryPathTemplate"
+        uri_template "repo://files/{+path}"
+      end
+      ResourceTemplatesRegistry.register(path_template)
+
+      uri = "repo://files/guides/ruby%20rails"
+
+      assert_equal path_template, ResourceTemplatesRegistry.find_template_for_uri(uri)
+      assert_equal({ path: "guides/ruby rails" }, ResourceTemplatesRegistry.extract_parameters(uri, path_template))
+    end
   end
 end

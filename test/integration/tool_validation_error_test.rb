@@ -9,7 +9,7 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
   setup do
     @headers = {
       "Content-Type" => "application/json",
-      "Accept" => "application/json",
+      "Accept" => "application/json, text/event-stream",
       "Mcp-Protocol-Version" => ActionMCP::LATEST_VERSION
     }
 
@@ -37,7 +37,7 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
     assert error_text == "Validation failed: 'staging' is not supported", "Error must be indicative of validation failure, got: '#{error_text.inspect}'"
   end
 
-  test "undeclared param on a strict tool returns -32602 naming the key" do
+  test "undeclared param on a strict tool returns a tool execution error naming the key" do
     @current_request_id ||= 1
     call_params = {
       jsonrpc: "2.0",
@@ -54,10 +54,27 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     response_json = JSON.parse(response.body)
-    assert response_json["error"], "Expected JSON-RPC error, got: #{response_json.inspect}"
-    assert_equal(-32_602, response_json["error"]["code"], "Expected invalid_params (-32602)")
-    assert_includes response_json["error"]["message"], "root_id",
+    assert response_json["result"], "Expected tool result, got: #{response_json.inspect}"
+    assert_equal true, response_json["result"]["isError"]
+    error_text = response_json["result"]["content"].find { |content| content["type"] == "text" }["text"]
+    assert_includes error_text, "root_id",
                     "Error message should name the offending key"
+  end
+
+  test "unknown tool returns invalid params" do
+    call_params = {
+      jsonrpc: "2.0",
+      id: @current_request_id,
+      method: "tools/call",
+      params: { name: "missing-tool", arguments: {} }
+    }
+    @current_request_id += 1
+
+    post action_mcp_path, params: call_params.to_json, headers: @headers
+    assert_response :success
+
+    response_json = JSON.parse(response.body)
+    assert_equal(-32_602, response_json.dig("error", "code"))
   end
 
   test "tool succeeds when validation passes" do

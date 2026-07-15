@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Refresh the vendored @modelcontextprotocol/ext-apps browser bundle.
+# Usage: bin/update-apps-bridge [version]
+set -euo pipefail
+
+VERSION="${1:-$(npm view @modelcontextprotocol/ext-apps version)}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DEST="$ROOT/lib/action_mcp/apps/javascript"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+cd "$TMP"
+npm pack "@modelcontextprotocol/ext-apps@$VERSION" --silent
+tar xzf ./*.tgz
+
+cp package/dist/src/app-with-deps.js "$DEST/ext_apps.js"
+cp package/LICENSE "$DEST/ext_apps.LICENSE"
+
+echo "Vendored @modelcontextprotocol/ext-apps@$VERSION"
+echo "Now update ActionMCP::Apps::BRIDGE_VERSION in lib/action_mcp/apps.rb to \"$VERSION\""

@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      /* Styles must be inline or served from origins declared in the ui csp metadata. */
+      body { font-family: system-ui, sans-serif; margin: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1><%= base_name.titleize %></h1>
+    <pre id="output">Waiting for tool result…</pre>
+    <%%= mcp_app_bridge_tag %>
+    <script type="module">
+      // Register handlers before connecting; handlers set after connect() can miss events.
+      const app = await ActionMCP.connect({
+        handlers: {
+          ontoolresult: (result) => {
+            document.getElementById("output").textContent =
+              JSON.stringify(result.structuredContent ?? result, null, 2);
+          }
+        }
+      });
+      // app.callServerTool({ name: "my-tool", arguments: { ... } }) calls back into the server.
+    </script>
+  </body>
+</html>

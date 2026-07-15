@@ -17,13 +17,15 @@ module ActionMCP
       # @param message [String] Human-readable message explaining why input is needed
       # @param requested_schema [Hash] JSON Schema for the expected response (primitive types only)
       # @param _meta [Hash] Optional metadata (e.g. related task)
-      def send_elicitation_create(message:, requested_schema:, _meta: {})
+      def send_elicitation_create(message:, requested_schema:, _meta: {}, task: nil)
         require_client_elicitation_support!(:form)
+        require_client_elicitation_task_support! if task
 
         request = ElicitationRequest.new(
           message: message,
           requested_schema: requested_schema,
-          _meta: _meta
+          _meta: _meta,
+          task: task
         )
         request.assert_valid!
 
@@ -37,14 +39,16 @@ module ActionMCP
       # @param url [String] The URL the user should navigate to
       # @param elicitation_id [String] Unique identifier for this elicitation
       # @param _meta [Hash] Optional metadata (e.g. related task)
-      def send_elicitation_create_url(message:, url:, elicitation_id: nil, _meta: {})
+      def send_elicitation_create_url(message:, url:, elicitation_id: nil, _meta: {}, task: nil)
         require_client_elicitation_support!(:url)
+        require_client_elicitation_task_support! if task
 
         request = UrlElicitationRequest.new(
           message: message,
           url: url,
           elicitation_id: elicitation_id,
-          _meta: _meta
+          _meta: _meta,
+          task: task
         )
         request.assert_valid!
 
@@ -56,6 +60,10 @@ module ActionMCP
       # @param elicitation_id [String] The elicitation ID from the original request
       def send_elicitation_complete_notification(elicitation_id)
         require_client_elicitation_support!(:url)
+        unless elicitation_id.is_a?(String) && elicitation_id.present?
+          raise ArgumentError, "elicitation_id must be a non-empty string"
+        end
+
         send_jsonrpc_notification(
           "notifications/elicitation/complete",
           { elicitationId: elicitation_id }
@@ -69,22 +77,35 @@ module ActionMCP
       # @param elicitations [Array<Hash>] Required URL mode elicitations
       def send_url_elicitation_required_error(request_id, message:, elicitations:)
         require_client_elicitation_support!(:url)
+        raise ArgumentError, "message must be a string" unless message.is_a?(String)
+        raise ArgumentError, "elicitations must be an array" unless elicitations.is_a?(Array)
 
-        elicitations.each do |e|
-          raise ArgumentError, "Each elicitation must have mode: 'url'" unless e[:mode] == "url"
-          raise ArgumentError, "Each elicitation must have an elicitationId" unless e[:elicitationId].present?
+        normalized_elicitations = elicitations.map do |elicitation|
+          unless elicitation.respond_to?(:to_h) && elicitation.to_h.is_a?(Hash)
+            raise ArgumentError, "Each elicitation must be an object"
+          end
 
-          UrlElicitationRequest.new(
-            message: e[:message],
-            url: e[:url],
-            elicitation_id: e[:elicitationId]
-          ).assert_valid!
+          attributes = elicitation.to_h.with_indifferent_access
+          raise ArgumentError, "Each elicitation must have mode: 'url'" unless attributes[:mode] == "url"
+          raise ArgumentError, "Each elicitation must have an elicitationId" unless attributes[:elicitationId].present?
+
+          request = UrlElicitationRequest.new(
+            message: attributes[:message],
+            url: attributes[:url],
+            elicitation_id: attributes[:elicitationId],
+            _meta: attributes[:_meta],
+            task: attributes[:task]
+          )
+          request.assert_valid!
+
+          extensions = attributes.except(:mode, :message, :url, :elicitationId, :_meta, :task)
+          request.to_params.merge(extensions)
         end
 
         error = {
           code: URL_ELICITATION_REQUIRED_CODE,
           message: message,
-          data: { elicitations: elicitations }
+          data: { elicitations: normalized_elicitations }
         }
 
         send_jsonrpc_response(request_id, error: error)
@@ -101,23 +122,24 @@ module ActionMCP
         raise UnsupportedElicitationError, "Client does not support elicitation" unless elicitation_caps.is_a?(Hash)
 
         if mode == :form
-          # Empty hash or explicit form: {} both mean form support (backward compat with 2025-06-18)
-          # But if client only declared url: {} without form, reject
           form_cap = elicitation_caps["form"] || elicitation_caps[:form]
-          unless elicitation_caps.empty? || form_cap
-            raise UnsupportedElicitationError, "Client does not support form mode elicitation"
-          end
+          raise UnsupportedElicitationError, "Client does not support form mode elicitation" unless form_cap.is_a?(Hash)
           return
         end
 
-        # URL mode requires protocol version 2025-11-25+
-        unless session.protocol_version == "2025-11-25"
-          raise UnsupportedElicitationError, "URL mode elicitation requires protocol version 2025-11-25"
-        end
-
-        # Client must explicitly declare url mode support (empty hash = form-only for 2025-06-18 clients)
         url_cap = elicitation_caps["url"] || elicitation_caps[:url]
-        raise UnsupportedElicitationError, "Client does not support URL mode elicitation" unless url_cap
+        raise UnsupportedElicitationError, "Client does not support URL mode elicitation" unless url_cap.is_a?(Hash)
+      end
+
+      def require_client_elicitation_task_support!
+        client_capabilities = session.client_capabilities || {}
+        tasks = client_capabilities["tasks"] || client_capabilities[:tasks]
+        requests = tasks.is_a?(Hash) && (tasks["requests"] || tasks[:requests])
+        elicitation = requests.is_a?(Hash) && (requests["elicitation"] || requests[:elicitation])
+        create = elicitation.is_a?(Hash) && (elicitation["create"] || elicitation[:create])
+        return if create.is_a?(Hash)
+
+        raise UnsupportedElicitationError, "Client does not support task-augmented elicitation"
       end
     end
 

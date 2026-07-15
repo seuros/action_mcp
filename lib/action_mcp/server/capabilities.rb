@@ -13,53 +13,33 @@ module ActionMCP
         client_protocol_version = params["protocolVersion"]
         client_info = params["clientInfo"]
         client_capabilities = params["capabilities"]
-        session_id = params["sessionId"]
-
-        unless client_protocol_version.is_a?(String) && client_protocol_version.present?
+        unless client_protocol_version.is_a?(String)
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'protocolVersion'")
         end
 
-        unless ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
-          error_message = "Unsupported protocol version. Client requested '#{client_protocol_version}' but server supports #{ActionMCP::SUPPORTED_VERSIONS.join(', ')}"
-          error_data = {
-            supported: ActionMCP::SUPPORTED_VERSIONS,
-            requested: client_protocol_version
-          }
-          return send_jsonrpc_error(request_id, :invalid_params, error_message, error_data)
-        end
-
-        unless client_info.is_a?(Hash)
+        unless client_info.is_a?(Hash) && client_info["name"].is_a?(String) && client_info["version"].is_a?(String)
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'clientInfo'")
         end
         unless client_capabilities.is_a?(Hash)
           return send_jsonrpc_error(request_id, :invalid_params, "Missing or invalid 'capabilities'")
         end
 
-        # Handle session resumption if sessionId provided
-        if session_id
-          existing_session = ActionMCP::Session.find_by(id: session_id)
-          if existing_session&.initialized?
-            # Resume existing session - update transport reference
-            transport.instance_variable_set(:@session, existing_session)
-
-            # Return existing session info
-            capabilities_payload = existing_session.server_capabilities_payload
-            capabilities_payload[:protocolVersion] = client_protocol_version
-            return send_jsonrpc_response(request_id, result: capabilities_payload)
-          end
+        negotiated_version = if ActionMCP::SUPPORTED_VERSIONS.include?(client_protocol_version)
+                               client_protocol_version
+        else
+                               ActionMCP::LATEST_VERSION
         end
 
-        # Create new session if not resuming
         session.store_client_info(client_info)
         session.store_client_capabilities(client_capabilities)
-        session.set_protocol_version(client_protocol_version)
+        session.set_protocol_version(negotiated_version)
 
-        unless session.initialize!
-          return send_jsonrpc_error(request_id, :internal_error, "Failed to initialize session")
+        unless session.begin_initialization!
+          return send_jsonrpc_error(request_id, :invalid_request, "Session has already started initialization")
         end
 
         capabilities_payload = session.server_capabilities_payload
-        capabilities_payload[:protocolVersion] = client_protocol_version
+        capabilities_payload[:protocolVersion] = negotiated_version
 
         send_jsonrpc_response(request_id, result: capabilities_payload)
       end

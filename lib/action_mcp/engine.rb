@@ -9,6 +9,16 @@ module ActionMCP
   class Engine < ::Rails::Engine
     isolate_namespace ActionMCP
 
+    def self.endpoint_path_matcher(path)
+      endpoint = ActionDispatch::Journey::Router::Utils.normalize_path(path)
+      formatted_endpoint = /\A#{Regexp.escape(endpoint)}(?:\.[^\/.]+)?\z/
+
+      lambda do |request_path|
+        normalized_path = ActionDispatch::Journey::Router::Utils.normalize_path(request_path)
+        formatted_endpoint.match?(normalized_path)
+      end
+    end
+
     ActiveSupport::Inflector.inflections(:en) do |inflect|
       inflect.acronym "MCP"
     end
@@ -43,13 +53,25 @@ module ActionMCP
       # Eager load MCP components if profile includes "all"
       # This runs after Zeitwerk is fully set up
       ActionMCP.configuration.eager_load_if_needed
+
+      # Register compiled MCP Apps views after registries
+      # are (re)built. Runs on each dev reload so rebuilt view bundles/hashes
+      # are picked up without restarting the server; runs once at boot in
+      # production.
+      ActionMCP::Apps::ViewManifest.load! if ActionMCP.configuration.mcp_apps_enabled
     end
 
     initializer "action_mcp.insert_middleware" do |app|
+      endpoint_paths = [ ActionMCP::Engine.endpoint_path_matcher(ActionMCP.configuration.base_path) ].freeze
+
       config.middleware.use ActionDispatch::HostAuthorization, app.config.hosts if app.config.hosts.present?
       config.middleware.use ActionMCP::Middleware::OriginValidation,
-                            [ ActionMCP.configuration.base_path ].compact.freeze
-      config.middleware.use JSONRPC_Rails::Middleware::Validator, [ ActionMCP.configuration.base_path ].compact.freeze
+                            endpoint_paths
+      config.middleware.use JSONRPC_Rails::Middleware::Validator,
+                            endpoint_paths,
+                            payload_validator: ActionMCP::ProtocolValidator,
+                            batch_policy: :reject,
+                            require_json_content_type: true
     end
 
     # Load MCP profiles during initialization

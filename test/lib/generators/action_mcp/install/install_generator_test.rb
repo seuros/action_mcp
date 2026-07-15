@@ -64,6 +64,9 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     assert_file "bin/mcp" do |content|
       assert_match(%r{mcp/config\.ru}, content)
       assert_match(/falcon/, content)
+      # Subcommand-aware: dev loop delegates to the Runner.
+      assert_match(/ARGV\.first == "dev"/, content)
+      assert_match(/ActionMCP::Dev::Runner/, content)
     end
   end
 

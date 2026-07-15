@@ -21,22 +21,23 @@ module ActionMCP
       # @param annotations [Hash, nil] Optional annotations for the resource.
       # @param meta [Hash, #to_hash, #to_h, nil] Optional extension metadata. Emitted on the wire as `_meta`.
       def initialize(uri, mime_type = "text/plain", text: nil, blob: nil, annotations: nil, meta: nil)
+        raise ArgumentError, "uri must be a non-empty string" unless uri.is_a?(String) && uri.present?
+        unless mime_type.nil? || (mime_type.is_a?(String) && mime_type.present?)
+          raise ArgumentError, "mime_type must be a non-empty string or nil"
+        end
+        unless [ !text.nil?, !blob.nil? ].one?
+          raise ArgumentError, "embedded resources require exactly one of text or blob"
+        end
+        raise ArgumentError, "text must be a string" if !text.nil? && !text.is_a?(String)
+        raise ArgumentError, "blob must be a base64 string" if !blob.nil? && !blob.is_a?(String)
+
         super("resource", annotations: annotations)
         @uri = uri
         @mime_type = mime_type
         @text = text
         @blob = blob
-        @annotations = annotations
-        @meta =
-          if meta.nil?
-            nil
-          elsif meta.respond_to?(:to_hash)
-            meta.to_hash
-          elsif meta.respond_to?(:to_h)
-            meta.to_h
-          else
-            raise ArgumentError, "meta must respond to :to_hash or :to_h, got: #{meta.class}"
-          end
+        @meta = meta.nil? ? nil : Validation.copy_object!(meta, "meta")
+        to_h
       end
 
       # Returns a hash representation of the resource content.
@@ -46,13 +47,13 @@ module ActionMCP
       #
       # @return [Hash] The hash representation of the resource content.
       def to_h
-        inner = { uri: @uri, mimeType: @mime_type }
+        inner = { uri: @uri }
+        inner[:mimeType] = @mime_type if @mime_type
         inner[:text] = @text if @text
         inner[:blob] = @blob if @blob
-        inner[:annotations] = @annotations if @annotations
         inner[:_meta] = @meta if @meta && !@meta.empty?
 
-        { type: @type, resource: inner }
+        super.merge(resource: inner).tap { |result| Validation.validate_content_block!(result) }
       end
     end
   end

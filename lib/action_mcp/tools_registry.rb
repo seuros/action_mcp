@@ -17,7 +17,7 @@ module ActionMCP
       # @return [Hash] A hash containing the tool's response.
       def tool_call(tool_name, arguments, _metadata = {})
         tool_class = find(tool_name)
-        tool = tool_class.new(arguments)
+        tool = tool_class.from_wire(arguments)
 
         tool.call
       rescue RegistryBase::NotFound

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Demo Panel</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; padding: 1.25rem; }
+      .card { max-width: 26rem; padding: 1rem 1.25rem; border-radius: 0.75rem;
+              background: color-mix(in srgb, currentColor 6%, transparent); }
+      h1 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+      .badge { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px;
+               font-size: 0.75rem; font-weight: 600; color: #16a34a;
+               background: color-mix(in srgb, currentColor 12%, transparent); }
+      .echo { margin-top: 0.75rem; font-size: 1.1rem; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="region" aria-label="Demo panel">
+      <h1>Demo Panel <span id="status" class="badge">connecting…</span></h1>
+      <div class="echo" id="echo">Waiting for tool result…</div>
+    </div>
+
+    <%= mcp_app_bridge_tag %>
+    <script type="module">
+      const app = await ActionMCP.connect({
+        handlers: {
+          ontoolresult: (result) => {
+            // The tool may send structured data and/or plain text content.
+            const sc = result.structuredContent;
+            const text = (result.content || [])
+              .filter((c) => c.type === "text").map((c) => c.text).join(" ");
+            document.getElementById("echo").textContent =
+              (sc && sc.message) || text || "(no payload)";
+          },
+        },
+      });
+      const status = document.getElementById("status");
+      status.textContent = "connected";
+    </script>
+  </body>
+</html>

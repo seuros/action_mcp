@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Widget Lab</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; padding: 1.25rem; }
+      .card { max-width: 30rem; padding: 1rem 1.25rem; border-radius: 0.75rem;
+              background: color-mix(in srgb, currentColor 6%, transparent); }
+      h1 { margin: 0 0 0.75rem; font-size: 1.15rem; }
+      .msg { font-size: 1.5rem; font-weight: 600; }
+      .meta { margin-top: 0.75rem; font-size: 0.85rem; opacity: 0.75; }
+      .ok { color: #16a34a; }
+      .err { color: #dc2626; }
+      .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+               font-size: 0.75rem; font-weight: 600;
+               background: color-mix(in srgb, currentColor 12%, transparent); }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="region" aria-label="Widget Lab panel">
+      <h1>Widget Lab <span id="status" class="badge">waiting…</span></h1>
+      <div id="message" class="msg">Waiting for tool result…</div>
+      <div id="detail" class="meta"></div>
+    </div>
+
+    <%= mcp_app_bridge_tag %>
+    <script type="module">
+      // Register the handler before connecting, per the ext-apps handshake.
+      const render = (payload) => {
+        const ok = payload && payload.ok;
+        const status = document.getElementById("status");
+        status.textContent = ok ? "ok" : "error";
+        status.className = "badge " + (ok ? "ok" : "err");
+        document.getElementById("message").textContent =
+          payload && payload.message ? payload.message : "(no message)";
+        document.getElementById("detail").textContent =
+          payload && payload.detail ? payload.detail : "";
+      };
+
+      const app = await ActionMCP.connect({
+        handlers: {
+          ontoolresult: (result) => render(result.structuredContent),
+        },
+      });
+
+      // If the tool result already arrived during the handshake, paint it now.
+      const initial = app.getToolOutput ? app.getToolOutput() : null;
+      if (initial) render(initial);
+    </script>
+  </body>
+</html>

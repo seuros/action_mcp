@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Color Palette</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; padding: 1.25rem; }
+      h1 { margin: 0 0 0.15rem; font-size: 1.1rem; }
+      .theme { margin: 0 0 1rem; font-size: 0.85rem; opacity: 0.7; text-transform: capitalize; }
+      .grid { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+      .swatch { flex: 1 1 5.5rem; min-width: 5.5rem; border: 0; padding: 0; border-radius: 0.6rem;
+                overflow: hidden; cursor: pointer; background: none; text-align: left;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.18); transition: transform .08s ease; }
+      .swatch:hover { transform: translateY(-2px); }
+      .chip { height: 5rem; }
+      .label { padding: 0.45rem 0.55rem; background: color-mix(in srgb, currentColor 6%, transparent); }
+      .name { font-size: 0.8rem; font-weight: 600; }
+      .hex { font-size: 0.72rem; opacity: 0.7; font-family: ui-monospace, monospace; text-transform: uppercase; }
+      #toast { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+               padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.8rem;
+               background: color-mix(in srgb, currentColor 85%, transparent);
+               color: Canvas; opacity: 0; transition: opacity .2s ease; pointer-events: none; }
+      #toast.show { opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <h1>Color Palette</h1>
+    <p class="theme" id="theme">Waiting for tool result…</p>
+    <div class="grid" id="grid"></div>
+    <div id="toast">Copied</div>
+
+    <%= mcp_app_bridge_tag %>
+    <script type="module">
+      const grid = document.getElementById("grid");
+      const toastEl = document.getElementById("toast");
+
+      const toast = (msg) => {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        setTimeout(() => toastEl.classList.remove("show"), 1100);
+      };
+
+      const copy = async (hex) => {
+        try {
+          if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(hex); toast(hex + " copied"); return; }
+        } catch (_) { /* permission declined — fall through */ }
+        toast(hex);
+      };
+
+      const render = (payload) => {
+        if (!payload || !Array.isArray(payload.swatches)) return;
+        document.getElementById("theme").textContent = payload.theme || "";
+        grid.replaceChildren(...payload.swatches.map((s) => {
+          const btn = document.createElement("button");
+          btn.className = "swatch";
+          btn.title = "Copy " + s.hex;
+          btn.addEventListener("click", () => copy(s.hex));
+
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.style.background = s.hex;
+
+          const label = document.createElement("div");
+          label.className = "label";
+          const name = document.createElement("div");
+          name.className = "name";
+          name.textContent = s.name;
+          const hex = document.createElement("div");
+          hex.className = "hex";
+          hex.textContent = s.hex;
+          label.append(name, hex);
+          btn.append(chip, label);
+          return btn;
+        }));
+      };
+
+      // Register the handler before connecting, per the ext-apps handshake.
+      const app = await ActionMCP.connect({
+        handlers: { ontoolresult: (result) => render(result.structuredContent) },
+      });
+    </script>
+  </body>
+</html>

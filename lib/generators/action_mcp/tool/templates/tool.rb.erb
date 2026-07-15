@@ -23,6 +23,12 @@ class <%= class_name %> < ApplicationMCPTool
   annotate(:<%= k %>, <%= v.inspect %>)
   <% end %>
 <% end %>
+<% if options[:ui] %>
+  renders_ui "<%= options[:ui] %>"
+<% else %>
+  # Link this tool to an MCP Apps UI view (generate one with `bin/rails g action_mcp:view MyView`):
+  # renders_ui "ui://views/my-view", visibility: %i[model app]
+<% end %>
 
     <% if properties.empty? %>
   property :input, type: "string", description: "Input", required: true

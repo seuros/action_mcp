@@ -3,26 +3,7 @@
 require "test_helper"
 
 class StructuredContentValidationTest < ActiveSupport::TestCase
-  setup do
-    @original_setting = ActionMCP.configuration.validate_structured_content
-  end
-
-  teardown do
-    ActionMCP.configuration.validate_structured_content = @original_setting
-  end
-
-  test "validation is disabled by default" do
-    assert_equal false, ActionMCP.configuration.validate_structured_content
-  end
-
-  test "validation can be enabled via configuration" do
-    ActionMCP.configuration.validate_structured_content = true
-    assert_equal true, ActionMCP.configuration.validate_structured_content
-  end
-
   test "weather tool with forecast passes validation when data matches schema" do
-    ActionMCP.configuration.validate_structured_content = true
-
     tool = WeatherTool.new(location: "NYC", units: "celsius", include_forecast: true)
     result = tool.call
 
@@ -36,19 +17,7 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
     assert first_forecast[:day].key?(:date), "Day should have :date"
   end
 
-  test "validation is skipped when disabled" do
-    ActionMCP.configuration.validate_structured_content = false
-
-    # Create a tool with mismatched data/schema - should NOT raise
-    tool = WeatherTool.new(location: "NYC", units: "celsius")
-    result = tool.call
-
-    assert_not result.is_error
-  end
-
   test "validation returns error response when data does not match schema" do
-    ActionMCP.configuration.validate_structured_content = true
-
     # Create a tool class with intentionally mismatched data
     tool_class = Class.new(ApplicationMCPTool) do
       tool_name "mismatched_tool"
@@ -68,14 +37,12 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
     tool = tool_class.new
     result = tool.call
 
-    # Tool catches exceptions and returns error response
-    assert result.is_error, "Should be an error response"
+    assert result.error?, "Should be a tool error response"
+    assert_equal true, result.to_h[:isError]
     assert_nil result.structured_content, "Should not have structured content on error"
   end
 
   test "validation passes when all required fields present" do
-    ActionMCP.configuration.validate_structured_content = true
-
     tool_class = Class.new(ApplicationMCPTool) do
       tool_name "valid_tool"
       description "Tool with valid data"
@@ -98,6 +65,26 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
     assert_equal 42, result.structured_content[:count]
   end
 
+  test "tool with an output schema must return structured content" do
+    tool_class = Class.new(ApplicationMCPTool) do
+      tool_name "missing_structured_content_tool"
+
+      output_schema do
+        property :answer, type: "string", required: true
+      end
+
+      def perform
+        render text: "unstructured only"
+      end
+    end
+
+    result = tool_class.call
+
+    assert result.error?
+    assert_equal true, result.to_h[:isError]
+    assert_includes result.to_h.dig(:content, -1, :text), "returned no structured content"
+  end
+
   test "object in array generates correct schema structure" do
     builder = ActionMCP::OutputSchemaBuilder.new
     builder.instance_eval do
@@ -112,6 +99,7 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
     schema = builder.to_json_schema
     items_schema = schema.dig("properties", "items", "items")
 
+    assert_equal ActionMCP::SchemaValidator::DEFAULT_DIALECT, schema["$schema"]
     # Named object creates wrapper
     assert_equal "object", items_schema["type"]
     assert items_schema["properties"].key?("entry"), "Should have 'entry' property"

@@ -9,8 +9,8 @@
 #
 # Start this server with:
 #   bin/mcp                                              # Uses Falcon (recommended)
-#   bundle exec falcon serve --bind http://0.0.0.0:62770 mcp/config.ru
-#   bundle exec rails s -c mcp/config.ru -p 62770       # Uses Puma (fallback)
+#   bundle exec falcon serve --bind http://127.0.0.1:62770 mcp/config.ru
+#   bundle exec rails s -c mcp/config.ru -b 127.0.0.1 -p 62770 # Uses Puma (fallback)
 #
 # Port 62770 = MCPS0 on a phone keypad (MCP Server, instance 0)
 #

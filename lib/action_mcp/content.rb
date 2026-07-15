@@ -15,7 +15,8 @@ module ActionMCP
       # @param annotations [Hash, nil] Optional annotations for the content.
       def initialize(type, annotations: nil)
         @type = type
-        @annotations = annotations
+        @annotations = annotations.nil? ? nil : Validation.copy_object!(annotations, "annotations")
+        Validation.validate_annotations!(@annotations)
       end
 
       # Returns a hash representation of the content.
@@ -24,6 +25,7 @@ module ActionMCP
       def to_h
         h = { type: @type }
         h[:annotations] = @annotations if @annotations
+        Validation.validate_annotations!(@annotations)
         h
       end
 

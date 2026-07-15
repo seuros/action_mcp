@@ -2,6 +2,8 @@
 
 module ActionMCP
   class PromptResponse < BaseResponse
+    ROLES = %w[user assistant].freeze
+
     attr_reader :messages
 
     # Delegate methods to the underlying messages array
@@ -14,7 +16,13 @@ module ActionMCP
 
     # Add a message to the response
     def add_message(role:, content:)
-      @messages << { role: role, content: content }
+      normalized_role = role.to_s
+      unless ROLES.include?(normalized_role)
+        raise ArgumentError, "role must be one of: #{ROLES.join(', ')}"
+      end
+      raise ArgumentError, "content must be an MCP content object" unless content.is_a?(Hash)
+
+      @messages << { role: normalized_role, content: Content::Validation.copy_content_block!(content) }
       self
     end
 
@@ -26,9 +34,11 @@ module ActionMCP
 
     # Implementation of build_success_hash for PromptResponse
     def build_success_hash
-      {
+      result = {
         messages: @messages
       }
+      Content::Validation.validate_prompt_result!(result)
+      result
     end
 
     # Implementation of compare_with_same_class for PromptResponse

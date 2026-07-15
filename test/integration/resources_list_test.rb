@@ -12,11 +12,12 @@ module ActionMCP
              id: 1,
              method: "initialize",
              params: {
+               capabilities: {},
                clientInfo: { name: "test", version: "1.0" },
                protocolVersion: ActionMCP::LATEST_VERSION
              }
            }.to_json,
-           headers: { "Content-Type" => "application/json", "Accept" => "application/json" }
+           headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
 
       assert_response :success
       session_id = response.headers["Mcp-Session-Id"]
@@ -30,7 +31,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            }
 
@@ -47,7 +48,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -83,7 +84,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -104,7 +105,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -125,7 +126,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -144,7 +145,7 @@ module ActionMCP
       assert_not_nil template["name"]
     end
 
-    test "resources/templates/list accepts cursor param without error" do
+    test "resources/templates/list rejects null cursor" do
       post action_mcp.mcp_post_path,
            params: {
              jsonrpc: "2.0",
@@ -154,14 +155,16 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
       assert_response :success
       result = JSON.parse(response.body)
-      assert_nil result["error"], "Expected no error with cursor param"
-      assert_not_nil result["result"]["resourceTemplates"]
+
+      assert_not_nil result["error"]
+      assert_equal(-32_602, result["error"]["code"])
+      assert_match(/cursor.*not a string/i, result["error"]["message"])
     end
 
     test "resources/templates/list returns invalid params for non-string cursor" do
@@ -174,7 +177,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -183,7 +186,7 @@ module ActionMCP
 
       assert_not_nil result["error"]
       assert_equal(-32_602, result["error"]["code"])
-      assert_match(/Cursor must be a non-empty string/, result["error"]["message"])
+      assert_match(/cursor.*not a string/i, result["error"]["message"])
     end
 
     test "resources/read returns MCP-compliant content shape" do
@@ -196,7 +199,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 
@@ -223,7 +226,7 @@ module ActionMCP
            }.to_json,
            headers: {
              "Content-Type" => "application/json",
-             "Accept" => "application/json",
+             "Accept" => "application/json, text/event-stream",
              "Mcp-Session-Id" => @session_id
            }
 

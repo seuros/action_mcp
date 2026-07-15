@@ -12,7 +12,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
       id: "test-init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         capabilities: {
           roots: {
             listChanged: false
@@ -27,7 +27,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
   end
 
   test "accepts valid MCP-Protocol-Version header" do
-    session = create_initialized_session("2025-06-18")
+    session = create_initialized_session
 
     post "/",
          params: {
@@ -37,9 +37,9 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          }.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session.id,
-           "MCP-Protocol-Version" => "2025-06-18"
+           "MCP-Protocol-Version" => "2025-11-25"
          }
 
     assert_response :success
@@ -59,7 +59,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          }.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session.id,
            "MCP-Protocol-Version" => "2024-01-01"
          }
@@ -72,7 +72,28 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     assert_includes json_response["error"]["message"], "2024-01-01"
   end
 
-  test "handles missing MCP-Protocol-Version header with backward compatibility" do
+  test "rejects a present blank MCP-Protocol-Version header" do
+    session = create_initialized_session
+
+    post "/",
+         params: {
+           jsonrpc: "2.0",
+           id: "blank-version",
+           method: "tools/list"
+         }.to_json,
+         headers: {
+           "CONTENT_TYPE" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
+           "Mcp-Session-Id" => session.id,
+           "MCP-Protocol-Version" => "   "
+         }
+
+    assert_response :bad_request
+    assert_equal "blank-version", response.parsed_body["id"]
+    assert_includes response.parsed_body.dig("error", "message"), "Unsupported MCP-Protocol-Version"
+  end
+
+  test "uses the negotiated session version when the header is missing" do
     session = create_initialized_session
 
     post "/",
@@ -83,7 +104,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          }.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session.id
          }
 
@@ -93,36 +114,13 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
     assert_equal "test-1", json_response["id"]
   end
 
-  test "rejects version mismatch between header and negotiated version" do
-    session = create_initialized_session("2025-06-18")  # Session negotiated 2025-06-18
-
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-1",
-           method: "tools/list"
-         }.to_json,
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
-           "Mcp-Session-Id" => session.id,
-           "MCP-Protocol-Version" => "2025-11-25"  # Different from session's negotiated version (2025-06-18)
-         }
-
-    assert_response :bad_request
-    json_response = JSON.parse(response.body)
-    assert_equal "2.0", json_response["jsonrpc"]
-    assert_equal "test-1", json_response["id"]
-    assert_includes json_response["error"]["message"], "does not match negotiated version"
-  end
-
   test "skips validation for initialize requests" do
     post "/",
          params: @valid_initialize_request.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
-           "MCP-Protocol-Version" => "2025-06-18"  # Should be ignored for initialize
+           "ACCEPT" => "application/json, text/event-stream",
+           "MCP-Protocol-Version" => "1999-01-01" # Only initialize params participate in negotiation
          }
 
     assert_response :success
@@ -132,7 +130,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
   end
 
   test "handles case-insensitive header names" do
-    session = create_initialized_session("2025-06-18")
+    session = create_initialized_session
 
     post "/",
          params: {
@@ -142,9 +140,9 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          }.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session.id,
-           "mcp-protocol-version" => "2025-06-18"  # lowercase version
+           "mcp-protocol-version" => "2025-11-25" # lowercase header name
          }
 
     assert_response :success
@@ -155,14 +153,8 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_initialized_session(protocol_version = "2025-06-18")
-    # Get fixture data based on protocol version
-    fixture_session = if protocol_version == "2025-06-18"
-                        action_mcp_sessions(:dr_identity_mcbouncer_session)
-    else
-                        action_mcp_sessions(:step1_session)
-    end
-
+  def create_initialized_session
+    fixture_session = action_mcp_sessions(:step1_session)
     # Create session in the session store using the helper
     ActionMCP::Server.session_store.create_session(
       fixture_session.id,
@@ -175,7 +167,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
          params: @valid_initialize_request.to_json,
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json"
+           "ACCEPT" => "application/json, text/event-stream"
          }
 
     assert_response :success
@@ -186,6 +178,7 @@ class ProtocolVersionHeaderTest < ActionDispatch::IntegrationTest
 
     @session = ActionMCP::Server.session_store.load_session(session_id)
     assert_not_nil @session
-    assert @session.initialized?
+    refute @session.initialized?
+    assert_equal "initializing", @session.status
   end
 end

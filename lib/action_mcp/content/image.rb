@@ -17,13 +17,16 @@ module ActionMCP
         super("image", annotations: annotations)
         @data = data
         @mime_type = mime_type
+        to_h
       end
 
       # Returns a hash representation of the image content.
       #
       # @return [Hash] The hash representation of the image content.
       def to_h
-        super.merge(data: @data, mimeType: @mime_type)
+        super.merge(data: @data, mimeType: @mime_type).tap do |result|
+          Validation.validate_content_block!(result)
+        end
       end
     end
   end

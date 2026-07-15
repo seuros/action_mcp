@@ -34,13 +34,10 @@ module ActionMCP
   class StructuredContentValidationError < StandardError; end
 
   # Protocol version constants
-  SUPPORTED_VERSIONS = [
-    "2025-11-25", # The Task Master - Tasks, icons, tool naming, polling SSE
-    "2025-06-18"  # Dr. Identity McBouncer - elicitation, structured output, resource links
-  ].freeze
+  SUPPORTED_VERSIONS = [ "2025-11-25" ].freeze
 
   LATEST_VERSION = SUPPORTED_VERSIONS.first.freeze
-  DEFAULT_PROTOCOL_VERSION = "2025-06-18" # Default to previous stable version for backwards compatibility
+  DEFAULT_PROTOCOL_VERSION = LATEST_VERSION
 
   MIME_TYPE_APP_HTML = Apps::MIME_TYPE # MCP Apps UI resources (ext-apps, stable 2026-01-26)
   class << self

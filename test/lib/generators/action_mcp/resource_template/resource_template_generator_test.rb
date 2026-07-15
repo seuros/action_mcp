@@ -57,4 +57,29 @@ class ResourceTemplateGeneratorTest < Rails::Generators::TestCase
     run_generator_with_args %w[user_profile]
     assert_file generated_template_path("user_profile"), /class UserProfileTemplate < ApplicationMCPResTemplate/
   end
+
+  test "generator with --ui creates an MCP Apps template" do
+    run_generator_with_args %w[WeatherDashboard --ui]
+    assert_file generated_template_path("weather_dashboard") do |content|
+      assert_match(/class WeatherDashboardTemplate < ApplicationMCPResTemplate/, content)
+      assert_match(%r{uri_template "ui://views/weather-dashboard"}, content)
+      assert_match(/mime_type :mcp_app/, content)
+      assert_match(/render_ui\(text:/, content)
+    end
+  end
+
+  test "generator with --ui strips Template suffix from URI" do
+    run_generator_with_args %w[PanelTemplate --ui]
+    assert_file generated_template_path("panel_template") do |content|
+      assert_match(%r{uri_template "ui://views/panel"}, content)
+    end
+  end
+
+  test "generator without --ui keeps the default app template" do
+    run_generator_with_args %w[Product]
+    assert_file generated_template_path("product") do |content|
+      assert_no_match(/render_ui/, content)
+      assert_match(%r{uri_template "app://products/{product_id}"}, content)
+    end
+  end
 end

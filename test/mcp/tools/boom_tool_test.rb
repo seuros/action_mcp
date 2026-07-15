@@ -6,9 +6,10 @@ require "test_helper"
 class BoomToolTest < ActiveSupport::TestCase
   include ActionMCP::TestHelper
 
-  test "always returns internal_error" do
+  test "always returns a tool execution error" do
     resp = BoomTool.new.call
     assert resp.error?
-    assert_mcp_error_code(-32_603, resp)
+    assert_equal true, resp.to_h[:isError]
+    assert_match(/Simulated failure/, resp.contents.first.text)
   end
 end

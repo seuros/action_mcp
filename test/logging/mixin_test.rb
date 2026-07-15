@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "minitest/mock"
-
 class ActionMCP::Logging::MixinTest < ActiveSupport::TestCase
   # Test class that includes the mixin
   class TestTool
@@ -115,6 +113,7 @@ class ActionMCP::Logging::MixinTest < ActiveSupport::TestCase
 
     assert_equal 3, @sent_notifications.length
 
+    assert_equal [ "notifications/message" ] * 3, @sent_notifications.map { |entry| entry[:method] }
     assert_equal "debug", @sent_notifications[0][:params][:level]
     assert_equal "info", @sent_notifications[1][:params][:level]
     assert_equal "error", @sent_notifications[2][:params][:level]
@@ -172,27 +171,17 @@ class ActionMCP::Logging::MixinTest < ActiveSupport::TestCase
   private
 
   def mock_session
-    session = Minitest::Mock.new
-    messaging_service = Minitest::Mock.new
-    session.expect(:messaging_service, messaging_service)
-    session
+    ActionMCP::Server::BaseSession.new(
+      server_capabilities: { "logging" => {} },
+      session_data: {}
+    )
   end
 
-  def mock_session_with_messaging(call_count = 3)
-    session = Minitest::Mock.new
-    messaging_service = Minitest::Mock.new
-
-    # Expect send_notification calls and capture them
-    call_count.times do
-      messaging_service.expect(:send_notification, nil) do |method, params|
-        @sent_notifications << { method: method, params: params }
-        true
-      end
-    end
-
-    # Expect messaging_service calls
-    call_count.times do
-      session.expect(:messaging_service, messaging_service)
+  def mock_session_with_messaging(_call_count = nil)
+    session = mock_session
+    notifications = @sent_notifications
+    session.define_singleton_method(:write) do |notification|
+      notifications << { method: notification.method, params: notification.params }
     end
 
     session

@@ -3,6 +3,7 @@
 require "action_mcp/types/float_array_type"
 require "action_mcp/types/hash_type"
 require "action_mcp/schema_helpers"
+require "action_mcp/schema_validator"
 
 module ActionMCP
   # Base class for defining tools.
@@ -28,11 +29,15 @@ module ActionMCP
     class_attribute :_meta, instance_accessor: false, default: {}
     class_attribute :_requires_consent, instance_accessor: false, default: false
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
-    class_attribute :_additional_properties, instance_accessor: false, default: nil
+    class_attribute :_additional_properties, instance_accessor: false, default: false
     class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
+    class_attribute :_input_schemer, instance_accessor: false, default: nil
+    class_attribute :_output_schemer, instance_accessor: false, default: nil
     class_attribute :_property_aliases, instance_accessor: false, default: {}
     class_attribute :_task_support, instance_accessor: false, default: :forbidden
     class_attribute :_resumable_steps_block, instance_accessor: false, default: nil
+
+    validate :input_arguments_match_schema
 
     # --------------------------------------------------------------------------
     # Tool Name and Description DSL
@@ -131,7 +136,15 @@ module ActionMCP
 
       # Class method to call the tool with arguments
       def call(arguments = {})
-        new(arguments).call
+        from_wire(arguments).call
+      end
+
+      # Builds a tool from decoded MCP arguments. The untouched input is kept
+      # for JSON Schema validation before ActiveModel coercion.
+      def from_wire(arguments)
+        new(arguments).tap do |tool|
+          tool.instance_variable_set(:@_wire_arguments, arguments)
+        end
       end
 
       # Helper methods for checking annotations
@@ -160,19 +173,12 @@ module ActionMCP
 
         builder = OutputSchemaBuilder.new
         builder.instance_eval(&block)
+        schema = builder.to_json_schema
+        schemer = SchemaValidator.compile(schema, context: "output schema for #{tool_name}")
 
-        # Store both the builder and the generated schema
         self._output_schema_builder = builder
-        self._output_schema = builder.to_json_schema
-
-        _output_schema
-      end
-
-      # Legacy output_schema method for backward compatibility
-      def output_schema_legacy(schema = nil)
-        if schema
-          raise NotImplementedError, "Legacy output schema not yet implemented. Use output_schema DSL instead!"
-        end
+        self._output_schema = schema
+        self._output_schemer = schemer
 
         _output_schema
       end
@@ -284,7 +290,12 @@ module ActionMCP
         if enabled.nil?
           _additional_properties
         else
+          unless enabled == true || enabled == false || enabled.is_a?(Hash)
+            raise ArgumentError, "additional_properties must be true, false, or a JSON Schema hash"
+          end
+
           self._additional_properties = enabled
+          invalidate_schema_cache
         end
       end
 
@@ -299,6 +310,46 @@ module ActionMCP
 
         self._cached_schema_property_keys = (_schema_properties.keys + _property_aliases.keys).map(&:to_s)
         _cached_schema_property_keys
+      end
+
+      def input_schema
+        properties = _schema_properties.deep_dup
+        _property_aliases.each do |alias_name, property_name|
+          properties[alias_name] = _schema_properties.fetch(property_name).deep_dup
+        end
+
+        schema = {
+          "$schema" => SchemaValidator::DEFAULT_DIALECT,
+          type: "object",
+          properties: properties
+        }
+
+        required = []
+        alias_constraints = []
+        _required_properties.each do |property_name|
+          aliases = _property_aliases.select { |_alias_name, target| target == property_name }.keys
+          if aliases.empty?
+            required << property_name
+          else
+            alternatives = [ property_name, *aliases ].map { |name| { required: [ name ] } }
+            alias_constraints << { anyOf: alternatives }
+          end
+        end
+
+        schema[:required] = required if required.any?
+        schema[:allOf] = alias_constraints if alias_constraints.any?
+        add_additional_properties_to_schema(schema, _additional_properties)
+        schema
+      end
+
+      def input_schemer
+        self._input_schemer ||= SchemaValidator.compile(input_schema, context: "input schema for #{tool_name}")
+      end
+
+      def output_schemer
+        return unless _output_schema
+
+        self._output_schemer ||= SchemaValidator.compile(_output_schema, context: "output schema for #{tool_name}")
       end
 
       # Creates an alternate input name for an existing property.
@@ -344,6 +395,7 @@ module ActionMCP
       # Invalidate cached schema property keys
       def invalidate_schema_cache
         self._cached_schema_property_keys = nil
+        self._input_schemer = nil
       end
     end
 
@@ -381,11 +433,6 @@ module ActionMCP
 
       # Map the JSON Schema type to an ActiveModel attribute type.
       attribute prop_name, map_json_type_to_active_model_type(type), default: default
-      validates prop_name, presence: true, if: -> { required }
-
-      return unless %w[number integer].include?(type)
-
-      validates prop_name, numericality: true, allow_nil: !required
     end
 
     # --------------------------------------------------------------------------
@@ -424,14 +471,6 @@ module ActionMCP
       end
 
       attribute prop_name, mapped_type, default: default
-
-      # For arrays, we need to check if the attribute is nil, not if it's empty
-      return unless required
-
-      validates prop_name, presence: true, unless: -> { send(prop_name).is_a?(Array) }
-      validate do
-        errors.add(prop_name, "can't be blank") if send(prop_name).nil?
-      end
     end
 
     # --------------------------------------------------------------------------
@@ -441,14 +480,8 @@ module ActionMCP
     #
     # @return [Hash] The tool definition.
     def self.to_h(protocol_version: nil)
-      schema = {
-        type: "object",
-        properties: _schema_properties
-      }
-      schema[:required] = _required_properties if _required_properties.any?
-
-      # Add additionalProperties if configured
-      add_additional_properties_to_schema(schema, _additional_properties)
+      schema = input_schema
+      input_schemer
 
       result = {
         name: tool_name,
@@ -465,45 +498,62 @@ module ActionMCP
 
       # Add execution metadata (MCP 2025-11-25)
       # Only include if not default (forbidden) to minimize payload
-      if _task_support && _task_support != :forbidden && task_metadata_supported?(protocol_version)
+      if _task_support && _task_support != :forbidden
         result[:execution] = execution_metadata
       end
 
       # Add _meta if present
-      result[:_meta] = _meta if _meta.any?
+      if _meta.any?
+        resolved_meta = _meta.deep_dup
+        ui_meta = resolved_meta[:ui] || resolved_meta["ui"]
+        if ui_meta.is_a?(Hash)
+          resource_uri_key = :resourceUri if ui_meta.key?(:resourceUri)
+          resource_uri_key ||= "resourceUri" if ui_meta.key?("resourceUri")
+          if resource_uri_key
+            ui_meta[resource_uri_key] = Apps::ViewManifest.resolve_resource_uri(ui_meta[resource_uri_key])
+          end
+        end
+        result[:_meta] = resolved_meta
+      end
 
       result
     end
-
-    def self.task_metadata_supported?(protocol_version)
-      protocol_version.nil? || protocol_version == "2025-11-25"
-    end
-    private_class_method :task_metadata_supported?
 
     # --------------------------------------------------------------------------
     # Instance Methods
     # --------------------------------------------------------------------------
 
-    # Override initialize to validate parameters before ActiveModel conversion
     def initialize(attributes = {})
-      validate_property_alias_conflicts(attributes)
+      @_alias_conflicts = []
 
-      # Separate additional properties from defined attributes if enabled
-      if self.class.accepts_additional_properties?
-        defined_keys = self.class.schema_property_keys
-        # Use partition for single-pass separation - more efficient than except/slice
-        defined_attrs, additional_attrs = attributes.partition { |k, _|
-          defined_keys.include?(k.to_s)
-        }.map(&:to_h)
-        @_additional_params = additional_attrs
-        attributes = defined_attrs
-      else
-        @_additional_params = {}
+      defined_attributes = {}
+      additional_attributes = {}
+
+      if attributes.is_a?(Hash)
+        sources = {}
+        attributes.each do |key, value|
+          key_string = key.to_s
+          property_name = self.class.canonical_property_name(key_string)
+
+          if self.class._schema_properties.key?(property_name)
+            if defined_attributes.key?(property_name) && sources[property_name] != key_string &&
+                defined_attributes[property_name] != value
+              @_alias_conflicts <<
+                "conflicting values for '#{property_name}' via '#{sources[property_name]}' and '#{key_string}'"
+              next
+            end
+
+            defined_attributes[property_name] = value
+            sources[property_name] = key_string
+          else
+            additional_attributes[key] = value
+          end
+        end
       end
 
-      # Validate parameters before ActiveModel processes them
-      validate_parameter_types(attributes)
-      super
+      @_provided_additional_attributes = additional_attributes
+      @_additional_params = self.class.accepts_additional_properties? ? additional_attributes : {}
+      super(defined_attributes)
     end
 
     # Returns additional parameters that were passed but not defined in the schema
@@ -530,18 +580,20 @@ module ActionMCP
           else
             e.message
           end
-          @response.mark_as_error!(:internal_error, message: error_message)
+          @response.report_tool_error(error_message)
         end
       else
-        @response.mark_as_error!(:invalid_params,
-                                 message: "Invalid input",
-                                 data: errors.full_messages)
+        @response.report_tool_error("Invalid input: #{errors.full_messages.join(', ')}")
       end
 
       # If callbacks halted execution (`performed` still false) and
-      # nothing else marked an error, surface it as invalid_params.
+      # nothing else marked an error, surface it as a tool execution error.
       if !performed && !@response.error?
-        @response.mark_as_error!(:invalid_params, message: "Tool execution was aborted")
+        @response.report_tool_error("Tool execution was aborted")
+      end
+
+      if performed && !@response.error? && self.class._output_schema && @response.structured_content.nil?
+        @response.report_tool_error("Tool declared an output schema but returned no structured content")
       end
 
       @response
@@ -565,11 +617,9 @@ module ActionMCP
 
     # Override render to collect Content objects and support structured content
     def render(structured: nil, **args)
-      if structured
-        # Validate structured content against output_schema if enabled
+      unless structured.nil?
         validate_structured_content!(structured) if self.class._output_schema
 
-        # Render structured content
         set_structured_content(structured)
         structured
       else
@@ -632,44 +682,28 @@ module ActionMCP
       @response.set_structured_content(content)
     end
 
-    # Validates structured content against the declared output_schema
-    # Only runs if validate_structured_content is enabled in configuration
+    def input_arguments_match_schema
+      validation_input = if defined?(@_wire_arguments)
+                           @_wire_arguments
+      else
+                           attributes.compact.merge(@_provided_additional_attributes.deep_stringify_keys)
+      end
+      schema_errors = SchemaValidator.validate(self.class.input_schemer, validation_input)
+      SchemaValidator.error_messages(schema_errors).each { |message| errors.add(:base, message) }
+      @_alias_conflicts.each { |message| errors.add(:base, message) }
+    end
+
+    # Validates structured content against the declared output_schema.
     # @param content [Hash] The structured content to validate
     # @raise [StructuredContentValidationError] If content doesn't match schema
     def validate_structured_content!(content)
-      return unless ActionMCP.configuration.validate_structured_content
+      schema_errors = SchemaValidator.validate(self.class.output_schemer, content)
+      return if schema_errors.empty?
 
-      schema = self.class._output_schema
-      return unless schema.present?
-
-      # Lazy load json_schemer - only required if validation is enabled
-      gem "json_schemer", ">= 2.4"
-      require "json_schemer"
-
-      schemer = JSONSchemer.schema(schema.deep_stringify_keys)
-      errors = schemer.validate(deep_stringify_content(content)).to_a
-
-      return if errors.empty?
-
-      error_messages = errors.map { |e| e["error"] }.join(", ")
       raise ActionMCP::StructuredContentValidationError,
-            "Structured content does not match output_schema: #{error_messages}"
+            "Structured content does not match output_schema: " \
+            "#{SchemaValidator.error_messages(schema_errors).join(', ')}"
     end
-
-    # Deep stringify keys for validation (handles symbols and nested structures)
-    def deep_stringify_content(content)
-      case content
-      when Hash
-        content.transform_keys(&:to_s).transform_values { |v| deep_stringify_content(v) }
-      when Array
-        content.map { |v| deep_stringify_content(v) }
-      else
-        content
-      end
-    end
-
-    private
-
 
     # Maps a JSON Schema type to an ActiveModel attribute type.
     #
@@ -689,105 +723,5 @@ module ActionMCP
     end
 
     private_class_method :map_json_type_to_active_model_type
-
-    private
-
-    def validate_property_alias_conflicts(attributes)
-      return unless attributes.is_a?(Hash)
-
-      seen_values = {}
-      seen_keys = {}
-
-      attributes.each do |key, value|
-        key_str = key.to_s
-        property_key = self.class.canonical_property_name(key_str)
-        next unless self.class._schema_properties.key?(property_key)
-
-        if seen_values.key?(property_key) && seen_keys[property_key] != key_str && seen_values[property_key] != value
-          raise ArgumentError,
-                "Conflicting values provided for aliased property '#{property_key}' " \
-                "via '#{seen_keys[property_key]}' and '#{key_str}'"
-        end
-
-        seen_values[property_key] = value
-        seen_keys[property_key] = key_str
-      end
-    end
-
-    # Validates parameter types before ActiveModel conversion
-    def validate_parameter_types(attributes)
-      return unless attributes.is_a?(Hash)
-
-      attributes.each do |key, value|
-        key_str = key.to_s
-        property_key = self.class.canonical_property_name(key_str)
-        property_schema = self.class._schema_properties[property_key]
-
-        next unless property_schema
-
-        expected_type = property_schema[:type]
-
-        # Skip validation if value is nil and property is not required
-        next if value.nil? && !self.class._required_properties.include?(property_key)
-
-        # Validate based on expected JSON Schema type
-        case expected_type
-        when "number"
-          validate_number_parameter(key_str, value)
-        when "integer"
-          validate_integer_parameter(key_str, value)
-        when "string"
-          validate_string_parameter(key_str, value)
-        when "boolean"
-          validate_boolean_parameter(key_str, value)
-        when "array"
-          validate_array_parameter(key_str, value, property_schema)
-        end
-      end
-    end
-
-    def validate_number_parameter(key, value)
-      return if value.is_a?(Numeric)
-
-      raise ArgumentError, "Parameter '#{key}' must be a number, got: #{value.class}" unless value.is_a?(String)
-
-      # Check if string can be converted to a valid number
-      begin
-        Float(value)
-      rescue ArgumentError, TypeError
-        raise ArgumentError, "Parameter '#{key}' must be a valid number, got: #{value.inspect}"
-      end
-    end
-
-    def validate_integer_parameter(key, value)
-      return if value.is_a?(Integer)
-
-      raise ArgumentError, "Parameter '#{key}' must be an integer, got: #{value.class}" unless value.is_a?(String)
-
-      # Check if string can be converted to a valid integer
-      begin
-        Integer(value)
-      rescue ArgumentError, TypeError
-        raise ArgumentError, "Parameter '#{key}' must be a valid integer, got: #{value.inspect}"
-      end
-    end
-
-    def validate_string_parameter(key, value)
-      return if value.is_a?(String)
-
-      raise ArgumentError, "Parameter '#{key}' must be a string, got: #{value.class}"
-    end
-
-    def validate_boolean_parameter(key, value)
-      return if value.is_a?(TrueClass) || value.is_a?(FalseClass)
-
-      raise ArgumentError, "Parameter '#{key}' must be a boolean, got: #{value.class}"
-    end
-
-    def validate_array_parameter(key, value, _property_schema)
-      return if value.is_a?(Array)
-
-      raise ArgumentError, "Parameter '#{key}' must be an array, got: #{value.class}"
-    end
   end
 end

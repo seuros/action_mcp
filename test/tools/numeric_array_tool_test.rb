@@ -121,11 +121,11 @@ class NumericArrayToolTest < ActiveSupport::TestCase
     assert_equal "60.0", result.contents.first.text
   end
 
-  test "call with empty arguments uses default" do
+  test "wire call with empty arguments rejects a missing required collection" do
     result = NumericArrayTool.call({})
-    # Should use default empty array and return 0
-    assert_not result.is_error
-    assert_equal "0", result.contents.first.text
+
+    assert result.error?
+    assert_match(/missing required properties: numbers/, result.contents.first.text)
   end
 
   test "float array type handles various inputs correctly" do

@@ -31,7 +31,7 @@ module ActionMCP
 
         unless tool_class
           Rails.logger.error "Tool not found: #{tool_name}. Registered tools: #{session.registered_tools.map(&:tool_name).join(', ')}"
-          send_jsonrpc_error(request_id, :method_not_found,
+          send_jsonrpc_error(request_id, :invalid_params,
                              "Tool '#{tool_name}' not found or not registered for this session")
           return
         end
@@ -51,8 +51,7 @@ module ActionMCP
         task_requested = !task_params.nil?
 
         if task_requested && !tasks_enabled?
-          send_jsonrpc_error(request_id, :method_not_found,
-                             "Task-augmented execution is not available for this session")
+          execute_tool_synchronously(request_id, tool_class, tool_name, arguments, _meta)
           return
         end
 
@@ -74,7 +73,7 @@ module ActionMCP
           return
         end
 
-        if !task_requested && task_support == :required
+        if !task_requested && tasks_enabled? && task_support == :required
           send_jsonrpc_error(request_id, :method_not_found,
                              "Tool '#{tool_name}' requires task-augmented execution")
           return
@@ -89,7 +88,7 @@ module ActionMCP
       def execute_tool_synchronously(request_id, tool_class, tool_name, arguments, _meta)
         begin
           # Create tool and set execution context with request info
-          tool = tool_class.new(arguments)
+          tool = tool_class.from_wire(arguments)
           tool.with_context({
                               session: session,
                               request: {
@@ -117,6 +116,8 @@ module ActionMCP
                      tool.call
           end
 
+          result = ToolResult.normalize(result)
+
           if result.is_error
             # Protocol error
             send_jsonrpc_response(request_id, error: result.to_h)
@@ -125,11 +126,9 @@ module ActionMCP
             send_jsonrpc_response(request_id, result: result.to_h)
           end
         rescue ArgumentError => e
-          # Handle parameter validation errors (e.g. alias conflicts)
-          send_jsonrpc_error(request_id, :invalid_params, e.message)
+          send_jsonrpc_response(request_id, result: ToolResult.execution_error(e.message).to_h)
         rescue ActiveModel::UnknownAttributeError => e
-          # Undeclared param on a strict tool — message already names the key + tool
-          send_jsonrpc_error(request_id, :invalid_params, e.message)
+          send_jsonrpc_response(request_id, result: ToolResult.execution_error(e.message).to_h)
         rescue StandardError => e
           # Log the actual error for debugging
           Rails.logger.error "Tool execution error: #{e.class} - #{e.message}"
@@ -177,7 +176,10 @@ module ActionMCP
       end
 
       def tasks_enabled?
-        ActionMCP.configuration.tasks_enabled && session.protocol_version == "2025-11-25"
+        return false unless session.protocol_version == "2025-11-25"
+
+        capabilities = (session.server_capabilities || {}).with_indifferent_access
+        capabilities.dig(:tasks, :requests, :tools, :call).is_a?(Hash)
       end
 
       def tool_task_support(tool_class)

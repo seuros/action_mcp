@@ -70,8 +70,15 @@ module ActionMCP
         initialized
       end
 
+      def begin_initialization!
+        return false unless status == "pre_initialize" && !initialized?
+
+        self.status = "initializing"
+        save
+      end
+
       def initialize!
-        return false if initialized?
+        return false unless status == "initializing" && !initialized?
 
         self.initialized = true
         self.status = "initialized"
@@ -86,23 +93,11 @@ module ActionMCP
 
       # Message management
       def write(data)
-        @messages << {
-          data: data,
-          direction: role == "server" ? "client" : "server",
-          created_at: Time.current
-        }
-        @message_counter.increment
-        self.messages_count = @message_counter.value
+        record_message(data, writer_role)
       end
 
       def read(data)
-        @messages << {
-          data: data,
-          direction: role,
-          created_at: Time.current
-        }
-        @message_counter.increment
-        self.messages_count = @message_counter.value
+        record_message(data, role)
       end
 
       def messages
@@ -111,6 +106,42 @@ module ActionMCP
 
       def subscriptions
         SubscriptionCollection.new(@subscriptions)
+      end
+
+      def cancel_in_flight_request(request_id)
+        return if request_id.nil?
+
+        request = received_requests_with_id(request_id).find do |message|
+          !message[:request_acknowledged] && !message[:request_cancelled]
+        end
+        return if request && message_payload(request)[:method] == JsonRpcHandlerBase::Methods::INITIALIZE
+
+        request&.tap { |message| message[:request_cancelled] = true }
+      end
+
+      def client_request_for_progress(progress_token)
+        return if progress_token.nil?
+
+        issued_client_requests.find do |request|
+          message_payload(request).dig(:params, :_meta, :progressToken) == progress_token &&
+            client_request_accepts_progress?(request)
+        end
+      end
+
+      def client_request_for_task(task_id)
+        return unless task_id.is_a?(String) && task_id.present?
+
+        response = @messages.reverse_each.find do |message|
+          message[:direction] == role &&
+            message_payload(message).dig(:result, :task, :taskId) == task_id
+        end
+        return unless response
+
+        response_id = message_payload(response)[:id]
+        issued_client_requests.find do |request|
+          payload = message_payload(request)
+          payload[:id] == response_id && payload.dig(:params, :task).is_a?(Hash)
+        end
       end
 
       # Capability methods
@@ -148,6 +179,10 @@ module ActionMCP
 
       def resource_unsubscribe(uri)
         @subscriptions.delete_if { |s| s[:uri] == uri }
+      end
+
+      def resource_subscribed?(uri)
+        @subscriptions.any? { |subscription| subscription[:uri] == uri }
       end
 
       # Progress notification
@@ -280,20 +315,91 @@ module ActionMCP
 
       private
 
-      def capabilities_for_protocol(capabilities)
-        filtered =
-          if capabilities.respond_to?(:deep_dup)
-            capabilities.deep_dup
-          elsif capabilities
-            capabilities.dup
-          else
-            {}
-          end
-        return filtered if protocol_version == "2025-11-25"
+      CLIENT_REQUEST_METHODS = %w[sampling/createMessage elicitation/create].freeze
+      TERMINAL_CLIENT_TASK_STATUSES = %w[cancelled completed failed].freeze
 
-        filtered.delete("tasks")
-        filtered.delete(:tasks)
-        filtered
+      def record_message(data, direction)
+        payload = data.respond_to?(:to_h) ? data.to_h : data
+        entry = {
+          data: data,
+          direction: direction,
+          request_acknowledged: false,
+          request_cancelled: false,
+          is_ping: payload.is_a?(Hash) && (payload[:method] || payload["method"]) == "ping",
+          created_at: Time.current
+        }
+        @messages << entry
+        acknowledge_request(entry)
+        @message_counter.increment
+        self.messages_count = @message_counter.value
+        entry
+      end
+
+      def acknowledge_request(response)
+        payload = message_payload(response)
+        return unless payload.key?(:id) && (payload.key?(:result) || payload.key?(:error))
+
+        request = @messages.reverse_each.find do |message|
+          next if message.equal?(response) || message[:direction] == response[:direction]
+
+          request_payload = message_payload(message)
+          request_payload.key?(:method) && request_payload[:id] == payload[:id]
+        end
+        return unless request
+
+        request[:request_acknowledged] = true
+        response[:is_ping] = request[:is_ping]
+      end
+
+      def received_requests_with_id(request_id)
+        @messages.reverse_each.select do |message|
+          payload = message_payload(message)
+          message[:direction] == role && payload.key?(:method) && payload[:id] == request_id
+        end
+      end
+
+      def issued_client_requests
+        @messages.reverse_each.select do |message|
+          payload = message_payload(message)
+          message[:direction] == writer_role && CLIENT_REQUEST_METHODS.include?(payload[:method])
+        end
+      end
+
+      def client_request_accepts_progress?(request)
+        return true unless request[:request_acknowledged]
+
+        request_id = message_payload(request)[:id]
+        response = @messages.reverse_each.find do |message|
+          payload = message_payload(message)
+          message[:direction] == role && payload[:id] == request_id && payload.key?(:result)
+        end
+        task = message_payload(response).dig(:result, :task) if response
+        return false unless task.is_a?(Hash) && task[:taskId].is_a?(String)
+
+        latest_status = @messages.reverse_each.filter_map do |message|
+          payload = message_payload(message)
+          next unless message[:direction] == role
+          next unless payload[:method] == JsonRpcHandlerBase::Methods::NOTIFICATIONS_TASKS_STATUS
+          next unless payload.dig(:params, :taskId) == task[:taskId]
+
+          payload.dig(:params, :status)
+        end.first
+
+        !TERMINAL_CLIENT_TASK_STATUSES.include?(latest_status || task[:status])
+      end
+
+      def message_payload(message)
+        data = message[:data]
+        data = data.to_h if data.respond_to?(:to_h)
+        data.is_a?(Hash) ? data.with_indifferent_access : {}.with_indifferent_access
+      end
+
+      def writer_role
+        role == "server" ? "client" : "server"
+      end
+
+      def capabilities_for_protocol(capabilities)
+        capabilities ? capabilities.deep_dup : {}
       end
 
       def normalize_name(class_or_name, type)

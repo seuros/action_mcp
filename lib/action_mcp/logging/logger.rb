@@ -92,50 +92,50 @@ module ActionMCP
       # Check if debug level is enabled
       # @return [Boolean] true if debug messages will be logged
       def debug?
-        state.should_log?(:debug)
+        should_log?(:debug)
       end
 
       # Check if info level is enabled
       # @return [Boolean] true if info messages will be logged
       def info?
-        state.should_log?(:info)
+        should_log?(:info)
       end
 
       # Check if notice level is enabled
       # @return [Boolean] true if notice messages will be logged
       def notice?
-        state.should_log?(:notice)
+        should_log?(:notice)
       end
 
       # Check if warning level is enabled
       # @return [Boolean] true if warning messages will be logged
       def warning?
-        state.should_log?(:warning)
+        should_log?(:warning)
       end
       alias_method :warn?, :warning?
 
       # Check if error level is enabled
       # @return [Boolean] true if error messages will be logged
       def error?
-        state.should_log?(:error)
+        should_log?(:error)
       end
 
       # Check if critical level is enabled
       # @return [Boolean] true if critical messages will be logged
       def critical?
-        state.should_log?(:critical)
+        should_log?(:critical)
       end
 
       # Check if alert level is enabled
       # @return [Boolean] true if alert messages will be logged
       def alert?
-        state.should_log?(:alert)
+        should_log?(:alert)
       end
 
       # Check if emergency level is enabled
       # @return [Boolean] true if emergency messages will be logged
       def emergency?
-        state.should_log?(:emergency)
+        should_log?(:emergency)
       end
 
       private
@@ -147,7 +147,7 @@ module ActionMCP
       # @yield Block that returns message
       # @return [void]
       def log(level, message = nil, data: nil, &block)
-        return unless state.should_log?(level)
+        return unless should_log?(level)
 
         # Evaluate message from block if provided
         final_message = if block_given?
@@ -174,8 +174,7 @@ module ActionMCP
         # Add logger name if present
         params[:logger] = name if name
 
-        # Send via session's messaging service
-        session.messaging_service.send_notification("notifications/message", params)
+        ActionMCP::Server::TransportHandler.new(session).send_logging_message_notification(**params)
       rescue StandardError => e
         # Fallback to Rails logger if MCP transport fails
         Rails.logger.error "Failed to send MCP log notification: #{e.message}"
@@ -202,6 +201,12 @@ module ActionMCP
             additional_data
           end
         end
+      end
+
+      def should_log?(message_level)
+        return false unless ActionMCP::Logging.enabled?
+
+        Level.coerce(message_level) >= Level.coerce(ActionMCP::Logging.level_for(session))
       end
     end
   end

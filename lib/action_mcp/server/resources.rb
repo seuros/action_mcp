@@ -46,7 +46,7 @@ module ActionMCP
       # @param params [Hash] Parameters specifying which resource to read
       def send_resource_read(id, params)
         uri = params["uri"]
-        template = ResourceTemplatesRegistry.find_template_for_uri(uri)
+        template = find_registered_template_for_uri(uri)
 
         unless template
           error = {
@@ -108,7 +108,39 @@ module ActionMCP
         end
       end
 
+      # Subscribe the current session to updates for an available resource.
+      def send_resource_subscribe(id, uri)
+        unless find_registered_template_for_uri(uri)
+          send_jsonrpc_response(id, error: resource_not_found_error(uri))
+          return
+        end
+
+        session.resource_subscribe(uri)
+        send_jsonrpc_response(id, result: {})
+      end
+
+      # Remove a resource update subscription. Unsubscribing is idempotent.
+      def send_resource_unsubscribe(id, uri)
+        session.resource_unsubscribe(uri)
+        send_jsonrpc_response(id, result: {})
+      end
+
       private
+
+      def find_registered_template_for_uri(uri)
+        ResourceTemplatesRegistry.find_template_for_uri(
+          uri,
+          templates: session.registered_resource_templates
+        )
+      end
+
+      def resource_not_found_error(uri)
+        {
+          code: -32_002,
+          message: "Resource not found",
+          data: { uri: uri }
+        }
+      end
 
       # Collect all concrete resources from templates that implement list.
       # Returns nil if a URI collision error was sent.
@@ -167,7 +199,8 @@ module ActionMCP
       def normalize_read_content(content, _uri)
         case content
         when ActionMCP::Content::Resource
-          inner = { uri: content.uri, mimeType: content.mime_type }
+          inner = { uri: content.uri }
+          inner[:mimeType] = content.mime_type if content.mime_type
           inner[:text] = content.text if content.text
           inner[:blob] = content.blob if content.blob
           inner[:_meta] = content.meta if content.meta && !content.meta.empty?

@@ -81,20 +81,19 @@ module ActionMCP
 
       def handle_response(response)
         Rails.logger.debug("Received response: #{response.inspect}")
-        response
+        nil
       end
 
       def process_completion_complete(id, params)
-        # Extract context if provided
-        context = params["context"] if params.is_a?(Hash)
-
-        transport.send_jsonrpc_response(id, result: build_completion_result(params, context))
+        transport.send_completion_complete(id, params)
       end
 
       def process_notifications(rpc_method, params)
         case rpc_method
         when Methods::NOTIFICATIONS_INITIALIZED
-          transport.initialize!
+          raise JSON_RPC::JsonRpcError.new(:invalid_request, message: "Session is not awaiting initialization") unless transport.initialize!
+        when Methods::NOTIFICATIONS_ROOTS_LIST_CHANGED
+          transport.refresh_roots_list
         else
           super
         end
@@ -105,21 +104,6 @@ module ActionMCP
           jsonrpc: "2.0",
           id: response.id,
           result: response.result
-        }
-      end
-
-      def build_completion_result(_params = {}, _context = nil)
-        # In a real implementation, this would use the params and context
-        # to generate appropriate completion suggestions
-        # For now, we just return an empty result
-        #
-        # params contains:
-        # - ref: reference to prompt or resource template
-        # - argument: { name: string, value: string }
-        # - context: { arguments: { [key]: string } } (previously resolved variables)
-
-        {
-          completion: { values: [], total: 0, hasMore: false }
         }
       end
     end

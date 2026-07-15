@@ -1,0 +1,16 @@
+# frozen_string_literal: true
+
+class <%= class_name %> < ApplicationMCPResTemplate
+  description "Interactive UI view for <%= base_name.titleize.downcase %>"
+  uri_template "ui://views/<%= uri_name %>"
+  mime_type :mcp_app
+
+  # Declare CSP origins and host preferences for the embedded view (MCP Apps / SEP-1865).
+  # Only origins listed here can be reached from inside the view iframe.
+  # ui csp: { connectDomains: %w[https://api.example.com] },
+  #    prefersBorder: true
+
+  def resolve
+    render_ui(template: "mcp/ui/<%= view_name %>")
+  end
+end

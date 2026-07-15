@@ -101,5 +101,50 @@ module ActionMCP
 
       assert_empty ResourceTemplate.registered_templates
     end
+
+    test "extracts and percent-decodes parameters from URN templates" do
+      template = Class.new(ResourceTemplate) do
+        def self.name = "UrnTemplate"
+        parameter :id, description: "Identifier", required: true
+        uri_template "urn:example:{id}"
+      end
+
+      resource = template.process("urn:example:hello%20world")
+
+      assert resource.valid?
+      assert_equal "hello world", resource.id
+      assert_equal "urn:example:hello%20world", resource.resolved_uri
+    end
+
+    test "supports reserved and query RFC 6570 operators" do
+      path_template = Class.new(ResourceTemplate) do
+        def self.name = "ReservedPathTemplate"
+        parameter :path, description: "Nested path", required: true
+        uri_template "repo://files/{+path}"
+      end
+      query_template = Class.new(ResourceTemplate) do
+        def self.name = "QueryTemplate"
+        parameter :q, description: "Query", required: true
+        parameter :lang, description: "Language"
+        uri_template "https://example.test/search{?q,lang}"
+      end
+
+      path_resource = path_template.process("repo://files/guides/ruby%20rails")
+      query_resource = query_template.process("https://example.test/search?q=ruby%20rails&lang=en")
+
+      assert_equal "guides/ruby rails", path_resource.path
+      assert_equal "ruby rails", query_resource.q
+      assert_equal "en", query_resource.lang
+    end
+
+    test "detects conflicts between equivalent URN templates" do
+      create_temp_template(uri_template: "urn:example:{id}", name: "FirstUrnTemplate")
+
+      error = assert_raises(ArgumentError) do
+        create_temp_template(uri_template: "urn:example:{name}", name: "SecondUrnTemplate")
+      end
+
+      assert_match(/URI template conflict detected/, error.message)
+    end
   end
 end

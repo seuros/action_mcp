@@ -5,14 +5,10 @@ require "test_helper"
 module ActionMCP
   module Content
     class ResourceTest < ActiveSupport::TestCase
-      test "initializes with uri and mime_type" do
-        resource = Resource.new("gemfile://test", "text/plain", annotations: nil)
-
-        assert_equal "gemfile://test", resource.uri
-        assert_equal "text/plain", resource.mime_type
-        assert_nil resource.text
-        assert_nil resource.blob
-        assert_equal "resource", resource.type
+      test "requires text or blob" do
+        assert_raises(ArgumentError) do
+          Resource.new("gemfile://test", "text/plain", annotations: nil)
+        end
       end
 
       test "initializes with optional text" do
@@ -48,11 +44,10 @@ module ActionMCP
         assert_equal gemfile_json, resource.text
       end
 
-      test "#to_h returns correct hash with uri and mime_type" do
-        resource = Resource.new("gemfile://test", "text/plain", annotations: nil)
-        expected = { type: "resource", resource: { uri: "gemfile://test", mimeType: "text/plain" } }
-
-        assert_equal expected, resource.to_h
+      test "rejects both text and blob" do
+        assert_raises(ArgumentError) do
+          Resource.new("gemfile://test", "text/plain", text: "text", blob: "YmxvYg==")
+        end
       end
 
       test "#to_h includes text when present" do

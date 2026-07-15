@@ -15,10 +15,13 @@ module ActionMCP
       attribute :url, :string
       attribute :elicitation_id, :string
       attribute :_meta # Hash, optional
+      attribute :task # TaskMetadata, optional
 
       validates :message, presence: true
       validates :url, presence: true
       validate :url_must_be_valid_http, if: -> { url.present? }
+      validate :meta_must_be_object, if: -> { _meta.present? }
+      validate :task_must_match_protocol, unless: -> { task.nil? }
 
       def initialize(attributes = {})
         super
@@ -34,6 +37,7 @@ module ActionMCP
           elicitationId: elicitation_id
         }
         params[:_meta] = _meta if _meta.present?
+        params[:task] = task unless task.nil?
         params
       end
 
@@ -54,6 +58,15 @@ module ActionMCP
         end
       rescue URI::InvalidURIError
         errors.add(:url, "is not a valid URI")
+      end
+
+      def meta_must_be_object
+        errors.add(:_meta, "must be an object") unless _meta.is_a?(Hash)
+      end
+
+      def task_must_match_protocol
+        errors.add(:task, "must match MCP 2025-11-25 TaskMetadata") unless
+          task.is_a?(Hash) && ElicitationRequest::TASK_SCHEMER.valid?(task.deep_stringify_keys)
       end
     end
   end

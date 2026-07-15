@@ -14,7 +14,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       id: "init-1",
       method: "initialize",
       params: {
-        protocolVersion: "2025-06-18",
+        protocolVersion: "2025-11-25",
         clientInfo: {
           name: "Test Client",
           version: "1.0.0"
@@ -43,7 +43,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
     post "/",
          headers: {
            "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json",
+           "ACCEPT" => "application/json, text/event-stream",
            "Mcp-Session-Id" => session_id
          },
          params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
@@ -91,7 +91,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       post "/",
            headers: {
              "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json",
+             "ACCEPT" => "application/json, text/event-stream",
              "Mcp-Session-Id" => session_id
            },
            params: tools_request.to_json
