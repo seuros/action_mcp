@@ -27,7 +27,6 @@
 #
 # [callbacks]
 # before_create = [{ method = "initialize_registries" }, { method = "set_server_info", if = ["proc"] }, { method = "set_server_capabilities", if = ["proc"] }]
-# after_initialize = [{ method = "proc" }]
 #
 # notes = ["messages:N_PLUS_ONE", "subscriptions:N_PLUS_ONE", "tasks:N_PLUS_ONE", "client_capabilities:NOT_NULL", "client_info:NOT_NULL", "prompt_registry:NOT_NULL", "protocol_version:NOT_NULL", "resource_registry:NOT_NULL", "server_capabilities:NOT_NULL", "server_info:NOT_NULL", "tool_registry:NOT_NULL", "id:LIMIT", "protocol_version:LIMIT", "role:LIMIT", "status:LIMIT", "status:INDEX"]
 # <rails-lens:schema:end>
@@ -38,10 +37,6 @@ module ActionMCP
   # such as client and server capabilities, protocol version, and session status.
   # It also manages the association with messages and subscriptions related to the session.
   class Session < ApplicationRecord
-    after_initialize do
-      self.consents = {} if consents == "{}" || consents.nil?
-    end
-
     include MCPConsoleHelpers
     attribute :id, :string, default: -> { SecureRandom.hex(16) }
     has_many :messages,
@@ -363,33 +358,34 @@ module ActionMCP
     # Consent management methods as per MCP specification
     # These methods manage user consents for tools and resources
 
+    def consents
+      value = super
+      return {} if value.nil? || value == ""
+
+      value.is_a?(String) ? JSON.parse(value) : value
+    end
+
     # Checks if consent has been granted for a specific key
     # @param key [String] The consent key (e.g., tool name or resource URI)
     # @return [Boolean] true if consent is granted, false otherwise
     def consent_granted_for?(key)
-      consents_hash = consents.is_a?(String) ? JSON.parse(consents) : consents
-      consents_hash&.key?(key) && consents_hash[key] == true
+      consents[key] == true
     end
 
     # Grants consent for a specific key
     # @param key [String] The consent key to grant
     # @return [Boolean] true if saved successfully
     def grant_consent(key)
-      self.consents = JSON.parse(consents) if consents.is_a?(String)
-      self.consents ||= {}
-      self.consents[key] = true
-      save!
+      update!(consents: consents.merge(key => true))
     end
 
     # Revokes consent for a specific key
     # @param key [String] The consent key to revoke
     # @return [void]
     def revoke_consent(key)
-      self.consents = JSON.parse(self.consents) if self.consents.is_a?(String)
-      return unless consents&.key?(key)
+      return unless consents.key?(key)
 
-      consents.delete(key)
-      save!
+      update!(consents: consents.except(key))
     end
 
     private
