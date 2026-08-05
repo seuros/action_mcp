@@ -40,13 +40,13 @@ module TransportMocks
     end
 
     def send_message(json)
-      parsed = MultiJson.load(json)
+      parsed = MultiJSON.parse(json)
       @sent_messages << parsed
       @peer&.receive_message(json)
     end
 
     def receive_message(json)
-      parsed = MultiJson.load(json)
+      parsed = MultiJSON.parse(json)
       send_capabilities_response(parsed["id"]) if parsed["method"] == "initialize"
       @initialized = true if parsed["method"] == "notifications/initialized"
       @handlers.each { |h| h.call(parsed) }

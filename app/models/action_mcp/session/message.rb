@@ -69,8 +69,8 @@ module ActionMCP
         # Convert string payloads to JSON
         if payload.is_a?(String)
           begin
-            @data = MultiJson.load(payload)
-          rescue MultiJson::ParseError
+            @data = MultiJSON.parse(payload)
+          rescue MultiJSON::ParseError
             # Handle invalid JSON by creating an error object
             self.message_json = { "error" => "Invalid JSON", "raw" => payload }
             self.message_type = "invalid_json"

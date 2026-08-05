@@ -84,7 +84,7 @@ module ActionMCP
       if data.is_a?(JSON_RPC::Request) || data.is_a?(JSON_RPC::Response) || data.is_a?(JSON_RPC::Notification)
         data = data.to_json
       end
-      data = MultiJson.dump(data) if data.is_a?(Hash)
+      data = MultiJSON.generate(data) if data.is_a?(Hash)
 
       messages.create!(data: data, direction: writer_role)
     end

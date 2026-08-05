@@ -55,7 +55,7 @@ module ActionMCP
     end
 
     def to_json(*)
-      MultiJson.dump(to_h, *)
+      MultiJSON.generate(to_h, *)
     end
 
     def ==(other)

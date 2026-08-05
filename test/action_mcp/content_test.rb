@@ -111,7 +111,7 @@ module ActionMCP
         assert_equal expected, text.to_h
 
         # Verify to_json returns valid JSON matching to_h
-        parsed = MultiJson.load(text.to_json, symbolize_keys: true)
+        parsed = MultiJSON.parse(text.to_json, symbolize_keys: true)
         assert_equal expected, parsed
       end
 

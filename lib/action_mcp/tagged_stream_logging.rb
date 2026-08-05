@@ -24,7 +24,7 @@ module ActionMCP
       pretty = json_normalise(line)
       log_with_tags("MCP", "RX") { ActionMCP.logger.debug("#{GREEN_RX}#{pretty}#{CLR}") }
       super
-    rescue MultiJson::ParseError => e
+    rescue MultiJSON::ParseError => e
       log_with_tags("MCP", "RX") { ActionMCP.logger.warn("#{YELLOW_ERR}Bad JSON → #{e.message}#{CLR}") }
       raise
     rescue StandardError => e
@@ -57,7 +57,7 @@ module ActionMCP
 
     # Accepts String, Hash, or any #to_json‑able object.
     def json_normalise(obj)
-      str = obj.is_a?(String) ? obj.strip : MultiJson.dump(obj)
+      str = obj.is_a?(String) ? obj.strip : MultiJSON.generate(obj)
       str.empty? ? "<empty frame>" : str
     end
   end

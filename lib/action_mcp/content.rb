@@ -33,7 +33,7 @@ module ActionMCP
       #
       # @return [String] The JSON representation.
       def to_json(*)
-        MultiJson.dump(to_h, *)
+        MultiJSON.generate(to_h, *)
       end
     end
   end
