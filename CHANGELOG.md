@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.200.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.0...action_mcp/v0.200.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* stop Session after_initialize block leaking into host app models ([036882d](https://github.com/seuros/action_mcp/commit/036882d2b70ebee296b5aca572a4159a72372a40))
+
 ## [0.200.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.111.1...action_mcp/v0.200.0) (2026-07-15)
 
 
