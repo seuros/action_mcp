@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.200.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.1...action_mcp/v0.200.2) (2026-08-06)
+
+
+### Bug Fixes
+
+* migrate to MultiJSON constant (multi_json &gt;= 1.21) ([80ea1c0](https://github.com/seuros/action_mcp/commit/80ea1c0f5a21bffc63c823898e244a8f3864b969))
+
 ## [0.200.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.0...action_mcp/v0.200.1) (2026-08-05)
 
 
