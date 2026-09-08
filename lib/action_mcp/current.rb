@@ -4,6 +4,11 @@ module ActionMCP
   class Current < ActiveSupport::CurrentAttributes
     attribute :user
     attribute :gateway
+    attribute :session_data
+
+    def session_data
+      super || (self.session_data = {})
+    end
 
     def user=(user)
       super

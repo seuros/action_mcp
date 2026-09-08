@@ -105,11 +105,13 @@ module ActionMCP
                      # Preserve Current attributes across reloader boundary
                      current_user = ActionMCP::Current.user
                      current_gateway = ActionMCP::Current.gateway
+                     current_session_data = ActionMCP::Current.session_data
 
                      Rails.application.reloader.wrap do
                        # Restore Current attributes inside reloader
                        ActionMCP::Current.user = current_user
                        ActionMCP::Current.gateway = current_gateway
+                       ActionMCP::Current.session_data = current_session_data
                        tool.call
                      end
           else

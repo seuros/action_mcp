@@ -15,5 +15,10 @@ module ActionMCP
     def current_gateway
       ActionMCP::Current.gateway
     end
+
+    # Access the current session data from ActionMCP::Current
+    def current_session_data
+      ActionMCP::Current.session_data
+    end
   end
 end
