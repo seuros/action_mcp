@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.201.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.2...action_mcp/v0.201.0) (2026-09-08)
+
+
+### Features
+
+* add session_data to Current ([158ad1a](https://github.com/seuros/action_mcp/commit/158ad1aaed32b8aa5bf20792123dc7cefd9a490f))
+
 ## [0.200.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.1...action_mcp/v0.200.2) (2026-08-06)
 
 
