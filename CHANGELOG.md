@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.201.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.0...action_mcp/v0.201.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* validate built-in tool content once, not again on serialization ([aeb990e](https://github.com/seuros/action_mcp/commit/aeb990e0258e9219c33c52725e4bb9a8c1e0c6d7))
+
 ## [0.201.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.200.2...action_mcp/v0.201.0) (2026-09-08)
 
 
