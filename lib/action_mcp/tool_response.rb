@@ -102,7 +102,10 @@ module ActionMCP
         raise ArgumentError, "content must respond to #to_h"
       end
 
-      content.to_h.tap { |result| Content::Validation.validate_content_block!(result) }
+      result = content.to_h
+      # Built-in content validates itself in #to_h; anything else is checked here.
+      Content::Validation.validate_content_block!(result) unless content.is_a?(Content::Base)
+      result
     end
   end
 end

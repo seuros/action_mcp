@@ -104,6 +104,15 @@ module ActionMCP
       end
     end
 
+    test "validates built-in content once when adding it" do
+      calls = 0
+      original = Content::Validation.method(:validate_content_block!)
+      counting = ->(content) { calls += 1; original.call(content) }
+      Content::Validation.stub(:validate_content_block!, counting) { @response.add(@text_content) }
+
+      assert_equal 1, calls
+    end
+
     test "revalidates contents before serialization" do
       @response.contents << { type: "text", text: 123 }
 
