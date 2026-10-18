@@ -3,11 +3,23 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/view/view_generator"
+require "tmpdir"
 
 class ViewGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::ViewGenerator
   destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-  setup :prepare_destination
+
+  # destination_root is a class_attribute shared across all generator test classes
+  # (they all point at the same literal tmp dir), so give each test its own directory
+  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
+  setup do
+    self.destination_root = Dir.mktmpdir("action_mcp_view_generator_test")
+    prepare_destination
+  end
+
+  teardown do
+    FileUtils.rm_rf(destination_root)
+  end
 
   test "generator creates resource template and view pair" do
     run_generator %w[WeatherDashboard]

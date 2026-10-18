@@ -2,11 +2,23 @@
 
 require "test_helper"
 require "generators/action_mcp/identifier/identifier_generator"
+require "tmpdir"
 
 class ActionMCP::Generators::IdentifierGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::IdentifierGenerator
   destination Rails.root.join("tmp/generator_test_output")
-  setup :prepare_destination
+
+  # destination_root is a class_attribute shared across all generator test classes
+  # (they all point at the same literal tmp dir), so give each test its own directory
+  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
+  setup do
+    self.destination_root = Dir.mktmpdir("action_mcp_identifier_generator_test")
+    prepare_destination
+  end
+
+  teardown do
+    FileUtils.rm_rf(destination_root)
+  end
 
   test "generates identifier with default options" do
     run_generator [ "MyAuth", "--auth-method=api_key" ]

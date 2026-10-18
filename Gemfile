@@ -45,6 +45,7 @@ gem "minitest", ">= 5.25", group: :test
 gem "minitest-mock", group: :test # Separate gem in Ruby 4.0+
 gem "minitest-reporters", group: :test
 gem "maxitest", group: :test
+gem "padded_cell", group: :test
 
 # File system watching for development
 gem "listen", group: :development

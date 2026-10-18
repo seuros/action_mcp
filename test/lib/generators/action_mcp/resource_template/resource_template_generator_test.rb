@@ -3,11 +3,23 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/resource_template/resource_template_generator"
+require "tmpdir"
 
 class ResourceTemplateGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::ResourceTemplateGenerator
   destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-  setup :prepare_destination
+
+  # destination_root is a class_attribute shared across all generator test classes
+  # (they all point at the same literal tmp dir), so give each test its own directory
+  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
+  setup do
+    self.destination_root = Dir.mktmpdir("action_mcp_resource_template_generator_test")
+    prepare_destination
+  end
+
+  teardown do
+    FileUtils.rm_rf(destination_root)
+  end
 
   def generated_template_path(name)
     base = name.underscore

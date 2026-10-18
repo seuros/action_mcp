@@ -4,9 +4,11 @@
 /pkg/
 /tmp/
 /db/*.sqlite3
+/db/*.sqlite3_*
 /db/*.sqlite3-*
 /db/schema.rb
 /test/dummy/db/*.sqlite3
+/test/dummy/db/*.sqlite3_*
 /test/dummy/db/*.sqlite3-*
 /test/dummy/db/schema.rb
 /test/dummy/log/*.log

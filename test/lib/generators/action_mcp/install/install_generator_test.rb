@@ -3,11 +3,23 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/install/install_generator"
+require "tmpdir"
 
 class InstallGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::InstallGenerator
   destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-  setup :prepare_destination
+
+  # destination_root is a class_attribute shared by every test in this class.
+  # Give each test its own directory so concurrent runs (parallelize, padded_cell) don't
+  # race on rm_rf/mkdir_p against the same path.
+  setup do
+    self.destination_root = Dir.mktmpdir("action_mcp_install_generator_test")
+    prepare_destination
+  end
+
+  teardown do
+    FileUtils.rm_rf(destination_root)
+  end
 
   test "generator creates application prompt file" do
     run_generator
