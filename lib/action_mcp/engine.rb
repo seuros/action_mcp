@@ -50,9 +50,9 @@ module ActionMCP
         ActionMCP::PromptsRegistry.clear!
       end
 
-      # Eager load MCP components if profile includes "all"
-      # This runs after Zeitwerk is fully set up
-      ActionMCP.configuration.eager_load_if_needed
+      # Eager load MCP components if profile includes "all". Booting without
+      # eager loading defers them to the first registry read instead.
+      ActionMCP.configuration.prepare_mcp_components
 
       # Register compiled MCP Apps views after registries
       # are (re)built. Runs on each dev reload so rebuilt view bundles/hashes

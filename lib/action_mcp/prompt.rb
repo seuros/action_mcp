@@ -56,7 +56,7 @@ module ActionMCP
       end
 
       def unregister_from_registry
-        ActionMCP::PromptsRegistry.unregister(self) if ActionMCP::PromptsRegistry.items.values.include?(self)
+        ActionMCP::PromptsRegistry.unregister(self) if ActionMCP::PromptsRegistry.store.values.include?(self)
       end
 
       # Hook called when a class inherits from Prompt

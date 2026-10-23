@@ -31,7 +31,7 @@ module ActionMCP
       def abstract!
         @abstract = true
         # Unregister from the appropriate registry if already registered
-        return unless ActionMCP::ResourceTemplatesRegistry.items.values.include?(self)
+        return unless ActionMCP::ResourceTemplatesRegistry.store.values.include?(self)
 
         ActionMCP::ResourceTemplatesRegistry.unregister(self)
       end

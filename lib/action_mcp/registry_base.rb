@@ -7,11 +7,19 @@ module ActionMCP
     class NotFound < StandardError; end
 
     class << self
-      # Returns all registered items.
+      # Raw storage for writes: registering never triggers the deferred component load.
+      #
+      # @return [Hash] A hash of registered items.
+      def store
+        @items ||= {}
+      end
+
+      # Returns all registered items, running a deferred component load first.
       #
       # @return [Hash] A hash of registered items.
       def items
-        @items ||= {}
+        ActionMCP.configuration.load_deferred_mcp_components
+        store
       end
 
       # Register an item explicitly
@@ -22,7 +30,7 @@ module ActionMCP
         return if klass.abstract?
 
         name = klass.capability_name
-        items[name] = klass
+        store[name] = klass
         klass._registered_name = name if klass.respond_to?(:_registered_name=)
       end
 
@@ -38,11 +46,11 @@ module ActionMCP
         new_name = klass.capability_name
 
         # Remove old entry if it exists and points to this class
-        if old_name && items[old_name] == klass
-          items.delete(old_name)
+        if old_name && store[old_name] == klass
+          store.delete(old_name)
         end
 
-        items[new_name] = klass
+        store[new_name] = klass
         klass._registered_name = new_name if klass.respond_to?(:_registered_name=)
       end
 
@@ -51,7 +59,7 @@ module ActionMCP
       # @param klass [Class] The class to unregister
       # @return [void]
       def unregister(klass)
-        items.delete(klass.capability_name)
+        store.delete(klass.capability_name)
       end
 
       # Retrieve an item by name.

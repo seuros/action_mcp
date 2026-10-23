@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "monitor"
 require_relative "gateway"
 
 module ActionMCP
@@ -107,6 +108,8 @@ module ActionMCP
       # Browser origins allowed to reach a local server. Remote deployments must
       # explicitly add their trusted origin hosts.
       @allowed_origins = %w[localhost 127.0.0.1 ::1].freeze
+
+      @mcp_components_monitor = Monitor.new
     end
 
     def name
@@ -340,20 +343,54 @@ module ActionMCP
     end
 
     def eager_load_if_needed
-      profile = @profiles[active_profile]
-      return unless profile
+      ensure_mcp_components_loaded if mcp_components_load_needed?
+    end
 
-      # Check if any component type includes "all"
-      needs_eager_load = profile[:tools]&.include?("all") ||
-                         profile[:prompts]&.include?("all") ||
-                         profile[:resources]&.include?("all")
+    # Loading app/mcp inside initialize! drags every model the tools reference into boot.
+    def prepare_mcp_components
+      if defer_mcp_components_load?
+        @mcp_components_state = (:deferred if mcp_components_load_needed?)
+      else
+        @mcp_components_state = nil
+        eager_load_if_needed
+      end
+    end
 
-      return unless needs_eager_load
+    def mcp_components_deferred?
+      @mcp_components_state == :deferred
+    end
 
-      ensure_mcp_components_loaded
+    # Reentrant Monitor: the load registers (and may read) through the registries on this thread.
+    def load_deferred_mcp_components
+      return unless @mcp_components_state
+
+      @mcp_components_monitor.synchronize do
+        next unless @mcp_components_state == :deferred
+
+        @mcp_components_state = :loading
+        begin
+          ensure_mcp_components_loaded
+          @mcp_components_state = nil
+        ensure
+          @mcp_components_state = :deferred if @mcp_components_state == :loading
+        end
+      end
     end
 
     private
+
+    def defer_mcp_components_load?
+      !Rails.configuration.eager_load && !Rails.application.initialized?
+    end
+
+    def mcp_components_load_needed?
+      profile = @profiles[active_profile]
+      return false unless profile
+
+      profile[:tools]&.include?("all") ||
+        profile[:prompts]&.include?("all") ||
+        profile[:resources]&.include?("all")
+    end
 
     def default_profiles
       {
