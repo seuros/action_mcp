@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.201.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.1...action_mcp/v0.201.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* defer MCP component loading to first registry read when Rails boots without eager loading ([#236](https://github.com/seuros/action_mcp/issues/236)) ([d88c58c](https://github.com/seuros/action_mcp/commit/d88c58cf9a1cdd64541c581dc2dcafcb9c3add22))
+
 ## [0.201.1](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.0...action_mcp/v0.201.1) (2026-10-18)
 
 
