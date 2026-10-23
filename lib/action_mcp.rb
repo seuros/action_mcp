@@ -83,14 +83,14 @@ module ActionMCP
   #
   # @return [ActionMCP::RegistryBase::RegistryScope] the available tools
   def available_tools
-    ToolsRegistry.available_tools
+    ToolsRegistry.non_abstract
   end
 
   # Returns the available prompts.
   #
   # @return [ActionMCP::RegistryBase::RegistryScope] the available prompts
   def available_prompts
-    PromptsRegistry.available_prompts
+    PromptsRegistry.non_abstract
   end
 
   ActiveModel::Type.register(:string_array, StringArray)

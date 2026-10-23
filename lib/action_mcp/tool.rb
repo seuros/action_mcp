@@ -87,7 +87,7 @@ module ActionMCP
       end
 
       def unregister_from_registry
-        ActionMCP::ToolsRegistry.unregister(self) if ActionMCP::ToolsRegistry.items.values.include?(self)
+        ActionMCP::ToolsRegistry.unregister(self) if ActionMCP::ToolsRegistry.store.values.include?(self)
       end
 
       # Hook called when a class inherits from Tool

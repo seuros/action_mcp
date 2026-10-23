@@ -82,13 +82,13 @@ module ActionMCP
           end
 
           generated.concat(ResourceTemplate.registered_templates.select { |klass| generated_template?(klass) })
-          generated.concat(ResourceTemplatesRegistry.items.values.select { |klass| generated_template?(klass) })
+          generated.concat(ResourceTemplatesRegistry.store.values.select { |klass| generated_template?(klass) })
           generated.uniq!
 
           ResourceTemplate.registered_templates.delete_if do |klass|
             generated.include?(klass) || generated_template?(klass)
           end
-          ResourceTemplatesRegistry.items.delete_if do |_name, klass|
+          ResourceTemplatesRegistry.store.delete_if do |_name, klass|
             generated.include?(klass) || generated_template?(klass)
           end
 
@@ -139,7 +139,7 @@ module ActionMCP
             end
           end
 
-          ResourceTemplatesRegistry.items.delete_if { |_key, registered| registered.equal?(klass) }
+          ResourceTemplatesRegistry.store.delete_if { |_key, registered| registered.equal?(klass) }
           ResourceTemplatesRegistry.register(klass)
 
           [ klass, logical_uri, uri ]
