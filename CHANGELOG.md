@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.201.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.2...action_mcp/v0.201.3) (2026-10-27)
+
+
+### Bug Fixes
+
+* exceptions raised while a prompt or tool performs reach Rails.error instead of vanishing into the error response ([#238](https://github.com/seuros/action_mcp/issues/238)) ([21e1f31](https://github.com/seuros/action_mcp/commit/21e1f31fb1c9916520158d9322da762650531c8b))
+
 ## [0.201.2](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.1...action_mcp/v0.201.2) (2026-10-23)
 
 
