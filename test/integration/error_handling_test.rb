@@ -19,15 +19,17 @@ class ErrorHandlingTest < ActionDispatch::IntegrationTest
   end
 
   test "handles tool execution errors properly" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "test-1",
-      method: "tools/call",
-      params: {
-        name: "error_raising",
-        arguments: { input: "test" }
-      }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
+    assert_error_reported(StandardError) do
+      post "/", params: {
+        jsonrpc: "2.0",
+        id: "test-1",
+        method: "tools/call",
+        params: {
+          name: "error_raising",
+          arguments: { input: "test" }
+        }
+      }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
+    end
 
     assert_response :success
     body = response.parsed_body
