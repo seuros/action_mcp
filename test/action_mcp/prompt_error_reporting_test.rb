@@ -4,24 +4,12 @@ require "test_helper"
 
 module ActionMCP
   class PromptErrorReportingTest < ActiveSupport::TestCase
-    setup do
-      @prompt_class = Class.new(ApplicationMCPPrompt) do
-        prompt_name "error_raising_prompt"
-        description "A prompt that always raises"
-
-        def perform
-          raise ArgumentError, "prompt exploded"
-        end
-      end
-    end
-
-    teardown do
-      @prompt_class.unregister_from_registry
-    end
-
     test "an exception raised while performing is reported and answered as an internal error" do
+      prompt = GreetingPrompt.new(name: "Ada")
+      prompt.define_singleton_method(:perform) { raise ArgumentError, "prompt exploded" }
       response = nil
-      report = assert_error_reported(ArgumentError) { response = @prompt_class.new.call }
+
+      report = assert_error_reported(ArgumentError) { response = prompt.call }
 
       assert_equal "prompt exploded", report.error.message
       assert response.is_error
