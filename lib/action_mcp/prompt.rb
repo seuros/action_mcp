@@ -166,8 +166,8 @@ module ActionMCP
           run_callbacks :perform do
             perform # Invoke the subclass-specific logic if valid
           end
-        rescue StandardError
-          # Handle exceptions during execution
+        rescue StandardError => e
+          Rails.error.report(e, handled: true, severity: :error)
           @response.mark_as_error!(:internal_error, message: "Unhandled Error executing prompt")
         end
       else

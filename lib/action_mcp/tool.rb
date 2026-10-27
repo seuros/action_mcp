@@ -574,6 +574,7 @@ module ActionMCP
             perform
           end
         rescue StandardError => e
+          Rails.error.report(e, handled: true, severity: :error)
           # Show generic error message for HTTP requests, detailed for direct calls
           error_message = if execution_context[:request].present?
                              "An unexpected error occurred."
