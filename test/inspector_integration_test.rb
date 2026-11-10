@@ -77,90 +77,26 @@ class InspectorIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   def initialize_session
-    request_id = next_request_id
-    init_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "initialize",
-      params: {
-        protocolVersion: @protocol_version,
-        clientInfo: {
-          name: "MCP Inspector",
-          version: "1.0.0"
-        },
-        capabilities: {}
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream"
-         },
-         params: init_request.to_json
-
-    assert_response :ok
-    session_id = response.headers["Mcp-Session-Id"]
-    assert_not_nil session_id, "Session ID should be present in header"
+    session_id = initialize_mcp_session(complete: false, protocol_version: @protocol_version,
+                                        client_name: "MCP Inspector", client_version: "1.0.0")
 
     # Enhance the session with a tool for testing
-    session = ActionMCP::Server.session_store.load_session(session_id)
-    session.register_tool("calculate_sum")
+    ActionMCP::Server.session_store.load_session(session_id).register_tool("calculate_sum")
 
     session_id
   end
 
   def send_initialized_notification(session_id)
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
+    mcp_notify("notifications/initialized", session_id: session_id)
   end
 
   def list_tools_with_progress_token(session_id, progress_token = "inspector-tools-progress")
-    request_id = next_request_id
-    tools_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "tools/list",
-      params: {
-        _meta: {
-          progressToken: progress_token
-        }
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: tools_request.to_json
-
+    mcp_post("tools/list", { _meta: { progressToken: progress_token } }, id: next_request_id, session_id: session_id)
     JSON.parse(response.body)
   end
 
   def send_cancellation_notification(session_id, request_id, reason)
-    cancel_notification = {
-      jsonrpc: "2.0",
-      method: "notifications/cancelled",
-      params: {
-        requestId: request_id,
-        reason: reason
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: cancel_notification.to_json
+    mcp_notify("notifications/cancelled", { requestId: request_id, reason: reason }, session_id: session_id)
 
     assert_includes [ 200, 202 ], response.status,
                     "Cancellation notification should be accepted with 200 OK or 202 Accepted"

@@ -1,61 +1,43 @@
 # frozen_string_literal: true
 
 namespace :action_mcp do
+  # Prints one registry's non-abstract entries under a coloured heading.
+  print_registry = lambda do |title, color, registry, &details|
+    Rails.application.eager_load!
+
+    puts "\e[#{color}m#{title}\e[0m"
+    puts "\e[#{color}m#{'-' * (title.length - 1)}\e[0m"
+    entries = registry.non_abstract.sort_by(&:name)
+    if entries.any?
+      entries.each do |entry|
+        line = "\e[#{color}m#{entry.name}:\e[0m #{entry.description}"
+        line += " : #{details.call(entry)}" if details
+        puts line
+      end
+    else
+      puts "  No #{title.split.last.downcase} registered"
+    end
+    puts "\n"
+  end
+
   # bin/rails action_mcp:list_tools
   desc "List all tools with their names and descriptions"
   task list_tools: :environment do
-    # Ensure Rails eager loads all classes
-    Rails.application.eager_load!
-
-    puts "\e[34mACTION MCP TOOLS\e[0m"  # Blue
-    puts "\e[34m---------------\e[0m"   # Blue
-    tools = ActionMCP::ToolsRegistry.non_abstract.sort_by(&:name)
-    if tools.any?
-      tools.each do |tool|
-        puts "\e[34m#{tool.name}:\e[0m #{tool.description}" # Blue name
-      end
-    else
-      puts "  No tools registered"
-    end
-    puts "\n"
+    print_registry.call("ACTION MCP TOOLS", 34, ActionMCP::ToolsRegistry)
   end
 
   # bin/rails action_mcp:list_prompts
   desc "List all prompts with their names and descriptions"
   task list_prompts: :environment do
-    # Ensure Rails eager loads all classes
-    Rails.application.eager_load!
-
-    puts "\e[32mACTION MCP PROMPTS\e[0m"  # Green
-    puts "\e[32m-----------------\e[0m"   # Green
-    prompts = ActionMCP::PromptsRegistry.non_abstract.sort_by(&:name)
-    if prompts.any?
-      prompts.each do |prompt|
-        puts "\e[32m#{prompt.name}:\e[0m #{prompt.description}" # Green name
-      end
-    else
-      puts "  No prompts registered"
-    end
-    puts "\n"
+    print_registry.call("ACTION MCP PROMPTS", 32, ActionMCP::PromptsRegistry)
   end
 
   # bin/rails action_mcp:list_resources
   desc "List all resources with their names and descriptions"
   task list_resources: :environment do
-    # Ensure Rails eager loads all classes
-    Rails.application.eager_load!
-
-    puts "\e[33mACTION MCP RESOURCES\e[0m" # Yellow
-    puts "\e[33m--------------------\e[0m" # Yellow
-    resources = ActionMCP::ResourceTemplatesRegistry.non_abstract.sort_by(&:name)
-    if resources.any?
-      resources.each do |resource|
-        puts "\e[33m#{resource.name}:\e[0m #{resource.description} : #{resource.klass.uri_template}" # Yellow name
-      end
-    else
-      puts "  No resources registered"
+    print_registry.call("ACTION MCP RESOURCES", 33, ActionMCP::ResourceTemplatesRegistry) do |resource|
+      resource.klass.uri_template
     end
-    puts "\n"
   end
 
   # bin/rails action_mcp:list_widgets
@@ -198,9 +180,7 @@ namespace :action_mcp do
       # Show Capabilities
       puts "\n\e[36mActive Capabilities:\e[0m" # Cyan
       capabilities = ActionMCP.configuration.capabilities
-      capabilities.each do |cap_name, cap_config|
-        puts "  #{cap_name}: #{cap_config.inspect}"
-      end
+      capabilities.each { |name, config| puts "  #{name}: #{config.inspect}" }
     end
 
     puts "\n"
@@ -273,9 +253,7 @@ namespace :action_mcp do
     puts "\n\e[36mEnabled Capabilities:\e[0m"
     capabilities = config.capabilities
     if capabilities.any?
-      capabilities.each do |cap_name, cap_config|
-        puts "  #{cap_name}: #{cap_config.inspect}"
-      end
+      capabilities.each { |name, config| puts "  #{name}: #{config.inspect}" }
     else
       puts "  None"
     end

@@ -82,13 +82,9 @@ module ActionMCP
 
     # Override to_h to use -32002 for resource not found (consistent with send_resource_read)
     def to_h(_options = nil)
-      if @is_error && @symbol.nil?
-        { code: -32_002, message: @error_message, data: @error_data }
-      elsif @is_error
-        JSON_RPC::JsonRpcError.new(@symbol, message: @error_message, data: @error_data).to_h
-      else
-        build_success_hash
-      end
+      return { code: -32_002, message: @error_message, data: @error_data } if @is_error && @symbol.nil?
+
+      super
     end
 
     # Implementation of build_success_hash for ResourceResponse

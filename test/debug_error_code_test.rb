@@ -15,16 +15,7 @@ class DebugErrorCodeTest < ActionDispatch::IntegrationTest
   end
 
   test "debug error code for unknown method" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "test-1",
-      method: "unknown_method",
-      params: {}
-    }.to_json, headers: {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream",
-      "Mcp-Session-Id" => @session.id
-    }
+    mcp_post("unknown_method", {}, id: "test-1", session_id: @session.id)
 
     assert_response :success
     body = response.parsed_body

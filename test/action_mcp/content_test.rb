@@ -5,54 +5,32 @@ require "test_helper"
 module ActionMCP
   module Content
     class ContentTest < ActiveSupport::TestCase
-      test "Audio content behaves as expected" do
-        data = Base64.strict_encode64("audio data")
-        mime_type = "audio/mp3"
-        audio = Audio.new(data, mime_type)
+      {
+        Audio => [ "audio", "audio/mp3", { "audience" => [ "user" ], "priority" => 1 } ],
+        Image => [ "image", "image/png", { "audience" => [ "assistant" ], "priority" => 0.5 } ]
+      }.each do |klass, (type, mime_type, annotations)|
+        name = klass.name.demodulize
 
-        # Verify attributes and type
-        assert_equal "audio", audio.type
-        assert_equal data, audio.data
-        assert_equal mime_type, audio.mime_type
+        test "#{name} content behaves as expected" do
+          data = Base64.strict_encode64("#{type} data")
+          content = klass.new(data, mime_type)
 
-        # Verify to_h output
-        expected = { type: "audio", data: data, mimeType: mime_type }
-        assert_equal expected, audio.to_h
-      end
+          # Verify attributes and type
+          assert_equal type, content.type
+          assert_equal data, content.data
+          assert_equal mime_type, content.mime_type
 
-      test "Audio content supports annotations" do
-        data = Base64.strict_encode64("audio data")
-        mime_type = "audio/mp3"
-        annotations = { "audience" => [ "user" ], "priority" => 1 }
-        audio = Audio.new(data, mime_type, annotations: annotations)
-        expected = { type: "audio", data: data, mimeType: mime_type, annotations: annotations }
-        assert_equal annotations, audio.annotations
-        assert_equal expected, audio.to_h
-      end
+          # Verify to_h output
+          assert_equal({ type: type, data: data, mimeType: mime_type }, content.to_h)
+        end
 
-      test "Image content behaves as expected" do
-        data = Base64.strict_encode64("image data")
-        mime_type = "image/png"
-        image = Image.new(data, mime_type)
-
-        # Verify attributes and type
-        assert_equal "image", image.type
-        assert_equal data, image.data
-        assert_equal mime_type, image.mime_type
-
-        # Verify to_h output
-        expected = { type: "image", data: data, mimeType: mime_type }
-        assert_equal expected, image.to_h
-      end
-
-      test "Image content supports annotations" do
-        data = Base64.strict_encode64("image data")
-        mime_type = "image/png"
-        annotations = { "audience" => [ "assistant" ], "priority" => 0.5 }
-        image = Image.new(data, mime_type, annotations: annotations)
-        expected = { type: "image", data: data, mimeType: mime_type, annotations: annotations }
-        assert_equal annotations, image.annotations
-        assert_equal expected, image.to_h
+        test "#{name} content supports annotations" do
+          data = Base64.strict_encode64("#{type} data")
+          content = klass.new(data, mime_type, annotations: annotations)
+          expected = { type: type, data: data, mimeType: mime_type, annotations: annotations }
+          assert_equal annotations, content.annotations
+          assert_equal expected, content.to_h
+        end
       end
 
       test "Resource content behaves as expected with various configurations" do

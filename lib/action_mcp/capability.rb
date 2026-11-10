@@ -14,6 +14,7 @@ module ActionMCP
     class_attribute :_capability_name, instance_accessor: false
     class_attribute :_registered_name, instance_accessor: false
     class_attribute :_description, instance_accessor: false, default: ""
+    class_attribute :_meta, instance_accessor: false, default: {}
 
     attr_reader :execution_context
 
@@ -29,6 +30,14 @@ module ActionMCP
 
     def session
       execution_context[:session]
+    end
+
+    def inspect
+      attribute_list = attributes.transform_values(&:inspect).map { |k, v| "#{k}: #{v.inspect}" }.join(", ")
+      response_info = defined?(@response) && @response ? "response: #{response_summary}" : "response: nil"
+      errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
+
+      "#<#{self.class.name} #{attribute_list}, #{response_info}#{errors_info}>"
     end
 
     delegate :session_data, to: :session, allow_nil: true
@@ -77,5 +86,39 @@ module ActionMCP
         _description
       end
     end
+
+    # Sets or retrieves the _meta field
+    def self.meta(data = nil)
+      return _meta unless data
+      raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
+
+      self._meta = _meta.merge(data)
+    end
+
+    # Name derived from the class: Admin::ReportTool => "admin__report".
+    def self.default_capability_name
+      return "" if name.nil?
+
+      name.underscore.gsub("/", "__").sub(/_#{type}$/, "")
+    end
+
+    def self.unregister_from_registry
+      registry.unregister(self) if registry.store.values.include?(self)
+    end
+
+    def self.assign_capability_name(name)
+      self._capability_name = name
+      re_register_if_needed
+      name
+    end
+
+    # Re-registers under the new name when the class was registered under an older one.
+    def self.re_register_if_needed
+      return if abstract? || !_registered_name || _registered_name == capability_name
+
+      registry.re_register(self, _registered_name)
+    end
+
+    private_class_method :assign_capability_name, :re_register_if_needed
   end
 end

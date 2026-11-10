@@ -3,66 +3,48 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/prompt/prompt_generator"
-require "tmpdir"
 
 class PromptGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::PromptGenerator
-  destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-
-  # destination_root is a class_attribute shared across all generator test classes
-  # (they all point at the same literal tmp dir), so give each test its own directory
-  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
-  setup do
-    self.destination_root = Dir.mktmpdir("action_mcp_prompt_generator_test")
-    prepare_destination
-  end
-
-  teardown do
-    FileUtils.rm_rf(destination_root)
-  end
+  include GeneratorTestDestination
 
   def generated_prompt_path(name)
-    base = name.underscore
-    file = base.end_with?("_prompt") ? base : "#{base}_prompt"
-    File.join(destination_root, "app/mcp/prompts/#{file}.rb")
+    generated_component_path(name, "prompt", "prompts")
   end
 
-  def run_generator_with_args(args)
-    run_generator args
-  end
 
   test "generator creates prompt file with correct class name" do
-    run_generator_with_args %w[MyCustom]
+    run_generator %w[MyCustom]
     assert_file generated_prompt_path("my_custom"), /class MyCustomPrompt < ApplicationMCPPrompt/
   end
 
   test "generator appends Prompt to class name if not present" do
-    run_generator_with_args %w[Another]
+    run_generator %w[Another]
     assert_file generated_prompt_path("another"), /class AnotherPrompt < ApplicationMCPPrompt/
   end
 
   test "generator does not double Prompt in class name" do
-    run_generator_with_args %w[AlreadyPrompt]
+    run_generator %w[AlreadyPrompt]
     assert_file generated_prompt_path("already_prompt"), /class AlreadyPrompt < ApplicationMCPPrompt/
   end
 
   test "generator sets correct prompt name" do
-    run_generator_with_args %w[TestAnalyzer]
+    run_generator %w[TestAnalyzer]
     assert_file generated_prompt_path("test_analyzer"), /prompt_name "test-analyzer"/
   end
 
   test "generator removes Prompt suffix from prompt name" do
-    run_generator_with_args %w[AnalyzerPrompt]
+    run_generator %w[AnalyzerPrompt]
     assert_file generated_prompt_path("analyzer_prompt"), /prompt_name "analyzer"/
   end
 
   test "generator includes default description" do
-    run_generator_with_args %w[TestPrompt]
+    run_generator %w[TestPrompt]
     assert_file generated_prompt_path("test_prompt"), /description "Describe what this prompt does"/
   end
 
   test "generator creates proper file structure" do
-    run_generator_with_args %w[CompleteTest]
+    run_generator %w[CompleteTest]
     assert_file generated_prompt_path("complete_test") do |content|
       assert_match(/class CompleteTestPrompt < ApplicationMCPPrompt/, content)
       assert_match(/prompt_name "complete-test"/, content)

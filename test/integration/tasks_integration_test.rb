@@ -50,14 +50,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
   # tasks/get tests
   test "tasks/get returns task data for existing task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-1",
-           method: "tasks/get",
-           params: { taskId: @working_task.id }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/get", { taskId: @working_task.id }, id: "test-1")
 
     assert_response :success
     body = response.parsed_body
@@ -71,14 +64,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/get returns error for non-existent task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-2",
-           method: "tasks/get",
-           params: { taskId: "non-existent-task-id" }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/get", { taskId: "non-existent-task-id" }, id: "test-2")
 
     assert_response :success
     body = response.parsed_body
@@ -87,14 +73,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/get returns error when taskId is missing" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-3",
-           method: "tasks/get",
-           params: {}
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/get", {}, id: "test-3")
 
     assert_response :success
     body = response.parsed_body
@@ -105,13 +84,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
   # tasks/list tests
   test "tasks/list returns all tasks for session" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-4",
-           method: "tasks/list"
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/list", id: "test-4")
 
     assert_response :success
     body = response.parsed_body
@@ -135,14 +108,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     end
 
     # First page
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-5",
-           method: "tasks/list",
-           params: {}
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/list", {}, id: "test-5")
 
     assert_response :success
     body = response.parsed_body
@@ -171,27 +137,14 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     older.update_columns(created_at: base_time, updated_at: base_time, last_updated_at: base_time)
     newer.update_columns(created_at: base_time + 1.second, updated_at: base_time + 1.second, last_updated_at: base_time + 1.second)
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-5a",
-           method: "tasks/list"
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/list", id: "test-5a")
 
     assert_response :success
     body = response.parsed_body
     assert_equal [ newer.id ], body["result"]["tasks"].map { |task| task["taskId"] }
     assert body["result"]["nextCursor"]
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-5b",
-           method: "tasks/list",
-           params: { cursor: body["result"]["nextCursor"] }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/list", { cursor: body["result"]["nextCursor"] }, id: "test-5b")
 
     assert_response :success
     body = response.parsed_body
@@ -203,14 +156,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
   # tasks/result tests
   test "tasks/result returns result for completed task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-6",
-           method: "tasks/result",
-           params: { taskId: @completed_task.id }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/result", { taskId: @completed_task.id }, id: "test-6")
 
     assert_response :success
     body = response.parsed_body
@@ -221,14 +167,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/result works for failed tasks" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-8",
-           method: "tasks/result",
-           params: { taskId: @failed_task.id }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/result", { taskId: @failed_task.id }, id: "test-8")
 
     assert_response :success
     body = response.parsed_body
@@ -240,14 +179,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
   # tasks/cancel tests
   test "tasks/cancel cancels a working task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-9",
-           method: "tasks/cancel",
-           params: { taskId: @working_task.id }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/cancel", { taskId: @working_task.id }, id: "test-9")
 
     assert_response :success
     body = response.parsed_body
@@ -260,14 +192,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/cancel returns error for already terminal task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-10",
-           method: "tasks/cancel",
-           params: { taskId: @completed_task.id }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/cancel", { taskId: @completed_task.id }, id: "test-10")
 
     assert_response :success
     body = response.parsed_body
@@ -276,14 +201,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/cancel returns error for non-existent task" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-11",
-           method: "tasks/cancel",
-           params: { taskId: "fake-task-id" }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/cancel", { taskId: "fake-task-id" }, id: "test-11")
 
     assert_response :success
     body = response.parsed_body
@@ -292,14 +210,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "tasks/resume is not accepted as a spec task method" do
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "test-resume",
-           method: "tasks/resume",
-           params: { taskId: @working_task.id, input: "value" }
-         }.to_json,
-         headers: request_headers
+    session_post("tasks/resume", { taskId: @working_task.id, input: "value" }, id: "test-resume")
 
     assert_response :success
     body = response.parsed_body
@@ -318,18 +229,11 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(AsyncCalculatorTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "task-tool-1",
-           method: "tools/call",
-           params: {
-             name: "async_calculator",
-             arguments: { x: 5, y: 3, operation: "add" },
-             task: { ttl: 60_000 }
-           }
-         }.to_json,
-         headers: request_headers
+    session_post("tools/call", {
+      name: "async_calculator",
+      arguments: { x: 5, y: 3, operation: "add" },
+      task: { ttl: 60_000 }
+    }, id: "task-tool-1")
 
     assert_response :success
     body = response.parsed_body
@@ -362,18 +266,11 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(AsyncCalculatorTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "sync-tool-1",
-           method: "tools/call",
-           params: {
-             name: "async_calculator",
-             arguments: { x: 10, y: 4, operation: "subtract" }
-             # No task parameter - should execute synchronously
-           }
-         }.to_json,
-         headers: request_headers
+    session_post("tools/call", {
+      name: "async_calculator",
+      arguments: { x: 10, y: 4, operation: "subtract" }
+      # No task parameter - should execute synchronously
+    }, id: "sync-tool-1")
 
     assert_response :success
     body = response.parsed_body
@@ -394,18 +291,11 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(AddTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "forbidden-task-tool-1",
-           method: "tools/call",
-           params: {
-             name: "add",
-             arguments: { a: 1, b: 2 },
-             task: { ttl: 60_000 }
-           }
-         }.to_json,
-         headers: request_headers
+    session_post("tools/call", {
+      name: "add",
+      arguments: { a: 1, b: 2 },
+      task: { ttl: 60_000 }
+    }, id: "forbidden-task-tool-1")
 
     assert_response :success
     body = response.parsed_body
@@ -423,17 +313,10 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(RequiredTaskDemoTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "required-task-tool-1",
-           method: "tools/call",
-           params: {
-             name: "required_task_demo",
-             arguments: {}
-           }
-         }.to_json,
-         headers: request_headers
+    session_post("tools/call", {
+      name: "required_task_demo",
+      arguments: {}
+    }, id: "required-task-tool-1")
 
     assert_response :success
     body = response.parsed_body
@@ -452,18 +335,11 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     session_without_tasks.register_tool(AsyncCalculatorTool)
     session_without_tasks.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "old-task-tool-1",
-           method: "tools/call",
-           params: {
-             name: "async_calculator",
-             arguments: { x: 1, y: 2, operation: "add" },
-             task: { ttl: 60_000 }
-           }
-         }.to_json,
-         headers: request_headers.merge("Mcp-Session-Id" => session_without_tasks.id)
+    session_post("tools/call", {
+      name: "async_calculator",
+      arguments: { x: 1, y: 2, operation: "add" },
+      task: { ttl: 60_000 }
+    }, id: "old-task-tool-1", session_id: session_without_tasks.id)
 
     assert_response :success
     body = response.parsed_body
@@ -481,13 +357,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(AsyncCalculatorTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "tools-list-1",
-           method: "tools/list"
-         }.to_json,
-         headers: request_headers
+    session_post("tools/list", id: "tools-list-1")
 
     assert_response :success
     body = response.parsed_body
@@ -509,13 +379,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
     @session.register_tool(AddTool)
     @session.save!
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: "tools-list-2",
-           method: "tools/list"
-         }.to_json,
-         headers: request_headers
+    session_post("tools/list", id: "tools-list-2")
 
     assert_response :success
     body = response.parsed_body
@@ -531,12 +395,7 @@ class TasksIntegrationTest < ActionDispatch::IntegrationTest
 
   private
 
-  def request_headers
-    {
-      "CONTENT_TYPE" => "application/json",
-      "ACCEPT" => "application/json, text/event-stream",
-      "Mcp-Session-Id" => @session_id,
-      "MCP-Protocol-Version" => "2025-11-25"
-    }
+  def session_post(method, params = nil, session_id: @session_id, **options)
+    mcp_post(method, params, session_id: session_id, protocol_version: "2025-11-25", **options)
   end
 end

@@ -38,6 +38,7 @@ module ActionMCP
   # It also manages the association with messages and subscriptions related to the session.
   class Session < ApplicationRecord
     include MCPConsoleHelpers
+    include Server::SessionRegistries
     attribute :id, :string, default: -> { SecureRandom.hex(16) }
     has_many :messages,
              class_name: "ActionMCP::Session::Message",
@@ -176,14 +177,6 @@ module ActionMCP
       update(status: "initializing")
     end
 
-    def initialize!
-      return false unless status == "initializing" && !initialized?
-
-      self.initialized = true
-      self.status = "initialized"
-      save
-    end
-
     def send_ping!
       Session.logger.silence do
         write(JSON_RPC::Request.new(id: Time.now.to_i, method: "ping"))
@@ -200,159 +193,6 @@ module ActionMCP
 
     def resource_subscribed?(uri)
       subscriptions.exists?(uri: uri)
-    end
-
-    def send_progress_notification(progressToken:, progress:, total: nil, message: nil)
-      # Create a transport handler to send the notification
-      handler = ActionMCP::Server::TransportHandler.new(self)
-      handler.send_progress_notification(
-        progressToken: progressToken,
-        progress: progress,
-        total: total,
-        message: message
-      )
-    end
-
-    # Registry management methods
-    def register_tool(tool_class_or_name)
-      tool_name = normalize_name(tool_class_or_name, :tool)
-      return false unless tool_exists?(tool_name)
-      return true if uses_all_tools?
-
-      self.tool_registry ||= []
-      unless self.tool_registry.include?(tool_name)
-        self.tool_registry << tool_name
-        save!
-        send_tools_list_changed_notification
-      end
-      true
-    end
-
-    def unregister_tool(tool_class_or_name)
-      tool_name = normalize_name(tool_class_or_name, :tool)
-
-      if uses_all_tools?
-        return unless tool_exists?(tool_name)
-        expand_tool_registry!
-      end
-
-      self.tool_registry ||= []
-      return unless self.tool_registry.delete(tool_name)
-
-      save!
-      send_tools_list_changed_notification
-    end
-
-    def register_prompt(prompt_class_or_name)
-      prompt_name = normalize_name(prompt_class_or_name, :prompt)
-      return false unless prompt_exists?(prompt_name)
-      return true if uses_all_prompts?
-
-      self.prompt_registry ||= []
-      unless self.prompt_registry.include?(prompt_name)
-        self.prompt_registry << prompt_name
-        save!
-        send_prompts_list_changed_notification
-      end
-      true
-    end
-
-    def unregister_prompt(prompt_class_or_name)
-      prompt_name = normalize_name(prompt_class_or_name, :prompt)
-
-      if uses_all_prompts?
-        return unless prompt_exists?(prompt_name)
-        expand_prompt_registry!
-      end
-
-      self.prompt_registry ||= []
-      return unless self.prompt_registry.delete(prompt_name)
-
-      save!
-      send_prompts_list_changed_notification
-    end
-
-    def register_resource_template(template_class_or_name)
-      template_name = normalize_name(template_class_or_name, :resource_template)
-      return false unless resource_template_exists?(template_name)
-      return true if uses_all_resources?
-
-      self.resource_registry ||= []
-      unless self.resource_registry.include?(template_name)
-        self.resource_registry << template_name
-        save!
-        send_resources_list_changed_notification
-      end
-      true
-    end
-
-    def unregister_resource_template(template_class_or_name)
-      template_name = normalize_name(template_class_or_name, :resource_template)
-
-      if uses_all_resources?
-        return unless resource_template_exists?(template_name)
-        expand_resource_registry!
-      end
-
-      self.resource_registry ||= []
-      return unless self.resource_registry.delete(template_name)
-
-      save!
-      send_resources_list_changed_notification
-    end
-
-    # Get registered items for this session
-    def registered_tools
-      # Special case: ['*'] means use all available tools dynamically
-      if tool_registry == [ "*" ]
-        # filtered_tools returns a RegistryScope with Item objects, need to extract the klass
-        ActionMCP.configuration.filtered_tools.map(&:klass)
-      else
-        (self.tool_registry || []).filter_map do |tool_name|
-          ActionMCP::ToolsRegistry.find(tool_name)
-        rescue StandardError
-          nil
-        end
-      end
-    end
-
-    def registered_prompts
-      if prompt_registry == [ "*" ]
-        # filtered_prompts returns a RegistryScope with Item objects, need to extract the klass
-        ActionMCP.configuration.filtered_prompts.map(&:klass)
-      else
-        (self.prompt_registry || []).filter_map do |prompt_name|
-          ActionMCP::PromptsRegistry.find(prompt_name)
-        rescue StandardError
-          nil
-        end
-      end
-    end
-
-    def registered_resource_templates
-      if resource_registry == [ "*" ]
-        # filtered_resources returns a RegistryScope with Item objects, need to extract the klass
-        ActionMCP.configuration.filtered_resources.map(&:klass)
-      else
-        (self.resource_registry || []).filter_map do |template_name|
-          ActionMCP::ResourceTemplatesRegistry.find(template_name)
-        rescue StandardError
-          nil
-        end
-      end
-    end
-
-    # Helper methods to check if using all capabilities
-    def uses_all_tools?
-      tool_registry == [ "*" ]
-    end
-
-    def uses_all_prompts?
-      prompt_registry == [ "*" ]
-    end
-
-    def uses_all_resources?
-      resource_registry == [ "*" ]
     end
 
     # Consent management methods as per MCP specification
@@ -451,78 +291,6 @@ module ActionMCP
       self.tool_registry = [ "*" ]
       self.prompt_registry = [ "*" ]
       self.resource_registry = [ "*" ]
-    end
-
-    # Expand wildcard registries to explicit name lists so individual
-    # entries can be removed without breaking the wildcard check.
-    def expand_tool_registry!
-      self.tool_registry = ActionMCP.configuration.filtered_tools.map(&:name)
-    end
-
-    def expand_prompt_registry!
-      self.prompt_registry = ActionMCP.configuration.filtered_prompts.map(&:name)
-    end
-
-    def expand_resource_registry!
-      self.resource_registry = ActionMCP.configuration.filtered_resources.map(&:name)
-    end
-
-    def normalize_name(class_or_name, type)
-      case class_or_name
-      when String
-        class_or_name
-      when Class
-        case type
-        when :tool
-          class_or_name.tool_name
-        when :prompt
-          class_or_name.prompt_name
-        when :resource_template
-          class_or_name.capability_name
-        end
-      else
-        raise ArgumentError, "Expected String or Class, got #{class_or_name.class}"
-      end
-    end
-
-    def tool_exists?(tool_name)
-      ActionMCP::ToolsRegistry.find(tool_name)
-      true
-    rescue ActionMCP::RegistryBase::NotFound
-      false
-    end
-
-    def prompt_exists?(prompt_name)
-      ActionMCP::PromptsRegistry.find(prompt_name)
-      true
-    rescue ActionMCP::RegistryBase::NotFound
-      false
-    end
-
-    def resource_template_exists?(template_name)
-      ActionMCP::ResourceTemplatesRegistry.find(template_name)
-      true
-    rescue ActionMCP::RegistryBase::NotFound
-      false
-    end
-
-    def send_tools_list_changed_notification
-      # Only send if server capabilities allow it
-      return unless server_capabilities.dig("tools", "listChanged")
-
-      write(JSON_RPC::Notification.new(method: "notifications/tools/list_changed"))
-    end
-
-    def send_prompts_list_changed_notification
-      return unless server_capabilities.dig("prompts", "listChanged")
-
-      write(JSON_RPC::Notification.new(method: "notifications/prompts/list_changed"))
-    end
-
-    def send_resources_list_changed_notification
-      return unless server_capabilities.dig("resources", "listChanged")
-
-      write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
     end
 
     def parsed_json_attribute(value)

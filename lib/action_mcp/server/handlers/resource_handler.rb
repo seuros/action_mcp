@@ -7,33 +7,22 @@ module ActionMCP
     module Handlers
       module ResourceHandler
         include ErrorAware
+        include Dispatching
 
         def process_resources(rpc_method, id, params)
           params ||= {}
 
           with_error_handling(id) do
-            unless params.is_a?(Hash)
-              raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Resource params must be an object")
-            end
+            require_params_object!(params, "Resource")
 
-            capabilities = negotiated_resource_capabilities
-            unless capabilities
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Resources are not available for this session")
-            end
+            capabilities = negotiated_capabilities(:resources)
+            method_not_available!("Resources are not available for this session") unless capabilities
 
             if subscription_method?(rpc_method) && capabilities[:subscribe] != true
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Resource subscriptions are not available for this session")
+              method_not_available!("Resource subscriptions are not available for this session")
             end
 
-            handler = resource_method_handlers[rpc_method]
-            if handler
-              send(handler, id, params)
-            else
-              Rails.logger.warn("Unknown resources method: #{rpc_method}")
-              raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Unknown resources method: #{rpc_method}")
-            end
+            dispatch_rpc(resource_method_handlers, "resources", rpc_method, id, params)
           end
         end
 
@@ -47,12 +36,6 @@ module ActionMCP
             JsonRpcHandlerBase::Methods::RESOURCES_SUBSCRIBE => :handle_resources_subscribe,
             JsonRpcHandlerBase::Methods::RESOURCES_UNSUBSCRIBE => :handle_resources_unsubscribe
           }
-        end
-
-        def negotiated_resource_capabilities
-          capabilities = (transport.session.server_capabilities || {}).with_indifferent_access
-          resource_capabilities = capabilities[:resources]
-          resource_capabilities.with_indifferent_access if resource_capabilities.is_a?(Hash)
         end
 
         def subscription_method?(rpc_method)

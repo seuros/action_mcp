@@ -30,21 +30,12 @@ module ActionMCP
 
       class TestTransport
         include Completions
+        include TransportMocks::RecordingTransport
 
-        attr_reader :session, :responses, :errors
+        attr_reader :session
 
         def initialize(session)
           @session = session
-          @responses = []
-          @errors = []
-        end
-
-        def send_jsonrpc_response(id, result: nil, error: nil)
-          @responses << { id: id, result: result, error: error }
-        end
-
-        def send_jsonrpc_error(id, symbol, message, data = nil)
-          @errors << { id: id, symbol: symbol, message: message, data: data }
         end
       end
 
@@ -58,10 +49,7 @@ module ActionMCP
       end
 
       test "completes a registered prompt enum" do
-        @transport.send_completion_complete("complete-1", {
-          "ref" => { "type" => "ref/prompt", "name" => "review" },
-          "argument" => { "name" => "language", "value" => "py" }
-        })
+        complete("complete-1", { "type" => "ref/prompt", "name" => "review" }, "language", "py")
 
         completion = @transport.responses.sole[:result][:completion]
         assert_equal %w[python pytorch], completion[:values]
@@ -70,10 +58,7 @@ module ActionMCP
       end
 
       test "completes a registered resource template enum" do
-        @transport.send_completion_complete("complete-2", {
-          "ref" => { "type" => "ref/resource", "uri" => "repo://{owner}/{name}" },
-          "argument" => { "name" => "owner", "value" => "r" }
-        })
+        complete("complete-2", { "type" => "ref/resource", "uri" => "repo://{owner}/{name}" }, "owner", "r")
 
         assert_equal %w[rails ruby], @transport.responses.sole[:result][:completion][:values]
       end
@@ -85,10 +70,7 @@ module ActionMCP
       end
 
       test "does not complete references outside the session" do
-        @transport.send_completion_complete("complete-4", {
-          "ref" => { "type" => "ref/prompt", "name" => "hidden" },
-          "argument" => { "name" => "language", "value" => "" }
-        })
+        complete("complete-4", { "type" => "ref/prompt", "name" => "hidden" }, "language", "")
 
         assert_equal :invalid_params, @transport.errors.sole[:symbol]
       end
@@ -96,12 +78,15 @@ module ActionMCP
       test "rejects requests when completion was not advertised" do
         @session.server_capabilities = {}
 
-        @transport.send_completion_complete("complete-5", {
-          "ref" => { "type" => "ref/prompt", "name" => "review" },
-          "argument" => { "name" => "language", "value" => "" }
-        })
+        complete("complete-5", { "type" => "ref/prompt", "name" => "review" }, "language", "")
 
         assert_equal :method_not_found, @transport.errors.sole[:symbol]
+      end
+
+      private
+
+      def complete(id, ref, argument_name, value)
+        @transport.send_completion_complete(id, { "ref" => ref, "argument" => { "name" => argument_name, "value" => value } })
       end
     end
   end

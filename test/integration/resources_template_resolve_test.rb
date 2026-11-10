@@ -5,55 +5,13 @@ require "test_helper"
 module ActionMCP
   class ResourcesTemplateResolveTest < ActionDispatch::IntegrationTest
     setup do
-      # Initialize session first
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 1,
-             method: "initialize",
-             params: {
-               capabilities: {},
-               clientInfo: { name: "test", version: "1.0" },
-               protocolVersion: ActionMCP::LATEST_VERSION
-             }
-           }.to_json,
-           headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
-
-      assert_response :success
-      session_id = response.headers["Mcp-Session-Id"]
-      assert_not_nil session_id
-
-      # Complete initialization
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             method: "notifications/initialized"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           }
-
+      @session_id = initialize_mcp_session(path: action_mcp.mcp_post_path)
       assert_response :accepted
-
-      @session_id = session_id
     end
 
     test "resources/read successfully resolves ProductsTemplate with valid product ID" do
       # Test resources/read with ProductsTemplate URI
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "resources/read",
-             params: { uri: "ecommerce://products/123" }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/read", { uri: "ecommerce://products/123" }, id: 2)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -78,18 +36,7 @@ module ActionMCP
 
     test "resources/read returns resource not found error for ProductsTemplate with negative product ID" do
       # Test resources/read with negative product ID that won't be found
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "resources/read",
-             params: { uri: "ecommerce://products/-111" }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/read", { uri: "ecommerce://products/-111" }, id: 2)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -102,6 +49,12 @@ module ActionMCP
       assert_match(/Resource not found/, result["error"]["message"])
       assert_equal "template://ProductsTemplate", result["error"]["data"]["uri"]
       assert_nil result["result"]
+    end
+
+    private
+
+    def session_post(method, params = nil, **options)
+      mcp_post(method, params, path: action_mcp.mcp_post_path, session_id: @session_id, **options)
     end
   end
 end

@@ -7,16 +7,7 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
   include ActionMCP::TestHelper
 
   setup do
-    @headers = {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream",
-      "Mcp-Protocol-Version" => ActionMCP::LATEST_VERSION
-    }
-
-    @current_request_id = 1  # Reset request ID for each test
-
-    # Initialize the MCP session
-    initialize_mcp_session
+    @session_id = initialize_mcp_session(path: action_mcp_path)
   end
 
   test "tool exceptions are returned as MCP-compliant errors" do
@@ -38,22 +29,8 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
   end
 
   test "undeclared param on a strict tool returns a tool execution error naming the key" do
-    @current_request_id ||= 1
-    call_params = {
-      jsonrpc: "2.0",
-      id: @current_request_id,
-      method: "tools/call",
-      params: {
-        name: "add",
-        arguments: { x: 5, y: 3, root_id: "oops" }
-      }
-    }
-    @current_request_id += 1
+    response_json = call_tool("add", { x: 5, y: 3, root_id: "oops" })
 
-    post action_mcp_path, params: call_params.to_json, headers: @headers
-    assert_response :success
-
-    response_json = JSON.parse(response.body)
     assert response_json["result"], "Expected tool result, got: #{response_json.inspect}"
     assert_equal true, response_json["result"]["isError"]
     error_text = response_json["result"]["content"].find { |content| content["type"] == "text" }["text"]
@@ -62,18 +39,7 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
   end
 
   test "unknown tool returns invalid params" do
-    call_params = {
-      jsonrpc: "2.0",
-      id: @current_request_id,
-      method: "tools/call",
-      params: { name: "missing-tool", arguments: {} }
-    }
-    @current_request_id += 1
-
-    post action_mcp_path, params: call_params.to_json, headers: @headers
-    assert_response :success
-
-    response_json = JSON.parse(response.body)
+    response_json = call_tool("missing-tool", {})
     assert_equal(-32_602, response_json.dig("error", "code"))
   end
 
@@ -90,49 +56,16 @@ class ToolValidationErrorTest < ActionDispatch::IntegrationTest
 
   private
 
-  def initialize_mcp_session
-    init_params = {
-      jsonrpc: "2.0",
-      id: 0,
-      method: "initialize",
-      params: {
-        protocolVersion: ActionMCP::LATEST_VERSION,
-        capabilities: {},
-        clientInfo: { name: "test", version: "1.0" }
-      }
-    }
-
-    post action_mcp_path, params: init_params.to_json, headers: @headers
-    assert_response :success
-
-    session_id = response.headers["Mcp-Session-Id"]
-    assert session_id, "Expected Mcp-Session-Id in response headers"
-
-    @headers["Mcp-Session-Id"] = session_id
-
-    post action_mcp_path,
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json,
-         headers: @headers
+  def call_environment_tool(env_value)
+    call_tool("environment", { env: env_value })
   end
 
-  def call_environment_tool(env_value)
-    @current_request_id ||= 1
-    call_params = {
-      jsonrpc: "2.0",
-      id: @current_request_id,
-      method: "tools/call",
-      params: {
-        name: "environment",
-        arguments: {
-          env: env_value
-        }
-      }
-    }
-    @current_request_id += 1
-
-    post action_mcp_path, params: call_params.to_json, headers: @headers
+  def call_tool(name, arguments)
+    @request_id = (@request_id || 0) + 1
+    mcp_post("tools/call", { name: name, arguments: arguments },
+             id: @request_id, path: action_mcp_path, session_id: @session_id,
+             protocol_version: ActionMCP::LATEST_VERSION)
     assert_response :success
-
     JSON.parse(response.body)
   end
 end

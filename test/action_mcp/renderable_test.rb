@@ -18,20 +18,14 @@ module ActionMCP
       assert_equal "Hello, world!", result.text
     end
 
-    def test_render_audio
-      data = Base64.strict_encode64("audio data")
-      result = @renderer.render(audio: data, mime_type: "audio/mpeg")
-      assert_instance_of Content::Audio, result
-      assert_equal data, result.data
-      assert_equal "audio/mpeg", result.mime_type
-    end
-
-    def test_render_image
-      data = Base64.strict_encode64("image data")
-      result = @renderer.render(image: data, mime_type: "image/png")
-      assert_instance_of Content::Image, result
-      assert_equal data, result.data
-      assert_equal "image/png", result.mime_type
+    { audio: [ Content::Audio, "audio/mpeg" ], image: [ Content::Image, "image/png" ] }.each do |kind, (klass, mime_type)|
+      define_method(:"test_render_#{kind}") do
+        data = Base64.strict_encode64("#{kind} data")
+        result = @renderer.render(kind => data, mime_type: mime_type)
+        assert_instance_of klass, result
+        assert_equal data, result.data
+        assert_equal mime_type, result.mime_type
+      end
     end
 
     def test_render_resource

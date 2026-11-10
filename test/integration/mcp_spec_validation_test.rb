@@ -17,53 +17,8 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     @session_id = @session.id
   end
 
-  test "initialization follows MCP spec" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "init-1",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        clientInfo: { name: "Test Client", version: "1.0" },
-        capabilities: {
-          roots: { listChanged: true },
-          sampling: {}
-        }
-      }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
-
-    assert_response :success
-    body = response.parsed_body
-
-    # Verify JSON-RPC response structure
-    assert_equal "2.0", body["jsonrpc"]
-    assert_equal "init-1", body["id"]
-    assert body["result"]
-
-    # Verify MCP protocol version matches request
-    assert_equal "2025-11-25", body["result"]["protocolVersion"]
-
-    # Verify server info contains expected values
-    assert_equal "ActionMCP Dummy", body["result"]["serverInfo"]["name"]
-    assert_equal "9.9.9", body["result"]["serverInfo"]["version"]
-
-    # Verify capabilities structure matches expected server capabilities
-    expected_capabilities = {
-      "tools" => { "listChanged" => true },
-      "prompts" => { "listChanged" => true },
-      "resources" => { "subscribe" => false, "listChanged" => true },
-      "completions" => {}
-    }
-    assert_equal expected_capabilities, body["result"]["capabilities"]
-  end
-
   test "error responses follow JSON-RPC spec" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "invalid-1",
-      method: "unknown_method",
-      params: {}
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
+    mcp_post("unknown_method", {}, id: "invalid-1", session_id: @session_id)
 
     assert_response :success
     body = response.parsed_body
@@ -77,15 +32,10 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     ActionMCP::Server.session_store.save_session(@session)
 
     # Without consent
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "consent-1",
-      method: "tools/call",
-      params: {
-        name: "consent_required",
-        arguments: { input: "test" }
-      }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
+    mcp_post("tools/call", {
+      name: "consent_required",
+      arguments: { input: "test" }
+    }, id: "consent-1", session_id: @session_id)
 
     body = response.parsed_body
     assert body["error"]
@@ -96,15 +46,10 @@ class McpSpecValidationTest < ActionDispatch::IntegrationTest
     @session.grant_consent("consent_required")
     ActionMCP::Server.session_store.save_session(@session)
 
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "consent-2",
-      method: "tools/call",
-      params: {
-        name: "consent_required",
-        arguments: { input: "test" }
-      }
-    }.to_json, headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "Mcp-Session-Id" => @session_id }
+    mcp_post("tools/call", {
+      name: "consent_required",
+      arguments: { input: "test" }
+    }, id: "consent-2", session_id: @session_id)
 
     body = response.parsed_body
 

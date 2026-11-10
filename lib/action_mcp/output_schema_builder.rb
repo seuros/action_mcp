@@ -27,10 +27,7 @@ module ActionMCP
       schema["description"] = description if description
       schema.merge!(options) if options.any?
 
-      @properties[name.to_s] = schema
-      @required << name.to_s if required
-
-      name.to_s
+      add_property(name, schema, required)
     end
 
     # Define a string property
@@ -44,14 +41,7 @@ module ActionMCP
       schema["minLength"] = min_length if min_length
       schema["maxLength"] = max_length if max_length
 
-      if name
-        @properties[name.to_s] = schema
-        @required << name.to_s if required
-        name.to_s
-      else
-        # Return schema for use in array items or other contexts
-        schema
-      end
+      add_property(name, schema, required)
     end
 
     # Define a number property
@@ -63,10 +53,7 @@ module ActionMCP
       schema["maximum"] = maximum if maximum
       schema["default"] = default if default
 
-      @properties[name.to_s] = schema
-      @required << name.to_s if required
-
-      name.to_s
+      add_property(name, schema, required)
     end
 
     # Define a boolean property
@@ -75,10 +62,7 @@ module ActionMCP
       schema["description"] = description if description
       schema["default"] = default unless default.nil?
 
-      @properties[name.to_s] = schema
-      @required << name.to_s if required
-
-      name.to_s
+      add_property(name, schema, required)
     end
 
     # Define an array property
@@ -122,9 +106,7 @@ module ActionMCP
         schema["items"] = { "type" => "string" }
       end
 
-      @properties[name.to_s] = schema
-
-      name.to_s
+      add_property(name, schema, false)
     end
 
     # Define an object property
@@ -150,14 +132,7 @@ module ActionMCP
       # Add additionalProperties if specified
       add_additional_properties_to_schema(schema, additional_properties)
 
-      if name
-        @properties[name.to_s] = schema
-        @required << name.to_s if required
-        name.to_s
-      else
-        # Return schema directly for use in array items
-        schema
-      end
+      add_property(name, schema, required)
     end
 
     # Set additionalProperties for the root schema
@@ -185,6 +160,18 @@ module ActionMCP
       add_additional_properties_to_schema(schema, @additional_properties)
 
       schema
+    end
+
+    private
+
+    # Registers a named property and returns its name; an unnamed schema is
+    # returned as-is so it can serve as array items.
+    def add_property(name, schema, required)
+      return schema unless name
+
+      @properties[name.to_s] = schema
+      @required << name.to_s if required
+      name.to_s
     end
   end
 end

@@ -10,18 +10,6 @@ module ActionMCP
     def app
       ActionMCP::Engine
     end
-
-    # Helper to create a session for tests
-    def create_initialized_session
-      # Get fixture data
-      fixture_session = action_mcp_sessions(:step1_session)
-
-      # Create session in the session store using the helper
-      Server.session_store.create_session(
-        fixture_session.id,
-        session_payload_from_fixture(fixture_session)
-      )
-    end
   end
 
   class ApplicationControllerJSONTest < ApplicationControllerTestBase
@@ -105,12 +93,7 @@ module ActionMCP
         }
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
-           },
-           params: init_request.to_json
+      mcp_send(init_request)
 
       assert_response :success
 
@@ -144,13 +127,7 @@ module ActionMCP
         method: "notifications/initialized"
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: initialized_notification.to_json
+      mcp_send(initialized_notification, session_id: session_id)
 
       # The server might return 202 Accepted for notifications
       assert_response :accepted
@@ -165,13 +142,7 @@ module ActionMCP
         method: "tools/list"
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: list_tools_request.to_json
+      mcp_send(list_tools_request, session_id: session_id)
 
       assert_response :ok
 
@@ -218,13 +189,7 @@ module ActionMCP
         }
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: call_tool_request.to_json
+      mcp_send(call_tool_request, session_id: session_id)
 
       assert_response :ok
 
@@ -255,13 +220,7 @@ module ActionMCP
         method: "prompts/list"
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: list_prompts_request.to_json
+      mcp_send(list_prompts_request, session_id: session_id)
 
       assert_response :ok
 
@@ -328,12 +287,7 @@ module ActionMCP
         }
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream"
-           },
-           params: init_request.to_json
+      mcp_send(init_request)
 
       assert_response :ok
       negotiated_response = response.parsed_body
@@ -354,13 +308,7 @@ module ActionMCP
         }
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => "nonexistent-session-id"
-           },
-           params: init_request.to_json
+      mcp_send(init_request, session_id: "nonexistent-session-id")
 
       assert_response :not_found
       body = response.parsed_body
@@ -392,13 +340,7 @@ module ActionMCP
         }
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => "c829a212-7973-4e15-828e-7effa6b7f7f3"
-           },
-           params: copilot_payload.to_json
+      mcp_send(copilot_payload, session_id: "c829a212-7973-4e15-828e-7effa6b7f7f3")
 
       assert_response :not_found
       body = response.parsed_body
@@ -416,13 +358,7 @@ module ActionMCP
         method: "ping"
       }
 
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: request_payload.to_json
+      mcp_send(request_payload, session_id: session_id)
 
       assert_response :success
       assert_match %r{application/json}, response.headers["Content-Type"]

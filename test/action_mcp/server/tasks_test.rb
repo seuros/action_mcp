@@ -21,18 +21,14 @@ module ActionMCP
 
       class TestTransport
         include Tasks
+        include TransportMocks::RecordingTransport
 
-        attr_reader :responses, :sleep_count
+        attr_reader :sleep_count
 
         def initialize(initial_task, reloads)
           @initial_task = initial_task
           @reloads = reloads
-          @responses = []
           @sleep_count = 0
-        end
-
-        def send_jsonrpc_response(id, result: nil, error: nil)
-          @responses << { id: id, result: result, error: error }
         end
 
         private

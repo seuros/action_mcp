@@ -5,22 +5,15 @@ module ActionMCP
     module Handlers
       module ToolHandler
         include ErrorAware
+        include Dispatching
 
         def process_tools(rpc_method, id, params)
           params ||= {}
 
           with_error_handling(id) do
-            unless params.is_a?(Hash)
-              raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Tool params must be an object")
-            end
+            require_params_object!(params, "Tool")
 
-            handler = tool_method_handlers[rpc_method]
-            if handler
-              send(handler, id, params)
-            else
-              Rails.logger.warn("Unknown tools method: #{rpc_method}")
-              raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Unknown tools method: #{rpc_method}")
-            end
+            dispatch_rpc(tool_method_handlers, "tools", rpc_method, id, params)
           end
         end
 

@@ -52,9 +52,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/",
-         headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-         params: request_payload.to_json
+    mcp_send(request_payload, session_id: session_id)
 
     assert_response :success
 
@@ -111,9 +109,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/",
-         headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-         params: request_payload.to_json
+    mcp_send(request_payload, session_id: session_id)
 
     assert_response :success
 
@@ -151,9 +147,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
           }
         }
 
-        post "/",
-             headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-             params: request.to_json
+        mcp_send(request, session_id: session_id)
       end
     end
 
@@ -188,9 +182,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/",
-         headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-         params: request_payload.to_json
+    mcp_send(request_payload, session_id: session_id)
 
     assert_response :success
 
@@ -222,9 +214,7 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/",
-         headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-         params: request_payload.to_json
+    mcp_send(request_payload, session_id: session_id)
 
     assert_response :success
 
@@ -241,49 +231,14 @@ class ToolProgressNotificationTest < ActionDispatch::IntegrationTest
   private
 
   def create_initialized_session
-    # Initialize the session
-    init_request = {
-      jsonrpc: "2.0",
-      id: "init-1",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        capabilities: {},
-        clientInfo: { name: "Test Client", version: "1.0" }
-      }
-    }
-
-    post "/",
-         headers: default_json_headers,
-         params: init_request.to_json
-
-    assert_response :ok
-    session_id = response.headers["Mcp-Session-Id"]
-    assert_not_nil session_id, "Session ID should be in response headers"
+    session_id = initialize_mcp_session(complete: false, protocol_version: "2025-11-25", client_name: "Test Client")
 
     # Register the progress demo tool for the session
-    session = @test_store.load_session(session_id)
-    session.register_tool("progress_2025_demo")
+    @test_store.load_session(session_id).register_tool("progress_2025_demo")
 
-    # Send initialized notification
-    initialized_notification = {
-      jsonrpc: "2.0",
-      method: "notifications/initialized"
-    }
-
-    post "/",
-         headers: default_json_headers.merge("Mcp-Session-Id" => session_id),
-         params: initialized_notification.to_json
-
+    mcp_notify("notifications/initialized", session_id: session_id)
     assert_response :accepted
 
     session_id
-  end
-
-  def default_json_headers
-    {
-      "CONTENT_TYPE" => "application/json",
-      "ACCEPT" => "application/json, text/event-stream"
-    }
   end
 end

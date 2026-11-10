@@ -30,13 +30,7 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
   # Test 1: Session hijacking protection
   test "sessions should not be vulnerable to hijacking" do
     # Create a session
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "MCP-Protocol-Version" => "2025-11-25"
-         }
+    post_initialize
 
     assert_response :success
     session_id = response.headers["Mcp-Session-Id"]
@@ -52,13 +46,7 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
     session_ids = [ session_id ]
 
     5.times do
-      post @base_url,
-           params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "MCP-Protocol-Version" => "2025-11-25"
-           }
+      post_initialize
 
       new_session_id = response.headers["Mcp-Session-Id"]
       refute_includes session_ids, new_session_id, "Session IDs should be unique"
@@ -80,24 +68,12 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
   # Test 3: Protocol version validation
   test "protocol version should be validated correctly" do
     # Test with supported version
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "MCP-Protocol-Version" => "2025-11-25"
-         }
+    post_initialize
 
     assert_response :success
 
     # Test with unsupported version
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params("1999-01-01") }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "MCP-Protocol-Version" => "1999-01-01"
-         }
+    post_initialize("1999-01-01")
 
     assert_response :success
     response_body = JSON.parse(response.body)
@@ -112,12 +88,7 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
       { jsonrpc: "2.0", method: "tools/list", id: 2 }
     ]
 
-    post @base_url,
-         params: batch_request.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream"
-         }
+    mcp_send(batch_request, path: @base_url)
 
     assert_response :bad_request
     response_body = JSON.parse(response.body)
@@ -145,26 +116,13 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
   # Test 7: Session lifecycle security
   test "session lifecycle should be secure" do
     # Initialize session
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "MCP-Protocol-Version" => "2025-11-25"
-         }
+    post_initialize
 
     assert_response :success
     session_id = response.headers["Mcp-Session-Id"]
 
     # Complete initialization
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id,
-           "MCP-Protocol-Version" => "2025-11-25"
-         }
+    mcp_notify("notifications/initialized", path: @base_url, session_id: session_id, protocol_version: "2025-11-25")
 
     # Session initialization notification may return different status codes
     assert_response_code_in [ 200, 202 ]
@@ -216,12 +174,7 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
     # Test with extremely large payload
     large_params = { "large_field" => "x" * 100_000 }
 
-    post @base_url,
-         params: { jsonrpc: "2.0", method: "initialize", id: 1, params: large_params }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream"
-         }
+    mcp_post("initialize", large_params, path: @base_url)
 
     # Should handle large payloads gracefully
     # (Implementation may vary - could be 413 Payload Too Large or processed normally)
@@ -234,13 +187,7 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
 
     # Create multiple concurrent sessions
     5.times do
-      post @base_url,
-           params: { jsonrpc: "2.0", method: "initialize", id: 1, params: valid_initialize_params }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "MCP-Protocol-Version" => "2025-11-25"
-           }
+      post_initialize
 
       if response.status == 200
         session_id = response.headers["Mcp-Session-Id"]
@@ -256,11 +203,11 @@ class MCPSpecificationComplianceTest < ActionDispatch::IntegrationTest
   private
 
   def valid_initialize_params(protocol_version = "2025-11-25")
-    {
-      protocolVersion: protocol_version,
-      capabilities: {},
-      clientInfo: { name: "compliance-test", version: "1.0.0" }
-    }
+    mcp_initialize_params(protocol_version: protocol_version, client_name: "compliance-test", client_version: "1.0.0")
+  end
+
+  def post_initialize(protocol_version = "2025-11-25")
+    mcp_post("initialize", valid_initialize_params(protocol_version), path: @base_url, protocol_version: protocol_version)
   end
 
   def with_gateway_config

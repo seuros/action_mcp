@@ -9,29 +9,8 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
 
   test "tools/list handles progressToken without timing out" do
     # Initialize session
-    init_request = {
-      jsonrpc: "2.0",
-      id: "init-1",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        clientInfo: {
-          name: "Test Client",
-          version: "1.0.0"
-        },
-        capabilities: {}
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream"
-         },
-         params: init_request.to_json
-
-    assert_response :ok
-    session_id = response.headers["Mcp-Session-Id"]
+    session_id = initialize_mcp_session(complete: false, protocol_version: "2025-11-25", client_name: "Test Client",
+                                        client_version: "1.0.0")
     assert_not_nil session_id, "Session ID should be present in header"
 
     # Find the session and register a tool
@@ -40,13 +19,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
     session.register_tool("calculate_sum")
 
     # Send initialized notification
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
+    mcp_notify("notifications/initialized", session_id: session_id)
 
     # Send tools/list with progressToken
     tools_request = {
@@ -88,13 +61,7 @@ class ToolsListProgressNotificationTest < ActionDispatch::IntegrationTest
       Thread.current[:test_progress_notifications] = []
 
       # Send the request
-      post "/",
-           headers: {
-             "CONTENT_TYPE" => "application/json",
-             "ACCEPT" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           },
-           params: tools_request.to_json
+      mcp_send(tools_request, session_id: session_id)
 
       assert_response :ok
 

@@ -117,83 +117,24 @@ class ToolsListSchemaValidationTest < ActionDispatch::IntegrationTest
   private
 
   def initialize_session
-    request_id = "init-#{SecureRandom.hex(4)}"
-    init_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "initialize",
-      params: {
-        protocolVersion: @protocol_version,
-        clientInfo: {
-          name: "Test Client",
-          version: "1.0.0"
-        },
-        capabilities: {}
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream"
-         },
-         params: init_request.to_json
-
-    assert_response :ok
-    response.headers["Mcp-Session-Id"]
+    initialize_mcp_session(complete: false, protocol_version: @protocol_version, client_name: "Test Client",
+                           client_version: "1.0.0")
   end
 
   def send_initialized_notification(session_id)
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json
+    mcp_notify("notifications/initialized", session_id: session_id)
 
     assert_includes [ 200, 202 ], response.status
   end
 
   def list_tools(session_id)
-    request_id = "list-tools-#{SecureRandom.hex(4)}"
-    tools_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "tools/list"
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: tools_request.to_json
-
+    mcp_post("tools/list", id: "list-tools-#{SecureRandom.hex(4)}", session_id: session_id)
     JSON.parse(response.body)
   end
 
   def call_tool(session_id, tool_name, arguments)
-    request_id = "call-tool-#{SecureRandom.hex(4)}"
-    tool_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "tools/call",
-      params: {
-        name: tool_name,
-        arguments: arguments
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: tool_request.to_json
-
+    mcp_post("tools/call", { name: tool_name, arguments: arguments },
+             id: "call-tool-#{SecureRandom.hex(4)}", session_id: session_id)
     JSON.parse(response.body)
   end
 end

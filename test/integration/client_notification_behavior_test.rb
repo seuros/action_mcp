@@ -41,15 +41,7 @@ class ClientNotificationBehaviorTest < ActionDispatch::IntegrationTest
   private
 
   def post_json(payload, session_id: nil)
-    headers = {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
-    if session_id
-      headers["Mcp-Session-Id"] = session_id
-      headers["MCP-Protocol-Version"] = PROTOCOL_VERSION
-    end
-    post "/", params: payload.to_json, headers: headers
+    mcp_send(payload, session_id: session_id, protocol_version: (PROTOCOL_VERSION if session_id))
   end
 
   def rpc_method(message)

@@ -118,16 +118,7 @@ module ActionMCP
           end
 
           # Format the metric
-          formatter = formatters&.dig(key)
-          formatted_value = if formatter.respond_to?(:call)
-                              formatter.call(value)
-          elsif value.is_a?(Float)
-                              format("%.1fms", value)
-          else
-                              value.to_s
-          end
-
-          formatted_metric = "#{key}: #{formatted_value}"
+          formatted_metric = format_metric(key, value)
 
           # Add to appropriate group (or "other")
           if group
@@ -145,18 +136,21 @@ module ActionMCP
         end.compact.join(" | ")
       else
         # No grouping, just format all metrics
-        custom_metrics.map do |key, value|
-          formatter = formatters&.dig(key)
-          formatted_value = if formatter.respond_to?(:call)
-                              formatter.call(value)
-          elsif value.is_a?(Float)
-                              format("%.1fms", value)
-          else
-                              value.to_s
-          end
-          "#{key}: #{formatted_value}"
-        end.join(" | ")
+        custom_metrics.map { |key, value| format_metric(key, value) }.join(" | ")
       end
+    end
+
+    # "key: value", using a registered formatter, milliseconds for floats, or to_s.
+    def self.format_metric(key, value)
+      formatter = formatters&.dig(key)
+      formatted_value = if formatter.respond_to?(:call)
+                          formatter.call(value)
+      elsif value.is_a?(Float)
+                          format("%.1fms", value)
+      else
+                          value.to_s
+      end
+      "#{key}: #{formatted_value}"
     end
 
     # Register a custom formatter for a specific metric

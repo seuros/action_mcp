@@ -27,58 +27,35 @@ class ToHContractTest < ActiveSupport::TestCase
   PROMPT_FIXTURES = load_fixture("prompt_hashes")
   TEMPLATE_FIXTURES = load_fixture("template_hashes")
 
-  # ----------------------------------------------------------------------
-  # Tools
-  # ----------------------------------------------------------------------
   {
-    AddTool => "add",
-    CalculateSumTool => "calculate_sum",
-    CalculateSumWithPrecisionTool => "calculate_sum_with_precision",
-    ExecuteCommandTool => "execute_command",
-    AnalyzeCsvTool => "analyze_csv",
-    GitHubCreateIssueTool => "create_github_issue",
-    WeatherForecastTool => "weather_forecast",
-    BoomTool => "boom" # still has a to_h
-  }.each do |klass, key|
-    class_name = klass.name
-    describe "#{class_name} .to_h contract" do
-      it "matches the tool fixture" do
-        assert_equal TOOL_FIXTURES[key], klass.to_h.deep_stringify_keys,
-                     "#{class_name}#to_h drifted from fixture"
-      end
-    end
-  end
-
-  # ----------------------------------------------------------------------
-  # Prompts
-  # ----------------------------------------------------------------------
-  {
-    AnalyzeCodePrompt => "analyze_code",
-    SummarizeTextPrompt => "summarize_text",
-    GreetingPrompt => "greeting",
-    CarbonFootprintAssessmentPrompt => "carbon_footprint_assessment"
-  }.each do |klass, key|
-    class_name = klass.name
-    describe "#{class_name} .to_h contract" do
-      it "matches the prompt fixture" do
-        assert_equal PROMPT_FIXTURES[key], klass.to_h.deep_stringify_keys,
-                     "#{class_name}#to_h drifted from fixture"
-      end
-    end
-  end
-
-  # ----------------------------------------------------------------------
-  # Resource templates
-  # ----------------------------------------------------------------------
-  {
-    OrdersTemplate => "orders",
-    ProductsTemplate => "products"
-  }.each do |klass, key|
-    class_name = klass.name
-    describe "#{class_name} .to_h contract" do
-      it "matches the template fixture" do
-        assert_equal TEMPLATE_FIXTURES[key], klass.to_h.deep_stringify_keys,
-                     "#{class_name}#to_h drifted from fixture"
+    [ TOOL_FIXTURES, "tool" ] => {
+      AddTool => "add",
+      CalculateSumTool => "calculate_sum",
+      CalculateSumWithPrecisionTool => "calculate_sum_with_precision",
+      ExecuteCommandTool => "execute_command",
+      AnalyzeCsvTool => "analyze_csv",
+      GitHubCreateIssueTool => "create_github_issue",
+      WeatherForecastTool => "weather_forecast",
+      BoomTool => "boom" # still has a to_h
+    },
+    [ PROMPT_FIXTURES, "prompt" ] => {
+      AnalyzeCodePrompt => "analyze_code",
+      SummarizeTextPrompt => "summarize_text",
+      GreetingPrompt => "greeting",
+      CarbonFootprintAssessmentPrompt => "carbon_footprint_assessment"
+    },
+    [ TEMPLATE_FIXTURES, "template" ] => {
+      OrdersTemplate => "orders",
+      ProductsTemplate => "products"
+    }
+  }.each do |(fixtures, kind), classes|
+    classes.each do |klass, key|
+      class_name = klass.name
+      describe "#{class_name} .to_h contract" do
+        it "matches the #{kind} fixture" do
+          assert_equal fixtures[key], klass.to_h.deep_stringify_keys,
+                       "#{class_name}#to_h drifted from fixture"
+        end
       end
     end
   end

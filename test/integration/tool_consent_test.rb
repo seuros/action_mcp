@@ -8,16 +8,11 @@ class ToolConsentTest < ActionDispatch::IntegrationTest
   setup do
     ActionMCP::ToolsRegistry.register(ConsentRequiredTool)
 
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "init-1",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        clientInfo: { name: "Test Client", version: "1.0" },
-        capabilities: { tools: { dynamicRegistration: true } }
-      }
-    }.to_json, headers: json_headers
+    mcp_post("initialize", {
+      protocolVersion: "2025-11-25",
+      clientInfo: { name: "Test Client", version: "1.0" },
+      capabilities: { tools: { dynamicRegistration: true } }
+    }, id: "init-1")
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
@@ -28,23 +23,15 @@ class ToolConsentTest < ActionDispatch::IntegrationTest
     @session = ActionMCP::Server.session_store.load_session(@session_id)
     @session.update!(tool_registry: [ "consent_required" ])
 
-    post "/", params: {
-      jsonrpc: "2.0",
-      method: "notifications/initialized"
-    }.to_json, headers: json_headers.merge("Mcp-Session-Id" => @session_id)
+    mcp_notify("notifications/initialized", session_id: @session_id)
     assert_response :accepted
   end
 
   test "tool requires consent" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "test-1",
-      method: "tools/call",
-      params: {
-        name: "consent_required",
-        arguments: { input: "test" }
-      }
-    }.to_json, headers: json_headers.merge("Mcp-Session-Id" => @session_id)
+    mcp_post("tools/call", {
+      name: "consent_required",
+      arguments: { input: "test" }
+    }, id: "test-1", session_id: @session_id)
 
     assert_response :success
     body = response.parsed_body
@@ -62,28 +49,14 @@ class ToolConsentTest < ActionDispatch::IntegrationTest
     @session.grant_consent("consent_required")
     @session.save!
 
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "test-2",
-      method: "tools/call",
-      params: {
-        name: "consent_required",
-        arguments: { input: "test" }
-      }
-    }.to_json, headers: json_headers.merge("Mcp-Session-Id" => @session_id)
+    mcp_post("tools/call", {
+      name: "consent_required",
+      arguments: { input: "test" }
+    }, id: "test-2", session_id: @session_id)
 
     assert_response :success
     body = response.parsed_body
     assert body["result"], "Expected result in response, got: #{body.inspect}"
     assert_equal [ { "type" => "text", "text" => "Processed input: test" } ], body["result"]["content"]
-  end
-
-  private
-
-  def json_headers
-    {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
   end
 end

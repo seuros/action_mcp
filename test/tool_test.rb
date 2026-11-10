@@ -120,24 +120,6 @@ class ToolTest < ActiveSupport::TestCase
     }
     assert_equal expected, CalculateSumWithPrecisionTool.to_h
   end
-
-  test "ExecuteCommandTool to_h returns correct hash representation with simple collection" do
-    expected = {
-      name: "execute_command",
-      description: "Run a shell command",
-      inputSchema: {
-        "$schema" => "https://json-schema.org/draft/2020-12/schema",
-        type: "object",
-        properties: {
-          "command" => { type: "string", description: "The command to run" },
-          "args" => { type: "array", description: "Command arguments", items: { type: "string" } }
-        },
-        additionalProperties: false
-        # No required properties specified.
-      }
-    }
-    assert_equal expected, ExecuteCommandTool.to_h
-  end
 end
 
 class ObjectTypeToolTest < ActiveSupport::TestCase

@@ -3,51 +3,33 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/resource_template/resource_template_generator"
-require "tmpdir"
 
 class ResourceTemplateGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::ResourceTemplateGenerator
-  destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-
-  # destination_root is a class_attribute shared across all generator test classes
-  # (they all point at the same literal tmp dir), so give each test its own directory
-  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
-  setup do
-    self.destination_root = Dir.mktmpdir("action_mcp_resource_template_generator_test")
-    prepare_destination
-  end
-
-  teardown do
-    FileUtils.rm_rf(destination_root)
-  end
+  include GeneratorTestDestination
 
   def generated_template_path(name)
-    base = name.underscore
-    file = base.end_with?("_template") ? base : "#{base}_template"
-    File.join(destination_root, "app/mcp/resource_templates/#{file}.rb")
+    generated_component_path(name, "template", "resource_templates")
   end
 
-  def run_generator_with_args(args)
-    run_generator args
-  end
 
   test "generator creates resource template file with correct class name" do
-    run_generator_with_args %w[MyResource]
+    run_generator %w[MyResource]
     assert_file generated_template_path("my_resource"), /class MyResourceTemplate < ApplicationMCPResTemplate/
   end
 
   test "generator appends Template to class name if not present" do
-    run_generator_with_args %w[Another]
+    run_generator %w[Another]
     assert_file generated_template_path("another"), /class AnotherTemplate < ApplicationMCPResTemplate/
   end
 
   test "generator does not double Template in class name" do
-    run_generator_with_args %w[AlreadyTemplate]
+    run_generator %w[AlreadyTemplate]
     assert_file generated_template_path("already_template"), /class AlreadyTemplate < ApplicationMCPResTemplate/
   end
 
   test "generator creates proper file structure" do
-    run_generator_with_args %w[Product]
+    run_generator %w[Product]
     assert_file generated_template_path("product") do |content|
       assert_match(/class ProductTemplate < ApplicationMCPResTemplate/, content)
       assert_match(/template_name "product"/, content)
@@ -61,17 +43,17 @@ class ResourceTemplateGeneratorTest < Rails::Generators::TestCase
   end
 
   test "generator creates file with snake_case naming" do
-    run_generator_with_args %w[UserProfile]
+    run_generator %w[UserProfile]
     assert_file generated_template_path("user_profile")
   end
 
   test "generator creates file with proper camelized class name" do
-    run_generator_with_args %w[user_profile]
+    run_generator %w[user_profile]
     assert_file generated_template_path("user_profile"), /class UserProfileTemplate < ApplicationMCPResTemplate/
   end
 
   test "generator with --ui creates an MCP Apps template" do
-    run_generator_with_args %w[WeatherDashboard --ui]
+    run_generator %w[WeatherDashboard --ui]
     assert_file generated_template_path("weather_dashboard") do |content|
       assert_match(/class WeatherDashboardTemplate < ApplicationMCPResTemplate/, content)
       assert_match(%r{uri_template "ui://views/weather-dashboard"}, content)
@@ -81,14 +63,14 @@ class ResourceTemplateGeneratorTest < Rails::Generators::TestCase
   end
 
   test "generator with --ui strips Template suffix from URI" do
-    run_generator_with_args %w[PanelTemplate --ui]
+    run_generator %w[PanelTemplate --ui]
     assert_file generated_template_path("panel_template") do |content|
       assert_match(%r{uri_template "ui://views/panel"}, content)
     end
   end
 
   test "generator without --ui keeps the default app template" do
-    run_generator_with_args %w[Product]
+    run_generator %w[Product]
     assert_file generated_template_path("product") do |content|
       assert_no_match(/render_ui/, content)
       assert_match(%r{uri_template "app://products/{product_id}"}, content)
