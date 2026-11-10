@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.202.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.3...action_mcp/v0.202.0) (2026-11-10)
+
+
+### Features
+
+* collection takes JSON Schema keywords and applications register vendor JSON-RPC methods ([#253](https://github.com/seuros/action_mcp/issues/253)) ([74313d0](https://github.com/seuros/action_mcp/commit/74313d04957810039432b208df743ed9c4b9aca2))
+* tools, prompts and resource templates read the request _meta through request_meta ([aa59c72](https://github.com/seuros/action_mcp/commit/aa59c721303303550732fea1a6eef00d48d4e864))
+
 ## [0.201.3](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.2...action_mcp/v0.201.3) (2026-10-27)
 
 
