@@ -57,6 +57,19 @@ module ActionMCP
       assert_equal @session, template.execution_context[:session]
     end
 
+    test "request_meta reads _meta from symbol- or string-keyed request params" do
+      tool = CalculateSumTool.new(a: 1, b: 2)
+
+      tool.with_context({ session: @session, request: { params: { _meta: { "progressToken" => "t1" } } } })
+      assert_equal "t1", tool.request_meta[:progressToken]
+
+      tool.with_context({ session: @session, request: { params: { "_meta" => { "progressToken" => "t2" } } } })
+      assert_equal "t2", tool.request_meta["progressToken"]
+
+      tool.with_context({ session: @session })
+      assert_equal({}, tool.request_meta)
+    end
+
     test "execution context is thread-safe" do
       tool1 = CalculateSumTool.new(a: 1, b: 2)
       tool2 = CalculateSumTool.new(a: 3, b: 4)

@@ -11,7 +11,7 @@ class MetaEchoTemplate < ApplicationMCPResTemplate
     ActionMCP::Content::Resource.new(
       "meta-echo://item/#{id}",
       "application/json",
-      text: "{}",
+      text: request_meta.to_json,
       meta: { ui: { prefersBorder: true } }
     )
   end
