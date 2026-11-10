@@ -139,20 +139,7 @@ class ActionMCP::ToolParameterValidationTest < ActiveSupport::TestCase
   end
 
   test "enforces the complete advertised JSON Schema" do
-    tool_class = Class.new(ActionMCP::Tool) do
-      tool_name "schema_constraint_test"
-      property :mode, type: "string", enum: [ "fast", "safe" ], required: true
-      property :port, type: "integer", minimum: 1, maximum: 65_535, required: true
-      property :endpoint, type: "string", format: "uri", required: true
-      property :settings,
-               type: "object",
-               properties: { enabled: { type: "boolean" } },
-               allOf: [ { required: [ "enabled" ] } ],
-               additionalProperties: false,
-               required: true
-    end
-
-    tool = tool_class.new(
+    tool = ConfigureServiceTool.new(
       mode: "turbo",
       port: 70_000,
       endpoint: "not a uri",

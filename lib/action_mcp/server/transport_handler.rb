@@ -38,12 +38,6 @@ module ActionMCP
       def send_pong(request_id)
         send_jsonrpc_response(request_id, result: {})
       end
-
-      private
-
-      def format_registry_items(registry)
-        registry.map { |item| item.klass.to_h }
-      end
     end
   end
 end

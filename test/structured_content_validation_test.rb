@@ -18,24 +18,7 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
   end
 
   test "validation returns error response when data does not match schema" do
-    # Create a tool class with intentionally mismatched data
-    tool_class = Class.new(ApplicationMCPTool) do
-      tool_name "mismatched_tool"
-      description "Tool with mismatched data"
-
-      output_schema do
-        property :name, type: "string", required: true
-        property :count, type: "number", required: true
-      end
-
-      def perform
-        # Missing required "count" field
-        render structured: { name: "test" }
-      end
-    end
-
-    tool = tool_class.new
-    result = tool.call
+    result = StockReportTool.new(detail: "partial").call
 
     assert result.error?, "Should be a tool error response"
     assert_equal true, result.to_h[:isError]
@@ -43,42 +26,15 @@ class StructuredContentValidationTest < ActiveSupport::TestCase
   end
 
   test "validation passes when all required fields present" do
-    tool_class = Class.new(ApplicationMCPTool) do
-      tool_name "valid_tool"
-      description "Tool with valid data"
-
-      output_schema do
-        property :name, type: "string", required: true
-        property :count, type: "number", required: true
-      end
-
-      def perform
-        render structured: { name: "test", count: 42 }
-      end
-    end
-
-    tool = tool_class.new
-    result = tool.call
+    result = StockReportTool.new(detail: "full").call
 
     assert_not result.is_error
-    assert_equal "test", result.structured_content[:name]
+    assert_equal "widgets", result.structured_content[:name]
     assert_equal 42, result.structured_content[:count]
   end
 
   test "tool with an output schema must return structured content" do
-    tool_class = Class.new(ApplicationMCPTool) do
-      tool_name "missing_structured_content_tool"
-
-      output_schema do
-        property :answer, type: "string", required: true
-      end
-
-      def perform
-        render text: "unstructured only"
-      end
-    end
-
-    result = tool_class.call
+    result = StockReportTool.call(detail: "text")
 
     assert result.error?
     assert_equal true, result.to_h[:isError]

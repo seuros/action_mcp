@@ -15,7 +15,7 @@ module ActionMCP
 
         page, next_cursor = paginate(session.registered_tools, cursor: params["cursor"])
 
-        result = { tools: page.map { |t| t.to_h(protocol_version: protocol_version) } }
+        result = { tools: page.filter_map { |tool_class| listed_tool(tool_class, protocol_version) } }
         result[:nextCursor] = next_cursor if next_cursor
 
         if progress_token
@@ -33,8 +33,7 @@ module ActionMCP
 
         unless tool_class
           Rails.logger.error "Tool not found: #{tool_name}. Registered tools: #{session.registered_tools.map(&:tool_name).join(', ')}"
-          send_jsonrpc_error(request_id, :invalid_params,
-                             "Tool '#{tool_name}' not found or not registered for this session")
+          send_tool_not_found(request_id, tool_name)
           return
         end
 
@@ -87,6 +86,18 @@ module ActionMCP
 
       private
 
+      # A tool whose schema procs fail is reported and left out of the listing.
+      def listed_tool(tool_class, protocol_version)
+        tool_class.to_h(protocol_version: protocol_version, session: session)
+      rescue SchemaResolutionError => e
+        Rails.error.report(e, handled: true, severity: :error, context: { tool: tool_class.tool_name })
+        nil
+      end
+
+      def send_tool_not_found(request_id, tool_name)
+        send_jsonrpc_error(request_id, :invalid_params, "Tool '#{tool_name}' not found or not registered for this session")
+      end
+
       def execute_tool_synchronously(request_id, tool_class, tool_name, arguments, _meta)
         begin
           # Create tool and set execution context with request info
@@ -110,6 +121,10 @@ module ActionMCP
           send_jsonrpc_response(request_id, result: ToolResult.execution_error(e.message).to_h)
         rescue ActiveModel::UnknownAttributeError => e
           send_jsonrpc_response(request_id, result: ToolResult.execution_error(e.message).to_h)
+        rescue SchemaResolutionError => e
+          # Unlisted for this caller, so it answers like an unknown tool.
+          Rails.error.report(e, handled: true, severity: :error, context: { tool: tool_name })
+          send_tool_not_found(request_id, tool_name)
         rescue StandardError => e
           # Log the actual error for debugging
           Rails.logger.error "Tool execution error: #{e.class} - #{e.message}"
@@ -167,10 +182,6 @@ module ActionMCP
         return :forbidden unless tool_class.respond_to?(:task_support)
 
         (tool_class.task_support || :forbidden).to_sym
-      end
-
-      def format_registry_items(registry, protocol_version = nil)
-        registry.map { |item| item.klass.to_h(protocol_version: protocol_version) }
       end
     end
   end

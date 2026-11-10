@@ -33,6 +33,10 @@ module ActionMCP
   # Error raised when structured content doesn't match the declared output_schema
   class StructuredContentValidationError < StandardError; end
 
+  # Raised when a schema keyword proc fails while a tool schema is built.
+  # The tool is left out of tools/list and answers tools/call as unavailable.
+  class SchemaResolutionError < StandardError; end
+
   # Protocol version constants
   SUPPORTED_VERSIONS = [ "2025-11-25" ].freeze
 

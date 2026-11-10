@@ -114,47 +114,13 @@ class SchemaValidationTest < ActiveSupport::TestCase
   end
 
   test "tools with collections generate proper array schemas" do
-    # Create a test tool with a collection
-    test_tool_class = Class.new(ApplicationMCPTool) do
-      tool_name "test_collection"
-      description "Test collection tool"
+    props = GitHubCreateIssueTool.to_h[:inputSchema][:properties]
+    labels = props["labels"]
 
-      collection :tags, type: "string", description: "List of tags"
-      collection :scores, type: "integer", description: "List of scores"
-
-      def perform
-        render text: "test"
-      end
-    end
-
-    schema = test_tool_class.to_h[:inputSchema]
-    assert_not_nil schema, "Schema should be generated"
-
-    props = schema[:properties] || schema["properties"]
-    assert_not_nil props, "Properties should exist"
-
-    # Handle both string and symbol keys
-    tags_prop = props["tags"] || props[:tags]
-    scores_prop = props["scores"] || props[:scores]
-
-    assert_not_nil tags_prop, "tags property should exist"
-    assert_not_nil scores_prop, "scores property should exist"
-
-    assert_equal "array", tags_prop["type"] || tags_prop[:type]
-
-    # Check items - could be either string or symbol keys
-    tags_items = tags_prop["items"] || tags_prop[:items]
-    assert_equal "string", tags_items["type"] || tags_items[:type]
-
-    assert_equal "List of tags", tags_prop["description"] || tags_prop[:description]
-
-    assert_equal "array", scores_prop["type"] || scores_prop[:type]
-
-    # Check items - could be either string or symbol keys
-    scores_items = scores_prop["items"] || scores_prop[:items]
-    assert_equal "integer", scores_items["type"] || scores_items[:type]
-
-    assert_equal "List of scores", scores_prop["description"] || scores_prop[:description]
+    assert_equal "array", labels[:type]
+    assert_equal "string", labels[:items][:type]
+    assert_equal "Issue labels", labels[:description]
+    assert_equal({ type: "array", items: { type: "number" } }, NumericArrayTool.to_h[:inputSchema][:properties]["numbers"])
   end
 
   test "prompts generate valid schemas" do
