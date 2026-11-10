@@ -2,6 +2,7 @@
 
 require "monitor"
 require_relative "gateway"
+require_relative "custom_methods"
 
 module ActionMCP
   # Configuration class to hold settings for the ActionMCP server.
@@ -109,7 +110,19 @@ module ActionMCP
       # explicitly add their trusted origin hosts.
       @allowed_origins = %w[localhost 127.0.0.1 ::1].freeze
 
+      @custom_methods = CustomMethods.new
+
       @mcp_components_monitor = Monitor.new
+    end
+
+    # Vendor JSON-RPC methods registered with #register_method.
+    # @return [ActionMCP::CustomMethods]
+    attr_reader :custom_methods
+
+    # Serves a vendor JSON-RPC method ("vendor/method") next to the MCP core methods.
+    # The handler is called with (params, session) and its return value is the result.
+    def register_method(name, callable = nil, &block)
+      custom_methods.register(name, callable, &block)
     end
 
     def name
