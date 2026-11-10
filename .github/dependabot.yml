@@ -10,3 +10,10 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+- package-ecosystem: bun
+  directories:
+  - "/test/dummy"
+  - "/javascript/vite-plugin-action-mcp"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
