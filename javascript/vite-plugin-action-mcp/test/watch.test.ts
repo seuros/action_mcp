@@ -48,11 +48,20 @@ describe("watchViews", () => {
     expect(hashes).toHaveLength(1);
 
     // Change rendered content so the minified bundle (and its hash) must move.
-    writeFileSync(VIEW, original.replace("Hello from ActionMCP", `Changed ${Date.now()}`), "utf8");
-    const now = new Date();
-    utimesSync(VIEW, now, now);
-
-    await waitFor(() => hashes.length >= 2);
+    // The edit repeats until a rebuild lands: macOS FSEvents starts its stream
+    // asynchronously and drops changes made right after fs.watch returns.
+    const edit = (): void => {
+      writeFileSync(VIEW, original.replace("Hello from ActionMCP", `Changed ${Date.now()}`), "utf8");
+      const now = new Date();
+      utimesSync(VIEW, now, now);
+    };
+    edit();
+    const retouch = setInterval(edit, 500);
+    try {
+      await waitFor(() => hashes.length >= 2);
+    } finally {
+      clearInterval(retouch);
+    }
     expect(hashes[1]).not.toBe(hashes[0]);
   }, 120_000);
 });

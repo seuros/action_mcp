@@ -32,17 +32,18 @@
     "rails"
   ],
   "peerDependencies": {
-    "vite": ">=6"
+    "vite": ">=8"
   },
   "dependencies": {
-    "@modelcontextprotocol/ext-apps": "1.7.4",
-    "@modelcontextprotocol/sdk": "1.32.2",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/core": "2.4.0",
+    "@modelcontextprotocol/ext-apps": "2.0.4",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.14",
-    "@types/node": "^26.1.0",
-    "typescript": "^6.0.3",
-    "vite": "^7.3.4"
+    "@types/bun": "^1.4.4",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
   }
 }
