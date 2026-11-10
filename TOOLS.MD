@@ -175,6 +175,25 @@ end
 - `"array"` - List of items
 - `"object"` - ⚠️ **Limited support** - See Input Schema Limitations below
 
+## Schema Keywords
+
+Extra keywords on `property` and `collection` become JSON Schema keywords and are enforced before `perform`. Write them in snake_case; they are emitted as JSON Schema (`max_items` → `maxItems`). On a `collection`, `min_items`, `max_items` and `unique_items` apply to the array, everything else to each item:
+
+```ruby
+property :port, type: "integer", minimum: 1, maximum: 65_535
+collection :labels, type: "string", enum: %w[bug feature docs], min_items: 1, unique_items: true
+```
+
+### Dynamic Values
+
+A keyword given as a proc is resolved on every `tools/list` and `tools/call`, with `session`, `session_data` and `current_user` in scope:
+
+```ruby
+property :operation, type: "string", required: true, enum: -> { current_user.allowed_operations }
+```
+
+If the proc raises, the tool is hidden for that request (reported to `Rails.error`); other tools are unaffected. Test your procs.
+
 ## Property Aliases
 
 Use `alias_property` when a tool should accept more than one input name for the same value:

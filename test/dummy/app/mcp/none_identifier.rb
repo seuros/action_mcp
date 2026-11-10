@@ -2,7 +2,11 @@
 
 # Identifier that requires no authentication - allows access for everyone
 class NoneIdentifier < ActionMCP::GatewayIdentifier
-  DevUser = Data.define(:id, :email, :name, :active, :last_login_at, :api_key, :password_digest, :created_at, :updated_at)
+  DevUser = Data.define(:id, :email, :name, :active, :last_login_at, :api_key, :password_digest, :created_at, :updated_at) do
+    def allowed_operations
+      %w[status deploy rollback]
+    end
+  end
 
   identifier :user
   authenticates :none

@@ -44,6 +44,11 @@ class User < ApplicationRecord
     update!(api_key: SecureRandom.hex(32))
   end
 
+  # Operations DispatchOperationTool offers this user.
+  def allowed_operations
+    active? ? %w[status deploy rollback] : %w[status]
+  end
+
   private
 
   def generate_api_key

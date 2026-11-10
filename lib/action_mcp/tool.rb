@@ -35,6 +35,7 @@ module ActionMCP
     class_attribute :_additional_properties, instance_accessor: false, default: false
     class_attribute :_cached_schema_property_keys, instance_accessor: false, default: nil
     class_attribute :_input_schemer, instance_accessor: false, default: nil
+    class_attribute :_dynamic_schema, instance_accessor: false, default: nil
     class_attribute :_output_schemer, instance_accessor: false, default: nil
     class_attribute :_property_aliases, instance_accessor: false, default: {}
     class_attribute :_task_support, instance_accessor: false, default: :forbidden
@@ -276,10 +277,11 @@ module ActionMCP
         _cached_schema_property_keys
       end
 
-      def input_schema
-        properties = _schema_properties.deep_dup
+      # @param session [ActionMCP::Session, nil] Session handed to keyword procs.
+      def input_schema(session: nil)
+        properties = SchemaContext.new(session, tool_name).resolve(_schema_properties)
         _property_aliases.each do |alias_name, property_name|
-          properties[alias_name] = _schema_properties.fetch(property_name).deep_dup
+          properties[alias_name] = properties.fetch(property_name).deep_dup
         end
 
         schema = {
@@ -306,8 +308,18 @@ module ActionMCP
         schema
       end
 
-      def input_schemer
-        self._input_schemer ||= SchemaValidator.compile(input_schema, context: "input schema for #{tool_name}")
+      # Compiled validator for the input schema. Cached per class, except when a
+      # keyword is a proc: those resolve on every build, so the validator does too.
+      def input_schemer(session: nil)
+        return compile_input_schemer(input_schema(session: session)) if dynamic_schema?
+
+        self._input_schemer ||= compile_input_schemer(input_schema)
+      end
+
+      # Whether any schema keyword is a proc resolved at build time.
+      def dynamic_schema?
+        self._dynamic_schema = SchemaContext.dynamic?(_schema_properties) if _dynamic_schema.nil?
+        _dynamic_schema
       end
 
       def output_schemer
@@ -360,6 +372,16 @@ module ActionMCP
       def invalidate_schema_cache
         self._cached_schema_property_keys = nil
         self._input_schemer = nil
+        self._dynamic_schema = nil
+      end
+
+      def compile_input_schemer(schema)
+        SchemaValidator.compile(schema, context: "input schema for #{tool_name}")
+      end
+
+      # DSL keywords arrive in Ruby style (max_items) and leave as JSON Schema (maxItems).
+      def schema_keywords(opts)
+        opts.transform_keys { |key| key.to_s.camelize(:lower).to_sym }
       end
     end
 
@@ -376,8 +398,15 @@ module ActionMCP
     # @param description [String, nil] Optional description for the property.
     # @param required [Boolean] Whether the property is required (default: false).
     # @param default [Object, nil] The default value for the property.
-    # @param opts [Hash] Additional options for the JSON Schema.
+    # @param opts [Hash] Additional JSON Schema keywords, in snake_case
+    #   (min_length, multiple_of) or their JSON Schema spelling. A keyword given
+    #   as a proc runs each time the schema is built (tools/list and argument
+    #   validation) through ActionMCP::SchemaContext, which exposes session and
+    #   current_user.
     # @return [void]
+    #
+    # @example
+    #   property :tool, type: "string", enum: -> { current_user.allowed_tools }
     def self.property(prop_name, type: "string", description: nil, required: false, default: nil, **opts)
       if _property_aliases.key?(prop_name.to_s)
         raise ArgumentError, "Cannot define property '#{prop_name}' because it is already defined as an alias"
@@ -388,7 +417,7 @@ module ActionMCP
       # Build the JSON Schema definition.
       prop_definition = { type: type }
       prop_definition[:description] = description if description && !description.empty?
-      prop_definition.merge!(opts) if opts.any?
+      prop_definition.merge!(schema_keywords(opts)) if opts.any?
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => prop_definition)
       new_required = _required_properties.dup
@@ -409,13 +438,14 @@ module ActionMCP
     # @param description [String, nil] Optional description for the collection.
     # @param required [Boolean] Whether the collection is required (default: false).
     # @param default [Array, nil] The default value for the collection.
-    # @param opts [Hash] Additional JSON Schema keywords. Array keywords
-    #   (minItems, maxItems, uniqueItems) apply to the array; every other
-    #   keyword (enum, format, minimum, pattern, ...) applies to each item.
+    # @param opts [Hash] Additional JSON Schema keywords, in snake_case or their
+    #   JSON Schema spelling. Array keywords (min_items, max_items, unique_items)
+    #   apply to the array; every other keyword (enum, format, minimum, pattern,
+    #   ...) applies to each item. Procs resolve as for #property.
     # @return [void]
     #
     # @example
-    #   collection :fruits, type: "string", enum: %w[apple banana], minItems: 1, uniqueItems: true
+    #   collection :labels, type: "string", enum: -> { current_user.labels }, min_items: 1, unique_items: true
     def self.collection(prop_name, type:, description: nil, required: false, default: [], **opts)
       raise ArgumentError, "Type is required for a collection" if type.nil?
 
@@ -425,6 +455,7 @@ module ActionMCP
 
       invalidate_schema_cache
 
+      opts = schema_keywords(opts)
       array_opts = opts.slice(*COLLECTION_ARRAY_KEYWORDS)
       item_opts = opts.except(*COLLECTION_ARRAY_KEYWORDS)
 
@@ -453,9 +484,10 @@ module ActionMCP
     # Returns a hash representation of the tool definition including its JSON Schema.
     #
     # @return [Hash] The tool definition.
-    def self.to_h(protocol_version: nil)
-      schema = input_schema
-      input_schemer
+    def self.to_h(protocol_version: nil, session: nil)
+      schema = input_schema(session: session)
+      # Compiling surfaces an invalid schema here instead of on the first call.
+      dynamic_schema? ? compile_input_schemer(schema) : input_schemer
 
       result = {
         name: tool_name,
@@ -653,7 +685,7 @@ module ActionMCP
       else
                            attributes.compact.merge(@_provided_additional_attributes.deep_stringify_keys)
       end
-      schema_errors = SchemaValidator.validate(self.class.input_schemer, validation_input)
+      schema_errors = SchemaValidator.validate(self.class.input_schemer(session: session), validation_input)
       SchemaValidator.error_messages(schema_errors).each { |message| errors.add(:base, message) }
       @_alias_conflicts.each { |message| errors.add(:base, message) }
     end

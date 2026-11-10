@@ -74,54 +74,34 @@ class ActionMCPTasksTest < ActiveSupport::TestCase
   end
 
   test "list_widgets matches concrete tool URIs to parameterized UI templates" do
-    with_registry_snapshot do
-      widget = Class.new(ActionMCP::ResourceTemplate) do
-        def self.name = "TaskParameterizedTemplate"
+    output = invoke_task("action_mcp:list_widgets")
 
-        description "Parameterized task widget"
-        uri_template "ui://task-widgets/{id}"
-        mime_type :mcp_app
-      end
-      ActionMCP::ResourceTemplatesRegistry.register(widget)
-
-      Class.new(ActionMCP::Tool) do
-        tool_name "task_parameterized_tool"
-        description "Tool linked to one parameterized widget instance"
-        renders_ui "ui://task-widgets/42"
-      end
-
-      output = invoke_task("action_mcp:list_widgets")
-
-      assert_match(/task_parameterized:.*ui:\/\/task-widgets\/\{id\}.*Linked tools: task_parameterized_tool/m, output)
-      refute_match(/MISSING UI WIDGET RESOURCES.*ui:\/\/task-widgets\/42/m, output)
-    end
+    assert_match(%r{service_status:.*ui://services/\{service\}.*Linked tools: api_status}m, output)
+    refute_match(%r{MISSING UI WIDGET RESOURCES.*ui://services/api}m, output)
   end
 
   test "list_widgets links a compiled view through its resolved manifest URI" do
-    with_registry_snapshot do
-      widget = Class.new(ActionMCP::ResourceTemplate) do
-        def self.name = "TaskCompiledTemplate"
+    Dir.mktmpdir("action_mcp_views") do |dir|
+      File.write(File.join(dir, "demo-abc123.js"), "console.log('demo');")
+      File.write(File.join(dir, "manifest.json"), JSON.generate(
+        schemaVersion: 1,
+        generator: "@action-mcp/vite-plugin",
+        views: {
+          "demo" => {
+            "file" => "demo-abc123.js",
+            "hash" => "abc123",
+            "uri" => "ui://views/demo.html?v=abc123",
+            "logicalUri" => "ui://views/demo"
+          }
+        }
+      ))
+      ActionMCP::Apps::ViewManifest.load!(dir)
 
-        description "Compiled task widget"
-        uri_template "ui://views/task-compiled.html?v=abc123"
-        mime_type :mcp_app
-      end
-      ActionMCP::ResourceTemplatesRegistry.register(widget)
+      output = invoke_task("action_mcp:list_widgets")
 
-      Class.new(ActionMCP::Tool) do
-        tool_name "task_compiled_tool"
-        description "Tool linked to a compiled widget"
-        renders_ui "ui://views/task-compiled"
-      end
-
-      resolver = lambda do |uri|
-        uri == "ui://views/task-compiled" ? "ui://views/task-compiled.html?v=abc123" : uri
-      end
-      output = ActionMCP::Apps::ViewManifest.stub(:resolve_resource_uri, resolver) do
-        invoke_task("action_mcp:list_widgets")
-      end
-
-      assert_match(/task_compiled:.*task-compiled\.html\?v=abc123.*Linked tools: task_compiled_tool/m, output)
+      assert_match(%r{demo_view:.*demo\.html\?v=abc123.*Linked tools: demo_counter}m, output)
+    ensure
+      ActionMCP::Apps::ViewManifest.send(:evict_generated_templates!)
     end
   end
 
@@ -144,17 +124,5 @@ class ActionMCPTasksTest < ActiveSupport::TestCase
     stdout, stderr = capture_io { Rake::Task[name].invoke(*arguments) }
     assert_empty stderr
     stdout
-  end
-
-  def with_registry_snapshot
-    tools = ActionMCP::ToolsRegistry.tools.dup
-    resources = ActionMCP::ResourceTemplatesRegistry.resource_templates.dup
-    registered_templates = ActionMCP::ResourceTemplate.registered_templates.dup
-
-    yield
-  ensure
-    ActionMCP::ToolsRegistry.instance_variable_set(:@items, tools)
-    ActionMCP::ResourceTemplatesRegistry.instance_variable_set(:@items, resources)
-    ActionMCP::ResourceTemplate.instance_variable_set(:@registered_templates, registered_templates)
   end
 end

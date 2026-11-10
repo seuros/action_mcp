@@ -28,15 +28,7 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
   end
 
   test "tool with additional_properties false explicitly disallows extra properties" do
-    # Create a test class with additional_properties false
-    test_class = Class.new(ActionMCP::Tool) do
-      tool_name "no_additional_props_test"
-      description "Test tool with additional_properties false"
-      property :name, type: "string", required: true
-      additional_properties false
-    end
-
-    tool_hash = test_class.to_h
+    tool_hash = ConfigureServiceTool.to_h
     assert_includes tool_hash[:inputSchema], :additionalProperties
     assert_equal false, tool_hash[:inputSchema][:additionalProperties]
   end
@@ -134,20 +126,7 @@ class ToolAdditionalPropertiesTest < ActiveSupport::TestCase
   end
 
   test "output schema builder supports additional_properties" do
-    tool_class = Class.new(ActionMCP::Tool) do
-      tool_name "output_schema_test"
-      description "Test tool with output schema additional properties"
-
-      output_schema do
-        string :message, required: true
-        object :metadata, additional_properties: true do
-          string :source
-        end
-        additional_properties false
-      end
-    end
-
-    schema = tool_class._output_schema
+    schema = StockReportTool._output_schema
 
     # Root level should have additionalProperties: false
     assert_equal false, schema["additionalProperties"]
