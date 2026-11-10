@@ -7,6 +7,11 @@
 
 * schema keywords take Ruby-style names and procs resolved per session and user ([#255](https://github.com/seuros/action_mcp/issues/255)) ([d5838f8](https://github.com/seuros/action_mcp/commit/d5838f8ea7b00f612372e0069d293a46f7bd834f))
 
+
+### Bug Fixes
+
+* task-augmented tool calls run, carry the caller's identity, and fail visibly ([#257](https://github.com/seuros/action_mcp/issues/257)) ([f17fe56](https://github.com/seuros/action_mcp/commit/f17fe562c9f76bc29b95204f2d5be8e6348ba188))
+
 ## [0.202.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.3...action_mcp/v0.202.0) (2026-11-10)
 
 
