@@ -10,22 +10,14 @@ class DebugInitTest < ActionDispatch::IntegrationTest
   end
 
   test "initialization follows MCP spec" do
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "init-1",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        clientInfo: { name: "Test Client", version: "1.0" },
-        capabilities: {
-          roots: { listChanged: true },
-          sampling: {}
-        }
+    mcp_post("initialize", {
+      protocolVersion: "2025-11-25",
+      clientInfo: { name: "Test Client", version: "1.0" },
+      capabilities: {
+        roots: { listChanged: true },
+        sampling: {}
       }
-    }.to_json, headers: {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
+    }, id: "init-1")
 
     assert_response :success
     body = response.parsed_body
@@ -55,25 +47,17 @@ class DebugInitTest < ActionDispatch::IntegrationTest
   test "initialization advertises mcp apps extension when enabled" do
     original_mcp_apps_enabled = ActionMCP.configuration.mcp_apps_enabled
     ActionMCP.configuration.mcp_apps_enabled = true
-    post "/", params: {
-      jsonrpc: "2.0",
-      id: "init-apps",
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-11-25",
-        clientInfo: { name: "Test Client", version: "1.0" },
-        capabilities: {
-          extensions: {
-            "io.modelcontextprotocol/ui" => {
-              mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ]
-            }
+    mcp_post("initialize", {
+      protocolVersion: "2025-11-25",
+      clientInfo: { name: "Test Client", version: "1.0" },
+      capabilities: {
+        extensions: {
+          "io.modelcontextprotocol/ui" => {
+            mimeTypes: [ ActionMCP::MIME_TYPE_APP_HTML ]
           }
         }
       }
-    }.to_json, headers: {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
+    }, id: "init-apps")
 
     assert_response :success
     extensions = response.parsed_body.dig(

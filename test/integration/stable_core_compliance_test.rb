@@ -132,7 +132,7 @@ class StableCoreComplianceTest < ActionDispatch::IntegrationTest
   end
 
   test "stable JSON-RPC envelope validation rejects malformed messages" do
-    post "/", params: '{"jsonrpc":', headers: json_headers
+    post "/", params: '{"jsonrpc":', headers: mcp_request_headers
     assert_response :bad_request
     assert_equal(-32_700, response.parsed_body.dig("error", "code"))
 
@@ -227,48 +227,25 @@ class StableCoreComplianceTest < ActionDispatch::IntegrationTest
   private
 
   def initialize_session(protocol_version: PROTOCOL_VERSION)
-    post_json(
-      jsonrpc: "2.0",
-      id: "init-#{SecureRandom.hex(4)}",
-      method: "initialize",
-      params: valid_initialize_params(protocol_version: protocol_version)
-    )
-    assert_response :ok
+    session_id = initialize_mcp_session(complete: false, **client_info(protocol_version))
     assert response.parsed_body["result"], response.parsed_body.inspect
-    response.headers["Mcp-Session-Id"].tap { |id| assert id.present? }
+    session_id
   end
 
   def complete_initialization(session_id)
-    post_json(
-      { jsonrpc: "2.0", method: "notifications/initialized" },
-      session_id: session_id,
-      protocol_version: PROTOCOL_VERSION
-    )
+    mcp_notify("notifications/initialized", session_id: session_id, protocol_version: PROTOCOL_VERSION)
   end
 
   def valid_initialize_params(protocol_version: PROTOCOL_VERSION)
-    {
-      protocolVersion: protocol_version,
-      capabilities: {},
-      clientInfo: { name: "stable-test-client", version: "1.0.0" }
-    }
+    mcp_initialize_params(**client_info(protocol_version))
+  end
+
+  def client_info(protocol_version)
+    { protocol_version: protocol_version, client_name: "stable-test-client", client_version: "1.0.0" }
   end
 
   def post_json(payload = nil, session_id: nil, protocol_version: nil, **message)
-    payload ||= message
-    post "/",
-         params: payload.to_json,
-         headers: json_headers(session_id: session_id, protocol_version: protocol_version)
-  end
-
-  def json_headers(session_id: nil, protocol_version: nil)
-    headers = {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
-    headers["Mcp-Session-Id"] = session_id if session_id
-    headers["MCP-Protocol-Version"] = protocol_version if protocol_version
-    headers
+    mcp_send(payload || message, session_id: session_id, protocol_version: protocol_version)
   end
 
   def session_headers(session_id, protocol_version: PROTOCOL_VERSION)

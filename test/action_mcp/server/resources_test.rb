@@ -28,25 +28,12 @@ module ActionMCP
 
       class TestTransport
         include Resources
+        include TransportMocks::RecordingTransport
 
-        attr_reader :responses, :errors
+        attr_reader :session
 
         def initialize
           @session = TestSession.new
-          @responses = []
-          @errors = []
-        end
-
-        def session
-          @session
-        end
-
-        def send_jsonrpc_response(id, result: nil, error: nil)
-          @responses << { id: id, result: result, error: error }
-        end
-
-        def send_jsonrpc_error(id, symbol, message, data = nil)
-          @errors << { id: id, symbol: symbol, message: message, data: data }
         end
       end
 

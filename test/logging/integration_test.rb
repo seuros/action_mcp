@@ -32,19 +32,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     @session.update!(server_capabilities: @session.server_capabilities.except("logging", :logging))
     ActionMCP::Server.session_store.save_session(@session)
 
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "setlevel-test",
-        method: "logging/setLevel",
-        params: { level: "error" }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "Accept" => "application/json, text/event-stream",
-        "MCP-Protocol-Version" => "2025-11-25",
-        "Mcp-Session-Id" => @session_id
-      }
+    mcp_post("logging/setLevel", { level: "error" }, id: "setlevel-test", protocol_version: "2025-11-25", session_id: @session_id)
 
     assert_response :success
 
@@ -58,19 +46,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     ActionMCP.configuration.logging_enabled = true
     ActionMCP::Logging.initialize_from_config!
 
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "setlevel-test",
-        method: "logging/setLevel",
-        params: { level: "debug" }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "Accept" => "application/json, text/event-stream",
-        "MCP-Protocol-Version" => "2025-11-25",
-        "Mcp-Session-Id" => @session_id
-      }
+    mcp_post("logging/setLevel", { level: "debug" }, id: "setlevel-test", protocol_version: "2025-11-25", session_id: @session_id)
 
     assert_response :success
 
@@ -86,19 +62,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     ActionMCP.configuration.logging_enabled = true
     ActionMCP::Logging.initialize_from_config!
 
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "setlevel-test",
-        method: "logging/setLevel",
-        params: { level: "invalid_level" }
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "Accept" => "application/json, text/event-stream",
-        "MCP-Protocol-Version" => "2025-11-25",
-        "Mcp-Session-Id" => @session_id
-      }
+    mcp_post("logging/setLevel", { level: "invalid_level" }, id: "setlevel-test", protocol_version: "2025-11-25", session_id: @session_id)
 
     assert_response :success
 
@@ -112,19 +76,7 @@ class ActionMCP::Logging::IntegrationTest < ActionDispatch::IntegrationTest
     ActionMCP.configuration.logging_enabled = true
     ActionMCP::Logging.initialize_from_config!
 
-    post "/",
-      params: {
-        jsonrpc: "2.0",
-        id: "setlevel-test",
-        method: "logging/setLevel",
-        params: {}
-      }.to_json,
-      headers: {
-        "Content-Type" => "application/json",
-        "Accept" => "application/json, text/event-stream",
-        "MCP-Protocol-Version" => "2025-11-25",
-        "Mcp-Session-Id" => @session_id
-      }
+    mcp_post("logging/setLevel", {}, id: "setlevel-test", protocol_version: "2025-11-25", session_id: @session_id)
 
     assert_response :success
 

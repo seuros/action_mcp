@@ -48,15 +48,7 @@ module ActionMCP
         uri = params["uri"]
         template = find_registered_template_for_uri(uri)
 
-        unless template
-          error = {
-            code: -32_002,
-            message: "Resource not found",
-            data: { uri: uri }
-          }
-          send_jsonrpc_response(id, error: error)
-          return
-        end
+        return send_jsonrpc_response(id, error: resource_not_found_error(uri)) unless template
 
         # Check if resource requires consent and if consent is granted
         if template.respond_to?(:requires_consent?) && template.requires_consent? && !session.consent_granted_for?("resource:#{template.name}")
@@ -68,28 +60,12 @@ module ActionMCP
           return
         end
 
-        unless template.readable_uri?(uri)
-          error = {
-            code: -32_002,
-            message: "Resource not found",
-            data: { uri: uri }
-          }
-          send_jsonrpc_response(id, error: error)
-          return
-        end
+        return send_jsonrpc_response(id, error: resource_not_found_error(uri)) unless template.readable_uri?(uri)
 
         begin
           # Create template instance and set execution context
           record = template.process(uri)
-          unless record
-            error = {
-              code: -32_002,
-              message: "Resource not found",
-              data: { uri: uri }
-            }
-            send_jsonrpc_response(id, error: error)
-            return
-          end
+          return send_jsonrpc_response(id, error: resource_not_found_error(uri)) unless record
 
           record.with_context({ session: session, request: { params: { uri: uri, _meta: params["_meta"] || {} } } })
 

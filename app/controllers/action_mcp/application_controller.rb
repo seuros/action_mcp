@@ -285,45 +285,30 @@ module ActionMCP
 
     # --- Error Rendering Methods ---
 
-    # Renders a 400 Bad Request response with a JSON-RPC-like error structure.
-    def render_bad_request(message = "Bad Request", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_600, message: message } }, status: :bad_request
+    # HTTP-level errors rendered with a JSON-RPC error body:
+    # name => [default message, JSON-RPC error code, HTTP status]
+    HTTP_ERRORS = {
+      bad_request: [ "Bad Request", -32_600, :bad_request ],
+      protocol_version_error: [ "Protocol Version Error", -32_000, :bad_request ],
+      not_found: [ "Not Found", -32_001, :not_found ],
+      method_not_allowed: [ "Method Not Allowed", -32_601, :method_not_allowed ],
+      not_acceptable: [ "Not Acceptable", -32_000, :not_acceptable ],
+      not_implemented: [ "Not Implemented", -32_003, :not_implemented ]
+    }.freeze
+
+    HTTP_ERRORS.each do |name, (default_message, code, status)|
+      define_method(:"render_#{name}") do |message = default_message, id = nil|
+        render_http_error(code, message, status, id || extract_jsonrpc_id_from_request)
+      end
     end
 
-    # Renders a 400 Bad Request response for protocol version errors as per MCP spec
-    def render_protocol_version_error(message = "Protocol Version Error", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :bad_request
-    end
-
-    # Renders a 404 Not Found response with a JSON-RPC-like error structure.
-    def render_not_found(message = "Not Found", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_001, message: message } }, status: :not_found
-    end
-
-    # Renders a 405 Method Not Allowed response.
-    def render_method_not_allowed(message = "Method Not Allowed", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_601, message: message } }, status: :method_not_allowed
-    end
-
-    # Renders a 406 Not Acceptable response.
-    def render_not_acceptable(message = "Not Acceptable", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :not_acceptable
-    end
-
-    # Renders a 501 Not Implemented response.
-    def render_not_implemented(message = "Not Implemented", id = nil)
-      id ||= extract_jsonrpc_id_from_request
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_003, message: message } }, status: :not_implemented
-    end
-
-    # Renders a 500 Internal Server Error response.
+    # The request id is left unset here: the body may be what failed.
     def render_internal_server_error(message = "Internal Server Error", id = nil)
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_603, message: message } }, status: :internal_server_error
+      render_http_error(-32_603, message, :internal_server_error, id)
+    end
+
+    def render_http_error(code, message, status, id)
+      render json: { jsonrpc: "2.0", id: id, error: { code: code, message: message } }, status: status
     end
 
     def render_jsonrpc_error(symbol, message, id = nil)
@@ -400,7 +385,7 @@ module ActionMCP
       challenge = "Bearer"
       challenge += ' error="invalid_token"' if request.headers["Authorization"].present?
       response.headers["WWW-Authenticate"] = challenge
-      render json: { jsonrpc: "2.0", id: id, error: { code: -32_000, message: message } }, status: :unauthorized
+      render_http_error(-32_000, message, :unauthorized, id)
     end
   end
 end

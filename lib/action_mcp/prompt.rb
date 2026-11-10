@@ -6,7 +6,6 @@ module ActionMCP
     include ActionMCP::Callbacks
     include ActionMCP::CurrentHelpers
     class_attribute :_argument_definitions, instance_accessor: false, default: []
-    class_attribute :_meta, instance_accessor: false, default: {}
 
     # ---------------------------------------------------
     # Prompt Name
@@ -16,47 +15,18 @@ module ActionMCP
     # @param name [String, nil] The prompt name to set.
     # @return [String] The prompt name.
     def self.prompt_name(name = nil)
-      if name
-        self._capability_name = name
-        re_register_if_needed
-        name
-      else
-        _capability_name || default_prompt_name
-      end
-    end
-
-    # Re-registers the prompt if it was already registered under a different name
-    # @return [void]
-    def self.re_register_if_needed
-      return if abstract?
-      return unless _registered_name # Not yet registered
-
-      new_name = capability_name
-      return if _registered_name == new_name # No change
-
-      ActionMCP::PromptsRegistry.re_register(self, _registered_name)
-    end
-
-    private_class_method :re_register_if_needed
-
-    # Returns the default prompt name based on the class name.
-    #
-    # @return [String] The default prompt name.
-    def self.default_prompt_name
-      return "" if name.nil?
-
-      name.underscore.gsub("/", "__").sub(/_prompt$/, "")
+      name ? assign_capability_name(name) : capability_name
     end
 
     class << self
-      alias default_capability_name default_prompt_name
+      alias default_prompt_name default_capability_name
 
       def type
         :prompt
       end
 
-      def unregister_from_registry
-        ActionMCP::PromptsRegistry.unregister(self) if ActionMCP::PromptsRegistry.store.values.include?(self)
+      def registry
+        ActionMCP::PromptsRegistry
       end
 
       # Hook called when a class inherits from Prompt
@@ -65,17 +35,6 @@ module ActionMCP
         # Run the ActiveSupport load hook when a prompt is defined
         subclass.class_eval do
           ActiveSupport.run_load_hooks(:action_mcp_prompt, subclass)
-        end
-      end
-
-      # Sets or retrieves the _meta field
-      def meta(data = nil)
-        if data
-          raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
-
-          self._meta = _meta.merge(data)
-        else
-          _meta
         end
       end
     end
@@ -178,21 +137,11 @@ module ActionMCP
       @response # Return the response with collected messages
     end
 
-    def inspect
-      attributes_hash = attributes.transform_values(&:inspect)
-
-      response_info = if defined?(@response) && @response
-                        "response: #{@response.messages.size} message(s)"
-      else
-                        "response: nil"
-      end
-
-      errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
-
-      "#<#{self.class.name} #{attributes_hash.map do |k, v|
-        "#{k}: #{v.inspect}"
-      end.join(', ')}, #{response_info}#{errors_info}>"
+    # Describes the collected response for #inspect.
+    def response_summary
+      "#{@response.messages.size} message(s)"
     end
+    private :response_summary
 
     # Override render to collect messages
     def render(**args)

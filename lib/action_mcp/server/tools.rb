@@ -3,6 +3,8 @@
 module ActionMCP
   module Server
     module Tools
+      include ResultResponse
+
       def send_tools_list(request_id, params = {})
         protocol_version = session.protocol_version
         progress_token = params.dig("_meta", "progressToken")
@@ -100,33 +102,10 @@ module ActionMCP
                               }
                             })
 
-          # Wrap tool execution with Rails reloader for development
-          result = if Rails.env.development?
-                     # Preserve Current attributes across reloader boundary
-                     current_user = ActionMCP::Current.user
-                     current_gateway = ActionMCP::Current.gateway
-                     current_session_data = ActionMCP::Current.session_data
+          result = DevReloader.wrap { tool.call }
 
-                     Rails.application.reloader.wrap do
-                       # Restore Current attributes inside reloader
-                       ActionMCP::Current.user = current_user
-                       ActionMCP::Current.gateway = current_gateway
-                       ActionMCP::Current.session_data = current_session_data
-                       tool.call
-                     end
-          else
-                     tool.call
-          end
-
-          result = ToolResult.normalize(result)
-
-          if result.is_error
-            # Protocol error
-            send_jsonrpc_response(request_id, error: result.to_h)
-          else
-            # Success OR tool execution error - both are valid JSON-RPC responses
-            send_jsonrpc_response(request_id, result: result.to_h)
-          end
+          # Tool execution errors travel as results; only protocol errors become JSON-RPC errors
+          send_result_response(request_id, ToolResult.normalize(result))
         rescue ArgumentError => e
           send_jsonrpc_response(request_id, result: ToolResult.execution_error(e.message).to_h)
         rescue ActiveModel::UnknownAttributeError => e

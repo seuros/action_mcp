@@ -4,6 +4,8 @@ module ActionMCP
   module Server
     # Base session object that mimics ActiveRecord Session with common functionality
     class BaseSession
+      include SessionRegistries
+
       attr_accessor :id, :status, :initialized, :role, :messages_count,
                     :protocol_version, :client_info,
                     :client_capabilities, :server_info, :server_capabilities,
@@ -22,9 +24,7 @@ module ActionMCP
         @consents = {}
         @session_data = {}
 
-        attributes.each do |key, value|
-          send("#{key}=", value) if respond_to?("#{key}=")
-        end
+        assign_known_attributes(attributes)
       end
 
       # ActiveRecord-like interface
@@ -48,9 +48,7 @@ module ActionMCP
       end
 
       def update(attributes)
-        attributes.each do |key, value|
-          send("#{key}=", value) if respond_to?("#{key}=")
-        end
+        assign_known_attributes(attributes)
         save
       end
 
@@ -74,14 +72,6 @@ module ActionMCP
         return false unless status == "pre_initialize" && !initialized?
 
         self.status = "initializing"
-        save
-      end
-
-      def initialize!
-        return false unless status == "initializing" && !initialized?
-
-        self.initialized = true
-        self.status = "initialized"
         save
       end
 
@@ -183,111 +173,6 @@ module ActionMCP
 
       def resource_subscribed?(uri)
         @subscriptions.any? { |subscription| subscription[:uri] == uri }
-      end
-
-      # Progress notification
-      def send_progress_notification(progressToken:, progress:, total: nil, message: nil)
-        handler = ActionMCP::Server::TransportHandler.new(self)
-        handler.send_progress_notification(
-          progressToken: progressToken,
-          progress: progress,
-          total: total,
-          message: message
-        )
-      end
-
-      # Registry management methods
-      def register_tool(tool_class_or_name)
-        tool_name = normalize_name(tool_class_or_name, :tool)
-        return false unless tool_exists?(tool_name)
-
-        self.tool_registry ||= []
-        unless self.tool_registry.include?(tool_name)
-          self.tool_registry << tool_name
-          save!
-          send_tools_list_changed_notification
-        end
-        true
-      end
-
-      def unregister_tool(tool_class_or_name)
-        tool_name = normalize_name(tool_class_or_name, :tool)
-        self.tool_registry ||= []
-
-        return unless self.tool_registry.delete(tool_name)
-
-        save!
-        send_tools_list_changed_notification
-      end
-
-      def register_prompt(prompt_class_or_name)
-        prompt_name = normalize_name(prompt_class_or_name, :prompt)
-        return false unless prompt_exists?(prompt_name)
-
-        self.prompt_registry ||= []
-        unless self.prompt_registry.include?(prompt_name)
-          self.prompt_registry << prompt_name
-          save!
-          send_prompts_list_changed_notification
-        end
-        true
-      end
-
-      def unregister_prompt(prompt_class_or_name)
-        prompt_name = normalize_name(prompt_class_or_name, :prompt)
-        self.prompt_registry ||= []
-
-        return unless self.prompt_registry.delete(prompt_name)
-
-        save!
-        send_prompts_list_changed_notification
-      end
-
-      def register_resource_template(template_class_or_name)
-        template_name = normalize_name(template_class_or_name, :resource_template)
-        return false unless resource_template_exists?(template_name)
-
-        self.resource_registry ||= []
-        unless self.resource_registry.include?(template_name)
-          self.resource_registry << template_name
-          save!
-          send_resources_list_changed_notification
-        end
-        true
-      end
-
-      def unregister_resource_template(template_class_or_name)
-        template_name = normalize_name(template_class_or_name, :resource_template)
-        self.resource_registry ||= []
-
-        return unless self.resource_registry.delete(template_name)
-
-        save!
-        send_resources_list_changed_notification
-      end
-
-      def registered_tools
-        (self.tool_registry || []).filter_map do |tool_name|
-          ActionMCP::ToolsRegistry.find(tool_name)
-        rescue StandardError
-          nil
-        end
-      end
-
-      def registered_prompts
-        (self.prompt_registry || []).filter_map do |prompt_name|
-          ActionMCP::PromptsRegistry.find(prompt_name)
-        rescue StandardError
-          nil
-        end
-      end
-
-      def registered_resource_templates
-        (self.resource_registry || []).filter_map do |template_name|
-          ActionMCP::ResourceTemplatesRegistry.find(template_name)
-        rescue StandardError
-          nil
-        end
       end
 
       # Consent management methods
@@ -402,61 +287,10 @@ module ActionMCP
         capabilities ? capabilities.deep_dup : {}
       end
 
-      def normalize_name(class_or_name, type)
-        case class_or_name
-        when String
-          class_or_name
-        when Class
-          case type
-          when :tool
-            class_or_name.tool_name
-          when :prompt
-            class_or_name.prompt_name
-          when :resource_template
-            class_or_name.capability_name
-          end
-        else
-          raise ArgumentError, "Expected String or Class, got #{class_or_name.class}"
+      def assign_known_attributes(attributes)
+        attributes.each do |key, value|
+          send("#{key}=", value) if respond_to?("#{key}=")
         end
-      end
-
-      def tool_exists?(tool_name)
-        ActionMCP::ToolsRegistry.find(tool_name)
-        true
-      rescue ActionMCP::RegistryBase::NotFound
-        false
-      end
-
-      def prompt_exists?(prompt_name)
-        ActionMCP::PromptsRegistry.find(prompt_name)
-        true
-      rescue ActionMCP::RegistryBase::NotFound
-        false
-      end
-
-      def resource_template_exists?(template_name)
-        ActionMCP::ResourceTemplatesRegistry.find(template_name)
-        true
-      rescue ActionMCP::RegistryBase::NotFound
-        false
-      end
-
-      def send_tools_list_changed_notification
-        return unless server_capabilities.dig("tools", "listChanged")
-
-        write(JSON_RPC::Notification.new(method: "notifications/tools/list_changed"))
-      end
-
-      def send_prompts_list_changed_notification
-        return unless server_capabilities.dig("prompts", "listChanged")
-
-        write(JSON_RPC::Notification.new(method: "notifications/prompts/list_changed"))
-      end
-
-      def send_resources_list_changed_notification
-        return unless server_capabilities.dig("resources", "listChanged")
-
-        write(JSON_RPC::Notification.new(method: "notifications/resources/list_changed"))
       end
 
       # Collection classes

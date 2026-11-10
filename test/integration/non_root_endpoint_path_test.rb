@@ -17,12 +17,10 @@ class NonRootEndpointPathTest < ActionDispatch::IntegrationTest
 
   test "non-root route aliases cannot bypass JSON-RPC validation" do
     ENDPOINT_ALIASES.each do |path|
-      post path,
-           params: { jsonrpc: "2.0", id: "valid", method: "example/test" }.to_json,
-           headers: json_headers
+      mcp_post("example/test", id: "valid", path: path)
       assert_response :ok
 
-      post path, params: '{"jsonrpc":', headers: json_headers
+      post path, params: '{"jsonrpc":', headers: mcp_request_headers
       assert_response :bad_request
       assert_equal(-32_700, response.parsed_body.dig("error", "code"))
     end
@@ -53,12 +51,5 @@ class NonRootEndpointPathTest < ActionDispatch::IntegrationTest
       require_json_content_type: true
     )
     ActionMCP::Middleware::OriginValidation.new(jsonrpc_app, endpoint_paths)
-  end
-
-  def json_headers
-    {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
   end
 end

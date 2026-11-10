@@ -12,27 +12,31 @@ module ActionMCP
     # ———  Outbound: any frame we ‘write’ to the wire  ———
     def write_message(data)
       pretty = json_normalise(data)
-      log_with_tags("MCP", "TX") { ActionMCP.logger.debug("#{BLUE_TX}#{pretty}#{CLR}") }
+      log_frame("TX", :debug, BLUE_TX, pretty)
       super
     rescue StandardError => e
-      log_with_tags("MCP", "TX") { ActionMCP.logger.error("#{RED_FATAL}#{e.message}#{CLR}") }
+      log_frame("TX", :error, RED_FATAL, e.message)
       raise
     end
 
     # ———  Inbound: every raw line handed to the JSON‑RPC handler  ———
     def read(line)
       pretty = json_normalise(line)
-      log_with_tags("MCP", "RX") { ActionMCP.logger.debug("#{GREEN_RX}#{pretty}#{CLR}") }
+      log_frame("RX", :debug, GREEN_RX, pretty)
       super
     rescue MultiJSON::ParseError => e
-      log_with_tags("MCP", "RX") { ActionMCP.logger.warn("#{YELLOW_ERR}Bad JSON → #{e.message}#{CLR}") }
+      log_frame("RX", :warn, YELLOW_ERR, "Bad JSON → #{e.message}")
       raise
     rescue StandardError => e
-      log_with_tags("MCP", "RX") { ActionMCP.logger.error("#{RED_FATAL}#{e.message}#{CLR}") }
+      log_frame("RX", :error, RED_FATAL, e.message)
       raise
     end
 
     private
+
+    def log_frame(direction, level, color, text)
+      log_with_tags("MCP", direction) { ActionMCP.logger.public_send(level, "#{color}#{text}#{CLR}") }
+    end
 
     # Helper method to handle tagged logging across different logger types
     def log_with_tags(*tags, &block)

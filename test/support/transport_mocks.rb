@@ -1,6 +1,20 @@
 # frozen_string_literal: true
 
 module TransportMocks
+  # Captures JSON-RPC responses and errors in place of a real transport.
+  module RecordingTransport
+    def responses = @responses ||= []
+    def errors = @errors ||= []
+
+    def send_jsonrpc_response(id, result: nil, error: nil)
+      responses << { id: id, result: result, error: error }
+    end
+
+    def send_jsonrpc_error(id, symbol, message, data = nil)
+      errors << { id: id, symbol: symbol, message: message, data: data }
+    end
+  end
+
   # A minimal, deliberately fake TCP-ish session for use in specs.
   # It doesn't read, doesn't connect, and doesn't care — much like your average senior dev on a Friday.
   class DummySession

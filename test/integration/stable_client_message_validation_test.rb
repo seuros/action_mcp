@@ -112,7 +112,7 @@ class StableClientMessageValidationTest < ActionDispatch::IntegrationTest
 
   test "rejects invalid nested initialize fields before allocating a session" do
     INVALID_INITIALIZE_PARAMS.each do |label, override|
-      params = deep_merge(valid_initialize_params, override)
+      params = valid_initialize_params.deep_merge(override)
       post_json(jsonrpc: "2.0", id: "invalid-#{label}", method: "initialize", params: params)
 
       assert_response :ok, label
@@ -276,48 +276,27 @@ class StableClientMessageValidationTest < ActionDispatch::IntegrationTest
   private
 
   def create_initializing_session
-    post_json(jsonrpc: "2.0", id: "init", method: "initialize", params: valid_initialize_params)
-    assert_response :ok
-    session_id = response.headers["Mcp-Session-Id"]
-    assert session_id.present?
-    session_id
+    initialize_mcp_session(complete: false, **client_info)
   end
 
   def create_initialized_session
     session_id = create_initializing_session
 
-    post_json(
-      { jsonrpc: "2.0", method: "notifications/initialized" },
-      session_id: session_id
-    )
+    post_json({ jsonrpc: "2.0", method: "notifications/initialized" }, session_id: session_id)
     assert_response :accepted
     session_id
   end
 
   def valid_initialize_params
-    {
-      protocolVersion: PROTOCOL_VERSION,
-      capabilities: {},
-      clientInfo: { name: "stable-client", version: "1.0.0" }
-    }
+    mcp_initialize_params(**client_info)
+  end
+
+  def client_info
+    { protocol_version: PROTOCOL_VERSION, client_name: "stable-client", client_version: "1.0.0" }
   end
 
   def post_json(payload = nil, session_id: nil, extensions: {}, **message)
-    payload ||= message
-    payload = payload.merge(extensions)
-    headers = {
-      "Content-Type" => "application/json",
-      "Accept" => "application/json, text/event-stream"
-    }
-    if session_id
-      headers["Mcp-Session-Id"] = session_id
-      headers["MCP-Protocol-Version"] = PROTOCOL_VERSION
-    end
-
-    post "/", params: payload.to_json, headers: headers
-  end
-
-  def deep_merge(base, override)
-    base.deep_merge(override)
+    mcp_send((payload || message).merge(extensions),
+             session_id: session_id, protocol_version: (PROTOCOL_VERSION if session_id))
   end
 end

@@ -3,67 +3,49 @@
 require "test_helper"
 require "rails/generators"
 require "generators/action_mcp/tool/tool_generator"
-require "tmpdir"
 
 class ToolGeneratorTest < Rails::Generators::TestCase
   tests ActionMCP::Generators::ToolGenerator
-  destination File.expand_path("../../../../../tmp/generator_test_output", __dir__)
-
-  # destination_root is a class_attribute shared across all generator test classes
-  # (they all point at the same literal tmp dir), so give each test its own directory
-  # to avoid racing on rm_rf/mkdir_p under concurrent runs (parallelize, padded_cell).
-  setup do
-    self.destination_root = Dir.mktmpdir("action_mcp_tool_generator_test")
-    prepare_destination
-  end
-
-  teardown do
-    FileUtils.rm_rf(destination_root)
-  end
+  include GeneratorTestDestination
 
   def generated_tool_path(name)
-    base = name.underscore
-    file = base.end_with?("_tool") ? base : "#{base}_tool"
-    File.join(destination_root, "app/mcp/tools/#{file}.rb")
+    generated_component_path(name, "tool", "tools")
   end
 
-  def run_generator_with_args(args)
-    run_generator args
-  end
 
   test "generator creates tool file with correct class name" do
-    run_generator_with_args %w[MyCustom]
+    run_generator %w[MyCustom]
     assert_file generated_tool_path("my_custom"), /class MyCustomTool < ApplicationMCPTool/
   end
 
   test "generator appends Tool to class name if not present" do
-    run_generator_with_args %w[Another]
+    run_generator %w[Another]
     assert_file generated_tool_path("another"), /class AnotherTool < ApplicationMCPTool/
   end
 
   test "generator does not double Tool in class name" do
-    run_generator_with_args %w[AlreadyTool]
+    run_generator %w[AlreadyTool]
     assert_file generated_tool_path("already_tool"), /class AlreadyTool < ApplicationMCPTool/
   end
 
   test "generator uses description option" do
-    run_generator_with_args [ "DescTest", "--description=A test tool" ]
+    run_generator [ "DescTest", "--description=A test tool" ]
     assert_file generated_tool_path("desc_test"), /description "A test tool"/
   end
 
   test "generator sets read_only and destructive annotations" do
-    run_generator_with_args %w[AnnTest --read_only --destructive]
+    run_generator %w[AnnTest --read_only --destructive]
     assert_file generated_tool_path("ann_test"), /read_only$/
     assert_file generated_tool_path("ann_test"), /destructive$/
   end
 
   test "generator sets category annotation" do
-    run_generator_with_args %w[CatTest --category=utility]
+    run_generator %w[CatTest --category=utility]
     assert_file generated_tool_path("cat_test"), /annotate\(:category, "utility"\)/
   end
 
   test "generator parses properties option" do
-    run_generator_with_args [
+    run_generator [
       "PropTest",
       "--properties",
       "foo:string:Foo description:true",
@@ -76,12 +58,12 @@ class ToolGeneratorTest < Rails::Generators::TestCase
   end
 
   test "generator with --ui emits renders_ui" do
-    run_generator_with_args %w[Weather --ui=ui://views/weather-dashboard]
+    run_generator %w[Weather --ui=ui://views/weather-dashboard]
     assert_file generated_tool_path("weather"), %r{^  renders_ui "ui://views/weather-dashboard"$}
   end
 
   test "generator without --ui includes commented renders_ui example" do
-    run_generator_with_args %w[Plain]
+    run_generator %w[Plain]
     assert_file generated_tool_path("plain") do |content|
       assert_match(%r{# renders_ui "ui://views/my-view"}, content)
       assert_no_match(/^  renders_ui/, content)

@@ -26,7 +26,6 @@ module ActionMCP
     class_attribute :_required_properties, instance_accessor: false, default: []
     class_attribute :_annotations, instance_accessor: false, default: {}
     class_attribute :_output_schema, instance_accessor: false, default: nil
-    class_attribute :_meta, instance_accessor: false, default: {}
     class_attribute :_requires_consent, instance_accessor: false, default: false
     class_attribute :_output_schema_builder, instance_accessor: false, default: nil
     class_attribute :_additional_properties, instance_accessor: false, default: false
@@ -47,47 +46,18 @@ module ActionMCP
     # @param name [String, nil] Optional. The name to set for the tool.
     # @return [String] The current tool name.
     def self.tool_name(name = nil)
-      if name
-        self._capability_name = name
-        re_register_if_needed
-        name
-      else
-        _capability_name || default_tool_name
-      end
-    end
-
-    # Re-registers the tool if it was already registered under a different name
-    # @return [void]
-    def self.re_register_if_needed
-      return if abstract?
-      return unless _registered_name # Not yet registered
-
-      new_name = capability_name
-      return if _registered_name == new_name # No change
-
-      ActionMCP::ToolsRegistry.re_register(self, _registered_name)
-    end
-
-    private_class_method :re_register_if_needed
-
-    # Returns a default tool name based on the class name.
-    #
-    # @return [String] The default tool name.
-    def self.default_tool_name
-      return "" if name.nil?
-
-      name.underscore.gsub("/", "__").sub(/_tool$/, "")
+      name ? assign_capability_name(name) : capability_name
     end
 
     class << self
-      alias default_capability_name default_tool_name
+      alias default_tool_name default_capability_name
 
       def type
         :tool
       end
 
-      def unregister_from_registry
-        ActionMCP::ToolsRegistry.unregister(self) if ActionMCP::ToolsRegistry.store.values.include?(self)
+      def registry
+        ActionMCP::ToolsRegistry
       end
 
       # Hook called when a class inherits from Tool
@@ -183,16 +153,6 @@ module ActionMCP
         _output_schema
       end
 
-      # Sets or retrieves the _meta field
-      def meta(data = nil)
-        if data
-          raise ArgumentError, "_meta must be a hash" unless data.is_a?(Hash)
-
-          self._meta = _meta.merge(data)
-        else
-          _meta
-        end
-      end
 
       # Declares the UI resource this tool renders. Merges a `ui:` entry into
       # `_meta` so the tool listing advertises the dashboard.
@@ -600,21 +560,11 @@ module ActionMCP
       @response
     end
 
-    def inspect
-      attributes_hash = attributes.transform_values(&:inspect)
-
-      response_info = if defined?(@response) && @response
-                        "response: #{@response.contents.size} content(s), isError: #{@response.is_error}"
-      else
-                        "response: nil"
-      end
-
-      errors_info = errors.any? ? ", errors: #{errors.full_messages}" : ""
-
-      "#<#{self.class.name} #{attributes_hash.map do |k, v|
-        "#{k}: #{v.inspect}"
-      end.join(', ')}, #{response_info}#{errors_info}>"
+    # Describes the collected response for #inspect.
+    def response_summary
+      "#{@response.contents.size} content(s), isError: #{@response.is_error}"
     end
+    private :response_summary
 
     # Override render to collect Content objects and support structured content
     def render(structured: nil, **args)

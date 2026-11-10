@@ -5,52 +5,12 @@ require "test_helper"
 module ActionMCP
   class ResourcesListTest < ActionDispatch::IntegrationTest
     setup do
-      # Initialize session
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 1,
-             method: "initialize",
-             params: {
-               capabilities: {},
-               clientInfo: { name: "test", version: "1.0" },
-               protocolVersion: ActionMCP::LATEST_VERSION
-             }
-           }.to_json,
-           headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream" }
-
-      assert_response :success
-      session_id = response.headers["Mcp-Session-Id"]
-      assert_not_nil session_id
-
-      # Complete initialization
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             method: "notifications/initialized"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => session_id
-           }
-
+      @session_id = initialize_mcp_session(path: action_mcp.mcp_post_path)
       assert_response :accepted
-      @session_id = session_id
     end
 
     test "resources/list returns concrete resources from templates implementing list" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "resources/list"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/list", id: 2)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -75,18 +35,7 @@ module ActionMCP
     end
 
     test "resources/list supports cursor pagination" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "resources/list",
-             params: {}
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/list", {}, id: 2)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -96,18 +45,7 @@ module ActionMCP
     end
 
     test "resources/list returns invalid params for malformed cursor" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 22,
-             method: "resources/list",
-             params: { cursor: "not-base64" }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/list", { cursor: "not-base64" }, id: 22)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -118,17 +56,7 @@ module ActionMCP
     end
 
     test "resources/templates/list returns templates" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 3,
-             method: "resources/templates/list"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/templates/list", id: 3)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -146,18 +74,7 @@ module ActionMCP
     end
 
     test "resources/templates/list rejects null cursor" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 4,
-             method: "resources/templates/list",
-             params: { cursor: nil }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/templates/list", { cursor: nil }, id: 4)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -168,18 +85,7 @@ module ActionMCP
     end
 
     test "resources/templates/list returns invalid params for non-string cursor" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 44,
-             method: "resources/templates/list",
-             params: { cursor: 123 }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/templates/list", { cursor: 123 }, id: 44)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -190,18 +96,7 @@ module ActionMCP
     end
 
     test "resources/read returns MCP-compliant content shape" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 5,
-             method: "resources/read",
-             params: { uri: "ecommerce://products/1" }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/read", { uri: "ecommerce://products/1" }, id: 5)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -217,18 +112,7 @@ module ActionMCP
     end
 
     test "resources/read returns error for unknown URI" do
-      post action_mcp.mcp_post_path,
-           params: {
-             jsonrpc: "2.0",
-             id: 6,
-             method: "resources/read",
-             params: { uri: "unknown://resource/123" }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      session_post("resources/read", { uri: "unknown://resource/123" }, id: 6)
 
       assert_response :success
       result = JSON.parse(response.body)
@@ -236,6 +120,12 @@ module ActionMCP
       assert_not_nil result["error"]
       assert_equal(-32002, result["error"]["code"])
       assert_match(/Resource not found/, result["error"]["message"])
+    end
+
+    private
+
+    def session_post(method, params = nil, **options)
+      mcp_post(method, params, path: action_mcp.mcp_post_path, session_id: @session_id, **options)
     end
   end
 end

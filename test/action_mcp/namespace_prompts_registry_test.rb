@@ -4,25 +4,8 @@ require "test_helper"
 
 module ActionMCP
   class NamespacePromptsRegistryTest < ActiveSupport::TestCase
-    setup do
-      @original_prompts = PromptsRegistry.items.dup
-      # Clear the registry before each test
-      PromptsRegistry.clear!
-    end
-
-    teardown do
-      PromptsRegistry.clear!
-      ActionMCP::Prompt.descendants.each do |prompt_class|
-        next if prompt_class.abstract?
-
-        PromptsRegistry.register(prompt_class)
-      end
-
-      # Restore any prompts that might live outside the descendant list (defensive)
-      @original_prompts.each do |name, klass|
-        PromptsRegistry.items[name] ||= klass
-      end
-    end
+    include RegistryIsolation
+    isolate_registry PromptsRegistry, ActionMCP::Prompt
 
     test "registers multiple prompts with same class name but different namespaces and no explicit prompt_name" do
       # The dummy app has Cat::GreetingPrompt and Dog::GreetingPrompt

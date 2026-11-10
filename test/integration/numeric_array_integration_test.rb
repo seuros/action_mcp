@@ -14,14 +14,7 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     setup_mcp_session
 
     # First, list tools to ensure it's available
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/list"
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/list", session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -41,20 +34,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal "number", schema["properties"]["numbers"]["items"]["type"]
 
     # Call the tool with various inputs
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 2,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: [ 1, 2.5, 3, 4.75, 5 ]
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: [ 1, 2.5, 3, 4.75, 5 ]
+      }
+    }, id: 2, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -67,20 +52,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   test "rejects string numbers before tool coercion" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: [ "1", "2.5", "3.14" ]
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: [ "1", "2.5", "3.14" ]
+      }
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -93,18 +70,10 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   test "rejects a missing required numbers argument" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {}
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {}
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -116,78 +85,21 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
 
   private
 
-  def initialize_session
-    request_id = "init-#{SecureRandom.hex(4)}"
-    init_request = {
-      jsonrpc: "2.0",
-      id: request_id,
-      method: "initialize",
-      params: {
-        protocolVersion: @protocol_version,
-        clientInfo: {
-          name: "Test Client",
-          version: "1.0.0"
-        },
-        capabilities: {}
-      }
-    }
-
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream"
-         },
-         params: init_request.to_json
-
-    assert_response :ok
-    response.headers["Mcp-Session-Id"]
-  end
-
-  def send_initialized_notification(session_id)
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => session_id
-         },
-         params: {
-           jsonrpc: "2.0",
-           method: "notifications/initialized"
-         }.to_json
-
-    assert_response :accepted
-  end
-
   def setup_mcp_session
-    @session_id = initialize_session
-    send_initialized_notification(@session_id)
-  end
-
-  def mcp_headers
-    {
-      "Mcp-Session-Id" => @session_id,
-      "CONTENT_TYPE" => "application/json",
-      "ACCEPT" => "application/json, text/event-stream"
-    }
+    @session_id = initialize_mcp_session(protocol_version: @protocol_version, client_name: "Test Client",
+                                         client_version: "1.0.0")
+    assert_response :accepted
   end
 
   test "rejects mixed valid and invalid values" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: [ 1, "2", "invalid", 3.5, nil, "4.5", {}, [] ]
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: [ 1, "2", "invalid", 3.5, nil, "4.5", {}, [] ]
+      }
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -200,20 +112,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   test "works with empty array" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: []
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: []
+      }
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -225,20 +129,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   test "handles very large numbers" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: [ 1e10, 2e10, 3e10 ]
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: [ 1e10, 2e10, 3e10 ]
+      }
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)
@@ -250,20 +146,12 @@ class NumericArrayIntegrationTest < ActionDispatch::IntegrationTest
   test "handles negative numbers" do
     setup_mcp_session
 
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "tools/call",
-           params: {
-             name: "numeric_array",
-             arguments: {
-               numbers: [ -5, -2.5, 0, 2.5, 5 ]
-             }
-           }
-         },
-         headers: mcp_headers,
-         as: :json
+    mcp_post("tools/call", {
+      name: "numeric_array",
+      arguments: {
+        numbers: [ -5, -2.5, 0, 2.5, 5 ]
+      }
+    }, session_id: @session_id)
 
     assert_response :success
     response_data = JSON.parse(response.body)

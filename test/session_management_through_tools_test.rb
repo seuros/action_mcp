@@ -35,13 +35,7 @@ class SessionManagementThroughToolsTest < ActionDispatch::IntegrationTest
       }
     }
 
-    post "/",
-         headers: {
-           "CONTENT_TYPE" => "application/json",
-           "ACCEPT" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => @session.id
-         },
-         params: params.to_json
+    mcp_send(params, session_id: @session.id)
     assert_includes [ 200, 202 ], response.status
 
     # Check response is successful

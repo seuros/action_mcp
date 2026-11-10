@@ -4,74 +4,34 @@ require "test_helper"
 
 class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
   setup do
-    # Initialize a session
-    post "/",
-         params: {
-           jsonrpc: "2.0",
-           id: 1,
-           method: "initialize",
-           params: {
-             protocolVersion: "2025-11-25",
-             clientInfo: { name: "test-client", version: "1.0" },
-             capabilities: {}
-           }
-         }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream"
-         }
+    @session_id = initialize_mcp_session(complete: false, protocol_version: "2025-11-25", client_name: "test-client")
 
-    assert_response :success
-    @session_id = response.headers["Mcp-Session-Id"]
-
-    post "/",
-         params: { jsonrpc: "2.0", method: "notifications/initialized" }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "Mcp-Session-Id" => @session_id,
-           "MCP-Protocol-Version" => "2025-11-25"
-         }
+    mcp_notify("notifications/initialized", session_id: @session_id, protocol_version: "2025-11-25")
     assert_response :accepted
   end
 
-  test "tools/list works without authentication in none mode" do
-    with_authentication_config([ "none" ]) do
-      post "/",
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "tools/list"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+  {
+    "tools/list works without authentication in none mode" => [ "none" ],
+    # Without credentials, api_key falls through to none
+    "fallback authentication allows requests without authentication" => %w[api_key none]
+  }.each do |name, auth_methods|
+    test name do
+      with_authentication_config(auth_methods) do
+        mcp_post("tools/list", id: 2, session_id: @session_id)
 
-      assert_response :success
-      body = response.parsed_body
-      assert body["result"]["tools"].is_a?(Array)
+        assert_response :success
+        body = response.parsed_body
+        assert body["result"]["tools"].is_a?(Array)
+      end
     end
   end
 
   test "user_info tool shows default dev user in none mode" do
     with_authentication_config([ "none" ]) do
-      post "/",
-           params: {
-             jsonrpc: "2.0",
-             id: 3,
-             method: "tools/call",
-             params: {
-               name: "user_info",
-               arguments: { include_sensitive: false, include_auth_details: false }
-             }
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
+      mcp_post("tools/call", {
+        name: "user_info",
+        arguments: { include_sensitive: false, include_auth_details: false }
+      }, id: 3, session_id: @session_id)
 
       assert_response :success
       body = response.parsed_body
@@ -82,27 +42,6 @@ class MCPNoneAuthenticationTest < ActionDispatch::IntegrationTest
       assert content.is_a?(Array), "Content should be an array: #{content.inspect}"
       # Should have the default dev user
       assert(content.any? { |c| c["text"]&.include?("dev@localhost") }, "Should contain dev user info")
-    end
-  end
-
-  test "fallback authentication allows requests without authentication" do
-    with_authentication_config(%w[api_key none]) do
-      # Try without authentication - should succeed with fallback to none
-      post "/",
-           params: {
-             jsonrpc: "2.0",
-             id: 2,
-             method: "tools/list"
-           }.to_json,
-           headers: {
-             "Content-Type" => "application/json",
-             "Accept" => "application/json, text/event-stream",
-             "Mcp-Session-Id" => @session_id
-           }
-
-      assert_response :success
-      body = response.parsed_body
-      assert body["result"]["tools"].is_a?(Array)
     end
   end
 end

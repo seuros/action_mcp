@@ -3,6 +3,8 @@
 module ActionMCP
   module Server
     module Prompts
+      include ResultResponse
+
       def send_prompts_list(request_id, params = {})
         page, next_cursor = paginate(session.registered_prompts, cursor: params["cursor"])
 
@@ -23,20 +25,9 @@ module ActionMCP
           prompt = prompt_class.new(params)
           prompt.with_context({ session: session, request: { params: { name: prompt_name, _meta: _meta } } })
 
-          # Wrap prompt execution with Rails reloader for development
-          result = if Rails.env.development? && defined?(Rails.application.reloader)
-                     Rails.application.reloader.wrap do
-                       prompt.call
-                     end
-          else
-                     prompt.call
-          end
+          result = DevReloader.wrap { prompt.call }
 
-          if result.is_error
-            send_jsonrpc_response(request_id, error: result.to_h)
-          else
-            send_jsonrpc_response(request_id, result: result.to_h)
-          end
+          send_result_response(request_id, result)
         else
           send_jsonrpc_error(request_id, :invalid_params, "Prompt '#{prompt_name}' not available in this session")
         end

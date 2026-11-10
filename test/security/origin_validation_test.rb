@@ -49,13 +49,7 @@ class OriginValidationTest < ActionDispatch::IntegrationTest
   end
 
   test "forbidden response is JSON-RPC with no id" do
-    post @base_url,
-         params: { jsonrpc: "2.0", id: "req-1", method: "initialize", params: {} }.to_json,
-         headers: {
-           "Content-Type" => "application/json",
-           "Accept" => "application/json, text/event-stream",
-           "Origin" => "http://evil.com"
-         }
+    mcp_post("initialize", {}, id: "req-1", path: @base_url, headers: { "Origin" => "http://evil.com" })
 
     assert_response :forbidden
     body = response.parsed_body

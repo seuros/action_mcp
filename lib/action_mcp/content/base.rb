@@ -25,6 +25,13 @@ module ActionMCP
         Validation.validate_annotations!(@annotations)
         h
       end
+
+      # Returns a JSON representation of the content.
+      #
+      # @return [String] The JSON representation.
+      def to_json(*)
+        MultiJSON.generate(to_h, *)
+      end
     end
   end
 end

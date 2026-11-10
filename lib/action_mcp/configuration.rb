@@ -255,28 +255,17 @@ module ActionMCP
 
     # Filter tools based on active profile
     def filtered_tools
-      return ToolsRegistry.non_abstract if should_include_all?(:tools)
-
-      tool_names = @profiles[active_profile][:tools] || []
-      # Convert tool names to underscored format
-      tool_names = tool_names.map { |name| name.to_s.underscore }
-      ToolsRegistry.non_abstract.select { |tool| tool_names.include?(tool.name.underscore) }
+      filter_by_profile(ToolsRegistry, :tools) { |name| name.to_s.underscore }
     end
 
     # Filter prompts based on active profile
     def filtered_prompts
-      return PromptsRegistry.non_abstract if should_include_all?(:prompts)
-
-      prompt_names = @profiles[active_profile][:prompts] || []
-      PromptsRegistry.non_abstract.select { |prompt| prompt_names.include?(prompt.name) }
+      filter_by_profile(PromptsRegistry, :prompts)
     end
 
     # Filter resources based on active profile
     def filtered_resources
-      return ResourceTemplatesRegistry.non_abstract if should_include_all?(:resources)
-
-      resource_names = @profiles[active_profile][:resources] || []
-      ResourceTemplatesRegistry.non_abstract.select { |resource| resource_names.include?(resource.name) }
+      filter_by_profile(ResourceTemplatesRegistry, :resources)
     end
 
     # Returns capabilities based on active profile
@@ -475,6 +464,16 @@ module ActionMCP
       if config["allowed_origins"]
         @allowed_origins = Array(config["allowed_origins"])
       end
+    end
+
+    # Non-abstract entries of +registry+ listed under +key+ in the active profile.
+    # The block normalizes names on both sides before comparing.
+    def filter_by_profile(registry, key, &normalize)
+      return registry.non_abstract if should_include_all?(key)
+
+      normalize ||= :itself.to_proc
+      names = (@profiles[active_profile][key] || []).map(&normalize)
+      registry.non_abstract.select { |item| names.include?(normalize.call(item.name)) }
     end
 
     def should_include_all?(type)

@@ -38,7 +38,7 @@ module ActionMCP
           "properties" => {
             "hints" => {
               "type" => "array",
-              "items" => { "$ref" => "#/$defs/ModelHint" }
+              "items" => Content::Validation.ref("ModelHint")
             },
             "costPriority" => { "type" => "number", "minimum" => 0, "maximum" => 1 },
             "speedPriority" => { "type" => "number", "minimum" => 0, "maximum" => 1 },
@@ -68,13 +68,13 @@ module ActionMCP
           "type" => "object",
           "required" => %w[inputSchema name],
           "properties" => Content::Validation::META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/ToolAnnotations" },
+            "annotations" => Content::Validation.ref("ToolAnnotations"),
             "description" => { "type" => "string" },
-            "execution" => { "$ref" => "#/$defs/ToolExecution" },
-            "icons" => { "type" => "array", "items" => { "$ref" => "#/$defs/Icon" } },
-            "inputSchema" => { "$ref" => "#/$defs/ToolSchema" },
+            "execution" => Content::Validation.ref("ToolExecution"),
+            "icons" => { "type" => "array", "items" => Content::Validation.ref("Icon") },
+            "inputSchema" => Content::Validation.ref("ToolSchema"),
             "name" => { "type" => "string" },
-            "outputSchema" => { "$ref" => "#/$defs/ToolSchema" },
+            "outputSchema" => Content::Validation.ref("ToolSchema"),
             "title" => { "type" => "string" }
           )
         },
@@ -104,7 +104,7 @@ module ActionMCP
           "properties" => Content::Validation::META_PROPERTY.merge(
             "content" => {
               "type" => "array",
-              "items" => { "$ref" => "#/$defs/ContentBlock" }
+              "items" => Content::Validation.ref("ContentBlock")
             },
             "isError" => { "type" => "boolean" },
             "structuredContent" => { "type" => "object" },
@@ -113,9 +113,7 @@ module ActionMCP
           )
         },
         "SamplingMessageContentBlock" => {
-          "anyOf" => %w[TextContent ImageContent AudioContent ToolUseContent ToolResultContent].map do |name|
-            { "$ref" => "#/$defs/#{name}" }
-          end
+          "anyOf" => Content::Validation.refs(*%w[TextContent ImageContent AudioContent ToolUseContent ToolResultContent])
         },
         "SamplingMessage" => {
           "type" => "object",
@@ -123,14 +121,14 @@ module ActionMCP
           "properties" => Content::Validation::META_PROPERTY.merge(
             "content" => {
               "anyOf" => [
-                { "$ref" => "#/$defs/SamplingMessageContentBlock" },
+                Content::Validation.ref("SamplingMessageContentBlock"),
                 {
                   "type" => "array",
-                  "items" => { "$ref" => "#/$defs/SamplingMessageContentBlock" }
+                  "items" => Content::Validation.ref("SamplingMessageContentBlock")
                 }
               ]
             },
-            "role" => { "$ref" => "#/$defs/Role" }
+            "role" => Content::Validation.ref("Role")
           )
         },
         "CreateMessageRequestParams" => {
@@ -140,7 +138,7 @@ module ActionMCP
             "_meta" => {
               "type" => "object",
               "properties" => {
-                "progressToken" => { "$ref" => "#/$defs/ProgressToken" }
+                "progressToken" => Content::Validation.ref("ProgressToken")
               }
             },
             "includeContext" => {
@@ -150,16 +148,16 @@ module ActionMCP
             "maxTokens" => { "type" => "integer" },
             "messages" => {
               "type" => "array",
-              "items" => { "$ref" => "#/$defs/SamplingMessage" }
+              "items" => Content::Validation.ref("SamplingMessage")
             },
             "metadata" => { "type" => "object" },
-            "modelPreferences" => { "$ref" => "#/$defs/ModelPreferences" },
+            "modelPreferences" => Content::Validation.ref("ModelPreferences"),
             "stopSequences" => { "type" => "array", "items" => { "type" => "string" } },
             "systemPrompt" => { "type" => "string" },
-            "task" => { "$ref" => "#/$defs/TaskMetadata" },
+            "task" => Content::Validation.ref("TaskMetadata"),
             "temperature" => { "type" => "number" },
-            "toolChoice" => { "$ref" => "#/$defs/ToolChoice" },
-            "tools" => { "type" => "array", "items" => { "$ref" => "#/$defs/Tool" } }
+            "toolChoice" => Content::Validation.ref("ToolChoice"),
+            "tools" => { "type" => "array", "items" => Content::Validation.ref("Tool") }
           }
         }
       ).freeze
@@ -184,35 +182,20 @@ module ActionMCP
           @default_messages ||= []
         end
 
-        def system_prompt(value = UNSET)
-          @default_system_prompt = value unless value.equal?(UNSET)
-          @default_system_prompt
-        end
-
-        def include_context(value = UNSET)
-          @default_context = value unless value.equal?(UNSET)
-          @default_context
-        end
-
         def model_hints(value = UNSET)
           @default_model_hints = value unless value.equal?(UNSET)
           @default_model_hints ||= []
         end
 
-        def intelligence_priority(value = UNSET)
-          @default_intelligence_priority = value unless value.equal?(UNSET)
-          @default_intelligence_priority.nil? ? 0.9 : @default_intelligence_priority
-        end
-
-        def max_tokens(value = UNSET)
-          @default_max_tokens = value unless value.equal?(UNSET)
-          @default_max_tokens.nil? ? 500 : @default_max_tokens
-        end
-
-        def temperature(value = UNSET)
-          @default_temperature = value unless value.equal?(UNSET)
-          @default_temperature.nil? ? 0.7 : @default_temperature
-        end
+        # Class-level defaults: called with a value to set it, without one to read it.
+        { system_prompt: nil, include_context: nil, intelligence_priority: 0.9, max_tokens: 500, temperature: 0.7 }
+          .each do |name, fallback|
+            define_method(name) do |value = UNSET|
+              instance_variable_set(:"@default_#{name}", value) unless value.equal?(UNSET)
+              stored = instance_variable_get(:"@default_#{name}")
+              stored.nil? ? fallback : stored
+            end
+          end
 
         def validate_params!(params)
           raise ArgumentError, "Sampling request params must be an object" unless params.is_a?(Hash)

@@ -7,43 +7,32 @@ module ActionMCP
       # Tasks provide durable state machines for tracking async request execution
       module TaskHandler
         include ErrorAware
+        include Dispatching
+
+        GATED_TASK_METHODS = {
+          JsonRpcHandlerBase::Methods::TASKS_LIST => [ :list, "Task listing" ],
+          JsonRpcHandlerBase::Methods::TASKS_CANCEL => [ :cancel, "Task cancellation" ]
+        }.freeze
 
         def process_tasks(rpc_method, id, params)
           params ||= {}
 
           with_error_handling(id) do
-            unless params.is_a?(Hash)
-              raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Task params must be an object")
-            end
+            require_params_object!(params, "Task")
 
             unless transport.session.protocol_version == "2025-11-25"
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Tasks are only available in MCP 2025-11-25")
+              method_not_available!("Tasks are only available in MCP 2025-11-25")
             end
 
-            task_capabilities = negotiated_task_capabilities
-            unless task_capabilities
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Tasks are not available for this session")
+            task_capabilities = negotiated_capabilities(:tasks)
+            method_not_available!("Tasks are not available for this session") unless task_capabilities
+
+            capability, feature = GATED_TASK_METHODS[rpc_method]
+            if capability && !task_capabilities.key?(capability)
+              method_not_available!("#{feature} is not available for this session")
             end
 
-            if rpc_method == JsonRpcHandlerBase::Methods::TASKS_LIST && !task_capabilities.key?(:list)
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Task listing is not available for this session")
-            end
-
-            if rpc_method == JsonRpcHandlerBase::Methods::TASKS_CANCEL && !task_capabilities.key?(:cancel)
-              raise JSON_RPC::JsonRpcError.new(:method_not_found,
-                                               message: "Task cancellation is not available for this session")
-            end
-
-            handler = task_method_handlers[rpc_method]
-            if handler
-              send(handler, id, params)
-            else
-              Rails.logger.warn("Unknown tasks method: #{rpc_method}")
-              raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Unknown tasks method: #{rpc_method}")
-            end
+            dispatch_rpc(task_method_handlers, "tasks", rpc_method, id, params)
           end
         end
 
@@ -56,12 +45,6 @@ module ActionMCP
             JsonRpcHandlerBase::Methods::TASKS_LIST => :handle_tasks_list,
             JsonRpcHandlerBase::Methods::TASKS_CANCEL => :handle_tasks_cancel
           }
-        end
-
-        def negotiated_task_capabilities
-          capabilities = (transport.session.server_capabilities || {}).with_indifferent_access
-          task_capabilities = capabilities[:tasks]
-          task_capabilities.with_indifferent_access if task_capabilities.is_a?(Hash)
         end
 
         def handle_tasks_get(id, params)

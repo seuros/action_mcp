@@ -14,6 +14,29 @@ module ActionMCP
         "_meta" => { "type" => "object" }
       }.freeze
 
+      def self.ref(name)
+        { "$ref" => "#/$defs/#{name}" }
+      end
+
+      def self.refs(*names)
+        names.map { |name| ref(name) }
+      end
+
+      ANNOTATED_PROPERTIES = META_PROPERTY.merge("annotations" => ref("Annotations")).freeze
+
+      # Base64 media block (ImageContent, AudioContent).
+      def self.media_content(type)
+        {
+          "type" => "object",
+          "required" => %w[data mimeType type],
+          "properties" => ANNOTATED_PROPERTIES.merge(
+            "data" => { "type" => "string", "format" => "byte" },
+            "mimeType" => { "type" => "string" },
+            "type" => { "type" => "string", "const" => type }
+          )
+        }
+      end
+
       ANNOTATIONS = {
         "type" => "object",
         "properties" => {
@@ -43,32 +66,13 @@ module ActionMCP
         "TextContent" => {
           "type" => "object",
           "required" => %w[text type],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
+          "properties" => ANNOTATED_PROPERTIES.merge(
             "text" => { "type" => "string" },
             "type" => { "type" => "string", "const" => "text" }
           )
         },
-        "ImageContent" => {
-          "type" => "object",
-          "required" => %w[data mimeType type],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
-            "data" => { "type" => "string", "format" => "byte" },
-            "mimeType" => { "type" => "string" },
-            "type" => { "type" => "string", "const" => "image" }
-          )
-        },
-        "AudioContent" => {
-          "type" => "object",
-          "required" => %w[data mimeType type],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
-            "data" => { "type" => "string", "format" => "byte" },
-            "mimeType" => { "type" => "string" },
-            "type" => { "type" => "string", "const" => "audio" }
-          )
-        },
+        "ImageContent" => media_content("image"),
+        "AudioContent" => media_content("audio"),
         "TextResourceContents" => {
           "type" => "object",
           "required" => %w[text uri],
@@ -90,12 +94,11 @@ module ActionMCP
         "EmbeddedResource" => {
           "type" => "object",
           "required" => %w[resource type],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
+          "properties" => ANNOTATED_PROPERTIES.merge(
             "resource" => {
               "anyOf" => [
-                { "$ref" => "#/$defs/TextResourceContents" },
-                { "$ref" => "#/$defs/BlobResourceContents" }
+                ref("TextResourceContents"),
+                ref("BlobResourceContents")
               ]
             },
             "type" => { "type" => "string", "const" => "resource" }
@@ -104,10 +107,9 @@ module ActionMCP
         "ResourceLink" => {
           "type" => "object",
           "required" => %w[name type uri],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
+          "properties" => ANNOTATED_PROPERTIES.merge(
             "description" => { "type" => "string" },
-            "icons" => { "type" => "array", "items" => { "$ref" => "#/$defs/Icon" } },
+            "icons" => { "type" => "array", "items" => ref("Icon") },
             "mimeType" => { "type" => "string" },
             "name" => { "type" => "string" },
             "size" => { "type" => "integer" },
@@ -117,17 +119,14 @@ module ActionMCP
           )
         },
         "ContentBlock" => {
-          "anyOf" => %w[TextContent ImageContent AudioContent ResourceLink EmbeddedResource].map do |name|
-            { "$ref" => "#/$defs/#{name}" }
-          end
+          "anyOf" => refs(*%w[TextContent ImageContent AudioContent ResourceLink EmbeddedResource])
         },
         "Resource" => {
           "type" => "object",
           "required" => %w[name uri],
-          "properties" => META_PROPERTY.merge(
-            "annotations" => { "$ref" => "#/$defs/Annotations" },
+          "properties" => ANNOTATED_PROPERTIES.merge(
             "description" => { "type" => "string" },
-            "icons" => { "type" => "array", "items" => { "$ref" => "#/$defs/Icon" } },
+            "icons" => { "type" => "array", "items" => ref("Icon") },
             "mimeType" => { "type" => "string" },
             "name" => { "type" => "string" },
             "size" => { "type" => "integer" },
@@ -139,7 +138,7 @@ module ActionMCP
           "type" => "object",
           "required" => %w[content role],
           "properties" => {
-            "content" => { "$ref" => "#/$defs/ContentBlock" },
+            "content" => ref("ContentBlock"),
             "role" => { "type" => "string", "enum" => %w[assistant user] }
           }
         },
@@ -148,14 +147,14 @@ module ActionMCP
           "required" => [ "messages" ],
           "properties" => META_PROPERTY.merge(
             "description" => { "type" => "string" },
-            "messages" => { "type" => "array", "items" => { "$ref" => "#/$defs/PromptMessage" } }
+            "messages" => { "type" => "array", "items" => ref("PromptMessage") }
           )
         },
         "CallToolResult" => {
           "type" => "object",
           "required" => [ "content" ],
           "properties" => META_PROPERTY.merge(
-            "content" => { "type" => "array", "items" => { "$ref" => "#/$defs/ContentBlock" } },
+            "content" => { "type" => "array", "items" => ref("ContentBlock") },
             "isError" => { "type" => "boolean" },
             "structuredContent" => { "type" => "object" }
           )
