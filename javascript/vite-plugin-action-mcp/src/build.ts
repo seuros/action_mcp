@@ -153,7 +153,7 @@ async function buildView(view: ScannedView, root: string, outDir: string): Promi
   const result = await build({
     root,
     configFile: false,
-    envFile: false,
+    envDir: false,
     // Views bundle everything inline; without this vite copies the project's
     // public/ directory (the whole Rails public tree) into outDir.
     publicDir: false,
@@ -166,11 +166,11 @@ async function buildView(view: ScannedView, root: string, outDir: string): Promi
       assetsInlineLimit: () => true,
       cssCodeSplit: false,
       sourcemap: false,
-      rollupOptions: {
+      rolldownOptions: {
         input: VIRTUAL_ENTRY_ID,
         output: {
           format: "es",
-          inlineDynamicImports: true,
+          codeSplitting: false,
           entryFileNames: `${view.name}-[hash].js`,
           assetFileNames: `${view.name}-[hash][extname]`,
         },
