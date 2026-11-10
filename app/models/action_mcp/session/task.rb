@@ -295,7 +295,8 @@ module ActionMCP
         return unless resumed
 
         # Re-enqueue the job to continue execution
-        ActionMCP::ToolExecutionJob.perform_later(id, request_name, request_params, {})
+        params = (request_params || {}).with_indifferent_access
+        ActionMCP::ToolExecutionJob.perform_later(id, request_name, params[:arguments] || {}, params[:_meta] || {})
       end
 
       private

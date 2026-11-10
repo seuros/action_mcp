@@ -8,12 +8,51 @@ module ActionMCP
 
     queue_as :mcp_tasks
 
-    # Retry configuration for transient failures
-    retry_on StandardError, wait: :polynomially_longer, attempts: 3
+    # The gateway resolves identities per request into ActionMCP::Current; they
+    # travel with the job so perform and schema procs see the same current_user
+    # as a synchronous call. Values ActiveJob cannot serialize stay behind.
+    CARRIED_CURRENT_ATTRIBUTES = %i[user session_data].freeze
 
-    # Ensure tasks reach terminal state on permanent failure
-    discard_on StandardError do |job, error|
-      handle_job_discard(job, error)
+    attr_reader :current_attributes
+
+    before_enqueue { @current_attributes ||= self.class.capture_current }
+    around_perform { |job, block| ActionMCP::Current.set(job.current_attributes.to_h) { block.call } }
+
+    # A failure marks the task failed, so clients polling tasks/get see a
+    # terminal state, then re-raises so the job fails visibly in the queue
+    # backend. A manual retry of such a job finds the task terminal and stops.
+    rescue_from StandardError do |error|
+      self.class.fail_task_for(self, error)
+      raise error
+    end
+
+    # Declared last, so checked first: transient infrastructure errors retry.
+    retry_on ActiveRecord::Deadlocked, ActiveRecord::ConnectionNotEstablished, ActiveRecord::LockWaitTimeout,
+             wait: :polynomially_longer, attempts: 3 do |job, error|
+      fail_task_for(job, error)
+      raise error
+    end
+
+    def self.capture_current
+      CARRIED_CURRENT_ATTRIBUTES.each_with_object({}) do |name, carried|
+        value = ActionMCP::Current.public_send(name)
+        next if value.blank?
+
+        ActiveJob::Arguments.serialize([ value ])
+        carried[name] = value
+      rescue ActiveJob::SerializationError
+        Rails.logger.warn "[ToolExecutionJob] ActionMCP::Current.#{name} (#{value.class}) " \
+                          "cannot be serialized for ActiveJob; the task runs without it"
+      end
+    end
+
+    def serialize
+      super.merge("action_mcp_current" => ActiveJob::Arguments.serialize([ current_attributes.to_h ]))
+    end
+
+    def deserialize(job_data)
+      super
+      @current_attributes = ActiveJob::Arguments.deserialize(job_data.fetch("action_mcp_current", [ {} ])).first
     end
 
     # @param task_id [String] Task ID
@@ -21,16 +60,18 @@ module ActionMCP
     # @param arguments [Hash] Tool arguments
     # @param meta [Hash] Request metadata
     def perform(task_id, tool_name, arguments, meta = {})
-      @task = step(:load_task, task_id)
+      # Loading reruns on every resumption; only the tool run is a checkpointed
+      # step, so a resumed job never executes the tool twice.
+      @task = load_task(task_id)
       return if @task.nil? || @task.terminal?
 
-      @session = step(:validate_session, @task)
+      @session = validate_session(@task)
       return unless @session
 
-      @tool = step(:prepare_tool, @session, tool_name, arguments, @task)
+      @tool = prepare_tool(@session, tool_name, arguments, @task)
       return unless @tool
 
-      step(:execute_tool) do
+      step :execute_tool do
         result = execute_with_reloader(@tool, @session)
         update_task_result(@task, result)
       end
@@ -135,12 +176,12 @@ module ActionMCP
       end
     end
 
-    def self.handle_job_discard(job, error)
+    def self.fail_task_for(job, error)
       task_id = job.arguments.first
       task = Session::Task.find_by(id: task_id)
       return unless task&.persisted?
 
-      Rails.logger.error "[ToolExecutionJob] Discarding job for task #{task_id}: #{error.class} - #{error.message}"
+      Rails.logger.error "[ToolExecutionJob] Task #{task_id} failed: #{error.class} - #{error.message}"
       Rails.logger.error error.backtrace&.first(10)&.join("\n")
 
       task.with_lock do
@@ -160,6 +201,9 @@ module ActionMCP
         )
         task.mark_failed!
       end
+    rescue StandardError => e
+      # The original error still propagates; this one is reported alongside it.
+      Rails.error.report(e, handled: true, severity: :error, context: { task_id: task_id })
     end
   end
 end
