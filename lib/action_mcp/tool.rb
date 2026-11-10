@@ -15,6 +15,10 @@ module ActionMCP
     include ActionMCP::CurrentHelpers
     extend ActionMCP::SchemaHelpers
 
+    # JSON Schema keywords the collection DSL places on the array itself;
+    # the rest describe each item.
+    COLLECTION_ARRAY_KEYWORDS = %i[minItems maxItems uniqueItems].freeze
+
     # --------------------------------------------------------------------------
     # Class Attributes for Tool Metadata and Schema
     # --------------------------------------------------------------------------
@@ -405,8 +409,14 @@ module ActionMCP
     # @param description [String, nil] Optional description for the collection.
     # @param required [Boolean] Whether the collection is required (default: false).
     # @param default [Array, nil] The default value for the collection.
+    # @param opts [Hash] Additional JSON Schema keywords. Array keywords
+    #   (minItems, maxItems, uniqueItems) apply to the array; every other
+    #   keyword (enum, format, minimum, pattern, ...) applies to each item.
     # @return [void]
-    def self.collection(prop_name, type:, description: nil, required: false, default: [])
+    #
+    # @example
+    #   collection :fruits, type: "string", enum: %w[apple banana], minItems: 1, uniqueItems: true
+    def self.collection(prop_name, type:, description: nil, required: false, default: [], **opts)
       raise ArgumentError, "Type is required for a collection" if type.nil?
 
       if _property_aliases.key?(prop_name.to_s)
@@ -415,8 +425,12 @@ module ActionMCP
 
       invalidate_schema_cache
 
-      collection_definition = { type: "array", items: { type: type } }
+      array_opts = opts.slice(*COLLECTION_ARRAY_KEYWORDS)
+      item_opts = opts.except(*COLLECTION_ARRAY_KEYWORDS)
+
+      collection_definition = { type: "array", items: { type: type, **item_opts } }
       collection_definition[:description] = description if description && !description.empty?
+      collection_definition.merge!(array_opts)
 
       self._schema_properties = _schema_properties.merge(prop_name.to_s => collection_definition)
       new_required = _required_properties.dup

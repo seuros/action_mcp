@@ -62,8 +62,24 @@ module ActionMCP
         when Methods::LOGGING_SET_LEVEL
           handle_logging_set_level(id, params)
         else
-          raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Method not found: #{rpc_method}")
+          process_custom_method(rpc_method, id, params)
         end
+      end
+
+      def process_custom_method(rpc_method, id, params)
+        handler = ActionMCP.configuration.custom_methods[rpc_method]
+        raise JSON_RPC::JsonRpcError.new(:method_not_found, message: "Method not found: #{rpc_method}") unless handler
+
+        result = begin
+          handler.call(params || {}, transport.session)
+        rescue JSON_RPC::JsonRpcError
+          raise
+        rescue StandardError => e
+          Rails.error.report(e, handled: true, severity: :error, context: { rpc_method: rpc_method })
+          raise JSON_RPC::JsonRpcError.new(:internal_error, message: "Error while handling #{rpc_method}")
+        end
+
+        transport.send_jsonrpc_response(id, result: result)
       end
 
       def handle_initialize(id, params)

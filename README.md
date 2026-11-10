@@ -186,6 +186,16 @@ class CalculateSumTool < ApplicationMCPTool
 end
 ```
 
+#### Schema Keywords
+
+Extra keyword arguments on `property` and `collection` become JSON Schema keywords, and arguments are validated against that schema before `perform` runs. On a `collection`, `minItems`, `maxItems` and `uniqueItems` describe the array; every other keyword describes each item:
+
+```ruby
+property :priority, type: "string", enum: %w[low normal high]
+property :retries, type: "integer", minimum: 0, maximum: 5
+collection :labels, type: "string", enum: %w[bug feature docs], minItems: 1, uniqueItems: true
+```
+
 #### Consent Management
 
 For tools that perform sensitive operations (file system access, database modifications, external API calls), you can require explicit user consent:
@@ -523,6 +533,21 @@ shared:
 When set, responses include an opaque `nextCursor` when more items are available. When `nil` (default), all items are returned in a single response. Enable only when your clients support cursor-based pagination.
 
 `tasks/list` always paginates regardless of this setting (defaults to 50 per page, or `pagination_page_size` if configured).
+
+### Custom JSON-RPC Methods
+
+Vendor methods can be served next to the MCP core methods. Names take the form `vendor/method`; the MCP namespaces (`tools/`, `prompts/`, `resources/`, `notifications/`, ...) are reserved. The handler receives the request params and the session, and its return value becomes the JSON-RPC result:
+
+```ruby
+# config/initializers/action_mcp.rb
+ActionMCP.configure do |config|
+  config.register_method("acme/toolsets/list") do |params, session|
+    { toolsets: Toolset.visible_to(ActionMCP::Current.user).as_json }
+  end
+end
+```
+
+Raise `JSON_RPC::JsonRpcError` to answer with a specific error code; any other exception is reported to `Rails.error` and answered with `internal_error`.
 
 ### Server Instructions
 
