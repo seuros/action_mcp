@@ -64,6 +64,18 @@ module ActionMCP
         assert_equal "Hello, Ada", result[:messages].sole[:content][:text]
       end
 
+      test "exposes the request _meta to the prompt" do
+        prompt = PromptDefinition.new("name" => "Ada")
+        prompt.define_singleton_method(:perform) { render(text: request_meta.to_json, role: "user") }
+
+        PromptDefinition.stub(:new, ->(*) { prompt }) do
+          @transport.send_prompts_get("prompt-5", "greeting", { "name" => "Ada" }, { "example.com/trace" => "abc" })
+        end
+
+        text = @transport.responses.sole[:result][:messages].sole[:content][:text]
+        assert_equal({ "example.com/trace" => "abc" }, JSON.parse(text))
+      end
+
       test "rejects non-string prompt argument values" do
         session = DummySession.new
         session.define_singleton_method(:read) { |_request = nil| }

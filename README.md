@@ -846,6 +846,21 @@ end
 
 Tools access it via `session_data["user_id"]`. See [GATEWAY.md](GATEWAY.md) for details.
 
+### Per-Request `_meta`
+
+Tools, prompts and resource templates read the `_meta` object of the current `tools/call`, `prompts/get` or `resources/read` request through `request_meta` (an indifferent-access hash, empty when the client sent none):
+
+```ruby
+class OrdersTemplate < ApplicationMCPResTemplate
+  def resolve
+    trace_id = request_meta["example.com/trace"]
+    # ...
+  end
+end
+```
+
+The MCP specification does not authenticate `_meta`. Use it as a lookup hint, and authorize from the session.
+
 ### 1. Create `mcp/config.ru`
 
 The install generator (`rails generate action_mcp:install`) creates this automatically. If you need to create it manually:

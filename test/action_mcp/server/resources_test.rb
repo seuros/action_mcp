@@ -50,6 +50,13 @@ module ActionMCP
         end
       end
 
+      def meta_echo_transport
+        TestTransport.new.tap do |transport|
+          transport.session.registered_resource_templates <<
+            ActionMCP::ResourceTemplatesRegistry.find_template_for_uri("meta-echo://item/42")
+        end
+      end
+
       test "send_resource_read returns not found when template does not accept URI" do
         transport = TestTransport.new
         uri = "demo://resource/1"
@@ -72,16 +79,23 @@ module ActionMCP
       end
 
       test "send_resource_read passes _meta through on contents" do
-        transport = TestTransport.new
-        uri = "meta-echo://item/42"
-        template = ActionMCP::ResourceTemplatesRegistry.find_template_for_uri(uri)
-        transport.session.registered_resource_templates << template
-        transport.send_resource_read(101, { "uri" => uri })
+        transport = meta_echo_transport
+        transport.send_resource_read(101, { "uri" => "meta-echo://item/42" })
 
         response = transport.responses.last
         assert_nil response[:error]
         content = response[:result][:contents].first
         assert_equal({ ui: { prefersBorder: true } }, content[:_meta])
+        assert_equal({}, JSON.parse(content[:text]))
+      end
+
+      test "send_resource_read exposes the request _meta to the template" do
+        transport = meta_echo_transport
+
+        transport.send_resource_read(105, { "uri" => "meta-echo://item/42", "_meta" => { "example.com/trace" => "abc" } })
+
+        content = transport.responses.sole[:result][:contents].first
+        assert_equal({ "example.com/trace" => "abc" }, JSON.parse(content[:text]))
       end
 
       test "send_resource_read does not resolve templates outside the session" do

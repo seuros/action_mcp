@@ -91,7 +91,7 @@ module ActionMCP
             return
           end
 
-          record.with_context({ session: session })
+          record.with_context({ session: session, request: { params: { uri: uri, _meta: params["_meta"] || {} } } })
 
           response = record.call
 

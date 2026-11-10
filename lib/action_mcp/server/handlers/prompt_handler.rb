@@ -43,7 +43,8 @@ module ActionMCP
             raise JSON_RPC::JsonRpcError.new(:invalid_params, message: "Prompt argument values must be strings")
           end
 
-          transport.send_prompts_get(id, name, arguments)
+          _meta = params["_meta"] || params[:_meta] || {}
+          transport.send_prompts_get(id, name, arguments, _meta)
         end
 
         def handle_prompts_list(id, params)

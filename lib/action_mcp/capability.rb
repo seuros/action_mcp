@@ -9,6 +9,7 @@ module ActionMCP
     include Callbacks
     include Instrumentation::Instrumentation
     include Renderable
+    include RequestMeta
 
     class_attribute :_capability_name, instance_accessor: false
     class_attribute :_registered_name, instance_accessor: false

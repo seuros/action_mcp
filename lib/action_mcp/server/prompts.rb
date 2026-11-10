@@ -14,14 +14,14 @@ module ActionMCP
         send_jsonrpc_error(request_id, :invalid_params, e.message)
       end
 
-      def send_prompts_get(request_id, prompt_name, params)
+      def send_prompts_get(request_id, prompt_name, params, _meta = {})
         # Find prompt in session's registry
         prompt_class = session.registered_prompts.find { |p| p.prompt_name == prompt_name }
 
         if prompt_class
           # Create prompt and set execution context
           prompt = prompt_class.new(params)
-          prompt.with_context({ session: session })
+          prompt.with_context({ session: session, request: { params: { name: prompt_name, _meta: _meta } } })
 
           # Wrap prompt execution with Rails reloader for development
           result = if Rails.env.development? && defined?(Rails.application.reloader)
