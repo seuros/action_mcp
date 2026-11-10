@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.203.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.202.0...action_mcp/v0.203.0) (2026-11-10)
+
+
+### Features
+
+* schema keywords take Ruby-style names and procs resolved per session and user ([#255](https://github.com/seuros/action_mcp/issues/255)) ([d5838f8](https://github.com/seuros/action_mcp/commit/d5838f8ea7b00f612372e0069d293a46f7bd834f))
+
 ## [0.202.0](https://github.com/seuros/action_mcp/compare/action_mcp/v0.201.3...action_mcp/v0.202.0) (2026-11-10)
 
 
